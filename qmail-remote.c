@@ -600,12 +600,22 @@ void smtp()
 #endif
   substdio_putsflush(&smtpto,"DATA\r\n");
   code = smtpcode();
+#ifdef DATA_COMPRESS
+  if (wantcomp == 1) {
+    if (code >= 500) quit("D"," failed on DATAZ command");
+    if (code >= 400) quit("Z"," failed on DATAZ command");
+  } else {
+#endif
   if (code >= 500) quit("D"," failed on DATA command");
   if (code >= 400) quit("Z"," failed on DATA command");
+#ifdef DATA_COMPRESS
+  }
+#endif
  
   blast();
 #ifdef DATA_COMPRESS
-  if (wantcomp == 1) compression_done();
+  if (wantcomp == 1)
+    compression_done();
 #endif
   code = smtpcode();
   flagcritical = 0;
