@@ -1690,11 +1690,12 @@ qmail-qstat.8
 qmail-queue: \
 load qmail-queue.o triggerpull.o fmtqfn.o now.o date822fmt.o \
 datetime.a seek.a ndelay.a open.a sig.a alloc.a substdio.a error.a \
-str.a fs.a auto_qmail.o auto_split.o auto_uids.o
-	./load qmail-queue triggerpull.o fmtqfn.o now.o \
-	date822fmt.o datetime.a seek.a ndelay.a open.a sig.a \
-	alloc.a substdio.a error.a str.a fs.a auto_qmail.o \
-	auto_split.o auto_uids.o 
+str.a fs.a auto_qmail.o auto_split.o auto_uids.o control.o constmap.o \
+stralloc.a case.a getln.a
+	./load qmail-queue triggerpull.o fmtqfn.o now.o control.o \
+	constmap.o date822fmt.o datetime.a seek.a ndelay.a open.a sig.a \
+	stralloc.a getln.a case.a alloc.a substdio.a error.a str.a fs.a \
+	auto_qmail.o auto_split.o auto_uids.o 
 
 qmail-queue.0: \
 qmail-queue.8
