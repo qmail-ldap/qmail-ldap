@@ -312,8 +312,17 @@ int qldap_get(stralloc *mail, int at, int fdmess)
        /* don't try an other address, retry later, hopefully ... */
        cae(q, QLX_SEARCHTIMEOUT);
      case TOOMANY:
+#ifdef DUPEALIAS
+       /*
+        * we are going to deliver this to a special alias user for
+        * further processing
+        */
+       qldap_free(q);
+       return 3;
+#else
        /* admin error, don't try a lower precedence addresses */
        cae(q, QLX_TOOMANY);
+#endif
      case FAILED:
        /* ... again do not retry lower precedence addresses */
        cae(q, QLX_LDAPFAIL);
@@ -784,6 +793,32 @@ char *s; char *r; int at;
      /* hostname is different, so I reconnect */
      forward_mail(host.s, ra.s, s, fdmess, fdout);
      /* that's it. Function does not return */
+#endif
+#ifdef DUPEALIAS
+   case 3:
+     /* the alias-user handling for dupe handling */
+     struct passwd *pw;
+     char num[FMT_ULONG];
+
+     log(4, "LDAP lookup got too many hits, using dupe alias\n");
+     pw = getpwnam("dupealias");
+     if (!pw) _exit(QLX_NOALIAS);
+
+     if (!stralloc_copys(&nughde, pw->pw_name)) _exit(QLX_NOMEM);
+     if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+     if (!stralloc_catb(&nughde,num,fmt_ulong(num, (long) pw->pw_uid)))
+       _exit(QLX_NOMEM);
+     if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+     if (!stralloc_catb(&nughde,num,fmt_ulong(num, (long) pw->pw_gid)))
+       _exit(QLX_NOMEM);
+     if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+     if (!stralloc_cats(&nughde, pw->pw_dir)) _exit(QLX_NOMEM);
+     if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+     if (!stralloc_cats(&nughde,"-")) _exit(QLX_NOMEM);
+     if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+     if (!stralloc_cats(&nughde,r)) _exit(QLX_NOMEM);
+     if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+     break;
 #endif
    default:
      log(2, "warning: ldap lookup freaky return value (%i)\n", rv);

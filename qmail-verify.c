@@ -145,8 +145,14 @@ lookup(stralloc *mail)
 			 * ldap server can recover */
 			die_timeout();
 		case TOOMANY:
+#ifdef DUPEALIAS
+			if (substdio_putflush(subfdout, "K", 1) == -1)
+				die_write();
+			qldap_free_results(q);
+#else
 			/* admin error, also temporary */
 			temp_fail();
+#endif
 			return;
 		case FAILED:
 			/* ... again temporary */
