@@ -951,7 +951,7 @@ void smtp_data() {
   if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
   qp = qmail_qp(&qqt);
   out("354 go ahead\r\n"); logline(3,"go ahead");
-  rblheader(&qqt, remoteip);
+  rblheader(&qqt);
 
 #ifdef TLS
   if(ssl){

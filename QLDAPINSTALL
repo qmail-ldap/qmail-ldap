@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/04/29 21:33:53 $)
+RELEASE: current ($Date: 2002/04/30 09:28:13 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -24,6 +24,8 @@ NEWS:
  see QLDAPNEWS
 
 IMPORTANT NEWS:
+
+ rework of qmail-smtpd with more options for spam protection, etc.
 
  added pop-before-smtp tools (see POPBEFORESMTP for more info).
 
@@ -398,9 +400,26 @@ CONFIG FILES:
 ~control/rbllist
 
  Rbllist contains a number of RBL's to check for the given senders IP address.
+ The file consists of four TAB separated fields.
+   basedomain: base domain address to lookup (e.g. relays.ordb.org)
+   action: one of addheader or reject. 
+           addheader will just create a X-RBL: header whereas
+           reject will reject the smtp connection instantly with a 553 error.
+   matchon: any or IP-Address, if a IP-Address is specified the action is only
+            taken if the returned address form basedomain is equal to 
+            IP-Address. With any all returned IP-Address will match.
+   message: message to be included in X-RBL: headers and 553 errors.
+
+ Example:
+   basedomain       action     matchon     message
+   ================================================================
+   relays.ordb.org  reject     any         go home
+   block.blars.org  addheader  127.1.0.16  has no abuse address
+
+ NOTE: for readability we replaced the tabs between the four fields basedoamin,
+       action, matchon and message with spaces (so you can not copy paste the
+       example. (Also the first two lines are not part of the file)
  Default: none
- Example: relays.ordb.org
- Example: relays.osirusoft.com
  Note: Multiline. To activate RBL checks you have to set RBL in qmail-smtpd's
        environment (with tcpserver). See this website for more information on
        available RBLs: http://www.declude.com/JunkMail/Support/ip4r.htm
@@ -425,6 +444,13 @@ CONFIG FILES:
  Note: This can be useful if a spammer sends lots of messages to a
        nonexistant user from an invalid address as otherwise postmaster
        will get lots of double bounces.
+
+~control/bouncemaxbytes
+
+ This file contains the maximal number of bytes to be included in a bounce
+ message.
+ Default: 0 (off)
+ Example: 102400 (equivalent to 10kB)
 
 ~control/dirmaker
 
@@ -501,7 +527,7 @@ RETURNMXCHECK
  Affects: qmail-smtpd
  Example: "" (any value will do)
  Note: This is quite useful even though it doesn't stops many spammers
-       today. But it ensures that you can send an email or an bounce
+       today. But it ensures that you can send an email or a bounce
        back to the sender. It is also useful for your own users/customers
        because if they type a nonexistent sender into their "from" field
        (typos!) it'll stop them the first time instead of getting help-

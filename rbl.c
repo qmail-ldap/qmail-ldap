@@ -12,11 +12,12 @@ char *rblenabled;
 
 extern void safeput();
 
-void rblheader(struct qmail *qqt, stralloc *rblmessage)
+void rblheader(struct qmail *qqt)
 {
   if (!rblenabled) return;
   if (!rblprintheader) return;
-  if (rblmessage->s) safeput(qqt,rblmessage->s);
+  /* rblmessage is safe because it does not contain any remote info */
+  if (rblmessage.s) qmail_puts(qqt,rblmessage.s);
 }
 
 struct rbl {
@@ -85,12 +86,13 @@ static int rbl_lookup(char *base, char *matchon)
 
 void rbladdheader(char *base, char *matchon, char *message)
 {
+  /* all of base, matchon and message can be trusted because these
+     are under our control */
   rblprintheader = 1;
   if(!stralloc_cats(&rblmessage, "X-RBL: (")) die_nomem();
   if(!stralloc_cats(&rblmessage, base)) die_nomem();
   if(!stralloc_cats(&rblmessage, ") ")) die_nomem();
-  if (!str_diff("any", matchon))
-  {
+  if (str_diff("any", matchon)) {
     if(!stralloc_cats(&rblmessage, "matches with ")) die_nomem();
     if(!stralloc_cats(&rblmessage, matchon)) die_nomem();
     if(!stralloc_cats(&rblmessage, " and ")) die_nomem();
@@ -100,7 +102,7 @@ void rbladdheader(char *base, char *matchon, char *message)
   if(!stralloc_cats(&rblmessage, "\n")) die_nomem();
 }
 
-int rblcheck(char *remoteip, char *rblname)
+int rblcheck(char *remoteip, char** rblname)
 {
   int r=1;
   int i;
@@ -121,12 +123,12 @@ int rblcheck(char *remoteip, char *rblname)
       *rblname = rbl[i].message;
       if (rblonlyheader) {
 	logstring(2,"only tagging header."); logflush(2);
-	rbladdheader(remoteip, rbl[i].baseaddr, rbl[i].message);
+	rbladdheader(rbl[i].baseaddr, rbl[i].matchon, rbl[i].message);
 	continue;
       }
       if (!str_diff("addheader", rbl[i].action)) {
 	logstring(2,"would tag header."); logflush(2);
-	rbladdheader(remoteip, rbl[i].baseaddr, rbl[i].message);
+	rbladdheader(rbl[i].baseaddr, rbl[i].matchon, rbl[i].message);
 	continue;
       } else {
 	/* default reject */

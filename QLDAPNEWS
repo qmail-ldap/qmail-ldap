@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/04/29 21:33:53 $ ($Revision: 1.54 $)
+RELEASE: $Date: 2002/04/30 09:28:13 $ ($Revision: 1.55 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -29,8 +29,13 @@ NEWS for current stuff:
   - RBL to check RBLs
   - RBLONLYHEADER to only add a X-RBL header
 
+ added bouncemaxbytes patch:
+ to turn it on write the amount of bytes to bounce in the file 
+ ~control/bouncemaxbytes.
+ Work inspired and mostly copied from Frank DENIS aka Jedi/Sector One.
+
  Bug fix in qmail-send.c log handling:
- If in one read a log entry and a delivery status notification was delivered the 
+ If in one read a log entry and a delivery status notification was delivered the
  status notification was dropped and therefor qmail-send did not close the job.
 
  qmail-remote supports the smtp size extension as specified by rfc 1870.
