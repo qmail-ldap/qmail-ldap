@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/02/01 19:16:04 $ ($Revision: 1.173 $)
+RELEASE: $Date: 2004/02/02 01:25:24 $ ($Revision: 1.174 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,9 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Yet another bug fix in the maildirmake code of auth_mod.c. The previous fix
+ was definitifly not strong enough,
 
  Bug fix in condwrite. The maildir child should not exit 99 on finish the
  parent should exit 99 and the child 0.

@@ -50,6 +50,8 @@ check_passwd(stralloc *login, stralloc *authdata,
 		    login->s);
 		return NOSUCH;
 	}
+	logit(32, "check_passwd: user %s found in passwd db\n",
+	    login->s);
 	if (!fast) {
 		c->gid = pw->pw_gid;
 		c->uid = pw->pw_uid;
@@ -114,7 +116,10 @@ get_local_maildir(stralloc *home, stralloc *maildir)
 	substdio_fdbuf(&ss, subread, fd, buf, sizeof(buf));
 	while (1) {
 		if (getln(&ss, maildir, &match, '\n') != 0) goto tryclose;
-		if (!match && !maildir->len) break;
+		if (!match && !maildir->len) {
+			if (!stralloc_copyb(maildir, "", 1)) goto tryclose;
+			break;
+		}
 		if ((maildir->s[0] == '.' || maildir->s[0] == '/') && 
 			  maildir->s[maildir->len-2] == '/') {
 			maildir->s[maildir->len-1] = '\0';
@@ -135,6 +140,5 @@ tryclose:
 	close(fd);
 	errno = save;
 	return ERRNO;
-
 }
 

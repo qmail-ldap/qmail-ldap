@@ -126,6 +126,9 @@ check_ldap(stralloc *login, stralloc *authdata,
 		if (r != OK) goto fail;
 		r = qldap_get_mailstore(q, &c->home, &c->maildir);
 		if (r != OK) goto fail;
+		if (!stralloc_0(&c->home) ||
+		    !stralloc_0(&c->maildir))
+			return ERRNO;
 		size = count = max = 0;
 		r = qldap_get_quota(q, &size, &count, &max);
 		if (r != OK) goto fail;

@@ -126,7 +126,7 @@ chdir_or_make(char *home, char *maildir)
 {
 	char	*md;
 
-	if (maildir == (char *)0)
+	if (maildir == (char *)0 || *maildir == '\0')
 		md = auth_aliasempty();
 	else
 		md = maildir;
@@ -135,7 +135,7 @@ chdir_or_make(char *home, char *maildir)
 	if (chdir(home) == -1) {
 #ifdef AUTOHOMEDIRMAKE
 		logit(8, "makeing homedir for %s %s\n", home, md);
-			
+
 		switch (dirmaker_make(home, md)) {
 		case OK:
 			break;

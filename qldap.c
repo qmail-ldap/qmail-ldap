@@ -579,7 +579,6 @@ qldap_get_mailstore(qldap *q, stralloc *hd, stralloc *ms)
 		if (!stralloc_copys(hd, "")) return ERRNO;
 	} else if (r != OK)
 		return r;
-	logit(128, "qldap_get_mailstore: hd \"%S\" len %i\n", hd, hd->len);
 	if (0 < hd->len) {
 		if (hd->s[0] != '/' || check_paths(hd->s) == 0) {
 			/* probably some log warning would be good */
@@ -592,7 +591,6 @@ qldap_get_mailstore(qldap *q, stralloc *hd, stralloc *ms)
 		if (!stralloc_copys(ms, "")) return ERRNO;
 	} else if (r != OK)
 		return r;
-	logit(128, "qldap_get_mailstore: ms \"%S\" len %i\n", ms, ms->len);
 	if (ms->len > 0)
 		if (check_paths(ms->s) == 0) {
 			/* probably some log warning would be good */
