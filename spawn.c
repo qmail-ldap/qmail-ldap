@@ -81,8 +81,8 @@ stralloc recip = {0};
 void err(s) char *s;
 {
  unsigned char ch;
- ch = (unsigned int) (unsigned char)delnum; substdio_put(&ssout,&ch,1);
- ch = (unsigned int) (unsigned char)delnum >> 8; substdio_put(&ssout,&ch,1);
+ ch = delnum; substdio_put(&ssout,&ch,1);
+ ch = delnum >> 8; substdio_put(&ssout,&ch,1);
  substdio_puts(&ssout,s); substdio_putflush(&ssout,"",1);
 }
 
@@ -96,7 +96,7 @@ void docmd()
  struct stat st;
 
  /* SIGHUP HANDLING */
- if (delnum == 0xBEEF)
+ if (delnum == 0xbeef)
    if (*messid.s == '\0' && *sender.s == '\0' && *recip.s == '\0') {
 #if 0
      err("HHUP received\n");
@@ -158,7 +158,7 @@ void getcmd()
 {
  int i;
  int r;
- char ch;
+ unsigned char ch;
 
  r = read(0,cmdbuf,sizeof(cmdbuf));
  if (r == 0)
@@ -176,10 +176,10 @@ void getcmd()
    switch(stage)
     {
      case 0:
-       delnum = (unsigned int) (unsigned char) ch;
+       delnum = ch;
        stage = 1; break;
      case 1:
-       delnum += (unsigned int) ((unsigned int) ch) << 8;
+       delnum += (unsigned int)ch << 8;
        messid.len = 0; stage = 2; break;
      case 2:
        if (!stralloc_append(&messid,&ch)) flagabort = 1;
