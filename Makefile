@@ -52,6 +52,10 @@ SHADOWLIBS=-lcrypt
 #DEBUG=-DDEBUG
 # WARNING: you need NONE DEBUG auth_* to run with inetd
 
+# for profiling ...
+#INCTAI=../libtai-0.60
+#LIBTAI=../libtai-0.60
+
 # Just for me, make from time to time a backup
 BACKUPPATH=/backup/qmail-backup/qmail-ldap.`date "+%Y%m%d-%H%M"`.tar
 # STOP editing HERE !!!
@@ -1243,6 +1247,12 @@ error.h control.h auto_qmail.h str.h qldap-ldaplib.c byte.h fmt.h
 qldap-mdm.o: \
 compile qldap-mdm.c qldap-errno.h wait.h
 	./compile $(LDAPFLAGS) $(HDIRMAKE) $(MDIRMAKE) $(DEBUG) qldap-mdm.c
+
+profile: qldap-profile.o
+
+qldap-profile.o: \
+compile qldap-profile.c qldap-profile.h qldap-debug.h
+	./compile ${INCTAI} qldap-profile.c 
 
 qmail-clean: \
 load qmail-clean.o fmtqfn.o now.o getln.a sig.a stralloc.a alloc.a \

@@ -472,4 +472,5 @@ QLDAPPICTURE
 TLS.readme
 dirmaker
 popfetch.pl
-
+qldap-profile.c
+qldap-profile.h
