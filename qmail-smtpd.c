@@ -145,7 +145,7 @@ void err_ldapsoft() { out("451 temporary ldap lookup failure, try again later\r\
 void err_bmf() { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
 void err_bmfunknown() { out("553 sorry, your mail from a host without RR DNS was administratively denied. (#5.7.1)\r\n"); }
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
-void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
+void err_nogateway(arg) char *arg; { out("553 sorry, relaying denied from your location ["); out(arg); out("] (#5.7.1)\r\n"); }
 void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
 void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command: "); logstring(3,arg); logflush(3); }
 void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because: 'SMTP SIZE' too big"); }
@@ -933,7 +933,7 @@ void smtp_rcpt(arg) char *arg; {
   } else {
     if (!addrallowed())
     { 
-      err_nogateway(); 
+      err_nogateway(&remoteip);
       logpid(2); logstring(2,"no mail relay for 'rcpt to': ");
       logstring(2,arg); logflush(2);
       if (errdisconnect) err_quit();
