@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/05 15:19:05 $ ($Revision: 1.117 $)
+RELEASE: $Date: 2003/09/09 20:09:03 $ ($Revision: 1.118 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,26 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ smtp recipient verify.
+
+ smtp sender verify.
+
+ smtpclustercookie feature for large smtp MX clusters behind load
+ balancers or NAT devices. The cookie is presentented in the smtp
+ greeting as last string before \r\n. If qmail-remote compares the
+ cookie with it's own and when they match, assumes that the message
+ is looping. Cookies are set in ~control/smtpclustercookies. Length
+ is limited to 32 characters. Fill with some random printable chars.
+
+ qmail-smtpd now prints its hostname (~control/me) along with QP
+ when acking a message. Makes it easier to track which smtp MX cluster
+ member took the message.
+
+ qmail-smtpd greeting restructured due to the above things. It now
+ prints "220 [~control/me] ESMTP [~control/smtpgreeting] [~control/
+ smtpclustercookie]\r\n". You don't have to put the hostname of the
+ machine into smtpgreeting anymore. It is just a text. Can be empty.
 
  auth_* sets now the MAILDIRQUOTA and DATASIZE environment vars. 
 
