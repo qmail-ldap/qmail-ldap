@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998,1999,2000,2001,2002,2003,2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/03/26 21:01:49 $ ($Revision: 1.188 $)
+RELEASE: $Date: 2004/03/29 12:55:49 $ ($Revision: 1.189 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,8 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Added some qmail-group docu. See QLDAPGROUP.
 
  Better 550GREETING support and added an additional 421GREETING mode to
  qmail-smtpd.
