@@ -569,8 +569,9 @@ ldap_fail:
    }
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
 
-   /* At the moment we ignore the dash-field and the extension field *
-    * so we fill up the nughde structure with '\0'                   */
+   /* Fill up the dash-field and the extension field with the values
+      used for the dash-ext search.
+    */
    if ( i < at && i != 0 )
      if (!stralloc_cats(&nughde,"-")) _exit(QLX_NOMEM);
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
