@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/11/11 22:08:35 $ ($Revision: 1.147 $)
+RELEASE: $Date: 2003/11/14 13:02:48 $ ($Revision: 1.148 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,11 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Do not touch down files in service dirs on install else we would disable a
+ already enabled service without the knowledge of the user.
+
+NEWS for 20031101a stuff:
 
  Nasty bugfix in qmail-qmqpd with compression turned on. On slow links large
  mails could cause a transmission error.
