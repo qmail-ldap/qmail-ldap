@@ -33,6 +33,9 @@
 SSL *ssl = NULL;
 stralloc clientcert = {0};
 #endif
+#ifdef DATA_COMPRESS
+#include <zlib.h>
+#endif
 
 #define MAXHOPS 100
 unsigned int databytes = 0;
@@ -49,7 +52,7 @@ int ssl_timeoutread(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
  int r; int saveerrno;
  if (flagtimedout) { errno = error_timeout; return -1; }
  alarm(timeout);
- if (ssl) r = SSL_read(ssl,buf,n); else r = read(fd,buf,n);
+ r = SSL_read(ssl,buf,n);
  saveerrno = errno;
  alarm(0);
  if (flagtimedout) { errno = error_timeout; return -1; }
@@ -61,7 +64,7 @@ int ssl_timeoutwrite(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
  int r; int saveerrno;
  if (flagtimedout) { errno = error_timeout; return -1; }
  alarm(timeout);
- if (ssl) r = SSL_write(ssl,buf,n); else r = write(fd,buf,n);
+ r = SSL_write(ssl,buf,n);
  saveerrno = errno;
  alarm(0);
  if (flagtimedout) { errno = error_timeout; return -1; }
@@ -74,10 +77,11 @@ int safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
 #ifdef TLS_SMTPD
-  r = ssl_timeoutwrite(timeout,fd,buf,len);
-#else
-  r = timeoutwrite(timeout,fd,buf,len);
+  if (ssl)
+    r = ssl_timeoutwrite(timeout,fd,buf,len);
+  else
 #endif
+  r = timeoutwrite(timeout,fd,buf,len);
   if (r <= 0) _exit(1);
   return r;
 }
@@ -169,7 +173,7 @@ void smtp_greet(code) char *code;
 }
 void smtp_help()
 {
-  out("214 qmail home page: http://pobox.com/~djb/qmail.html\r\n");
+  out("214-qmail home page: http://pobox.com/~djb/qmail.html\r\n");
   out("214 qmail-ldap patch home page: http://www.nrg4u.com\r\n");
   logline(3,"help requested");
 }
@@ -576,6 +580,9 @@ void smtp_ehlo(arg) char *arg;
 #ifdef TLS_SMTPD
   if (ssl) {
    out("\r\n250-PIPELINING\r\n");
+#ifdef DATA_COMPRESS
+   out("250-DATAZ\r\n");
+#endif
    out("250-SIZE "); out(smtpsize); out("\r\n");
    out("250 8BITMIME\r\n");
   }
@@ -584,6 +591,9 @@ void smtp_ehlo(arg) char *arg;
   out("\r\n250-PIPELINING\r\n");
 #ifdef TLS_SMTPD
   out("250-STARTTLS\r\n");
+#endif
+#ifdef DATA_COMPRESS
+   out("250-DATAZ\r\n");
 #endif
   out("250-SIZE "); out(smtpsize); out("\r\n");
   out("250 8BITMIME\r\n");
@@ -889,16 +899,102 @@ void smtp_rcpt(arg) char *arg; {
   out("250 ok\r\n");
 }
 
+#ifdef DATA_COMPRESS
+z_stream stream;
+char zbuf[1024];
+int compdata = 0;
+
+int compression_init(void)
+{
+  int r;
+
+  compdata = 1;
+  stream.zalloc = Z_NULL;
+  stream.zfree = Z_NULL;
+  stream.opaque = Z_NULL;
+  stream.avail_in = 0;
+  stream.next_in = zbuf;
+  if (inflateInit(&stream) != Z_OK) {
+    out("451 Initalizing data compression failed: ");
+    out(stream.msg); out(" #(4.3.0)\r\n"); flush();
+    return -1;
+  }
+  return 0;
+}
+int compression_done(void)
+{
+  char num[FMT_ULONG];
+  int r;
+
+  compdata = 0;
+  if (stream.avail_out != sizeof(zbuf)) {
+    /* there is some left data, ignore */
+  }
+  if (inflateEnd(&stream) != Z_OK) {
+    out("451 Finishing data compression failed: ");
+    out(stream.msg); out(" #(4.3.0)\r\n"); flush();
+    return -1;
+  }
+  r = 100 - (int)(100.0*stream.total_in/stream.total_out);
+  if (r < 0) {
+    num[0] = '-';
+    r *= -1;
+  } else
+    num[0] = ' ';
+  num[fmt_ulong(num+1,r)+1] = 0;
+  logpid(1);
+  logstring(1, "Dynamic data compression saved ");
+  logstring(1, num); logstring(1, "%.\n"); logflush(1);
+  return 0;
+}
+#endif
 
 int saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   flush();
+#ifdef DATA_COMPRESS
+  if (compdata) {
+    stream.avail_out = len;
+    stream.next_out = buf;
+    do {
+      if (stream.avail_in == 0) {
 #ifdef TLS_SMTPD
-  r = ssl_timeoutread(timeout,fd,buf,len);
-#else
-  r = timeoutread(timeout,fd,buf,len);
+	if (ssl)
+	  r = ssl_timeoutread(timeout,fd,zbuf,sizeof(zbuf));
+	else
 #endif
+	r = timeoutread(timeout,fd,zbuf,sizeof(zbuf));
+	if (r == -1) if (errno == error_timeout) die_alarm();
+	if (r <= 0) die_read();
+	stream.avail_in = r;
+	stream.next_in = zbuf;
+      }
+      r = inflate(&stream, 0);
+      switch (r) {
+      case Z_OK:
+	if (stream.avail_out == 0)
+	  return len;
+	break;
+      case Z_STREAM_END:
+	compdata = 0;
+	return len - stream.avail_out;
+      default:
+	out("451 Receiving compressed data failed: ");
+	out(stream.msg); out(" #(4.3.0)\r\n");
+	flush();
+	die_read();
+      }
+      return len;
+    } while (1);
+  }
+#endif
+#ifdef TLS_SMTPD
+  if (ssl)
+    r = ssl_timeoutread(timeout,fd,buf,len);
+  else
+#endif
+  r = timeoutread(timeout,fd,buf,len);
   if (r == -1) if (errno == error_timeout) die_alarm();
   if (r <= 0) die_read();
   return r;
@@ -994,7 +1090,7 @@ void acceptmessage(qp) unsigned long qp;
   accept_buf[fmt_ulong(accept_buf,qp)] = 0;
   out(accept_buf);
   out("\r\n");
-  logstring(2,"qp"); logstring(2,accept_buf); logflush(2);
+  logstring(2," qp "); logstring(2,accept_buf); logflush(2);
 }
 
 #ifdef TLS_SMTPD
@@ -1058,6 +1154,68 @@ void smtp_data() {
   logstring(1,qqx+1); logflush(1);
   out("\r\n");
 }
+
+#ifdef DATA_COMPRESS
+void smtp_compress() {
+  int hops;
+  unsigned long qp;
+  char *qqx;
+
+  logline(3,"smtp compress");
+  if (!seenmail) { err_wantmail(); return; }
+  if (!rcptto.len) { err_wantrcpt(); return; }
+  seenmail = 0;
+  if (databytes) bytestooverflow = databytes + 1;
+  if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
+  qp = qmail_qp(&qqt);
+  out("354 go ahead punk, make my day\r\n");
+  logline(3,"go ahead punk. make my day");
+  rblheader(&qqt);
+
+#ifdef TLS_SMTPD
+  if(ssl){
+   if (!stralloc_copys(&protocolinfo, SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
+   if (!stralloc_cats(&protocolinfo, " encrypted compressed SMTP"))
+     die_nomem();
+   if (clientcert.len){
+     if (!stralloc_cats(&protocolinfo," cert ")) die_nomem();
+     if (!stralloc_catb(&protocolinfo,clientcert.s, clientcert.len)) die_nomem();
+   }
+  } else if (!stralloc_copys(&protocolinfo,"compressed SMTP")) die_nomem();
+  if (!stralloc_0(&protocolinfo)) die_nomem();
+  received(&qqt,protocolinfo.s,local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
+#else 
+  received(&qqt,"compressed SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
+#endif
+  if (compression_init() != 0) return;
+  blast(&hops);
+  if (compression_done() != 0) return;
+
+  receivedbytes[fmt_ulong(receivedbytes,(unsigned long) bytesreceived)] = 0;
+  logpid(3); logstring(3,"data bytes received: "); logstring(3,receivedbytes); logflush(3);
+
+  hops = (hops >= MAXHOPS);
+  if (hops) { logline(2,"hop count exceeded"); qmail_fail(&qqt); }
+  qmail_from(&qqt,mailfrom.s);
+  qmail_put(&qqt,rcptto.s,rcptto.len);
+ 
+  qqx = qmail_close(&qqt);
+  if (!*qqx) { acceptmessage(qp); return; }
+  if (hops) { out("554 too many hops, this message is looping (#5.4.6)\r\n"); return; }
+  if (databytes) if (!bytestooverflow)
+  {
+    out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n");
+    logline(2,"datasize limit exceeded");
+    return;
+  }
+  logpid(1);
+  if (*qqx == 'D') { out("554 "); logstring(1,"message not accepted because: "); }
+    else { out("451 "); logstring(1,"message not accepted because: "); }
+  out(qqx + 1);
+  logstring(1,qqx+1); logflush(1);
+  out("\r\n");
+}
+#endif
 
 #ifdef TLS_SMTPD
 RSA *tmp_rsa_cb(ssl,export,keylength) SSL *ssl; int export; int keylength; 
@@ -1138,6 +1296,9 @@ struct commands smtpcommands[] = {
 , { "help", smtp_help, flush }
 #ifdef TLS_SMTPD
 , { "starttls", smtp_tls, flush }
+#endif
+#ifdef DATA_COMPRESS
+, { "dataz", smtp_compress, flush }
 #endif
 , { "noop", err_noop, flush }
 , { "vrfy", err_vrfy, flush }

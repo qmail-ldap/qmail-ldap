@@ -14,7 +14,8 @@
 # EXTERNAL_TODO). Useful for servers with very many non-preprocessed mails
 # -DBIGBROTHER to use the control/bigbrother file to forward all mails comming
 # from a specified account to another (swiss bigbrother law)
-LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DBIGBROTHER -DDASH_EXT
+# -DDATA_COMPRESS to use the smtp on the fly DATA compression 
+#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT 
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
@@ -27,29 +28,32 @@ LDAPINCLUDES=-I/usr/local/include
 # if you need a special include-directory for ldap headers enable this
 #LDAPINCLUDES=-I/opt/OpenLDAP/include
 
+# ZLIB needed for -DDATA_COMPRESS
+#ZLIB=-lz
+
 # TLS (SMTP encryption) in qmail-smtpd and qmail-remote, see TLS.readme
 # You need OpenSSL for this
 # use -DTLS_REMOTE to enable tls support in qmail-remote
 # use -DTLS_SMTPD to enable tls support in qmail-smtpd
 # use -DTLSDEBUG to enable additional tls debug information in qmail-remote
-TLS=-DTLS_REMOTE -DTLS_SMTPD
+#TLS=-DTLS_REMOTE -DTLS_SMTPD
 # Path to OpenSSL includes
-TLSINCLUDES=-I/usr/local/include
+#TLSINCLUDES=-I/usr/local/include
 # Path to OpenSSL libraries
-TLSLIBS=-L/usr/local/lib -lssl -lcrypto
+#TLSLIBS=-L/usr/local/lib -lssl -lcrypto
 # Path to OpenSSL binary
 #OPENSSLBIN=/usr/local/bin/openssl
-OPENSSLBIN=openssl
+#OPENSSLBIN=openssl
 
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
 MNW=-DMAKE_NETSCAPE_WORK 
 
 # to enable the auto-maildir-make feature uncomment the next line
-MDIRMAKE=-DAUTOMAILDIRMAKE
+#MDIRMAKE=-DAUTOMAILDIRMAKE
 
 # to enable the auto-homedir-make feature uncomment the next line
-HDIRMAKE=-DAUTOHOMEDIRMAKE
+#HDIRMAKE=-DAUTOHOMEDIRMAKE
 
 # on most systems we need this to make auth_pop and auth_imap
 #SHADOWLIBS=-lcrypt
@@ -62,7 +66,7 @@ HDIRMAKE=-DAUTOHOMEDIRMAKE
 
 # to enable the possibility to log and debug imap and pop uncoment the
 # next line
-DEBUG=-DDEBUG
+#DEBUG=-DDEBUG
 # WARNING: you need a NONE DEBUG auth_* to run with inetd
 
 # for profiling ...
@@ -420,7 +424,7 @@ qldap-errno.h readwrite.h error.h str.h open.h substdio.h getln.h select.h \
 digest_md4.h digest_md5.h digest_rmd160.h digest_sha1.h dns.h \
 ipalloc.h timeoutconn.h byte.h scan.h fmt.h alloc.h qldap-debug.h
 	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(LDAPINCLUDES) $(DEBUG) \
-	$(TLS) checkpassword.c
+	checkpassword.c
 
 chkshsgr: \
 load chkshsgr.o
@@ -570,7 +574,7 @@ alloc.a error.a fs.a str.a
 dns.o: \
 compile dns.c ip.h ipalloc.h ip.h gen_alloc.h fmt.h alloc.h str.h \
 stralloc.h gen_alloc.h dns.h case.h
-	./compile $(TLS) dns.c
+	./compile dns.c
 
 dnscname: \
 load dnscname.o dns.o dnsdoe.o ip.o ipalloc.o stralloc.a alloc.a \
@@ -598,7 +602,7 @@ substdio.a error.a str.a fs.a dns.lib socket.lib
 dnsfq.o: \
 compile dnsfq.c substdio.h subfd.h substdio.h stralloc.h gen_alloc.h \
 dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h exit.h
-	./compile $(TLS) dnsfq.c
+	./compile dnsfq.c
 
 dnsip: \
 load dnsip.o dns.o dnsdoe.o ip.o ipalloc.o stralloc.a alloc.a \
@@ -610,7 +614,7 @@ substdio.a error.a str.a fs.a dns.lib socket.lib
 dnsip.o: \
 compile dnsip.c substdio.h subfd.h substdio.h stralloc.h gen_alloc.h \
 dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h exit.h
-	./compile $(TLS) dnsip.c
+	./compile dnsip.c
 
 dnsmxip: \
 load dnsmxip.o dns.o dnsdoe.o ip.o ipalloc.o now.o stralloc.a alloc.a \
@@ -623,7 +627,7 @@ dnsmxip.o: \
 compile dnsmxip.c substdio.h subfd.h substdio.h stralloc.h \
 gen_alloc.h fmt.h dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h \
 now.h datetime.h exit.h
-	./compile $(TLS) dnsmxip.c
+	./compile dnsmxip.c
 
 dnsptr: \
 load dnsptr.o dns.o dnsdoe.o ip.o ipalloc.o stralloc.a alloc.a \
@@ -953,12 +957,12 @@ compile ip.c fmt.h scan.h ip.h
 ipalloc.o: \
 compile ipalloc.c alloc.h gen_allocdefs.h ip.h ipalloc.h ip.h \
 gen_alloc.h
-	./compile $(TLS) ipalloc.c
+	./compile ipalloc.c
 
 ipme.o: \
 compile ipme.c hassalen.h byte.h ip.h ipalloc.h ip.h gen_alloc.h \
 stralloc.h gen_alloc.h ipme.h ip.h
-	./compile $(TLS) ipme.c
+	./compile ipme.c
 
 ipmeprint: \
 load ipmeprint.o ipme.o ip.o ipalloc.o stralloc.a alloc.a substdio.a \
@@ -969,7 +973,7 @@ error.a str.a fs.a socket.lib
 ipmeprint.o: \
 compile ipmeprint.c subfd.h substdio.h substdio.h ip.h ipme.h ip.h \
 ip.h gen_alloc.h exit.h
-	./compile $(TLS) ipmeprint.c
+	./compile ipmeprint.c
 
 it: \
 qmail-local qmail-lspawn qmail-getpw qmail-remote qmail-rspawn \
@@ -1622,7 +1626,7 @@ qmail-qmqpc.o: \
 compile qmail-qmqpc.c substdio.h getln.h readwrite.h exit.h \
 stralloc.h gen_alloc.h slurpclose.h error.h sig.h ip.h timeoutconn.h \
 timeoutread.h timeoutwrite.h auto_qmail.h control.h fmt.h ipalloc.h
-	./compile $(LDAPFLAGS) $(TLS) qmail-qmqpc.c
+	./compile $(LDAPFLAGS) qmail-qmqpc.c
 
 qmail-qmqpd: \
 load qmail-qmqpd.o received.o now.o date822fmt.o qmail.o auto_qmail.o \
@@ -1736,7 +1740,8 @@ substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
 	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
 	ipalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
 	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
-	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib` $(TLSLIBS)
+	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib` \
+	$(TLSLIBS) $(ZLIB)
 
 qmail-remote.0: \
 qmail-remote.8
@@ -1748,7 +1753,7 @@ subfd.h substdio.h scan.h case.h error.h auto_qmail.h control.h dns.h \
 alloc.h quote.h ip.h ipalloc.h ip.h gen_alloc.h ipme.h ip.h ipalloc.h \
 gen_alloc.h gen_allocdefs.h str.h now.h datetime.h exit.h constmap.h \
 tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
-	./compile $(TLS) $(TLSINCLUDES) qmail-remote.c
+	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) qmail-remote.c
 
 qmail-reply: \
 load qmail-reply.o case.a control.o constmap.o getln.a sig.a newfield.o \
@@ -1847,7 +1852,7 @@ fs.a auto_qmail.o dns.lib socket.lib
 	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
 	alloc.a substdio.a error.a fs.a auto_qmail.o dns.o str.a \
-	`cat dns.lib` `cat socket.lib` $(TLSLIBS)
+	`cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
 
 qmail-smtpd.0: \
 qmail-smtpd.8
@@ -1859,7 +1864,7 @@ substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
 exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h rbl.h
-	./compile $(TLS) $(TLSINCLUDES) qmail-smtpd.c
+	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) qmail-smtpd.c
 
 qmail-start: \
 load qmail-start.o prot.o fd.a auto_uids.o
@@ -1997,7 +2002,7 @@ compile quote.c stralloc.h gen_alloc.h str.h quote.h
 
 rbl.o: \
 compile rbl.c dns.h env.h ipalloc.h qmail.h rbl.h stralloc.h
-	./compile $(TLS) rbl.c
+	./compile rbl.c
 
 rcpthosts.o: \
 compile rcpthosts.c cdb.h uint32.h byte.h open.h error.h control.h \

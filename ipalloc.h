@@ -3,11 +3,7 @@
 
 #include "ip.h"
 
-#if defined(TLS_REMOTE) || defined(TLS_SMTPD)
-struct ip_mx { struct ip_address ip; int pref; char *fqdn; } ;
-#else
 struct ip_mx { struct ip_address ip; int pref; } ;
-#endif
 
 #include "gen_alloc.h"
 

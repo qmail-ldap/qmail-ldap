@@ -290,10 +290,6 @@ int pref;
 
  if (!stralloc_copy(&glue,sa)) return DNS_MEM;
  if (!stralloc_0(&glue)) return DNS_MEM;
-#if defined(TLS_REMOTE) || defined(TLS_SMTPD)
- if (!(ix.fqdn = alloc(glue.len) ) ) return DNS_MEM;
- byte_copy(ix.fqdn, glue.len, glue.s);
-#endif
  if (glue.s[0]) {
    ix.pref = 0;
    if (!glue.s[ip_scan(glue.s,&ix.ip)] || !glue.s[ip_scanbracket(glue.s,&ix.ip)])
