@@ -282,10 +282,11 @@ int needauth = 0;
 int needssl = 0;
 int flagauthok = 0;
 const char *authprepend;
-int sslenabled = 0;
+stralloc sslcert = {0};
 
 void setup(void)
 {
+  char *sslpath;
   char *x, *l;
   unsigned long u;
 
@@ -311,10 +312,12 @@ void setup(void)
   if (control_readint(&timeout,"control/timeoutsmtpd") == -1) die_control();
   if (timeout <= 0) timeout = 1;
 
-  if (control_readint(&sslenabled, "control/cert.pem") == -1)
-    sslenabled = 0;
-  else
-    sslenabled = 1;
+  sslpath = env_get("SSLCERT");
+  if (!sslpath)
+    sslpath = (char *)"control/smtpcert";
+  if (control_rldef(&sslcert, sslpath, 0, "") == -1)
+    die_control();
+  if (!stralloc_0(&sslcert)) die_nomem();
 
   x = env_get("TARPITCOUNT");
   if (x) { scan_ulong(x,&u); tarpitcount = u >= UINT_MAX ? UINT_MAX - 1 : u; }
@@ -411,7 +414,7 @@ void setup(void)
   logpid(2);
   logstring(2, "enabled options: ");
   if (greeting550) logstring(2,"greeting550 ");
-  if (sslenabled) logstring(2, "starttls ");
+  if (sslcert.s && *sslcert.s) logstring(2, "starttls ");
   if (relayclient) logstring(2,"relayclient ");
   if (sanitycheck) logstring(2,"sanitycheck ");
   if (returnmxcheck) logstring(2,"returnmxcheck ");
@@ -773,7 +776,7 @@ void smtp_ehlo(char *arg)
   out("250-DATAZ\r\n");
 #endif
 #ifdef TLS_SMTPD
-  if (!ssl && sslenabled)
+  if (!ssl && sslcert.s && *sslcert.s)
     out("250-STARTTLS\r\n");
 #endif
 #ifdef TLS_SMTPD
@@ -1551,7 +1554,7 @@ void smtp_tls(char *arg)
 {
   SSL_CTX *ctx;
 
-  if (!sslenabled) {
+  if (sslcert.s && *sslcert.s) {
     err_unimpl((char *)0);
     return;
   }
@@ -1570,13 +1573,13 @@ void smtp_tls(char *arg)
     logline(1,"aborting TLS negotiations, unable to initialize local SSL context");
     return;
   }
-  if(!SSL_CTX_use_RSAPrivateKey_file(ctx, "control/cert.pem", SSL_FILETYPE_PEM))
+  if(!SSL_CTX_use_RSAPrivateKey_file(ctx, sslcert.s, SSL_FILETYPE_PEM))
   {
     out("454 TLS not available: missing RSA private key (#4.3.0)\r\n");
     logline(1,"aborting TLS negotiations, RSA private key invalid or unable to read ~control/cert.pem");
     return;
   }
-  if(!SSL_CTX_use_certificate_file(ctx, "control/cert.pem", SSL_FILETYPE_PEM))
+  if(!SSL_CTX_use_certificate_file(ctx, sslcert.s, SSL_FILETYPE_PEM))
   {
     out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
     logline(1,"aborting TLS negotiations, local cert invalid or unable to read ~control/cert.pem");

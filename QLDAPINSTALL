@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/06/02 07:59:33 $)
+RELEASE: current ($Date: 2004/06/11 13:42:53 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -25,19 +25,11 @@ NEWS:
 
 IMPORTANT NEWS:
 
- - From release 20030901 on we broke certain backwards compatibility with release
-   20030801 and prior releases for clarity and cleanup reasons!!
+ - From release 20030901 on we broke certain backwards compatibility with
+   release 20030801 and prior releases for clarity and cleanup reasons!!
 
- - delivery modes changed in important ways (easier now, but incompatble
-   for some installations)
-
- - quota definitions are new format only (size and count separate)
-
- - qmail-smtpd control files are gone (tarpitcount/delay, maxrcptcount,
-   rblonlyheader) and are environment only (with tcpserver)
-
- - accountStatus NOPOP has been renamed to NOACCESS because it not just
-   blocks pop but also imap access
+ - To enable SMTP STARTTLS a the path to the cert file needs to be set in
+   ~control/smtpcert or set via the env var SSLCERT.
 
  - and as always a lot of smaller patches see QLDAPNEWS
 
@@ -625,6 +617,14 @@ OR
        files (exe|com|pif|scr, etc) and common email Virii at the
        time of the current release.
 
+~control/smtpcert
+
+ This file contains the location of the SSL certificate used for smtps STARTTLS
+ feature. The path may be relative to /var/qmail or whatever was specified in
+ conf-qmail.
+ Default: none
+ Example: control/cert.pem
+
 ~control/tarpitcount
 ~control/tarpitdelay
 ~control/maxrcptcount
@@ -873,6 +873,13 @@ SENDERCHECK
        if they have a valid existing email address with you.
        Addresses or domains listed in ~control/goodmailaddr are unconditionally
        allowed in all cases.
+
+SSLCERT
+
+ Path to the SSL certificate qmail-smtpd should use for STARTTLS. Overrides
+ ~control/smtpcert.
+ Default: none, ~control/smtpcert will be used
+ Example: /var/qmail/boot/qmail-smtpd/cert.pem
 
 SMTPAUTH
 

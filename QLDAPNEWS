@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/06/08 14:47:57 $ ($Revision: 1.194 $)
+RELEASE: $Date: 2004/06/11 13:42:53 $ ($Revision: 1.195 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,9 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ To enable SMTP STARTTLS a the path to the cert file needs to be set in
+ ~control/smtpcert or set via the env var SSLCERT.
 
  If the defaultdelivery aka aliasempty is not a local delivery qmail-local
  my start additionally programs while running qmail-reply. Reported by
