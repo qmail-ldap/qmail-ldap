@@ -280,6 +280,7 @@ int qldap_open(void)
 	}
 	log(128, ", bind successful\n");
 	return 0;
+#endif
 }
 
 
@@ -296,9 +297,10 @@ int qldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	int num_entries;
 	struct timeval ldaptimeout = {0};
 
-        /* set up the ldap search timeout */
-        ldaptimeout.tv_sec = qldap_timeout;
-        ldaptimeout.tv_usec = 0;
+#ifndef USE_CLDAP
+	/* set up the ldap search timeout */
+	ldaptimeout.tv_sec = qldap_timeout;
+	ldaptimeout.tv_usec = 0;
 
 	/* do the search for the login uid */
 	if ( (rc = ldap_search_st(ld, qldap_basedn.s, LDAP_SCOPE_SUBTREE,
