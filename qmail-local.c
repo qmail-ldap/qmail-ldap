@@ -84,7 +84,7 @@ char fntmptph[80 + FMT_ULONG * 2];
 char fnnewtph[83 + FMT_ULONG * 3];
 void tryunlinktmp() { unlink(fntmptph); }
 void sigalrm() { tryunlinktmp(); _exit(3); }
-int msfd; /* global filedescriptor to the quota file */
+int msfd = -1; /* global filedescriptor to the quota file */
 
 void maildir_child(dir)
 char *dir;
@@ -252,7 +252,7 @@ char *fn;
  quota_t q;
  unsigned long mailsize;
 
- if(quotastring && *quotastring) {
+ if (quotastring && *quotastring) {
    if (fstat(0, &mailst) != 0)
        strerr_die3x(111,"Can not stat mail for quota: ",error_str(errno),". (LDAP-ERR #2.4.1)");
    mailsize = mailst.st_size;
@@ -296,7 +296,7 @@ char *fn;
      _exit(111);
   }
 
- close(msfd); /* close the maildirsize fd in the parent */
+ if (msfd != -1) close(msfd); /* close the maildirsize fd in the parent */
 
  wait_pid(&wstat,child);
  if (wait_crashed(wstat))
@@ -331,8 +331,6 @@ char *fn;
  long int totalsize;
  quota_t q;
 
- if (seek_begin(0) == -1) temp_rewind();
- 
  if( quotastring && *quotastring ) {
    quota_get(&q, quotastring);
    if (stat(fn, &filest) == -1) {
