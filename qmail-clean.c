@@ -73,22 +73,43 @@ void main()
    if (line.len < 7) { respond("x"); continue; }
    if (line.len > 100) { respond("x"); continue; }
    if (line.s[line.len - 1]) { respond("x"); continue; } /* impossible */
+#ifndef BIGTODO
    for (i = 5;i < line.len - 1;++i)
+#else
+   for (i = line.len - 2;i > 4;--i)
+    {
+      if (line.s[i] == '/') break;
+#endif
      if ((unsigned char) (line.s[i] - '0') > 9)
       { respond("x"); continue; }
+#ifndef BIGTODO
    if (!scan_ulong(line.s + 5,&id)) { respond("x"); continue; }
+#else
+    }
+   if (line.s[i] == '/')
+     if (!scan_ulong(line.s + i + 1,&id)) { respond("x"); continue; }
+#endif
    if (byte_equal(line.s,5,"foop/"))
     {
 #define U(prefix,flag) fmtqfn(fnbuf,prefix,id,flag); \
 if (unlink(fnbuf) == -1) if (errno != error_noent) { respond("!"); continue; }
+#ifndef BIGTODO
      U("intd/",0)
+#else
+     U("intd/",1)
+#endif
      U("mess/",1)
      respond("+");
     }
    else if (byte_equal(line.s,5,"todo/"))
     {
+#ifndef BIGTODO
      U("intd/",0)
      U("todo/",0)
+#else
+     U("intd/",1)
+     U("todo/",1)
+#endif
      respond("+");
     }
    else

@@ -10,6 +10,8 @@
 # systems)
 # -DEXTERNAL_TODO to use the external high-performance todo processing (this
 # avoids the silly qmail syndrome with high injection rates)
+# -DBIGTODO to enable the big todo patch (this can be used together with 
+# EXTERNAL_TODO). Useful for servers with very many non-preprocessed mails
 # -DBIGBROTHER to use the control/bigbrother file to forward all mails comming
 # from a specified account to another (swiss bigbrother law)
 #LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO
@@ -1334,7 +1336,7 @@ qmail-clean.o: \
 compile qmail-clean.c readwrite.h sig.h now.h datetime.h str.h \
 direntry.h getln.h stralloc.h gen_alloc.h substdio.h subfd.h \
 substdio.h byte.h scan.h fmt.h error.h exit.h fmtqfn.h auto_qmail.h
-	./compile qmail-clean.c
+	./compile $(LDAPFLAGS) qmail-clean.c
 
 qmail-command.0: \
 qmail-command.8
@@ -1921,7 +1923,7 @@ qmail-todo.o: \
 compile alloc.h auto_qmail.h byte.h constmap.h control.h direntry.h error.h \
 exit.h fmt.h fmtqfn.h getln.h open.h ndelay.h now.h readsubdir.h readwrite.h \
 scan.h select.h str.h stralloc.h substdio.h trigger.h
-	./compile qmail-todo.c
+	./compile $(LDAPFLAGS) qmail-todo.c
 
 qmail-upq: \
 warn-auto.sh qmail-upq.sh conf-qmail conf-break conf-split

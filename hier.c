@@ -50,14 +50,20 @@ void hier()
 
   d(auto_qmail,"queue",auto_uidq,auto_gidq,0750);
   d(auto_qmail,"queue/pid",auto_uidq,auto_gidq,0700);
+#ifndef BIGTODO
   d(auto_qmail,"queue/intd",auto_uidq,auto_gidq,0700);
   d(auto_qmail,"queue/todo",auto_uidq,auto_gidq,0750);
+#endif
   d(auto_qmail,"queue/bounce",auto_uids,auto_gidq,0700);
 
   dsplit("queue/mess",auto_uidq,0750);
   dsplit("queue/info",auto_uids,0700);
   dsplit("queue/local",auto_uids,0700);
   dsplit("queue/remote",auto_uids,0700);
+#ifdef BIGTODO
+  dsplit("queue/intd",auto_uidq,0700);
+  dsplit("queue/todo",auto_uidq,0750);
+#endif
 
   d(auto_qmail,"queue/lock",auto_uidq,auto_gidq,0750);
   z(auto_qmail,"queue/lock/tcpto",1024,auto_uidr,auto_gidq,0644);

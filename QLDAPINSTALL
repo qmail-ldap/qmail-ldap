@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2003/02/27 17:59:51 $)
+RELEASE: current ($Date: 2003/03/26 21:10:53 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -65,6 +65,8 @@ INSTALL:
                -DLDAP_ESCAPE_BUG (see NOTE) +
                -DCLEARTEXTPASSWD (for cleartext passwords in ldap, bad idea)
                -DDASH_EXT (turn on dash_ext support see 5.3)
+               -DEXTERNAL_TODO to use the external high-performance todo processing
+               -DBIGTODO to enable the big todo patch
                -DBIGBROTHER (turn on per address queue extra feature see NEWS)
      NOTE: at the moment -DLDAP_ESCAPE_BUG is not defined, this should be
            added if your ldap server has problems with the escapeing of 
