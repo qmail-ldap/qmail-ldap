@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/04/24 15:39:34 $ ($Revision: 1.52 $)
+RELEASE: $Date: 2002/04/26 08:13:25 $ ($Revision: 1.53 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,10 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Bug fix in qmail-send.c log handling:
+ If in one read a log entry and a delivery status notification was delivered the 
+ status notification was dropped and therefor qmail-send did not close the job.
 
  qmail-remote supports the smtp size extension as specified by rfc 1870.
  If the EHLO extension size is set qmail-remote sends size in the mail form
