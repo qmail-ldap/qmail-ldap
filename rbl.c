@@ -80,7 +80,7 @@ static int rbl_lookup(char *base, char *matchon)
         return 1;
       for (i = 0;i < rblsa.len;++i)
       {
-	ipstr[ip_fmt(ipstr,&rblsa.ix[0].ip)]=0;
+	ipstr[ip_fmt(ipstr,&rblsa.ix[i].ip)]=0;
 	if (!str_diff(ipstr, matchon)) return 1;
       }
       return 0; /* found match but ignored */
