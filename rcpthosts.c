@@ -25,7 +25,7 @@ int rcpthosts_init(void)
     if (control_readfile(&locals,"control/locals",1) != 1) return -1;
     if (!constmap_init(&maplocals,locals.s,locals.len,0)) return -1;
   }
-  fdrh = open_read("control/locals.cdb");
+  fdrh = open_read("control/rcpthosts.cdb");
   if (fdrh == -1) {
     if (errno != error_noent) return -1;
 
