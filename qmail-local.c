@@ -317,7 +317,7 @@ char *fn;
 
  if (seek_begin(0) == -1) temp_rewind();
  
- if(quotastring != 0 ) {
+ if( quotastring && *quotastring ) {
    get_quota(quotastring, &quota, &dummy);
    if (stat(fn, &filest) == -1)
      if ( errno != error_noent) { /* FALSE if file doesn't exist */

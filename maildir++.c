@@ -514,10 +514,10 @@ static int parse_quota(substdio *ss, long int *size, int *count, int *lines)
 		s[foo.len-1] = 0;
 		/* first the size */
 		if ( *s == '-' ) {
-			if (! scan_ulong(s++, &fig) ) continue;
+			if (! scan_ulong(++s, &fig) ) continue;
 			fig *= -1;
 		} else {
-			if (! scan_ulong(s++, &fig) ) continue;
+			if (! scan_ulong(s, &fig) ) continue;
 		}
 		*size += fig;
 		/* then the file count */

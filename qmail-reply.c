@@ -198,7 +198,7 @@ void send_reply(stralloc *dtl, stralloc *to, stralloc *from, stralloc *subject, 
  write(pi[1], from->s, from->len);
  write(pi[1], "\nSubject: ", 10);
  write(pi[1], subject->s, subject->len);
- write(pi[1], "\n", 2);
+ write(pi[1], "\n", 1);
  write(pi[1],replytext->s,replytext->len);
  close(pi[1]);
  wait_pid(&wstat,child);
