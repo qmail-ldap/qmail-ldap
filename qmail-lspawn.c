@@ -544,28 +544,28 @@ ldap_fail:
    /* get the path of the maildir or mbox */
    force_forward = 0;
    if ( info.homedir ) {
-      if (!chck_paths(info.homedir) ) return 23;
-      if (!stralloc_cats(&nughde, info.homedir)) _exit(QLX_NOMEM);
-      alloc_free(info.homedir);
-	  if ( info.mms ) {
-         if (!chck_paths(info.mms) ) return 23;
-         aliasempty = info.mms;
-	  }
+     if (!chck_paths(info.homedir) ) return 23;
+     if (!stralloc_cats(&nughde, info.homedir)) _exit(QLX_NOMEM);
+     alloc_free(info.homedir);
+     if ( info.mms ) {
+       if (!chck_paths(info.mms) ) return 23;
+       aliasempty = info.mms;
+     }
    } else if ( info.mms ) {
-      if (!chck_paths(info.mms) ) return 23;
-      if (!stralloc_cats(&nughde, info.mms)) _exit(QLX_NOMEM);
-      alloc_free(info.mms);
+     if (!chck_paths(info.mms) ) return 23;
+     if (!stralloc_cats(&nughde, info.mms)) _exit(QLX_NOMEM);
+     alloc_free(info.mms);
    } else {
-      /* XXX nothing defined use ~alias as home and 
-       * XXX ALIASDEVNULL as aliasempty */
-      struct passwd *pw;
-      pw = getpwnam(auto_usera);
-      if (!pw) {
-         _exit(QLX_NOALIAS);
-      }
-      if (!stralloc_cats(&nughde, pw->pw_dir)) _exit(QLX_NOMEM);      
-      aliasempty = ALIASDEVNULL;
-      force_forward = 1;
+     /* XXX nothing defined use ~alias as home and 
+      * XXX ALIASDEVNULL as aliasempty */
+     struct passwd *pw;
+     pw = getpwnam(auto_usera);
+     if (!pw) {
+        _exit(QLX_NOALIAS);
+     }
+     if (!stralloc_cats(&nughde, pw->pw_dir)) _exit(QLX_NOMEM);      
+     aliasempty = ALIASDEVNULL;
+     force_forward = 1;
    }
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
 
