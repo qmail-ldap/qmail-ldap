@@ -153,6 +153,8 @@ void auth_fail(int argc, char **argv, char *login)
 {
 	int i;
 	int pi[2];
+	char *t;
+	t = up;
 	
 	debug(2, "warning: auth_fail: user %s faild\n", login);
 	if ( qldap_errno == AUTH_NOSUCH ) {
@@ -184,12 +186,12 @@ void auth_fail(int argc, char **argv, char *login)
 		}
 		close(pi[0]);
 		while (uplen) {
-			i = write(pi[1],up,uplen);
+			i = write(pi[1],t,uplen);
 			if (i == -1) {
 				if (errno == error_intr) continue;
 				/* note that some data may have been written */
 			}
-			up += i;
+			t += i;
 			uplen -= i;
 		}
 		close(pi[1]);
