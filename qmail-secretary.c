@@ -621,7 +621,9 @@ sendmail(struct qmail *qq, int fd, int maxsize,
 		if (*(message->s + i + j) == '%') {
 			if (case_startb(message->s + i + j,
 				    len - i -j, "%LIST%")) {
-				qmail_put(qq, mailinglist.s, mailinglist.len);
+				qmail_put(qq, outlocal.s, outlocal.len);
+				qmail_puts(qq, "@");
+				qmail_put(qq, outhost.s, outhost.len);
 				i += 6;
 			} else {
 				qmail_put(qq, message->s + i + j, 1);
