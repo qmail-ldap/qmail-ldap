@@ -102,8 +102,9 @@ char *dir;
  substdio ssout;
 
  sig_alarmcatch(sigalrm);
- if (chdir(dir) == -1) {  
+ if (chdir(dir) == -1) {
 #ifdef AUTOMAILDIRMAKE
+   /* this one handles the case where the aliasempty is not "./" */
    if (errno == error_noent) {
      umask(077);
      if (mkdir(dir,0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
@@ -111,11 +112,25 @@ char *dir;
      if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
      if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
      if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
-   } else 
+   } else
 #endif
-   if (error_temp(errno)) _exit(1); else _exit(2); }
+   if (error_temp(errno)) _exit(1); else _exit(2);
+ }
+#ifdef AUTOMAILDIRMAKE
+ /* this one handles the case where the aliasempty is "./" */
+ if (chdir("./tmp") == -1) {
+   if (errno == error_noent) {
+     umask(077);
+     if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+     if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+     if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+   } else
+   if (error_temp(errno)) _exit(1); else _exit(2);
+ }
+#endif
    
-#ifdef AUTOMAILDIRMAKE_PARANOIA
+/* XXX this looks weird and doesn't fit */
+#ifdef AUTOMAILDIRMAKE_PARANOIA_XXX /* disabled */
    umask(077);
    if (stat("new", &st) == -1) {
      if (errno == error_noent) {
@@ -353,8 +368,7 @@ char *fn;
      /* probably we could do a second check (to deliver very big messages) */
      quota_bounce();
    } else if ( totalsize > g_quota/100UL*80UL ) /* drop a warning when mailbox is around 80% full */
-/* XXX disabled because qmail-quotawarn is currently only fot maildirs */
-/*     quota_warning(fn); */
+     quota_warning(fn);
  }
  
 #endif /* end -- quota handling mbox */
