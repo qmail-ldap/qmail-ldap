@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/12/15 13:26:04 $ ($Revision: 1.159 $)
+RELEASE: $Date: 2003/12/22 09:30:15 $ ($Revision: 1.160 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,14 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Newer fdcopy STDOUT with STDERR in qmail-popup. The copy was only skipped if
+ DEBUG was set. So it was not possible to use qmail-pop3d accounting/logging
+ if a non-DEBUG version was compiled. Report by Henning Brauer.
+
+ Once again I missed something in the run scripts. It would be good to run
+ awk scripts with awk. Remember to remove the old run scripts before a
+ make setup check.
 
  Kill the qmail-verify zombies in qmail-smtps call infrastructure. Reported
  by Kevin J. McCarthy.
