@@ -332,7 +332,7 @@ void setup(void)
     if (control_readline(&sslcert, sslpath) == -1)
       die_control();
   } else
-    if (!stralloc_copy(&sslcert, sslpath)) die_nomem();
+    if (!stralloc_copys(&sslcert, sslpath)) die_nomem();
   if (!stralloc_0(&sslcert)) die_nomem();
 #endif
 
