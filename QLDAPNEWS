@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/01/01 23:06:21 $ ($Revision: 1.28 $)
+RELEASE: $Date: 2001/01/01 23:53:51 $ ($Revision: 1.29 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -32,6 +32,13 @@ NEWS for current stuff:
  introduced ~control/ldaptimeout to limit the time and ldap search might
  take until the delivery attempt is being deferred and tried again later.
  The default is 30 seconds.
+
+ works fine with OpenLDAP 2.x (2.0.7).
+
+ included the OpenLDAP 2.x LDAPv3 Schema definition file created by
+ David E. Storey. This version is based on the original work by David
+ but modified quite a lot by Andre. Also qmail-ldap has got it's own
+ offcially IANA assigned OID.
 
 NEWS for 20001201:
 

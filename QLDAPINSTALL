@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/01/01 23:06:20 $)
+RELEASE: current ($Date: 2001/01/01 23:53:50 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -40,7 +40,7 @@ INSTALL:
    ./configure; make; make install software.
 
 3. You need the following compiled and installed
-    - OpenLDAP 1.2.9 or higher (others might also work)
+    - OpenLDAP 1.2.x/2.x or higher (others might also work)
    or
     - Netscape LDAP sdk (tested libldapssl30 on Solaris 2.6)
    and
@@ -108,6 +108,7 @@ INSTALL:
     certificates
 
 7.  Create the LDAP user database and start the LDAP server
+    See qmail.schema for definition of all fields for OpenLDAP 2.x
 
 8.  Create the proper ~control/ldap* files for qmail-ldap
     At least ldapserver and ldapbasedn must exist (and also 'me')
@@ -649,7 +650,7 @@ index           default none
 
 ================================================================================
 
-ADD THIS SCHEMA TO SLAPD.OC.CONF
+ADD THIS SCHEMA TO SLAPD.OC.CONF (for OpenLDAP 1.2.x)
 
 objectclass qmailUser
         requires
@@ -671,6 +672,14 @@ objectclass qmailUser
                 deliveryMode,
                 mailReplyText,
                 accountStatus
+
+
+FOR OpenLDAP 2.x DO THIS INSTEAD:
+
+Copy qmail.schema to your OpenLDAP installation location and add this
+to your slapd.conf:
+
+ include /path/to/your/OpenLDAP/qmail.schema
 
 ================================================================================
 
