@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/10/02 15:06:35 $ ($Revision: 1.135 $)
+RELEASE: $Date: 2003/10/03 11:39:33 $ ($Revision: 1.136 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -24,6 +24,11 @@ NEWS for current stuff:
  Add some more features to qmail-ldaplookup. Password compare works now.
  It is now also possible to use a different binddn and bindpw.
  What is missing are local /etc/passwd lookups and group handling.
+
+ The objectclass of a group object can now be changed like all other ldap
+ values via qmail-ldap.h.
+
+ Fix in the qmail schema definitions: a ')' was missing.
 
 NEWS for 20031001 stuff:
 
