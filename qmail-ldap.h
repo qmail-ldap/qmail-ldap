@@ -107,6 +107,7 @@
 /*********************************************************************
         ldap variables used in qmail-group
 *********************************************************************/
+#define LDAP_GROUPOBJECTCLASS	"qmailGroup"
 #define LDAP_GROUPMEMONLY	"membersonly"
 #define LDAP_GROUPCONFIRM	"senderconfirm"
 #define LDAP_GROUPCONFRIMTEXT	"confirmtext"

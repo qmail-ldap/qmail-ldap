@@ -474,7 +474,7 @@ int qldap_get(stralloc *mail, int at, int fdmess)
    if (!env_unset(ENV_GROUP)) cae(q, QLX_NOMEM);
    for (len = 0; len < foo.len;
         len += byte_chr(foo.s + len, foo.len - len, ':') + 1) {
-     if (case_startb(foo.s + len, foo.len - len, "qmailGroup")) {
+     if (case_startb(foo.s + len, foo.len - len, LDAP_GROUPOBJECTCLASS)) {
        rv = qldap_get_dn(q, &foo);
        if (rv != OK) goto fail;
        log(32, "%s: %s\n", ENV_GROUP, foo.s);
