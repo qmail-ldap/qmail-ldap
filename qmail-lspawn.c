@@ -518,7 +518,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
    if (rv != OK) goto fail; /* objectclass is a must */
    if (!env_unset(ENV_GROUP)) cae(q, QLX_NOMEM);
    for (len = 0; len < foo.len;
-        len += byte_chr(foo.s + len, foo.len - len, ':')) {
+        len += byte_chr(foo.s + len, foo.len - len, ':') + 1) {
      if (case_startb(foo.s + len, foo.len - len, "qmailGroup")) {
        rv = qldap_get_dn(q, &foo);
        if (rv != OK) goto fail;

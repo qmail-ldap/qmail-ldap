@@ -1419,9 +1419,9 @@ qmail-control.9 conf-break conf-spawn
 	> qmail-control.5
 
 qmail-forward: \
-load qmail-forward.o qmail.o control.o now.o fd.a wait.a open.a getln.a \
+load qmail-forward.o qmail.o control.o now.o env.a fd.a wait.a open.a getln.a \
 seek.a stralloc.a alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o
-	./load qmail-forward qmail.o control.o now.o fd.a wait.a open.a \
+	./load qmail-forward qmail.o control.o now.o env.a fd.a wait.a \
 	open.a getln.a seek.a strerr.a stralloc.a alloc.a substdio.a \
 	error.a str.a fs.a auto_qmail.o
 	

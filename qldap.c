@@ -679,7 +679,7 @@ qldap_get_quota(qldap *q, unsigned long *size, unsigned long *count,
 	r = qldap_get_ulong(q, LDAP_QUOTA_SIZE, size);
 	if (r != OK && r != NOSUCH)
 		return r;
-	r = qldap_get_ulong(q, LDAP_QUOTA_COUNT, max);
+	r = qldap_get_ulong(q, LDAP_QUOTA_COUNT, count);
 	if (r != OK && r != NOSUCH)
 		return r;
 
