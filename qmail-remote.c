@@ -688,7 +688,6 @@ char **argv;
 {
   static ipalloc ip = {0};
   int i;
-  int tcpnodelay = 1;
   unsigned long random;
   char **recips;
   unsigned long prefme;
@@ -774,9 +773,6 @@ char **argv;
     smtpfd = socket(AF_INET,SOCK_STREAM,0);
     if (smtpfd == -1) temp_oserr();
 
-    /* performace hack to send TCP ACK's without delay */
-    setsockopt(smtpfd, IPPROTO_TCP, TCP_NODELAY, &tcpnodelay, sizeof(tcpnodelay));
- 
     if (qmtp_priority(ip.ix[i].pref)) {
       if (timeoutconn(smtpfd,&ip.ix[i].ip,&outip,(unsigned int) qmtp_port,timeoutconnect) == 0) {
 	tcpto_err(&ip.ix[i].ip,0);
@@ -786,9 +782,6 @@ char **argv;
       close(smtpfd);
       smtpfd = socket(AF_INET,SOCK_STREAM,0);
       if (smtpfd == -1) temp_oserr();
-
-      /* performace hack to send TCP ACK's without delay */
-      setsockopt(smtpfd, IPPROTO_TCP, TCP_NODELAY, &tcpnodelay, sizeof(tcpnodelay));
     }
     if (timeoutconn(smtpfd,&ip.ix[i].ip,&outip,(unsigned int) smtp_port,timeoutconnect) == 0) {
       tcpto_err(&ip.ix[i].ip,0);
