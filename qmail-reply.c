@@ -211,7 +211,6 @@ char* stamp(datetime_sec time)
 }
 
 stralloc rs = {0}; /* recent sender */
-int rsmatch = 0;
 datetime_sec timeout;
 #ifndef REPLY_TIMEOUT
 #define REPLY_TIMEOUT 1209600 /* 2 weeks */
@@ -235,16 +234,16 @@ int recent(char *buf, int len)
 	}
 
 	slen = rs.len; s = rs.s;
-	for (i = 0; i < slen; i += str_len(s+i)) {
+	for (i = 0; i < slen; i += str_len(s+i) + 1) {
 		if (case_diffb(buf, len, s+i) == 0) {
 			/* match found, look at timeval */
-			rsmatch = i; i += len;
+			i += len;
 			if (s[i++] != ':')
 				strerr_die2x(100, FATAL,
 				    "db file .qmail-reply.db corrupted");
 			last = get_stamp(s+i);
-			if (last + timeout > now()) return 1;
-			else return 0;
+			if (last + timeout < now()) return 0;
+			else return 1;
 		}
 	}
 
@@ -263,17 +262,19 @@ void sigalrm()
 
 void recent_update(char *buf, int len)
 {
-	char *s, *t;
 	struct stat st;
-	unsigned long pid, time;
-	int fd, loop, size, slen, i;
 	substdio ss;
+	char *s, *t;
+	datetime_sec time, last;
+	unsigned long pid;
+	unsigned int slen, i, n;
+	int fd, loop;
 
 	s = rs.s; slen = rs.len;
-	size = slen + len + 10;
-	for(; size > MAX_SIZE; ) {
+	n = slen + len + 10;
+	for(; n > MAX_SIZE; ) {
 		i = str_len(s) + 1;
-		size -= i;
+		n -= i;
 		slen -= i;
 		s += i;
 	}
@@ -301,7 +302,11 @@ void recent_update(char *buf, int len)
 	substdio_fdbuf(&ss, write, fd, rsoutbuf, sizeof(rsoutbuf));
 
 	for (i = 0; i < slen; i += str_len(s+i) + 1) {
-		if (rs.s+rsmatch == s+i) continue;
+		n = byte_chr(s+i, slen, ':');
+		if (n++ != slen) {
+			last = get_stamp(s + i + n);
+			if (last + timeout < time) continue;
+		} /* else file corrupted */
 		if (substdio_puts(&ss, s+i) == -1) goto fail;
 		if (substdio_put(&ss, "\n", 1) == -1) goto fail;
 	}
