@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/03/26 21:00:18 $)
+RELEASE: current ($Date: 2004/03/31 21:49:54 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -893,17 +893,34 @@ TARPITDELAY
        that this ties up the available qmail-smtpd slots. Raise connection
        limits with tcpserver if neccessary.
 
+421GREETING
+
+ Rejects a connection right away with a 421 in the greeting line and
+ starts in a dummy mode where only QUIT works unless 421GREETING is set -- in
+ that case the connection will closed immediatly after printing the greeting. 
+ Default: off
+ Affects: qmail-smtpd
+ Example: ""
+ Example: "Go away!"
+ Note: You can set this in tcpserver if you want to reject messages from
+       an ip address temporarily. If no string is given it will default
+       to "Service temporarily not available (#4.3.2)".
+       The timeout is reduced to 20 seconds to prevent starvation.
+
 550GREETING
 
- Rejects a connection right away with an 550 in the greeting line and
- closes the connection.
+ Rejects a connection right away with a 550 in the greeting line and
+ starts in a dummy mode where only QUIT works unless 421GREETING is set -- in
+ that case the connection will closed immediatly after printing the greeting. 
  Default: off
  Affects: qmail-smtpd
  Example: ""
  Example: "Go away!"
  Note: You can set this in tcpserver if you want to reject messages from
        an ip address permanently. If no string is given it will default
-       to "your message has been administratively denied".
+       to "Sorry, your message has been administratively denied. (#5.7.1)".
+       The timeout is reduced to 20 seconds to prevent starvation.
+       550GREETING has precedence over 421GREETING.
 
 
 ================================================================================

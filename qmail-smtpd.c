@@ -1663,9 +1663,10 @@ int main(int argc, char **argv)
   if (greeting550 || greeting421) {
     if (!stralloc_copys(&greeting,greeting550 ? greeting550 : greeting421))
       die_nomem();
+    timeout = 20; /* reduce timeout so the abuser is kicked out faster */
     if (greeting.len == 0 && greeting550)
       stralloc_copys(&greeting,
-	  "sorry, your mail was administratively denied. (#5.7.1)");
+	  "Sorry, your mail was administratively denied. (#5.7.1)");
     else if (greeting.len == 0 && greeting421)
       stralloc_copys(&greeting,
 	  "Service temporarily not available (#4.3.2)");
