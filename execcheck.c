@@ -52,7 +52,7 @@ execcheck_start(void)
 }
 
 void
-execcheck_put(struct qmail *qqt, char *ch)
+execcheck_put(struct qmail *qq, char *ch)
 {
 	char *cp, *cpstart, *cpafter;
 	unsigned int len;
@@ -101,8 +101,8 @@ execcheck_put(struct qmail *qqt, char *ch)
 					while (cp < cpafter &&
 					    (*cp == ' ' || *cp == '\t'))
 						++cp;
-					if (9 > cpafter - cp &&
-					    case_diffb(cp, 9, "boundary=")) {
+					if (case_startb(cp, cpafter - cp,
+						    "boundary=")) {
 						cp += 9; /* after boundary= */
 						if (cp < cpafter &&
 						    *cp == '"') {
@@ -141,7 +141,7 @@ execcheck_put(struct qmail *qqt, char *ch)
 					break;
 				}
 			} else {
-				if (!case_startb(line.s, line.len,
+				if (case_startb(line.s, line.len,
 					    "content-type:")) {
 					if (!stralloc_copyb(&content,
 						    line.s+13, line.len-14))
@@ -173,7 +173,7 @@ execcheck_put(struct qmail *qqt, char *ch)
 				    !str_diffn(line.s,"TVouARsAA",9) ||
 				    !str_diffn(line.s,"TVrQAT8AA",9)) {
 					flagexecutable = 1;
-					qmail_fail(&qqt);
+					qmail_fail(qq);
 				}
 			linespastheader = 2;
 		}
