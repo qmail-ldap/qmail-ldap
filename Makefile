@@ -1,14 +1,16 @@
 # Edit this few lines to configure your ldap stuff and checkpassword
 
 # to enable some additional for qmail-ldap stuff put it on the LDAPFLAGS line
+#
 # -DLDAP_ESCAPE_BUG should be added as long as the ldap servers have 
 # problems with the escapeing of LDAP filters (fixed with OpenLDAP 1.2.7)
 # -DQLDAP_CLUSTER for enabling cluster support
-# to enable the dash_ext patch for extended mail addresses add
-# -DDASH_EXT to the LDAPFLAGS
-# to use cleartext passwords (a bad idea on production systems) add
-# -DCLEARTEXTPASSWD to the LDAPFLAGS
-#LDAPFLAGS=-DQLDAP_CLUSTER
+# -DDASH_EXT to enable the dash_ext patch for extended mail addresses
+# -DCLEARTEXTPASSWD to use cleartext passwords (a bad idea on production
+# systems)
+# -DEXTTODO to use the external high-performance todo processing (this
+# avoids the silly qmail syndrome with high injection rates)
+#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTTODO
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
