@@ -1,47 +1,49 @@
 # Edit this few lines to configure your ldap stuff and checkpassword
 
 # to enable qmail-ldap some additional stuff uncomment the next line
-LDAPFLAGS=-DLDAP_ESCAPE_BUG
+#LDAPFLAGS=-DLDAP_ESCAPE_BUG
 # -DLDAP_ESCAPE_BUG should be added as long as the ldap servers have 
 # problems with the escapeing of LDAP filters
 # -DQLDAP_CLUSTER for enabling cluster support
 
 # Perhaps you have different ldap libraries, change them here
-LDAPLIBS=-L/usr/local/lib -lldap -llber
+#LDAPLIBS=-L/usr/local/lib -lldap -llber
 # and change the location of the include files here
-LDAPINCLUDES=-I/usr/local/include
+#LDAPINCLUDES=-I/usr/local/include
 # for example on my Linux box I use:
-#LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
+LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
 # if you need a special include-directory for ldap headers enable this
-#LDAPINCLUDES=-I/opt/OpenLDAP/include
+LDAPINCLUDES=-I/opt/OpenLDAP/include
 
 # TLS SMTP encryption in qmail-smtpd and qmail-remote
 # You need OpenSSL for this
 # TLS enable
-#TLSON=-DTLS
+TLSON=-DTLS
 # Path to OpenSSL includes
-#TLSINCLUDES=-I/usr/local/include
+TLSINCLUDES=-I/usr/local/include
 # Path to OpenSSL libraries
-#TLSLIBS=-L/usr/local/lib -lssl -lcrypto
+TLSLIBS=-L/usr/local/lib -lssl -lcrypto
 
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
 MNW=-DMAKE_NETSCAPE_WORK 
 
 # to enable the auto-maildir-make feature uncomment the next line
-#MDIRMAKE=-DAUTOMAILDIRMAKE
+MDIRMAKE=-DAUTOMAILDIRMAKE
 
 # to enable the auto-homedir-make feature uncomment the next line
-#HDIRMAKE=-DAUTOHOMEDIRMAKE
+HDIRMAKE=-DAUTOHOMEDIRMAKE
 
+# on OpenBSD system the next line has to be commented
+SHADOWLIBS=-lcrypt
 # To use shadow passwords under Linux, uncomment the next two lines.
-#SHADOWLIBS=-lshadow
+#SHADOWLIBS=-lcrypt -lshadow
 #SHADOWOPTS=-DPW_SHADOW
 # To use shadow passwords under Solaris, uncomment the SHADOWOPTS line.
 
 # to enable the possibility to log and debug imap and pop uncoment the
 # next line
-#DEBUG=-DDEBUG
+DEBUG=-DDEBUG
 # WARNING: you need NONE DEBUG auth_* to run with inetd
 
 # Just for me, make a backup before compiling
@@ -88,7 +90,7 @@ timeoutread.o qldap-mdm.o wait.a sig.a prot.o
 	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
 	qldap-mdm.o wait.a error.a fs.a ndelay.a sig.a prot.o $(LDAPLIBS) \
-	-lcrypt $(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
+	$(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
 
 auth_pop.o: \
 compile auth_pop.c error.h qldap-errno.h readwrite.h stralloc.h env.h \
@@ -106,7 +108,7 @@ timeoutread.o qldap-mdm.o wait.a prot.o
 	qldap-debug.o auto_qmail.o dns.o timeoutconn.o timeoutread.o ip.o \
 	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-	qldap-mdm.o wait.a error.a fs.a ndelay.a prot.o $(LDAPLIBS) -lcrypt \
+	qldap-mdm.o wait.a error.a fs.a ndelay.a prot.o $(LDAPLIBS) \
 	$(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
 
 auto-ccld.sh: \
@@ -1504,7 +1506,7 @@ getln.a substdio.a stralloc.a alloc.a error.a str.a fs.a socket.lib
 	./load qmail-qmqpc slurpclose.o timeoutread.o \
 	timeoutwrite.o timeoutconn.o ip.o control.o auto_qmail.o \
 	sig.a ndelay.a open.a getln.a substdio.a stralloc.a alloc.a \
-	error.a str.a fs.a dns.o ipalloc.o `cat dns.lib` `cat socket.lib`
+	error.a fs.a dns.o str.a ipalloc.o `cat dns.lib` `cat socket.lib`
 
 qmail-qmqpc.0: \
 qmail-qmqpc.8
@@ -1735,7 +1737,7 @@ fs.a auto_qmail.o dns.lib socket.lib
 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
 	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a auto_qmail.o dns.o \
+	alloc.a substdio.a error.a fs.a auto_qmail.o dns.o str.a \
 	`cat dns.lib` `cat socket.lib` ${TLSLIBS}
 
 qmail-smtpd.0: \
