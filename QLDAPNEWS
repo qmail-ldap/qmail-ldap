@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2005/04/01 13:13:05 $ ($Revision: 1.213 $)
+RELEASE: $Date: 2005/04/01 14:10:30 $ ($Revision: 1.214 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,9 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Enable logging in qmail-verify. It is not perfect but far better than
+ before.
 
  Correctly escape the AUTH= extension according to RFC2554 in xtext form.
  Initial idea and problem found by Aiko Barz.

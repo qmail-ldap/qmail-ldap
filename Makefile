@@ -2184,8 +2184,9 @@ auto_qmail.o
 	str.a timeoutread.o auto_qmail.o $(LDAPLIBS)
 
 qmail-verify.o: \
-compile qmail-verify.c error.h getln.h qldap.h qldap-errno.h qmail-ldap.h \
-read-ctrl.h stralloc.h subfd.h substdio.h timeoutread.h
+compile qmail-verify.c error.h getln.h output.h qldap.h qldap-debug.h \
+qldap-errno.h qmail-ldap.h read-ctrl.h stralloc.h subfd.h substdio.h \
+timeoutread.h
 	./compile $(LDAPFLAGS) $(DEBUG) qmail-verify.c
 
 qmail.0: \

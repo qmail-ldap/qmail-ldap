@@ -34,7 +34,9 @@
 #include <unistd.h>
 #include "error.h"
 #include "getln.h"
+#include "output.h"
 #include "qldap.h"
+#include "qldap-debug.h"
 #include "qldap-errno.h"
 #include "qmail-ldap.h"
 #include "read-ctrl.h"
@@ -113,6 +115,8 @@ main(int argc, char **argv)
 {
 	int match;
 
+	log_init(STDERR, ~256, 0);
+
 	if (read_controls(ctrls) == -1)
 		die_control();
 	
@@ -128,6 +132,7 @@ main(int argc, char **argv)
 			cleanup(); /* other side closed pipe */
 			break;
 		}
+		logit(32, "qmail-verfiy: verifying %S\n", &line);
 		lookup(&line);
 	} while (1);
 	return 0;
@@ -142,7 +147,6 @@ lookup(stralloc *mail)
 	int status;
 	int rv;
 
-	/* TODO more debug output is needed */
 	if (q == 0) {
 		q = qldap_new();
 		if (q == 0)
@@ -168,7 +172,7 @@ lookup(stralloc *mail)
 		f = filter_mail(mail->s, &done);
 		if (f == (char *)0) die_nomem();
 
-		//logit(16, "ldapfilter: '%s'\n", f);
+		logit(16, "ldapfilter: '%s'\n", f);
 
 		/* do the search for the email address */
 		rv = qldap_lookup(q, f, attrs);
