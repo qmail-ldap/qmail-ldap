@@ -64,7 +64,6 @@ char *aliasempty;
 
 /* define the global variables */
 char *quotastring;
-long int mailsize;
 
 stralloc safeext = {0};
 stralloc ufline = {0};
@@ -81,7 +80,7 @@ char buf[1024];
 char outbuf[1024];
 
 /* child process */
-char fntmptph[83 + FMT_ULONG * 3];
+char fntmptph[83 + FMT_ULONG * 2];
 char fnnewtph[83 + FMT_ULONG * 3];
 void tryunlinktmp() { unlink(fntmptph); }
 void sigalrm() { tryunlinktmp(); _exit(3); }
@@ -150,8 +149,6 @@ char *dir;
    s += fmt_ulong(s,time); *s++ = '.';
    s += fmt_ulong(s,pid); *s++ = '.';
    s += fmt_strn(s,host,sizeof(host)); 
-   s += fmt_str(s,",S=");
-   s += fmt_ulong(s,mailsize);
    *s++ = 0;
    if (stat(fntmptph,&st) == -1) if (errno == error_noent) break;
    /* really should never get to this point */
@@ -178,8 +175,15 @@ char *dir;
 
  if (substdio_flush(&ssout) == -1) goto fail;
  if (fsync(fd) == -1) goto fail;
+ if (fstat(fd, &st) == -1) goto fail;
  if (close(fd) == -1) goto fail; /* NFS dorks */
 
+ s = fnnewtph;
+ while( *s ) s++;
+ s += fmt_str(s,",S=");
+ s += fmt_ulong(s,(unsigned long) st.st_size);
+ *s++ = 0;
+  
  if (link(fntmptph,fnnewtph) == -1) goto fail;
    /* if it was error_exist, almost certainly successful; i hate NFS */
  tryunlinktmp(); _exit(0);
@@ -239,6 +243,7 @@ char *fn;
  struct stat mailst;
  int perc;
  int fd;
+ int mailsize;
 
  if( quotastring && *quotastring ) {
    if (fstat(0, &mailst) != 0)
