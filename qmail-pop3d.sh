@@ -3,14 +3,14 @@ exec 2>&1
 #
 # POP3 service 
 #
-QMAIL=/var/qmail
+QMAIL="%QMAIL%"
 ME=$(head -1 $QMAIL/control/me)
-ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty > /dev/null 2>&1)
+ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty 2> /dev/null )
 if test X"$ALIASEMPTY" = "X"; then
 	ALIASEMPTY=./Maildir/
 fi
 
-PATH=$PATH:"$QMAIL/bin"
+PATH="$QMAIL/bin:$PATH"
 
 # source the environemt in ./env
 eval `env - envdir ./env awk '\

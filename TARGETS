@@ -438,8 +438,12 @@ qmail-forward
 qmail-forward.o
 qmail-group
 qmail-group.o
+qmail-imapd.run
 qmail-ldaplookup
 qmail-ldaplookup.o
+qmail-pbsdbd.run
+qmail-pop3d.run
+qmail-qmqpd.run
 qmail-quotawarn
 qmail-quotawarn.o
 qmail-reply
@@ -450,6 +454,7 @@ qmail-todo
 qmail-todo.o
 qmail-verify
 qmail-verify.o
+qmail.run
 rbl.o
 read-ctrl.o
 readwrite.o

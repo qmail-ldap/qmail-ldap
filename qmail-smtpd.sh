@@ -4,11 +4,11 @@ exec 2>&1
 # SMTP service 
 #
 USER=qmaild
-QMAIL=/var/qmail
+QMAIL="%QMAIL%"
 ME=$(head -1 $QMAIL/control/me)
 CONCURRENCY=${CONCURRENCY:=50}
 
-PATH=$PATH:"$QMAIL/bin"
+PATH="$QMAIL/bin:$PATH"
 
 # source the environemt in ./env
 eval `env - envdir ./env awk '\

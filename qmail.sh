@@ -3,13 +3,13 @@ exec 2>&1
 #
 # qmail-send and friends
 #
-QMAIL=/var/qmail
-ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty > /dev/null 2>&1)
+QMAIL="%QMAIL%"
+ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty 2> /dev/null)
 if test X"$ALIASEMPTY" = "X"; then
 	ALIASEMPTY=./Maildir/
 fi
 
-PATH=$PATH:"$QMAIL/bin"
+PATH="$QMAIL/bin:$PATH"
 
 # limit to prevent memory hogs
 ulimit -c 204800 

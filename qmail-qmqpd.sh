@@ -4,10 +4,10 @@ exec 2>&1
 # QMQP service 
 #
 USER=qmaild
-QMAIL=/var/qmail
+QMAIL="%QMAIL%"
 ME=$(head -1 $QMAIL/control/me)
 
-PATH=$PATH:"$QMAIL/bin"
+PATH="$QMAIL/bin:$PATH"
 
 # source the environemt in ./env
 eval `env - envdir ./env awk '\

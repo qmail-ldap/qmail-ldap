@@ -90,7 +90,9 @@ default: it ldap
 
 ldap: qmail-quotawarn qmail-reply auth_pop auth_imap auth_smtp digest \
 qmail-ldaplookup pbsadd pbscheck pbsdbd qmail-todo qmail-forward \
-qmail-secretary qmail-group qmail-verify condwrite qmail-cdb
+qmail-secretary qmail-group qmail-verify condwrite qmail-cdb \
+qmail-imapd.run qmail-pbsdbd.run qmail-pop3d.run qmail-qmqpd.run \
+qmail-smtpd.run qmail.run
 
 addresses.0: \
 addresses.5
@@ -1539,6 +1541,13 @@ qmail-header.0: \
 qmail-header.5
 	nroff -man qmail-header.5 > qmail-header.0
 
+qmail-imapd.run: \
+qmail-imapd.sh conf-qmail
+	cat qmail-imapd.sh \
+	| sed s}%QMAIL%}"`head -1 conf-qmail`"}g \
+	> qmail-imapd.run
+	chmod 755 qmail-imapd.run
+
 qmail-inject: \
 load qmail-inject.o headerbody.o hfield.o newfield.o quote.o now.o \
 control.o date822fmt.o constmap.o qmail.o case.a fd.a wait.a open.a \
@@ -1697,6 +1706,13 @@ getln.h substdio.h cdbmss.h cdbmake.h uint32.h substdio.h exit.h \
 readwrite.h open.h error.h case.h auto_qmail.h
 	./compile qmail-newu.c
 
+qmail-pbsdbd.run: \
+qmail-pbsdbd.sh conf-qmail
+	cat qmail-pbsdbd.sh \
+	| sed s}%QMAIL%}"`head -1 conf-qmail`"}g \
+	> qmail-pbsdbd.run
+	chmod 755 qmail-pbsdbd.run
+
 qmail-pop3d: \
 load qmail-pop3d.o commands.o case.a timeoutread.o timeoutwrite.o \
 maildir.o prioq.o now.o env.a strerr.a sig.a open.a getln.a str.a \
@@ -1717,6 +1733,13 @@ substdio.h alloc.h open.h prioq.h datetime.h gen_alloc.h scan.h fmt.h \
 str.h exit.h maildir.h strerr.h readwrite.h timeoutread.h \
 timeoutwrite.h maildir++.h
 	./compile $(LDAPFLAGS) $(MNW) $(MDIRMAKE) qmail-pop3d.c
+
+qmail-pop3d.run: \
+qmail-pop3d.sh conf-qmail
+	cat qmail-pop3d.sh \
+	| sed s}%QMAIL%}"`head -1 conf-qmail`"}g \
+	> qmail-pop3d.run
+	chmod 755 qmail-pop3d.run
 
 qmail-popup: \
 load qmail-popup.o commands.o timeoutread.o timeoutwrite.o now.o \
@@ -1799,6 +1822,13 @@ qmail-qmqpd.o: \
 compile qmail-qmqpd.c auto_qmail.h qmail.h substdio.h received.h \
 sig.h substdio.h readwrite.h exit.h now.h datetime.h fmt.h env.h
 	./compile $(LDAPFLAGS) $(ZINCLUDES) qmail-qmqpd.c
+
+qmail-qmqpd.run: \
+qmail-qmqpd.sh conf-qmail
+	cat qmail-qmqpd.sh \
+	| sed s}%QMAIL%}"`head -1 conf-qmail`"}g \
+	> qmail-qmqpd.run
+	chmod 755 qmail-qmqpd.run
 
 qmail-qmtpd: \
 load qmail-qmtpd.o rcpthosts.o control.o constmap.o received.o \
@@ -2044,6 +2074,13 @@ exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h rbl.h
 	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) $(ZINCLUDES) \
 	qmail-smtpd.c
 
+qmail-smtpd.run: \
+qmail-smtpd.sh conf-qmail
+	cat qmail-smtpd.sh \
+	| sed s}%QMAIL%}"`head -1 conf-qmail`"}g \
+	> qmail-smtpd.run
+	chmod 755 qmail-smtpd.run
+
 qmail-start: \
 load qmail-start.o prot.o fd.a auto_uids.o
 	./load qmail-start prot.o fd.a auto_uids.o 
@@ -2150,6 +2187,13 @@ qmail.o: \
 compile qmail.c substdio.h readwrite.h wait.h exit.h fork.h fd.h \
 qmail.h substdio.h auto_qmail.h
 	./compile $(LDAPFLAGS) qmail.c
+
+qmail.run: \
+qmail.sh conf-qmail
+	cat qmail.sh \
+	| sed s}%QMAIL%}"`head -1 conf-qmail`"}g \
+	> qmail.run
+	chmod 755 qmail.run
 
 qreceipt: \
 load qreceipt.o headerbody.o hfield.o quote.o token822.o qmail.o \

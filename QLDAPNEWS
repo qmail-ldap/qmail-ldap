@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/01/26 21:13:29 $ ($Revision: 1.163 $)
+RELEASE: $Date: 2004/01/26 22:15:31 $ ($Revision: 1.164 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,9 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Yet another run script update. $ALIASEMPTY fix from Jo Geraerts and correct
+ $QMAIL idea from Ace Suares.
 
  Fix typo in qmail-secretary. Reported by Beni Schoedler.
 
