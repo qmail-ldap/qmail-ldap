@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/08/30 14:57:25 $ ($Revision: 1.65 $)
+RELEASE: $Date: 2002/09/27 09:18:43 $ ($Revision: 1.66 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,19 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Add LDAPv3 protocol support.
+
+ Synchronize the external processor qmail-todo with qmail-send on startup.
+ There was a race condition on startup which caused some mails to be deliverd
+ twice.
+
+ In both auth_* tools the forwarding code was only sending a CR instead of
+ the needed CRLF.
+
+ Little fixes in the pbs tools.
+
+NEWS for 20020901 stuff:
 
  Fixed bugs in pbscheck and pbsadd which caused unexpected behaviour if
  multiple servers where specified.
