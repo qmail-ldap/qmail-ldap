@@ -516,7 +516,6 @@ qmail-qmqpd.rules
 qmail-qmqpd.sh
 qmail-quotawarn.c
 qmail-reply.c
-qmail-secretary
 qmail-secretary.c
 qmail-smtpd.rules
 qmail-smtpd.sh
@@ -532,4 +531,3 @@ readwrite.c
 signatures
 smtpcall.c
 smtpcall.h
-
