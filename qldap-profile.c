@@ -12,7 +12,7 @@ static struct profile_t profile_list[PROFILES_MAX];
 void start_timing(int profile, char *function)
 {
 	if ( profile >= PROFILES_MAX ) {
-		debug(0x400, "Max Number of profiles exceded\n");
+		debug(0x400, "Max Number of profiles exceeded\n");
 		return;
 	}
 	
@@ -28,7 +28,7 @@ void stop_timing(int profile)
 	unsigned long sec;
 	
 	if ( profile >= PROFILES_MAX ) {
-		debug(0x400, "Max Number of profiles exceded\n");
+		debug(0x400, "Max Number of profiles exceeded\n");
 		return;
 	}
 
