@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include "sig.h"
 #include "stralloc.h"
@@ -415,7 +416,7 @@ char **argv;
     if (smtpfd == -1) temp_oserr();
 
     /* performace hack to send TCP ACK's without delay */
-    setsockopt(smtpfd, IPPROTO_TCP, TCP_NODELAY, &smtpfd, sizeof smtpdfd);
+    setsockopt(smtpfd, IPPROTO_TCP, TCP_NODELAY, &smtpfd, sizeof smtpfd);
  
     if (timeoutconn(smtpfd,&ip.ix[i].ip,(unsigned int) port,timeoutconnect) == 0) {
       tcpto_err(&ip.ix[i].ip,0);
