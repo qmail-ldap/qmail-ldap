@@ -681,6 +681,8 @@ void main()
    r = read(fdin, &c, 1);
    if ((r == -1) && (errno != error_intr))
      _exit(100); /* read failed probably qmail-send died */
+   if (r == 0) /* Uh-oh, qmail-send died. */
+     _exit(100);
  } while (r != 1); /* we assume it is a 'S' */
  
  for (;;)
