@@ -17,6 +17,7 @@
 z_stream stream;
 char zbuf[4096];
 int percent;
+int compressed = 0;
 extern substdio ssout;
 
 void out(const char *s1, const char *s2, const char *s3)
@@ -30,7 +31,7 @@ void out(const char *s1, const char *s2, const char *s3)
   substdio_put(&ssout,strnum,fmt_ulong(strnum,(unsigned long)len));
   substdio_puts(&ssout,":");
   substdio_puts(&ssout,s1);
-  substdio_puts(subfderr,s1);
+  substdio_puts(subfderr,s1+1);
   if (s2) { substdio_puts(&ssout,s2); substdio_puts(subfderr,s2); }
   if (s3) { substdio_puts(&ssout,s3); substdio_puts(subfderr,s3); }
   substdio_puts(subfderr, "\n");
@@ -38,12 +39,12 @@ void out(const char *s1, const char *s2, const char *s3)
   substdio_puts(&ssout,",");
   substdio_flush(&ssout);
 }
-void compression_init(void)
+void compression_init(int avail)
 {
   stream.zalloc = Z_NULL;
   stream.zfree = Z_NULL;
   stream.opaque = Z_NULL;
-  stream.avail_in = 0;
+  stream.avail_in = avail;
   stream.next_in = zbuf;
   if (inflateInit(&stream) != Z_OK) {
     out("ZInitalizing data compression failed: ", stream.msg, " #(4.3.0)");
@@ -76,12 +77,26 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
 #ifdef QMQP_COMPRESS
-  static int done = -1;
-  if (done == -1) {
-    compression_init();
-    done = 0;
+  if (compressed == 0) {
+    int i;
+    char ch;
+    r = read(0,zbuf,len);
+    if (r <= 0) _exit(0);
+    for (i = 0; i < r; i++) {
+      ch = zbuf[i];
+      if (ch >= '0' && ch <= '9') continue;
+      if (ch == ':') {
+	byte_copy(buf, r, zbuf);
+	compressed = -1;
+	return r;
+      }
+      compressed = 1;
+      compression_init(r);
+      break;
+    }
   }
-  if (done == 1) _exit(0);
+  if (compressed < 0) goto uncompressed;
+  if (compressed == 2) _exit(0);
   stream.avail_out = len;
   stream.next_out = buf;
   do {
@@ -99,7 +114,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
       break;
     case Z_STREAM_END:
       compression_done();
-      done = 1;
+      compressed = 2;
       return len - stream.avail_out;
     default:
       out("ZReceiving compressed data failed: ", stream.msg, " #(4.3.0)");
@@ -107,6 +122,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
     }
     return len;
   } while (1);
+uncompressed:
 #endif 
   r = read(fd,buf,len);
   if (r <= 0) _exit(0);
@@ -166,10 +182,11 @@ void identify()
   if (!local) local = "unknown";
  
 #ifdef QMQP_COMPRESS
-  received(&qq,"compressed QMQP",local,remoteip,remotehost,remoteinfo,(char *) 0,(char *) 0,(char *) 0);
-#else
-  received(&qq,"QMQP",local,remoteip,remotehost,remoteinfo,(char *) 0,(char *) 0,(char *) 0);
+  if (compressed > 0)
+    received(&qq,"compressed QMQP",local,remoteip,remotehost,remoteinfo,(char *) 0,(char *) 0,(char *) 0);
+  else
 #endif
+  received(&qq,"QMQP",local,remoteip,remotehost,remoteinfo,(char *) 0,(char *) 0,(char *) 0);
 }
 
 char buf[1000 + 20 + FMT_ULONG];
@@ -250,13 +267,15 @@ main()
     len += fmt_str(buf + len," qp ");
     len += fmt_ulong(buf + len,qp);
 #ifdef QMQP_COMPRESS
-    len += fmt_str(buf + len, " ddc saved ");
-    if (percent < 0) {
-      len += fmt_str(buf + len, "-");
-      percent *= -1;
+    if (compressed > 0) {
+      len += fmt_str(buf + len, " ddc saved ");
+      if (percent < 0) {
+        len += fmt_str(buf + len, "-");
+        percent *= -1;
+      }
+      len += fmt_ulong(buf + len, percent);
+      len += fmt_str(buf + len, " percent");
     }
-    len += fmt_ulong(buf + len, percent);
-    len += fmt_str(buf + len, " percent");
 #endif
     buf[len] = 0;
     result = buf;
