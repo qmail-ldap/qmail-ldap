@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/10/01 09:20:23 $ ($Revision: 1.134 $)
+RELEASE: $Date: 2003/10/02 15:06:35 $ ($Revision: 1.135 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,12 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Add some more features to qmail-ldaplookup. Password compare works now.
+ It is now also possible to use a different binddn and bindpw.
+ What is missing are local /etc/passwd lookups and group handling.
+
+NEWS for 20031001 stuff:
 
  Change NOPOP in accountStatus to NOACCESS as it is not just disabling
  pop access but also imap and possibly others.

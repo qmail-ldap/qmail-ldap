@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/10/01 09:20:23 $)
+RELEASE: current ($Date: 2003/10/02 15:06:35 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -285,7 +285,25 @@ CONFIG FILES:
  Password for the LDAP server connection
  Default: NULL
  Note: The password is in clear text. The file should be owned by root and
-       mode (600) rw-------.
+       mode (600) rw-------. If rcpt verify or auth_smtp is used then the
+       permissions must be adjusted so that the qmail-smtpd user -- normaly
+       qmaild -- has read access.
+
+~control/ldapgrouplogin
+ 
+ Username for the qmail-group LDAP server connection.
+ Default: use the login specified in ~control/ldaplogin
+ Example: cn=qmail-group, o=Internet Pipeline, c=CH
+ Note: The user must have enough rights to lookup the mail attribute.
+       Also the ldap limit used for this user must be enough high.
+
+~control/ldapgrouppassword
+
+ Password for the qmail-group LDAP server connection.
+ Default: NULL only if ~control/ldapgrouplogin is present else fall back to
+          ~control/ldappassword
+ Note: The password is in clear text. The file should not be readable for
+       all.
 
 ~control/ldaplocaldelivery
 

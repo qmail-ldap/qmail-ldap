@@ -223,7 +223,6 @@ retry:
 	   LDAP_STRONG_AUTH_NOT_SUPPORTED,
 	   LDAP_STRONG_AUTH_REQUIRED,
 	   *LDAP_INAPPROPRIATE_AUTH*,
-	   *LDAP_INVALID_CREDENTIALS*,
 	   LDAP_AUTH_UNKNOWN
 	 */
 	switch (rc) {
@@ -302,9 +301,9 @@ qldap_free_results(qldap *q)
 int
 qldap_free(qldap *q)
 {
-	if (!STATEIN(q, NEW))
+	qldap_free_results(q);
+	if (!STATEIN(q, NEW) && !STATEIN(q, CLOSE))
 		qldap_close(q);
-	/* TODO free all other values and free q */
 	byte_zero(q, sizeof(qldap));
 	alloc_free(q);
 	return OK;

@@ -5,12 +5,12 @@
 /* XXX TODO needs to be removed */
 int qldap_errno;
 
-const char *qldap_err_str(int enbr )
+const char *qldap_err_str(int enbr)
 /* returns a string that corresponds to the qldap_errno */
 {
 	switch (enbr) {
 	case OK:
-		return "no error";
+		return "successful";
 	case ERRNO:
 		return error_str(errno);
 	case FAILED:

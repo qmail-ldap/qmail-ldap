@@ -10,6 +10,7 @@
 #include "error.h"
 #include "localdelivery.h"
 #include "output.h"
+#include "passwd.h"
 #include "qldap.h"
 #include "qldap-cluster.h"
 #include "qldap-debug.h"
@@ -37,15 +38,18 @@ void
 usage(void) 
 {
 	output(subfderr,
-	    "usage:\t%s [ -d level ] -u uid [ -p passwd ]\n"
-	    "\t%s [ -d level ] -m mail\n"
-	    "\t%s [ -d level ] -f ldapfilter\n",
+	    "usage:"
+	    "\t%s [-d level] [-D binddn -w passwd] -u uid [-p passwd]\n"
+	    "\t%s [-d level] [-D binddn -w passwd] -m mail\n"
+	    "\t%s [-d level] [-D binddn -w passwd] -f ldapfilter\n",
 	    optprogname, optprogname, optprogname, optprogname);
-	output(subfderr,
-	    "\t-d level:\tsets log-level to level\n"
-	    "\t-u uid: \tsearch for user id uid (pop3/imap lookup)\n"
-	    "\t-p passwd:\tpassword for user id lookups (only by root)\n"
-	    "\t-m mail:\tlookup the mailaddress\n");
+	output(subfderr, "options:\n"
+	    "\t-d level \tsets log-level to level\n"
+	    "\t-u uid   \tsearch for user id uid (pop3/imap lookup)\n"
+	    "\t-p passwd\tpassword for user id lookups (only by root)\n"
+	    "\t-m mail  \tlookup the mailaddress\n"
+	    "\t-D binddn\tbind DN\n"
+	    "\t-w passwd\tbind password\n");
 	_exit(1);
 }
 
@@ -66,15 +70,17 @@ ctrlfunc ctrls[] = {
   0
 };
 
+stralloc dn = {0};
 stralloc foo = {0};
 stralloc bar = {0};
 
 int main(int argc, char **argv)
 {
 	enum { unset, uid, mail, filter } mode = unset;
-	qldap	*q;
+	qldap	*q, *qpw;
 	struct passwd *pw;
 	char	*passwd = 0, *value = 0;
+	char	*bindpw = 0, *binddn = 0;
 	char	*f, *s;
 	int	opt, r, done, j, slen, status, id;
 	unsigned long size, count, maxsize;
@@ -111,11 +117,14 @@ int main(int argc, char **argv)
 				LDAP_PASSWD,
 				0};
 
-	while ((opt = getopt(argc, argv, "d:u:m:p:f:")) != opteof)
+	while ((opt = getopt(argc, argv, "d:D:u:m:p:f:w:")) != opteof)
 		switch (opt) {
 		case 'd':
 			if (env_put2("LOGLEVEL", optarg) == 0)
 				strerr_die2sys(1, FATAL, "setting loglevel: ");
+			break;
+		case 'D':
+			binddn = optarg;
 			break;
 		case 'u':
 			if (value != 0)
@@ -141,27 +150,35 @@ int main(int argc, char **argv)
 				    "only the superuser may comapre passwords");
 			passwd = optarg;
 			break;
+		case 'w':
+			bindpw = optarg;
+			break;
 		default:
 			usage();
 		}
 	if (argc != optind) usage();
-
+	if (bindpw && !binddn) usage();
+	
 	log_init(STDERR, -1, 0);
 
 	if (read_controls(ctrls) != 0)
 		strerr_die2sys(111, FATAL, "unable to read controls: ");
 	
-	strerr_warn2(WARN, "program not yet fully finished", 0);
 	q = qldap_new();
 	if (q == 0)
-		return ERRNO;
+		strerr_die2sys(111, FATAL, "qldap_new failed: ");
+	qpw = qldap_new();
+	if (qpw == 0)
+		strerr_die2sys(111, FATAL, "qldap_new failed: ");
 	
 	r = qldap_open(q);
 	if (r != OK) fail(q, "qldap_open", r);
-	r = qldap_bind(q, 0, 0);
-	if (r != OK) fail(q, "qldap_open", r);
+	r = qldap_open(qpw);
+	if (r != OK) fail(qpw, "qldap_open", r);
+	r = qldap_bind(q, binddn, bindpw);
+	if (r != OK) fail(q, "qldap_bind", r);
 
-	if (qldap_need_rebind() != 0)
+	if (passwd == 0 || mode != uid || qldap_need_rebind() != 0)
 		attrs[sizeof(attrs)/4 - 2] = 0; /* password */
 	done = 0;
 	do {
@@ -183,25 +200,44 @@ int main(int argc, char **argv)
 		default:
 			usage();
 		}
-		output(subfdout, "Searching ldap for:\n%s\nunder dn: %s\n\n",
+		output(subfdout, "Searching ldap for: %s\nunder dn: %s\n",
 		    f, qldap_basedn());
-		r = qldap_filter(q, f, attrs, qldap_basedn(),
-		    SCOPE_SUBTREE);
+		r = qldap_filter(q, f, attrs, qldap_basedn(), SCOPE_SUBTREE);
 		if (r != OK) fail(q, "qldap_filter", r);
 
 		r = qldap_count(q);
-		if (r == -1) fail(q, "qldap_count", FAILED);
-		output(subfdout, "Found %i entries\n\n", r);
+		switch (r) {
+		case -1:
+			fail(q, "qldap_count", FAILED);
+		case 0:
+			output(subfdout, "No entries found.\n");
+			qldap_free(q);
+			/* TODO hook for local lookups. */
+			return 0;
+		case 1:
+			output(subfdout, "Found %i entry:\n", r);
+			break;
+		default:
+			output(subfdout, "Found %i entries:\n", r);
+			if (mode == uid || mode == uid) {
+				output(subfdout,
+				    "Uh-oh: multiple entries found but "
+				    "should be unique!\n");
+				passwd = 0;
+			}
+			break;
+		}
+		output(subfdout, "\n");
 	} while (r == 0 && !done);
 
 	r = qldap_first(q);
 	if (r != OK) fail(q, "qldap_first", r);;
 	do {
-		r = qldap_get_dn(q, &foo);
+		r = qldap_get_dn(q, &dn);
 		if (r != OK) fail(q, "qldap_get_dn", r);
 		output(subfdout, "dn: %s\n"
 		    "-------------------------------------------------------\n",
-		    foo.s);
+		    dn.s);
 		
 		r = qldap_get_attr(q, LDAP_OBJECTCLASS, &foo, MULTI_VALUE);
 		if (r != OK) fail(q, "qldap_get_attr(" LDAP_OBJECTCLASS ")", r);
@@ -317,8 +353,7 @@ int main(int argc, char **argv)
 				if (j++ == slen) break;
 				s += j; slen -= j;
 			}
-			qldap_free(q);
-			return 0;
+			continue;
 		default:
 			fail(q, "qldap_get_mailstore", r);
 		}
@@ -415,6 +450,33 @@ int main(int argc, char **argv)
 			    "=== end ===\n", LDAP_REPLYTEXT, foo.s);
 		else
 			output(subfdout, "%s: undefined\n", LDAP_REPLYTEXT);
+
+		if (mode == uid && passwd != 0) {
+			if (qldap_need_rebind() == 0) {
+				r = qldap_get_attr(q, LDAP_PASSWD,
+				    &foo, SINGLE_VALUE);
+				if (r != OK) fail(q, "qldap_get_attr("
+				    LDAP_PASSWD ")", r);
+				r = cmp_passwd(passwd, foo.s);
+			} else {
+				r = qldap_rebind(qpw, dn.s, passwd);
+				switch (r) {
+				case OK:
+					r = OK;
+					break;
+				case LDAP_BIND_AUTH:
+					r = BADPASS;
+					break;
+				default:
+					break;
+				}
+			}
+			output(subfdout, "\nPASSWORD COMPARE was %s.\n",
+			    r == OK?"successful":"NOT successful");
+			if (r != OK)
+				output(subfdout, "\terror was: %s\n",
+				    qldap_err_str(r));
+		}
 
 		r = qldap_next(q);
 		output(subfdout, "\n\n");

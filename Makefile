@@ -1582,19 +1582,19 @@ qmail-log.5
 	nroff -man qmail-log.5 > qmail-log.0
 
 qmail-ldaplookup: \
-load qmail-ldaplookup.o qldap.a constmap.o localdelivery.o read-ctrl.o \
-control.o env.a getopt.a getln.a stralloc.a alloc.a strerr.a error.a \
-substdio.a open.a fs.a str.a case.a auto_usera.o auto_qmail.o
-	./load qmail-ldaplookup qldap.a constmap.o localdelivery.o \
-	read-ctrl.o control.o env.a getopt.a getln.a stralloc.a alloc.a \
-	strerr.a error.a substdio.a open.a fs.a str.a case.a auto_usera.o \
-	auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS)
+load qmail-ldaplookup.o qldap.a passwd.o base64.o constmap.o localdelivery.o \
+read-ctrl.o control.o env.a getopt.a getln.a stralloc.a alloc.a strerr.a \
+error.a substdio.a open.a fs.a str.a case.a auto_usera.o auto_qmail.o
+	./load qmail-ldaplookup qldap.a passwd.o base64.o constmap.o \
+	localdelivery.o read-ctrl.o control.o env.a getopt.a getln.a \
+	stralloc.a alloc.a strerr.a error.a substdio.a open.a fs.a str.a \
+	case.a auto_usera.o auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS)
 
 qmail-ldaplookup.o: \
-compile qmail-ldaplookup.c qmail-ldap.h qldap-errno.h stralloc.h \
-alloc.h error.h str.h qldap-debug.h check.h substdio.h \
-fmt.h scan.h readwrite.h byte.h getln.h digest_md4.h auto_qmail.h \
-digest_md5.h digest_rmd160.h digest_sha1.h open.h uint32.h auto_break.h
+compile qmail-ldaplookup.c alloc.h auto_usera.h byte.h case.h env.h error.h \
+localdelivery.h output.h passwd.h qldap.h qldap-cluster.h qldap-debug.h \
+qldap-errno.h qmail-ldap.h read-ctrl.h scan.h sgetopt.h str.h stralloc.h \
+strerr.h subfd.h substdio.h
 	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(DEBUG) qmail-ldaplookup.c
 
 qmail-lspawn: \
