@@ -176,7 +176,7 @@ objectclass ( 1.3.6.1.4.1.7914.1.2.2.1 NAME 'qmailUser'
 
 objectclass ( 1.3.6.1.4.1.7914.1.3.2.1 NAME 'qmailGroup'
 	DESC 'QMail-LDAP Group'
-	SUP qmailUser
+	SUP top
 	AUXILARY
 	MUST ( mail $ mailAlternateAddress $ mailMessageStore )
 	MAY ( dnmember $ rfc822member $ filtermember $ senderconfirm $
