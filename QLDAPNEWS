@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/10/28 13:27:01 $ ($Revision: 1.140 $)
+RELEASE: $Date: 2003/10/28 16:38:59 $ ($Revision: 1.141 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,11 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ readwrite cleanup. Similar to other djb ware we wrap read() and write()
+ into the functions subread() and subwrite(). This solves the 64-bit troubles
+ with read and write. read() and write() should no longer be used together with
+ the substdio framework.
 
  Huge cleanup. Bring qmail into the 21st century. Define all prototypes
  and include the needed system include files. This commit fixes about 99%
