@@ -3,11 +3,11 @@
     Is relayclient set?
       Yes -> accept it anyway.
       No  -> check if recipient domain is listed in rcpthosts else
-             bounce
+             deny
 
     Does sender's domain have a valid MX or A record?
       Yes -> accept for data
-      No  -> bounce
+      No  -> deny
 
     Now the message gets queued.
 

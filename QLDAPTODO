@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/06/18 20:59:37 $ ($Revision: 1.5 $)
+RELEASE: $Date: 2000/06/25 01:05:44 $ ($Revision: 1.6 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -20,7 +20,7 @@ TODO:
 ongoing - Debugging and testing, testing, testing
 ongoing - The big qmail-ldap picture
 ongoing - full code review by a third person
-planned - splitting the patch into smaler separate pieces
+planned - splitting the patch into smaller separate pieces
 planned - make it possible to have locals and rcpthosts in ldap
           and perhaps also the rules for the tcpserver (certs?)
 

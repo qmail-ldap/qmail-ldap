@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20000701 ($Date: 2000/06/19 10:31:08 $)
+RELEASE: 20000701 ($Date: 2000/06/25 01:05:43 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -78,15 +78,15 @@ INSTALL:
      NOTE: on Solaris Systems you probably need also -lnsl -lsocket
    - LDAPINCLUDES: perhaps you need a special include-path for ldap
 
-   - MNW=-DMAKE_NETSCAPE_WORK (turns the patch on that fixes the problem 
-     with the Netscape download progress bar and qmail-pop3d) 
+   - MNW=-DMAKE_NETSCAPE_WORK (turns on the patch that fixes the problem 
+     with the Netscape download progress bar and qmail-pop3d)
 
    - MDIRMAKE=-DAUTOMAILDIRMAKE (turns the auto-MAILdir-make-patch on)
    - HDIRMAKE=-DAUTOHOMEDIRMAKE (compiles the auto-HOMEdir-make-patch 
      into the release, you need the ~control/dirmaker file to turn the 
      patch on, see CONFIG FILES)
 
-   - SHADOWLIBS=-lcrypt is needed on most systems (exeption my OpenBSD box)
+   - SHADOWLIBS=-lcrypt is needed on most systems (except my OpenBSD box)
      SHADOWLIBS=-lcrypt -lshadow , SHADOWOPTS=-DPW_SHADOW are needed on some 
      Systems (Solaris, Linux) for local password lookups 
      (just like the original djb-checkpassword)
@@ -109,19 +109,19 @@ INSTALL:
     install -> read the INSTALL and the FAQ file!!!).
     Now everything should be installed with correct permissions.
 
-6.1 If using TLS you can use make cert or make cert-req to create TLS 
+6.1 If using TLS you can use 'make cert' or 'make cert-req' to create TLS 
     certificates
 
 7.  Create the LDAP user database and start the LDAP server
 
 8.  Create the proper ~control/ldap* files for qldap
-    At least ldapserver and ldapbasedn should exist (and also me)
+    At least ldapserver and ldapbasedn must exist (and also me)
 
-9.  Test, Debug and Enjoy!
+9.  Test and Enjoy!
 
 10. Debugging: as said befor you can compile qmail-lspawn and the auth modules 
-    with a flexible debuging facility (option DEBUG).
-    The debug output gets logged through splogger or your favorite loggin tool 
+    with a flexible debugging facility (option DEBUG).
+    The debug output gets logged through splogger or your favorite logging tool 
     connected to stderr for tcpserver-pop/imap chain.
     To turn on debugging you need only to define the DEBUGLEVEL environment 
     variable (e.g. with env, env DEBUGLEVEL=3 qmail-start ...)
@@ -139,7 +139,7 @@ INSTALL:
                       turn it on edit checkpassword.c and increase the level
                       for init_debug().
 
-     WARNING: on production machines don't use levels over 3 or you will get 
+     WARNING: on production machines don't use levels higher 3 or you will get 
               incredible huge logfiles.
      NOTE: too high debuglevels are reduced to the maximum allowed debug level
            if the level parameter in init_debug() is smaler.
@@ -196,24 +196,22 @@ CONFIG FILES:
 ~control/ldapcluster
 
  Turn clustering on and off. Needs a qmail-ldap compiled with 
- -DQLDAP_CLUSTER else nothing will happen.
+ -DQLDAP_CLUSTER else nothing will happen. Also don't forget to set up
+ qmail-qmqpd on all servers in the cluster.
  Default: disabled
  Example: 1
  Note: boolean, use 0 (zero) or 1 (one)
  ATTN: the control files me, rcpthosts and locals have to be set carfully
-       or you will have big problems. Until now there is no loop detection
+       or you will have big problems. Right now there is no loop detection
        in the clustering code.
 
 ~control/ldapdefaultquota
 
- The amount of space the user can use until all further msg get bounced
- There are two possible limits, size (a byte count 'S') and count (a file 
- count 'C')
- The mailQuota is a string of the form figures type (S or C) and a ',' 
- separates multiple entries.
+ The default amount of disk space the user can use until all further messages
+ get bounced back to the sender. There are two possible limits, size (a byte
+ count 'S') and count (a file count 'C')
  Default: unlimited
  Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
- The default amount of space one user can use
  Note: is overridden by mailQuota
 
 ~control/ldapdefaultdotmode
@@ -223,7 +221,7 @@ CONFIG FILES:
  Example: both
  Values: both, dotonly, ldaponly, ldapwithprog, none
  Note: Works only for deliveries based on LDAP lookups.
-       Local mails use dotonly like normal qmail does. 
+       Local mails use dotonly like in normal qmail.
 
 ~control/ldapmessagestore
 
@@ -281,11 +279,11 @@ CONFIG FILES:
 
 ~control/badrcptto
 
- This file lists recipient addresses that should be rejected.
+ This file contains local recipient addresses that are rejected.
  Default: none
  Example: user@domain or @domain
  Note: This can be useful if a spammer sends lots of messages to a
-       nonexistant user from an invalid address, as otherwise, postmaster
+       nonexistant user from an invalid address as otherwise postmaster
        will get lots of double bounces.
 
 ~control/dirmaker
@@ -361,11 +359,11 @@ LDAP_PASSWD (default: "userPassword")
  Example: {MD5}uSI59Zyfa5lapBLGfJrD+g==
  Note: Can be encrypted with {SHA}, {MD4}, {MD5}, {RMD160}, {NS-MTA-MD5}, 
        {crypt} crypt (without {crypt} prefix) or cleartext (only if compiled 
-       with -DCLEARTEXTPASSWD (a bad idea on production systems) )
+       with -DCLEARTEXTPASSWD (a bad idea on production systems)).
        If you rebind to the ldapserver don't use {NS-MTA-MD5}, {RMD160} and
-       probably {MD4}. This algorithms are sometimes not supported by the 
-       ldap servers, read their documentation. 
-       To generate passwords you can use the inlcuded tool digest.
+       probably {MD4}. These algorithms are sometimes not supported by the 
+       ldap servers, so check with their documentation.
+       To generate passwords you can use the included tool 'digest'.
 
 
 LDAP_MAILSTORE (default: "mailMessageStore")
@@ -384,15 +382,15 @@ LDAP_HOMEDIR (default: "homeDirectory")
  Note: LDAP_MAILSTORE can be written relative in a virtual users environment
        ldapmailstore will be prefixed to make the path absolute.
        For more info have a look at the QLDAPNEWS file.
-       If you use "homeDirectory" in an incompatible way redefine it to 
-       something not used like "noHomeDirectory".
+       If you use "homeDirectory" in an incompatible way then redefine it in
+       qldap-ldap.h to something not used, like "noHomeDirectory".
 
 
 LDAP_QUOTA (default: "mailQuota")
 
- The amount of space the user can use until all further msg get bounced
- There are two possible limits, size (a byte count) and count (a file count)
- The mailQuota is a string of the form figures type (S or C) and a ',' separates
+ The amount of space the user can use until all further messages get bounced.
+ There are two possible limits, size (a byte count) and count (a file count).
+ The mailQuota is a string of the form figures type (S or C) and a ',' separating
  multiple entries.
  Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
  Note: overrides ldapdefaultquota, the old format is still supported
@@ -400,21 +398,21 @@ LDAP_QUOTA (default: "mailQuota")
 
 LDAP_FORWARDS (default: "mailForwardingAddress")
 
- Addresses to forward all incoming messages to.
+ Address(es) to forward all incoming messages to.
  Example: jdoe@new.place
  Note: multifield
 
 
 LDAP_PROGRAM (default: "deliveryProgramPath")
 
- Program to execute with all incoming messages as input
+ Program to execute for all incoming mails. Gets the message as input on stdin.
  Example: /usr/bin/program -c -s
  Note: multifield. The same as |/usr/bin/program -c -s in .qmail
-       Works only with qmailDotMode set to ldapwithprog or both
-       with ldaponly set deliveryProgramPath is silently ignored.
+       Works only with qmailDotMode set to ldapwithprog or both.
+       With ldaponly set deliveryProgramPath is silently ignored.
        Before using it have a look at QLDAPNEWS, qmail-ldap.h, check.c and
        see also 5.2.
-       
+
 
 LDAP_MODE (default: "deliveryMode")
 
@@ -452,14 +450,14 @@ LDAP_DOTMODE (default: "qmailDotMode")
  Values: both, dotonly, ldaponly, ldapwithprog, none (just Maildir/box delivery)
  Default: set by file ~control/ldapdefaultdotmode
  Note: Works only for deliveries based on LDAP lookups,
-       overrides ldapdefaultdotmode.
+       overrides ~control/ldapdefaultdotmode.
  
 
 LDAP_MAILHOST (default: "mailHost")
 
  On which qmail server the messagestore of this user is located
  Example: qmail3.nrg4u.com
- Note: Must be equal to the ~control/me hostname on the homeserver 
+ Note: Must be the same as the ~control/me hostname on the homeserver 
        of the user.
 
 
@@ -553,6 +551,5 @@ then 2 (255 is a good setting to see all possible problems).
 It is impossible to know where the problem is when somebody writes a mail like:
 I have a problem with the patch. No mail gets send to the user in the ldap db.
 
-Normaly you get also a better response if you sepecify your problem.
-
+Normaly you get also a better response if you specify your problem in detail.
 

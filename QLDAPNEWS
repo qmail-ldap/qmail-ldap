@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/06/21 12:54:24 $ ($Revision: 1.11 $)
+RELEASE: $Date: 2000/06/25 01:05:44 $ ($Revision: 1.12 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -19,7 +19,7 @@ TODO:
 
 NEWS for current stuff:
 
- forceing forwardonly and ldaponly when neither LDAP_MAILSTORE nor LDAP_HOMEDIR
+ forcing forwardonly and ldaponly when neither LDAP_MAILSTORE nor LDAP_HOMEDIR
  is defined
 
  bugfixes in hier.c and install-big.c to install qmail-ldaplookup with correct
