@@ -1400,8 +1400,8 @@ void smtp_auth(char *arg)
 {
   struct call cct;
   char *type;
-  char *status;
-  
+  const char *status;
+
   if (!flagauth) {
     err_unimpl();
     return;
@@ -1413,12 +1413,14 @@ void smtp_auth(char *arg)
     if (errdisconnect) err_quit();
     return;
   }
+#ifdef TLS_SMTPD
   if (needssl && !ssl) {
     out("538 Encryption required for requested authentication mechanism");
     logline(2,"TLS encryption required for authentication");
     if (errdisconnect) err_quit();
     return;
   }
+#endif
   type = arg;
   while (*arg != '\0' && *arg != ' ') ++arg;
   if (*arg) {
