@@ -33,7 +33,7 @@
 #define WARN  "qmail-secretary: warn: "
 
 const char *confirmmess = "Hi,\n\n\
-I'm mailgroup secretatry, an automated mail-handling program.\n\
+I'm mailgroup secretary, an automated mail-handling program.\n\
 I received a message from you addressed to %LIST%\n\
 for which I'm responsible. The top of your message is shown below.\n\
 \n\
@@ -56,7 +56,7 @@ The mailgroup secretary program\n\
 ";
 
 const char *approvemess = "Hi,\n\n\
-I'm mailgroup secretatry, an automated mail-handling program.\n\
+I'm mailgroup secretary, an automated mail-handling program.\n\
 I need an approval that the attached message is allowed to be sent\n\
 to the %LIST% mailinglist.\n\
 \n\
