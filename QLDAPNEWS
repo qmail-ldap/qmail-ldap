@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/30 17:15:55 $ ($Revision: 1.132 $)
+RELEASE: $Date: 2003/10/01 09:14:16 $ ($Revision: 1.133 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -98,6 +98,11 @@ NEWS for current stuff:
  qmail-qmqpd supports now both clear and ZLIB compressed communications
  for intra-cluster forwards.
 
+ Added new tool condwrite. Works like condredirect but writes to a maildir
+ or mailfile instead of forwarding. The quota is respected and maildir are
+ created automatic if option is set. NOTE: The automatic maildir creation
+ is not capable to create valid IMAP subdirs (Maildir/.somedir).
+
  auth_* sets now the MAILDIRQUOTA and DATASIZE environment vars.
 
  New compile time option QUOTATRASH to include the Trash in the quota
@@ -130,6 +135,8 @@ NEWS for current stuff:
 
  Fixing clustering. The cluster forwarding was broken during the rewrite
  (20030901).
+
+ Fix error handling of qmail-quotawarning startup in qmail-local.
 
  Bug fix in qldap_get_status reported by <krits at home dot pl>.
 

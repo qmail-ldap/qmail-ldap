@@ -173,6 +173,7 @@ void hier()
   c(auto_qmail,"bin","forward",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","preline",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","condredirect",auto_uido,auto_gidq,0755);
+  c(auto_qmail,"bin","condwrite",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","bouncesaying",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","except",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","maildirmake",auto_uido,auto_gidq,0755);

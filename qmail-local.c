@@ -193,7 +193,7 @@ void quota_warning(char *fn)
      args[0] = qwapp.s; args[1] = fn; args[2] = 0;
      sig_pipedefault();
      execv(*args,args);
-     strerr_die5x(111,"Unable to run quotawarn program: ", foo.s, ": ",error_str(errno),". (#4.2.2)");
+     _exit(2);
   }
 
  wait_pid(&wstat,child);
@@ -201,6 +201,9 @@ void quota_warning(char *fn)
    temp_childcrashed();
  switch(wait_exitcode(wstat))
   {
+   case 2:
+     strerr_die5x(111,"Unable to run quotawarn program: ",
+	 qwapp.s, ": ",error_str(errno),". (#4.2.2)");
    case 111: _exit(111);
    case 0: break;
    default: _exit(100);

@@ -397,6 +397,8 @@ byte_repl.o
 case_startb.o
 check.o
 checkpassword.o
+condwrite
+condwrite.o
 digest
 digest.o
 digest_md4.o

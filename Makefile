@@ -90,7 +90,7 @@ default: it ldap
 
 ldap: qmail-quotawarn qmail-reply auth_pop auth_imap auth_smtp digest \
 qmail-ldaplookup pbsadd pbscheck pbsdbd qmail-todo qmail-forward \
-qmail-secretary qmail-group qmail-verify
+qmail-secretary qmail-group qmail-verify condwrite
 
 addresses.0: \
 addresses.5
@@ -515,6 +515,20 @@ condredirect.o: \
 compile condredirect.c sig.h readwrite.h exit.h env.h error.h fork.h \
 wait.h seek.h qmail.h substdio.h strerr.h substdio.h fmt.h
 	./compile condredirect.c
+
+condwrite: \
+load condwrite.o maildir++.o getln.a stralloc.a alloc.a env.a wait.a \
+seek.a strerr.a substdio.a error.a gfrom.o str.a now.o fs.a mailmaker.o \
+open.a sig.a lock.a auto_qmail.o
+	./load condwrite maildir++.o getln.a stralloc.a alloc.a env.a \
+	wait.a seek.a strerr.a substdio.a error.a gfrom.o str.a now.o \
+	fs.a mailmaker.o open.a sig.a lock.a auto_qmail.o
+
+condwrite.o: \
+compile condwrite.c auto_qmail.h env.h error.h fmt.h maildir++.h now.h \
+qmail-ldap.h seek.h sig.h str.h stralloc.h strerr.h subfd.h substdio.h \
+wait.h mailmaker.h qldap-errno.h
+	./compile $(MDIRMAKE) condwrite.c
 
 config: \
 warn-auto.sh config.sh conf-qmail conf-break conf-split
