@@ -884,7 +884,7 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
    int i;
    
    if (!stralloc_copys(&dtline, "Delivered-To: CLUSTERHOST ")) _exit(QLX_NOMEM);
-   if (!stralloc_cat(&dtline, &qldap_me)) _exit(QLX_NOMEM);
+   if (!stralloc_catb(&dtline, qldap_me.s, qldap_me.len - 1 )) _exit(QLX_NOMEM);
    for (i = 0;i < dtline.len;++i) if (dtline.s[i] == '\n') dtline.s[i] = '_';
    if (!stralloc_cats(&dtline,"\n")) _exit(QLX_NOMEM);
 
