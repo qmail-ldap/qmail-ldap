@@ -92,7 +92,7 @@ void main(int argc, char **argv)
 	debug(256, "auth_init: login=%s, authdata=%s\n", login.s, authdata.s);
 	
 	if ( init_ldap(&locald, &cluster, &rebind, &homemaker, 0, 0, 0) == -1 ) {
-		debug(1, "alert: init_ldap faild.\n");
+		debug(1, "alert: init_ldap failed.\n");
 		_exit(1);
 	}
 	debug(64, "init_ldap: ld=%i, cluster=%i, rebind=%i, hdm=%s\n", 
@@ -177,8 +177,8 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	scan_ulong(info.uid, uid);	/* get uid, gid and home */
 	scan_ulong(info.gid, gid);	/* the values are checked later */
 	if ( info.mms == 0 && info.homedir == 0 ) {
-		qldap_errno = AUTH_FAILD;
-		return -1; /* user authentification faild no homedir defined */
+		qldap_errno = AUTH_FAILED;
+		return -1; /* user authentification failed no homedir defined */
 	}
 	if ( info.homedir ) {
 		if ( ! stralloc_copys(home, info.homedir) ) {
@@ -232,9 +232,9 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 		/* if we got till here under rebind mode, the user is authenticated */
 	} else if ( rebind ) {
 		debug(32, 
-			"check_ldap: ldap_lookup authentication faild with rebind\n");
-		qldap_errno = AUTH_FAILD;
-		return -1; /* user authentification faild */
+			"check_ldap: ldap_lookup authentication failed with rebind\n");
+		qldap_errno = AUTH_FAILED;
+		return -1; /* user authentification failed */
 	}
 	
 	if ( ! extra[0].vals ) {
@@ -369,7 +369,7 @@ static int cmp_passwd(char *clear, char *encrypted)
 		debug(256, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
 				hashed, encrypted);
 		if (!*encrypted || str_diff(hashed,encrypted+shift) ) {
-			qldap_errno = AUTH_FAILD;
+			qldap_errno = AUTH_FAILED;
 			return -1;
 		}
 		/* hashed passwds are equal */
@@ -383,7 +383,7 @@ static int cmp_passwd(char *clear, char *encrypted)
 #warning ___CLEARTEXT_PASSWORD_SUPPORT_IS_ON___
 			if (!*encrypted || str_diff(encrypted, clear) ) {
 #endif
-			qldap_errno = AUTH_FAILD;
+			qldap_errno = AUTH_FAILED;
 			return -1;
 #ifdef CLEARTEXTPASSWD
 			}

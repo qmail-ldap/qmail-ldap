@@ -707,7 +707,7 @@ char *s; char *r; int at;
    rv = qldap_get(&ra, s, fdmess);
    switch( rv ) {
       case 0:
-		  debug(16, "LDAP lookup succeded\n");
+		  debug(16, "LDAP lookup succeeded\n");
       break;
 
       case 1:
@@ -715,7 +715,7 @@ char *s; char *r; int at;
          if ( qldap_localdelivery == 1 ) {
          /* do the address lookup local */
          /* this is the standart qmail lookup funktion */
-         	debug(4, "LDAP lookup faild using local db\n");
+         	debug(4, "LDAP lookup failed using local db\n");
             nughde_get(r);
 
          /* the alias-user handling for LDAP only mode */
@@ -723,7 +723,7 @@ char *s; char *r; int at;
             struct passwd *pw;
             char num[FMT_ULONG];
 
-            debug(4, "LDAP lookup faild using alias (no local db)\n");
+            debug(4, "LDAP lookup failed using alias (no local db)\n");
             pw = getpwnam(auto_usera);
             if (!pw) {
                _exit(QLX_NOALIAS);
@@ -748,7 +748,7 @@ char *s; char *r; int at;
       break;
         
       default:
-         debug(2, "warning: ldap lookup faild with %i\n", rv);
+         debug(2, "warning: ldap lookup failed with %i\n", rv);
          _exit(190 + rv);
       break;
    } /* end switch */
@@ -831,9 +831,10 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
           args[0]="bin/qmail-qmqpc"; args[1]=host; args[2]=0;
           sig_pipedefault();
           execv(*args,args);
+		  _exit(QLX_EXECHARD);
    }
    
-   debug(8, "Frowrding to %S at host %s from %s\n", to, host, from);
+   debug(8, "Forwarding to %S at host %s from %s\n", to, host, from);
    close(pi[0]);
    allwrite(write, pi[1], "F", 1);
    allwrite(write, pi[1], from, str_len(from));

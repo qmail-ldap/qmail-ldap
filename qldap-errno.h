@@ -18,7 +18,7 @@ extern int qldap_errno;
 #define LDAP_COUNT		8				/* too many entries found */
 
 /* now the checkpassword errnos */
-#define AUTH_FAILD		9				/* authorization faild wrong password */
+#define AUTH_FAILED		9				/* authorization failed wrong password */
 #define AUTH_ERROR		10				/* error on authentication */
 #define AUTH_NOSUCH		LDAP_NOSUCH		/* no such user */
 #define ILL_PATH		11				/* illegal path */

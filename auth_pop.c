@@ -131,13 +131,13 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
-	debug(32, "auth_success: setgid succeded (%i)\n", gid);
+	debug(32, "auth_success: setgid succeeded (%i)\n", gid);
 	/* ... then the user id */
 	if (prot_uid(uid) == -1) {
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
-	debug(32, "auth_success: setuid succeded (%i)\n", uid);
+	debug(32, "auth_success: setuid succeeded (%i)\n", uid);
 	
 	/* ... go to home dir and create it if needed */
 	if (chdir(home) == -1) {
@@ -158,10 +158,10 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 			}
 			if (ret != 0 ) {
 				if ( qldap_errno == ERRNO ) {
-					debug(2, "warning: auth_success: dirmaker faild (%s)\n",
+					debug(2, "warning: auth_success: dirmaker failed (%s)\n",
 							error_str(errno));
 				} else {
-					debug(2, "warning: auth_success: dirmaker faild (%s)\n",
+					debug(2, "warning: auth_success: dirmaker failed (%s)\n",
 							qldap_errno == MAILDIR_CRASHED?	"program crashed":
 															"bad exit status");
 				}
@@ -170,7 +170,7 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 			}
 			if (chdir(home) == -1) {
 				debug(2, 
-					"warning: auth_success: chdir faild after dirmaker (%s)\n",
+					"warning: auth_success: chdir failed after dirmaker (%s)\n",
 					error_str(errno));
 				qldap_errno = MAILDIR_CORRUPT;
 				auth_error();
@@ -236,12 +236,12 @@ void auth_error(void)
 	 * 7 = unable to start subprogram
 	 * 8 = out of memory
 	 */
-	debug(2, "warning: auth_error: authorization faild (%s)\n",
+	debug(2, "warning: auth_error: authorization failed (%s)\n",
 		   qldap_err_str(qldap_errno) );
 
 	if ( qldap_errno == LDAP_INIT ) _exit(1);
 	if ( qldap_errno == LDAP_BIND ) _exit(2);
-	if ( qldap_errno == AUTH_FAILD || qldap_errno == LDAP_REBIND || 
+	if ( qldap_errno == AUTH_FAILED || qldap_errno == LDAP_REBIND || 
 		 qldap_errno == AUTH_NOSUCH ) _exit(3);
 	if ( qldap_errno == LDAP_SEARCH || qldap_errno == LDAP_NEEDED ||
 		 qldap_errno == ILL_AUTH || qldap_errno == ILL_PATH ) _exit(25);

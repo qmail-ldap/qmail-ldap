@@ -230,12 +230,12 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	/* do the search for the login uid */
 	if ( (rc = ldap_search_s(ld, qldap_basedn.s, LDAP_SCOPE_SUBTREE,
 							 search->filter, attrs, 0, &res )) != LDAP_SUCCESS ) {
-		debug(64, "ldap_lookup: search for %s faild (%s)\n", 
+		debug(64, "ldap_lookup: search for %s failed (%s)\n", 
 				search->filter, ldap_err2string(rc) );
 		qldap_errno = LDAP_SEARCH;
 		return -1;
 	}
-	debug(128, "ldap_lookup: search for %s succeded\n", search->filter);
+	debug(128, "ldap_lookup: search for %s succeeded\n", search->filter);
 	
 	/* go to the first entry */
 	msg = ldap_first_entry(ld,res);
@@ -262,14 +262,14 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		/* do re-bind here */
 		if ( (rc = ldap_simple_bind_s(ld,dn,search->bindpw)) != LDAP_SUCCESS) {
 			alloc_free(dn);
-			debug(64, "ldap_lookup: rebind with %s faild (%s)", 
+			debug(64, "ldap_lookup: rebind with %s failed (%s)", 
 					dn, ldap_err2string(rc) );
 			search->bind_ok = 0;
 			qldap_errno = LDAP_REBIND;
 			return -1;
 		}
 		search->bind_ok = 1;
-		debug(128, "ldap_lookup: rebind with %s succeded", dn );
+		debug(128, "ldap_lookup: rebind with %s succeeded", dn );
 	}
 	if ( dn != 0 ) alloc_free(dn);
 

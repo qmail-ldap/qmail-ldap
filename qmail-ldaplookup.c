@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 	
 	if ( init_ldap( &locald, &cluster, &rebind, &homemaker, &defdot, &defquota,
 					&quotawarning) == -1 ) {
-		strerr_die2x(1, "ERROR: init_ldap faild: ", qldap_err_str(qldap_errno));
+		strerr_die2x(1, "ERROR: init_ldap failed: ", qldap_err_str(qldap_errno));
 	}
 	
 	output( "init_ldap:\tpasswords are %scompared via rebind\n",
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
 		search.bindpw = 0; 	/* rebind off */
 	}
 	if ( !escape_forldap(&value) ) {
-		strerr_die2x(1, "ERROR: escape_forldap faild: ", error_str(errno) );
+		strerr_die2x(1, "ERROR: escape_forldap failed: ", error_str(errno) );
 	}
 	if ( mode == mail) {
 		/* build the search string for the email address */
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
 			exit(111);
 		}
 	}
-	output( "ldap_lookup:\tsucceded, found:\n");
+	output( "ldap_lookup:\tsucceeded, found:\n");
 	output( "\t\t%s: %s\n", LDAP_UID, info.user);
 	if (!chck_users(info.user) ) {
 		output( "\tWARNING %s contains illegal chars!\n", LDAP_UID);
@@ -369,7 +369,7 @@ static void local_lookup(char *username, char *passwd)
 		output("local_lookup:\tuser %s not found in passwd db\n", username);
 		_exit(0);
 	}
-	output( "local_lookup:\tsucceded\n\t\tuser %s found in passwd database\n", 
+	output( "local_lookup:\tsucceeded\n\t\tuser %s found in passwd database\n", 
 			username);
 	output( "\t\tuid: %u\n\t\tgid: %u\n",
 			pw->pw_uid, pw->pw_gid);
@@ -482,7 +482,7 @@ static int cmp_passwd(char *clear, char *encrypted)
 		debug(256, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
 				hashed, encrypted+shift);
 		if (!*encrypted || str_diff(hashed,encrypted+shift) ) {
-			qldap_errno = AUTH_FAILD;
+			qldap_errno = AUTH_FAILED;
 			return -1;
 		}
 		/* hashed passwds are equal */
@@ -496,7 +496,7 @@ static int cmp_passwd(char *clear, char *encrypted)
 #warning ___CLEARTEXT_PASSWORD_SUPPORT_IS_ON___
 			if (!*encrypted || str_diff(encrypted, clear) ) {
 #endif
-			qldap_errno = AUTH_FAILD;
+			qldap_errno = AUTH_FAILED;
 			return -1;
 #ifdef CLEARTEXTPASSWD
 			}

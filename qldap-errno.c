@@ -11,22 +11,22 @@ char *qldap_err_str(int enbr )
 		case ERRNO:
 			return error_str(errno);
 		case LDAP_INIT:
-			return "initalizing of ldap connection faild";
+			return "initalizing of ldap connection failed";
 		case LDAP_BIND:
-			return "binding to ldap server faild";
+			return "binding to ldap server failed";
 		case LDAP_SEARCH:
-			return "ldap_search faild";
+			return "ldap_search failed";
 		case LDAP_NOSUCH:
 			return "no such object";
 		case LDAP_REBIND:
-			return "rebinding to ldap server faild";
+			return "rebinding to ldap server failed";
 		case LDAP_NEEDED:
 			return "needed object/field is missing";
 		case LDAP_COUNT:
 			return "too many entries found";
 
-		case AUTH_FAILD:
-			return "authorization faild wrong password";
+		case AUTH_FAILED:
+			return "authorization failed wrong password";
 		case AUTH_ERROR:
 			return "error on authentication";
 		case ILL_PATH:

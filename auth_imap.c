@@ -156,7 +156,7 @@ void auth_fail(int argc, char **argv, char *login)
 	char *t;
 	t = up;
 	
-	debug(2, "warning: auth_fail: user %s faild\n", login);
+	debug(2, "warning: auth_fail: user %s failed\n", login);
 	if ( qldap_errno == AUTH_NOSUCH ) {
 		debug(4, "warning: auth_fail: user %s not found\n", login);
 		if ( !env_unset("AUTHENTICATED") ) {
@@ -229,13 +229,13 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
-	debug(32, "auth_success: setgid succeded (%i)\n", gid);
+	debug(32, "auth_success: setgid succeeded (%i)\n", gid);
 	/* ... then the user id */
 	if (prot_uid(uid) == -1) {
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
-	debug(32, "auth_success: setuid succeded (%i)\n", uid);
+	debug(32, "auth_success: setuid succeeded (%i)\n", uid);
 	
 	/* ... go to home dir and create it if needed */
 	if (chdir(home) == -1) {
@@ -256,10 +256,10 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 			}
 			if (ret != 0 ) {
 				if ( qldap_errno == ERRNO ) {
-					debug(2, "warning: auth_success: dirmaker faild (%s)\n",
+					debug(2, "warning: auth_success: dirmaker failed (%s)\n",
 							error_str(errno));
 				} else {
-					debug(2, "warning: auth_success: dirmaker faild (%s)\n",
+					debug(2, "warning: auth_success: dirmaker failed (%s)\n",
 							qldap_errno == MAILDIR_CRASHED?	"program crashed":
 															"bad exit status");
 				}
@@ -267,7 +267,7 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 				auth_error();
 			}
 			if (chdir(home) == -1) {
-				debug(2, "warning: auth_success: chdir faild after dirmaker (%s)\n",
+				debug(2, "warning: auth_success: chdir failed after dirmaker (%s)\n",
 						error_str(errno));
 				qldap_errno = MAILDIR_CORRUPT;
 				auth_error();
@@ -336,7 +336,7 @@ void auth_error(void)
 	/* XXX under courier-imap it is not simple to give the correct failure back
 	 * XXX to the user, perhaps somebody has a good idea */
 
-	debug(2, "warning: auth_error: authorization faild (%s)\n",
+	debug(2, "warning: auth_error: authorization failed (%s)\n",
 		   qldap_err_str(qldap_errno) );
 	if (! (env = env_get("ARGC") ) ) {
 		_exit(111);
