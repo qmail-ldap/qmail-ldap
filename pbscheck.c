@@ -20,7 +20,7 @@
 #include "timeoutwrite.h"
 
 static void die(void);
-static int safewrite(int, char *, int);
+static int safewrite(int, void *, int);
 static void puts(const char *);
 static void flush(void);
 static void err(const char *);
@@ -297,7 +297,7 @@ static void die(void)
 	_exit(1);
 }
 
-static int safewrite(int fd, char *buf, int len)
+static int safewrite(int fd, void *buf, int len)
 {
 	int r;
 	r = timeoutwrite(1200,fd,buf,len);
