@@ -266,8 +266,8 @@ char *fn;
      }
    }
    
-   if (quota_check(&q, mailsize, 1, &perc) =! 0) /* 0 if OK */
-     if (quota_recalc(fn, &msfd, &q, mailsize, 1, &perc))
+   if (quota_check(&q, mailsize, 1, &perc) != 0) /* 0 if OK */
+     if (quota_recalc(fn, &msfd, &q, mailsize, 1, &perc) != 0)
        quota_bounce("mailfolder");
    if (perc >= QUOTA_WARNING_LEVEL) 
 	 /* drop a warning when mailbox is around 80% full */
