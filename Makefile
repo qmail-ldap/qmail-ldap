@@ -19,6 +19,8 @@ LDAPINCLUDES=-I/usr/local/include
 # You need OpenSSL for this
 # TLS enable
 #TLSON=-DTLS
+# Path to OpenSSL includes
+#TLSINCLUDES=-I/usr/local/include
 # Path to OpenSSL libraries
 #TLSLIBS=-L/usr/local/lib -lssl -lcrypto
 
@@ -1600,7 +1602,7 @@ subfd.h substdio.h scan.h case.h error.h auto_qmail.h control.h dns.h \
 alloc.h quote.h ip.h ipalloc.h ip.h gen_alloc.h ipme.h ip.h ipalloc.h \
 gen_alloc.h gen_allocdefs.h str.h now.h datetime.h exit.h constmap.h \
 tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
-	./compile ${TLSON} qmail-remote.c
+	./compile ${TLSON} ${TLSINCLUDES} qmail-remote.c
 
 qmail-reply: \
 load qmail-reply.o case.a getln.a sig.a open.a seek.a env.a fd.a \
@@ -1710,7 +1712,7 @@ substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
 exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h
-	./compile ${TLSON} qmail-smtpd.c
+	./compile ${TLSON} ${TLSINCLUDES} qmail-smtpd.c
 
 qmail-start: \
 load qmail-start.o prot.o fd.a auto_uids.o
