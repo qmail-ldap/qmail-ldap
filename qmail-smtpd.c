@@ -214,7 +214,11 @@ int rblok = 0;
 int brtok = 0;
 stralloc brt = {0};
 struct constmap mapbadrcptto;
-unsigned int errdisconnect = 0;
+int errdisconnect = 0;
+int nobounce = 0;
+int sanitycheck = 0;
+int returnmxcheck = 0;
+int blockrelayprobe = 0;
 int tarpitcount = 0;
 int tarpitdelay = 5;
 int maxrcptcount = 0;
@@ -270,8 +274,25 @@ void setup()
   rblok = rblinit();
   if (rblok == -1) die_control();
 
-  if (control_readint(&errdisconnect,"control/smtp550disconnect") == -1)
-    die_control();
+  errdisconnect = (env_get("SMTP550DISCONNECT") ? 1:0);
+  if (errdisconnect) logstring(2,", smtp550disconnect enabled");
+
+  nobounce = (env_get("NOBOUNCE") ? 1:0);
+  if (nobounce) logstring(2,", nobounce enabled");
+
+  sanitycheck = (env_get("SANITYCHECK") ? 1:0);
+  if (sanitycheck) logstring(2,", sanitycheck enabled");
+
+  returnmxcheck = (env_get("RETURNMXCHECK") ? 1:0);
+  if (returnmxcheck) logstring(2,", returnmxcheck enabled");
+
+  blockrelayprobe = (env_get("BLOCKRELAYPROBE") ? 1:0);
+  if (blockrelayprobe) logstring(2,", blockrelayprobe enabled");
+
+  relayok = relayclient = env_get("RELAYCLIENT");
+  if (relayclient) logstring(2,", relayclient set");
+
+  logflush(2);
 
   if (control_readint(&databytes,"control/databytes") == -1) die_control();
   x = env_get("DATABYTES");
@@ -292,11 +313,6 @@ void setup()
   if (!local) local = env_get("TCPLOCALIP");
   if (!local) local = "unknown";
   logstring(2,local);
-
-  relayok = relayclient = env_get("RELAYCLIENT");
-  if (relayclient) { logstring(2,", relayclient set"); }
-
-  denymail = env_get("DENYMAIL");
 
   logflush(2);
   dohelo(remotehost);
@@ -545,7 +561,7 @@ struct qmail qqt;
 void smtp_mail(arg) char *arg;
 {
   int i,j;
-  char *why;
+  char *rblname;
 
   logpid(3); logstring(3,"remote sent 'mail from' ="); logstring(3,arg); logflush(3);
 
@@ -560,7 +576,12 @@ void smtp_mail(arg) char *arg;
   logpid(3); logstring(3,"mail from ="); logstring(3,addr.s); logflush(3);
 
   /* smtp size check */
-  if (databytes && !sizelimit(arg)) { err_size(); return; }
+  if (databytes && !sizelimit(arg))
+  {
+    err_size(); /* logging is done in error routine */
+    if (errdisconnect) err_quit();
+    return;
+  }
 
   /* bad mailfrom check */
   if (bmfcheck())
@@ -571,7 +592,7 @@ void smtp_mail(arg) char *arg;
     return;
   }
 
-  /* XXX: NOBOUNCE check */
+  /* NOBOUNCE check */
   if (nobounce)
   {
     if (!addr.s[0] || !str_diff("#@[]", addr.s))
@@ -582,8 +603,8 @@ void smtp_mail(arg) char *arg;
     }
   }
 
-  /* XXX: Sanity checks */
-  if (!str_diff("SANITYCHECK", denymail))
+  /* Sanity checks */
+  if (sanitycheck)
   {
     /* Invalid Mailfrom */
     if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len)
@@ -624,21 +645,21 @@ void smtp_mail(arg) char *arg;
     else relayclient = 0; /* Do we really need this ?? */
   }
 
-  /* XXX: Check RBL only if relayclient is not set */
-  if (rbl && !relayclient)
+  /* Check RBL only if relayclient is not set */
+  if (rblok && !relayclient)
   {
-    switch(rblcheck(remoteip, &why))
+    switch(rblcheck(remoteip, &rblname))
     {
       case 2: /* soft error lookup */
         /*
-         * continue, RBL DNS has a problem. if a RBL is unreachable
+         * continue if  RBL DNS has a problem. if a RBL is unreachable
          * we dont want to fail. accept message anyway. a false negative
          * is better in this case than rejecting every message just
          * because one RBL failed. play safe, might be an important mail.
          */
         break;
       case 1: /* host is listed in RBL */
-        err_554msg(why);
+        err_rbl(rblname);
         if (errdisconnect) err_quit();
         return;
       default: /* ok, go ahead */
@@ -648,7 +669,7 @@ void smtp_mail(arg) char *arg;
   }
 
   /* return MX check */
-  if (!str_diff("DNSCHECK", denymail) && !relayclient)
+  if (returnmxcheck)
   {
     switch (badmxcheck(&addr.s[i+1]))
     {
@@ -687,7 +708,7 @@ void smtp_rcpt(arg) char *arg; {
   }
   logpid(3); logstring(3,"rcpt to ="); logstring(3,addr.s); logflush(3);
 
-  /* XXX: blockrelay not yet fully done */
+  /* blockrelay stupid sendwhale bug relay probing */
   if (blockrelayprobe) /* don't enable this if you use percenthack */
   {
     if (relayprobe)

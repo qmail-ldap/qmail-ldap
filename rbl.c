@@ -7,25 +7,23 @@
 
 static stralloc rblmessage = {0};
 int rblprintheader;
-char* rblonlyheader;
-char* rblenabled;
+char *rblonlyheader;
+char *rblenabled;
 
 extern void safeput();
 
-void rblheader(qqt,remoteip)
-struct qmail *qqt;
-char *remoteip;
+void rblheader(struct qmail *qqt, stralloc *rblmessage)
 {
   if (!rblenabled) return;
   if (!rblprintheader) return;
-  if (*rblmessage.s) safeput(qqt,rblmessage.s);
+  if (rblmessage->s) safeput(qqt,rblmessage->s);
 }
 
 struct rbl {
-  char* baseaddr;
-  char* action;
-  char* matchon;
-  char* message;
+  char *baseaddr;
+  char *action;
+  char *matchon;
+  char *message;
 } *rbl;
 
 int numrbl;
@@ -33,7 +31,7 @@ int numrbl;
 static stralloc ip_reverse = {0};
 static stralloc rbl_tmp = {0};
 
-static void rbl_start(char* remoteip)
+static void rbl_start(char *remoteip)
 {
   unsigned int i;
   unsigned int j;
@@ -56,7 +54,7 @@ static void rbl_start(char* remoteip)
 
 static char ipstr[IPFMT];
 
-static int rbl_lookup(char *base, char* matchon)
+static int rbl_lookup(char *base, char *matchon)
 {
   ipalloc rblsa = {0};
   int i;
@@ -70,14 +68,13 @@ static int rbl_lookup(char *base, char* matchon)
     case DNS_MEM:
     case DNS_SOFT:
       return 2; /* soft error */
-
     case DNS_HARD:
       return 0; /* found no match */
-
-    default:
-      /* found match */
-      if (!str_diff("any", matchon) ) return 1; 
-      for (i = 0;i < rblsa.len;++i) {
+    default: /* found match */
+      if (!str_diff("any", matchon))
+        return 1;
+      for (i = 0;i < rblsa.len;++i)
+      {
 	ipstr[ip_fmt(ipstr,&rblsa.ix[0].ip)]=0;
 	if (!str_diff(ipstr, matchon)) return 1;
       }
@@ -86,19 +83,26 @@ static int rbl_lookup(char *base, char* matchon)
   return 1; /* should never get here */
 }
 
-void rbladdheader(char* remoteip, char* base)
+void rbladdheader(char *base, char *matchon, char *message)
 {
   rblprintheader = 1;
-  if(!stralloc_cats(&rblmessage, "X-RBL: ")) die_nomem();
-  if(!stralloc_cats(&rblmessage, remoteip)) die_nomem();
-  if(!stralloc_cats(&rblmessage, " is listed by ")) die_nomem();
+  if(!stralloc_cats(&rblmessage, "X-RBL: (")) die_nomem();
   if(!stralloc_cats(&rblmessage, base)) die_nomem();
+  if(!stralloc_cats(&rblmessage, ") ")) die_nomem();
+  if (!str_diff("any", matchon))
+  {
+    if(!stralloc_cats(&rblmessage, "matches with ")) die_nomem();
+    if(!stralloc_cats(&rblmessage, matchon)) die_nomem();
+    if(!stralloc_cats(&rblmessage, " and ")) die_nomem();
+  }
+  if(!stralloc_cats(&rblmessage, "tells us ")) die_nomem();
+  if(!stralloc_cats(&rblmessage, message)) die_nomem();
   if(!stralloc_cats(&rblmessage, "\n")) die_nomem();
 }
 
-int rblcheck(char* remoteip, char** why)
+int rblcheck(char *remoteip, char *rblname)
 {
-  int r = 1;
+  int r=1;
   int i;
 
   if (!rblenabled) return 0;
@@ -108,20 +112,21 @@ int rblcheck(char* remoteip, char** why)
 
   for (i=0; i < numrbl; i++) {
     logpid(2); logstring(2,"RBL check with '"); logstring(2,rbl[i].baseaddr); logstring(2,"':");
+
     r = rbl_lookup(rbl[i].baseaddr, rbl[i].matchon);
     if (r == 2) {
       logstring(2,"temporary DNS error, ignored."); logflush(2);
     } else if (r == 1) {
       logstring(2,"found match,");
-      *why = rbl[i].message;
+      *rblname = rbl[i].message;
       if (rblonlyheader) {
 	logstring(2,"only tagging header."); logflush(2);
-	rbladdheader(remoteip, rbl[i].baseaddr);
+	rbladdheader(remoteip, rbl[i].baseaddr, rbl[i].message);
 	continue;
       }
       if (!str_diff("addheader", rbl[i].action)) {
 	logstring(2,"would tag header."); logflush(2);
-	rbladdheader(remoteip, rbl[i].baseaddr);
+	rbladdheader(remoteip, rbl[i].baseaddr, rbl[i].message);
 	continue;
       } else {
 	/* default reject */

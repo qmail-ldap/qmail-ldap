@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/04/26 08:13:25 $ ($Revision: 1.53 $)
+RELEASE: $Date: 2002/04/29 21:33:53 $ ($Revision: 1.54 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,6 +18,17 @@ TODO:
 
 NEWS for current stuff:
 
+ Major overhaul of qmail-smtpd. Completely restructured anti-spam stuff and
+ replaced DENYMAIL environment variable (settable through tcpserver) with:
+  - SMTP550DISCONNECT to disconnect the smtp session immediatly after a fatal
+    5xx error
+  - NOBOUNCE to reject null sender bounces
+  - SANITYCHECK to reject messages without @, no . in TLD, too short/long TLD
+  - RETURNMXCHECK to check if the sender has an MX
+  - BLOCKRELAYPROBE to block rcptto containing !%@ before @ from Russel Nelson
+  - RBL to check RBLs
+  - RBLONLYHEADER to only add a X-RBL header
+
  Bug fix in qmail-send.c log handling:
  If in one read a log entry and a delivery status notification was delivered the 
  status notification was dropped and therefor qmail-send did not close the job.
@@ -28,7 +39,7 @@ NEWS for current stuff:
  OK, the remote smtp server should decide if it is OK.
 
  clean up in qmail-remote, the starttls option was not compared in a case
- indipendent way as defined in rfc 2821. The tls debug option is now called
+ independend way as defined in rfc 2821. The tls debug option is now called
  TLSDEBUG.
 
  added Russ Nelson patch to qmail-remote to send using QMTP.

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/04/24 11:49:04 $)
+RELEASE: current ($Date: 2002/04/29 21:33:53 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -403,9 +403,7 @@ CONFIG FILES:
  Example: relays.osirusoft.com
  Note: Multiline. To activate RBL checks you have to set RBL in qmail-smtpd's
        environment (with tcpserver). See this website for more information on
-       RBL's: http://www.declude.com/JunkMail/Support/ip4r.htm
-       We strongly recommend against using ORBZ because they are completly
-       unreasonable.
+       available RBLs: http://www.declude.com/JunkMail/Support/ip4r.htm
 
 ~control/rblonlyheader
 
@@ -413,9 +411,11 @@ CONFIG FILES:
  line with it's findings to the mail header.
  Default: none
  Example: 1
- Note: Add's a "X-RBL: IP[] is listed by RBL[]" header to the message for
-       later filtering. Can also be activated if you set RBLONLYHEADER in
-       qmail-smtpd's environment (with tcpserver).
+ Note: Add's a
+       "X-RBL: (relays.ordb.org) matches with 127.0.0.2 and tells us go home"
+       header to the message for later filtering. Can also be activated for
+       certain IP ranges if you set RBLONLYHEADER in qmail-smtpd's environment
+       (with tcpserver).
 
 ~control/badrcptto
 
@@ -449,7 +449,7 @@ CONFIG FILES:
 
 ~control/ldappasswdappend
  NO LONGER USED, PLEASE REMOVE THE FILE
- Now the auth modules extract the Maildir out of the .qmail file, but only
+ The auth modules now extract the Maildir out of the .qmail file, but only
  on local (/etc/passwd) lookups.
 
 ================================================================================
@@ -462,24 +462,70 @@ Environment variables with control files (see control file for description):
  RBL
  RBLONLYHEADER
 
-Environment variables *without* control file:
+Environment variables *without* control file (setable with tcpserver):
 
-DENYMAIL
+SMTP550DISCONNECT
 
- Heavy sanity checking of the envelope sender address
- Default: none
+ Disconnect the SMTP session if a 5xx is produced by the sender
+ Default: off
  Affects: qmail-smtpd
- Example: DNSCHECK
- Note: The following variables are supported:
-        SPAM     -> refuse all mail
-        NOBOUNCE -> refuse null mail from
-        DNSCHECK -> validate that envelope senders domain has an MX or A record
-                    plus check for other invalid envelope sender constructs
+ Example: "" (any value will do)
+ Note: This is useful if you have a spammer trying different senders or
+       recipients in the same session separated by rset's.
+
+NOBOUNCE
+
+ Rejects null sender bounces
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Use only in extreme cases and only for certain IP ranges. Blocking
+       bounces is considered harmful and strictly prohibited by RFC2821.
+       This can be useful if a spammer used your domain as sender and you
+       get all the bounces. Otherwise don't enable this! You want to get
+       bounces!
+
+SANITYCHECK
+
+ Rejects senders without an @, no . in domain part or too long/short TLD
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Rejects stuff which you probably don't want on your mailserver
+       because it's highly likely that it'll bounce later.
+
+RETURNMXCHECK
+
+ Rejects senders if they don't have a valid return MX
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: This is quite useful even though it doesn't stops many spammers
+       today. But it ensures that you can send an email or an bounce
+       back to the sender. It is also useful for your own users/customers
+       because if they type a nonexistent sender into their "from" field
+       (typos!) it'll stop them the first time instead of getting help-
+       desk calls when nobody can reply to them.
+
+BLOCKRELAYPROBE
+
+ Rejects recipients with and "!", "%" or double-"@"
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: This is quite useful to stop so called anti-spam probes of clueless
+       and overzealus wannabe RBL operators. These probes try to exploit
+       some ancient sendwhale bugs never existent in qmail. Unfortunatly
+       qmail accepts such stuff even if it doesn't relays it and bounces
+       it later. "!" is the old UUCP bang path. "%" is a sendwhale relaying
+       hack and double-"@" a sendwhale bug.
+       Beware if you actually use the qmail percent-hack! Then this can't
+       be used obviously!
 
 LOGLEVEL
 
  Level of log verbosity in qmail-smtpd
- Default: none
+ Default: 0 (NULL)
  Affects: qmail-smtpd
  Example: 3
  Note: integer value from 0-3, everything will be logged through tcpserver
@@ -487,7 +533,7 @@ LOGLEVEL
 LOGLEVEL or DEBUGLEVEL
 
  Level of log verbosity in qmail-lspawn, auth_*
- Default: none (0)
+ Default: 0 (NULL)
  LEVELS:
     LOGLEVEL=1   -> Errors
     LOGLEVEL=2   -> Warnings
