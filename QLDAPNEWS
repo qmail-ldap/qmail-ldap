@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/03/03 19:35:54 $ ($Revision: 1.181 $)
+RELEASE: $Date: 2004/03/04 13:31:46 $ ($Revision: 1.182 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -32,7 +32,7 @@ NEWS for current stuff:
  header fields a char of the local address was chopped of. Noticed by
  different people.
 
- Fix endless lopp in qmail-ldaplookup noticed by Tomas Kuliavas.
+ Fix endless loop in qmail-ldaplookup noticed by Tomas Kuliavas.
 
  Fix bug in substdio_feed noticed by Stefan Paletta.
 
