@@ -1518,11 +1518,11 @@ void smtp_auth(char *arg)
       call_puts(&cct, arg); call_put(&cct, "", 1);
     } else {
       out("334 VXNlcm5hbWU6\r\n"); flush(); /* base64 for 'Username:' */
-      if (call_getln(&ssin, &line) <= 0) die_read();
+      if (call_getln(&ssin, &line) == -1) die_read();
       call_puts(&cct, line.s); call_put(&cct, "", 1);
     }
     out("334 UGFzc3dvcmQ6\r\n"); flush(); /* base64 for 'Password:' */
-    if (call_getln(&ssin, &line) <= 0) die_read();
+    if (call_getln(&ssin, &line) == -1) die_read();
     call_puts(&cct, line.s); call_putflush(&cct, "", 1);
   } else if (case_diffs(type, "plain") == 0) {
     logline(4,"auth plain");
@@ -1532,7 +1532,7 @@ void smtp_auth(char *arg)
       call_puts(&cct, arg); call_putflush(&cct, "", 1);
     } else {
       out("334 \r\n"); flush();
-      if (call_getln(&ssin, &line) <= 0) die_read();
+      if (call_getln(&ssin, &line) == -1) die_read();
       call_puts(&cct, line.s); call_putflush(&cct, "", 1);
     }
   } else {

@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/07/02 16:00:35 $ ($Revision: 1.200 $)
+RELEASE: $Date: 2004/07/27 19:12:26 $ ($Revision: 1.201 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,9 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Fix a bug in smtp_auth handling where empty password caused a disconnect.
+ Noticed by Fabio Gomes.
 
  Fix multiple bugs in qmail-smtps starttls handling. Noticed by Ted Zlatanov.
 
