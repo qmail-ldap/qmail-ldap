@@ -511,10 +511,10 @@ char *dom;
          ret = DNS_HARD;
          break;
     case 1:
-         if (checkip.len == 0) ret = DNS_HARD;
+         if (checkip.len <= 0) ret = DNS_SOFT;
          break;
     default:
-         ret = 0;
+         if (checkip.len <= 0) ret = DNS_HARD;
          break;
   }
   return (ret);
