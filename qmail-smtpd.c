@@ -139,7 +139,7 @@ void err_hard(arg) char *arg; { out("554 syntax error, "); out(arg); out(" (#5.5
 void err_rbl(arg) char *arg; { out("553 sorry, your mailserver is listed in "); out(arg); out(", mail from your location is not accepted here (#5.7.1)\r\n"); }
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
-void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); logline(3,"bounce message denied because it has more than one recipient");}
+void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
 #ifdef TLS
 void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
 #endif
@@ -859,6 +859,11 @@ void smtp_rcpt(arg) char *arg; {
     logline(1,"message denied because of more 'RCPT TO' than allowed by MAXRCPTCOUNT");
     return;
   }
+  if ( rcptcount > 1 && (addr.s[0] || str_diff("#@[]", addr.s)) )
+  {
+    err_badbounce();
+    logline(1,"bounce message denied because it has more than one recipient");
+  }
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
   if (!stralloc_0(&rcptto)) die_nomem();
@@ -991,7 +996,6 @@ void smtp_data() {
   logline(3,"smtp data");
   if (!seenmail) { err_wantmail(); return; }
   if (!rcptto.len) { err_wantrcpt(); return; }
-  if ((mailfrom.len == 1) && (rcptcount > 1)) { err_badbounce(); return; }
   seenmail = 0;
   if (databytes) bytestooverflow = databytes + 1;
   if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
