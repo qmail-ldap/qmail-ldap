@@ -220,14 +220,14 @@ CONFIG FILES:
  The default UID used in virtual users environments
  Default: NULL
  Example: 1010
- Note: Must match the username
+ Note: Must match the username, must be above 100
 
 ~control/ldapgid
 
  The default GID used in virtual users environments
  Default: NULL
  Example: 1010
- Note: Must match the username
+ Note: Must match the username, must be above 100
 
 ~control/custombouncetext
 
