@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/05/06 10:10:17 $ ($Revision: 1.58 $)
+RELEASE: $Date: 2002/05/06 14:17:37 $ ($Revision: 1.59 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -30,6 +30,9 @@ NEWS for current stuff:
  This should fix order problems in mailclients.
 
 NEWS for 20020501 stuff:
+
+ ****** ATTENTION the format of ~control/rbllist has changed, see ******
+        QLDAPINSTALL for information about the new rbllist file.
 
  Major overhaul of qmail-smtpd. Completely restructured anti-spam stuff and
  replaced DENYMAIL environment variable (settable through tcpserver) with:
