@@ -106,7 +106,8 @@ int wstat;
 char *s;
 int len;
 {
-#ifdef DEBUG
+#if 0
+//#ifdef DEBUG
 #define REPORT_RETURN for (i = 0;i < len;++i) if (!s[i]) break; substdio_put(ss,s,i); return
 #else
 #define REPORT_RETURN return
@@ -340,7 +341,8 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
                       LDAP_PROGRAM,
                       LDAP_MODE,
                       LDAP_REPLYTEXT,
-                      LDAP_DOTMODE, 0 };
+                      LDAP_DOTMODE, 
+		      LDAP_MAXMSIZE, 0 };
    int  ret;
    int  at;
    int  i;
@@ -355,12 +357,13 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
     * escape '*', ,'\', '(' and ')' with a preceding '\' */
    if (!escape_forldap(mail) ) _exit(QLX_NOMEM);
 
-   ret = qldap_open();
-   if ( ret != 0 ) goto ldap_fail;
-
    at = 0;
+   i = 0;
    s = mail->s;
    len = mail->len;
+
+   ret = qldap_open();
+   if ( ret != 0 ) goto ldap_fail;
 
    for (at = len - 1; s[at] != '@' && at >= 0 ; at--) ; 
    /* handels also mail with 2 @ */
@@ -493,6 +496,7 @@ ldap_fail:
 
    /* check if incomming mail is smaller than max mail size */
    if (extra[8].vals != 0) {
+     log(32, "%s: %s\n", LDAP_MAXMSIZE, extra[8].vals[0]);
      scan_ulong(extra[8].vals[0], &tid);
      if (fstat(fdmess, &st) != 0) {
        log(2, "warning: can not stat mail: %s\n", error_str(errno));
