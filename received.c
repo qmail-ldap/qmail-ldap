@@ -66,7 +66,7 @@ char *rcptto;
   safeput(qqt,remoteip);
   qmail_puts(qqt,"])");
 
-  qmail_puts(qqt," (envelope sender <");
+  qmail_puts(qqt," (envelope-sender <");
   safeput(qqt,mailfrom);
   qmail_puts(qqt,">)\n          by ");
 
