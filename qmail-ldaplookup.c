@@ -158,9 +158,13 @@ int main(int argc, char **argv)
 	}
 	if ( mode == mail) {
 		/* build the search string for the email address */
-		if ( !stralloc_copys(&filter,"(|(mail=" ) ||
+		if ( !stralloc_copys(&filter,"(|(" ) ||
+			 !stralloc_cats(&filter, LDAP_MAIL ) || 
+			 !stralloc_cats(&filter, "=" ) ||
 			 !stralloc_cat(&filter,&value) ||
-			 !stralloc_cats(&filter,")(mailalternateaddress=") ||
+			 !stralloc_cats(&filter,")(" ) || 
+			 !stralloc_cats(&filter,LDAP_MAILALTERNATE ) ||
+			 !stralloc_cats(&filter, "=") ||
 			 !stralloc_cat(&filter,&value) ||
 			 !stralloc_cats(&filter,"))") ||
 			 !stralloc_0(&filter)) {
