@@ -1,0 +1,18 @@
+#!/bin/sh
+exec 2>&1
+#
+# POP3 service 
+#
+QMAIL=/var/qmail
+ME=`head -1 $QMAIL/control/me`
+ALIASEMPTY=`head -1 $QMAIL/control/aliasempty`
+
+PATH=$PATH:"$QMAIL/bin"
+
+exec envdir ./env \
+	tcpserver -v -HRl $ME -x$QMAIL/control/qmail-pop3d.cdb 0 pop3 \
+	$QMAIL/bin/qmail-popup $ME \
+	$QMAIL/bin/auth_pop \
+	$QMAIL/bin/pbsadd \
+	$QMAIL/bin/qmail-pop3d "$ALIASEMPTY"
+

@@ -1,0 +1,15 @@
+#!/bin/sh
+exec 2>&1
+#
+# qmail-send and friends
+#
+QMAIL=/var/qmail
+ALIASEMPTY=`head -1 $QMAIL/control/aliasempty`
+
+PATH=$PATH:"$QMAIL/bin"
+
+# limit to prevent memory hogs
+ulimit -c 204800 
+
+exec envdir ./env qmail-start "$ALIASEMPTY"
+

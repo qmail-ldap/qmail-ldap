@@ -1,0 +1,18 @@
+#!/bin/sh
+exec 2>&1
+#
+# IMAP service: this script uses courier-imap
+#
+QMAIL=/var/qmail
+COURIER=/usr/local
+ME=`head -1 $QMAIL/control/me`
+ALIASEMPTY=`head -1 $QMAIL/control/aliasempty`
+
+PATH=$PATH:"$QMAIL/bin"
+
+exec envdir ./env \
+	tcpserver -v -HRl $ME -x$QMAIL/control/qmail-imapd.cdb 0 imap \
+	$COURIER/sbin/imaplogin \
+	$QMAIL/bin/auth_imap \
+	$QMAIL/bin/pbsadd \
+	$COURIER/bin/imapd "$ALIASEMPTY"

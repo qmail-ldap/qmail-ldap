@@ -1,0 +1,16 @@
+#!/bin/sh
+exec 2>&1
+#
+# QMQP service 
+#
+USER=qmaild
+QMAIL=/var/qmail
+ME=`head -1 $QMAIL/control/me`
+
+PATH=$PATH:"$QMAIL/bin"
+
+exec envdir ./env \
+	envuidgid $USER \
+	tcpserver -v -URl $ME -x$QMAIL/control/qmail-qmqpd.cdb 0 628 \
+	$QMAIL/bin/qmail-qmqpd
+

@@ -1,0 +1,17 @@
+#!/bin/sh
+exec 2>&1
+#
+# SMTP service 
+#
+USER=qmaild
+QMAIL=/var/qmail
+ME=`head -1 $QMAIL/control/me`
+
+PATH=$PATH:"$QMAIL/bin"
+
+exec envdir ./env \
+	envuidgid $USER \
+	tcpserver -v -URl $ME -x$QMAIL/control/qmail-smtpd.cdb 0 smtp \
+	$QMAIL/bin/pbscheck \
+	$QMAIL/bin/qmail-smtpd
+
