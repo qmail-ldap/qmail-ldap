@@ -1,3 +1,6 @@
+#ifdef linux
+#define _XOPEN_SOURCE
+#endif
 #include <unistd.h>
 #include "base64.h"
 #include "byte.h"
