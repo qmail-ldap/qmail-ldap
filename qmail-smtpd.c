@@ -206,6 +206,8 @@ void dohelo(arg) char *arg; {
   fakehelo = case_diffs(remotehost,helohost.s) ? helohost.s : 0;
 }
 
+int meok = 0;
+stralloc me = {0};
 int liphostok = 0;
 stralloc liphost = {0};
 int bmfok = 0;
@@ -249,8 +251,14 @@ void setup()
   if (l) { scan_ulong(l,&v); loglevel = v; };
 
   if (control_init() == -1) die_control();
+
+  if (control_rldef(&me,"control/me",1,(char *) 0) != 1)
+    die_control();
+  if (stralloc_0(&me)) die_nomem();
+
   if (control_rldef(&greeting,"control/smtpgreeting",1,(char *) 0) != 1)
     die_control();
+
   liphostok = control_rldef(&liphost,"control/localiphost",1,(char *) 0);
   if (liphostok == -1) die_control();
 
@@ -1193,6 +1201,8 @@ void acceptmessage(qp) unsigned long qp;
   out(" qp ");
   accept_buf[fmt_ulong(accept_buf,qp)] = 0;
   out(accept_buf);
+  out(" by ");
+  out(me.s);
   out("\r\n");
   logstring(2," qp "); logstring(2,accept_buf); logflush(2);
 }
