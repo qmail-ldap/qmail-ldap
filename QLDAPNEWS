@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/05/01 17:04:07 $ ($Revision: 1.96 $)
+RELEASE: $Date: 2003/06/09 09:58:56 $ ($Revision: 1.97 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,14 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ New delivery mode noforward to disable all forwarding entries in ldap
+ and .qmail. The deliveryMode attributes need some major overwork becasue
+ we have a few modes -- manly forwardonly, noforward, localdelivery,
+ normal and nombox -- that are exclusive. Anyway for now this should make
+ life a bit easier.
+
+NEWS for 20030501 stuff:
 
  gcc bug fix for OpenBSD sparc64 in digest_sha.c
 

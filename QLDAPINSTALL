@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2003/03/26 21:10:53 $)
+RELEASE: current ($Date: 2003/06/09 09:58:56 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -25,7 +25,7 @@ NEWS:
 
 IMPORTANT NEWS:
 
- - new ldap fields mailQuotaSize, mailQuotaCount and mailSizeMax
+ - new delivery mode noforward
 
  - and as always a lot of smaller patches see QLDAPNEWS
 
@@ -756,6 +756,7 @@ LDAP_MODE (default: "deliveryMode")
            (Maildir/box delivery only if no forwards or programs are executed)
  - forwardonly: is equal to set the execute bit of .qmail
                 so only forwards are allowed
+ - noforward: ignore all forwarding entries in ldap (LDAP_FORWARDS) and .qmail
  - nombox: ignore all maildir/mbox deliveries
  - localdelivery: forces maildir/mbox delivery (into $HOME/$ALIASEMPTY)
  - reply: send also an auto_reply mail with text from mailReplyText 
@@ -765,11 +766,11 @@ LDAP_MODE (default: "deliveryMode")
  Note: echo exits immediatly after the "echoing" (only useful for testing
        purposes). reply is executed directly and does not interfere with
        the other settings.
-       "normal", "nombox", "localdelivery" and "forwardonly" are set one after
-       the other (i.e. "nombox,localdelivery,normal" resets to a "normal"
-       delivery).
+       "normal", "nombox", "localdelivery" "forwardonly" and "noforward" are 
+       set one after the other (i.e. "nombox,localdelivery,normal" resets to
+       a "normal" delivery).
        There are some strange behavior when localdelivery and nombox or
-       forwardonly are set, so handle them with care.
+       forwardonly and noforward are set, so handle them with care.
        
 
 LDAP_REPLYTEXT (default: "mailReplyText")

@@ -78,6 +78,7 @@
 
 #define MODE_NORMAL		"normal"
 #define MODE_FORWARD		"forwardonly"
+#define MODE_NOFORWARD		"noforward"
 #define MODE_NOMBOX		"nombox"
 #define MODE_LDELIVERY		"localdelivery"
 #define MODE_REPLY		"reply"

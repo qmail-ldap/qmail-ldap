@@ -646,6 +646,7 @@ char **argv;
  int slen;
  int qmode;
  int flagforwardonly2;
+ int flagnoforward;
  int mboxdelivery;
  int localdelivery;
  int ldapprogdelivery;
@@ -801,7 +802,7 @@ char **argv;
  if (!stralloc_0(&foo)) temp_nomem();
  if (!env_put2("HOST4",foo.s)) temp_nomem();
 
- flagforwardonly = 0; flagforwardonly2 = 0;
+ flagforwardonly = 0; flagforwardonly2 = 0; flagnoforward = 0;
  mboxdelivery = 1; localdelivery = 0; ldapprogdelivery = 0;
 
  /* quota, dotmode and forwarding handling - part 1 */
@@ -898,10 +899,14 @@ char **argv;
        } else if (!str_diff(MODE_NOMBOX, s)) {
          if (!flagdoit) sayit("no mbox delivery ",s,0);
          mboxdelivery = 0;
+       } else if (!str_diff(MODE_NOFORWARD, s)) {
+	 if (!flagdoit) sayit("no mail forwarding ",s,0);
+	 flagnoforward = 1;
        } else if (!str_diff(MODE_NORMAL, s)) {
          if (!flagdoit) sayit("reseting delivery to normal",s,0);
          mboxdelivery = 1;
          flagforwardonly2 = 0;
+	 flagnoforward = 0;
          localdelivery = 0;
        } else if (!str_diff(MODE_LDELIVERY, s)) {
          if (!flagdoit) sayit("force local delivery ",s,0);
@@ -993,6 +998,8 @@ char **argv;
      i = j + 1;
     }
 
+ if (flagnoforward) numforward = 0;
+ 
  recips = (char **) alloc((numforward + 1) * sizeof(char *));
  if (!recips) temp_nomem();
  numforward = 0;
@@ -1044,6 +1051,9 @@ char **argv;
          ++i;
        default:
 	 ++count_forward;
+	 if (flagnoforward)
+	   if (flagdoit) break;
+	   else { sayit("disabled forward ", cmds.s + i, k - i); break; }
          if (flagdoit) recips[numforward++] = cmds.s + i;
          else sayit("forward ",cmds.s + i,k - i);
          break;
@@ -1052,7 +1062,7 @@ char **argv;
      if (flag99) break;
     }
 
- if (numforward) if (flagdoit)
+ if (numforward) if (flagdoit) if (!flagnoforward)
   {
    recips[numforward] = 0;
    mailforward(recips);
