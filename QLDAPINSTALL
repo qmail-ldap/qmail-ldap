@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/04/30 09:45:01 $)
+RELEASE: current ($Date: 2002/04/30 15:32:46 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -413,7 +413,7 @@ CONFIG FILES:
  Example:
    basedomain            action     matchon    message
    ========================================================================
-   relays.ordb.org       reject     any        go home
+   relays.ordb.org       reject     any        see http://ordb.org
    spamguard.leadmon.net addheader  127.0.0.2  address is a dialup address
 
  NOTE: for readability we replaced the tabs between the four fields basedoamin,
