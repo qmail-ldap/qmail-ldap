@@ -225,7 +225,7 @@ int main (int argc, char** argv)
 	char *ipstr;
 	char *s;
 	unsigned long t;
-	int sfd;
+	int sfd = -1;
 	int len;
 	int i;
 
@@ -284,7 +284,7 @@ int main (int argc, char** argv)
 	setenv(packet + 3 + packet[1], i - packet[1] - 3);
 
 start_daemon:
-	close(sfd); /* try to close socket */
+	if (sfd == -1) close(sfd); /* try to close socket */
 
 	/* start smtpd */
 	execvp(*childargs,childargs);
