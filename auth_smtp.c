@@ -89,7 +89,6 @@ auth_fail(const char *login, int reason)
 	log(2, "warning: auth_fail: user %s failed\n", login);
 
 	if (substdio_putflush(subfdout, "D", 1) == -1) auth_error(ERRNO);
-	close(1);
 	_exit(0);
 }
 
@@ -99,7 +98,6 @@ auth_success(const char *login)
 	if (substdio_put(subfdout, "K", 1) == -1) auth_error(ERRNO);
 	if (substdio_puts(subfdout, login) == -1) auth_error(ERRNO);
 	if (substdio_putflush(subfdout, "", 1) == -1) auth_error(ERRNO);
-	close(1);
 	_exit(0);
 }
 
@@ -110,7 +108,6 @@ void auth_error(int errnum)
 	if (errnum == BADVAL || errnum == NEEDED || errnum == ILLVAL) {
 		if (substdio_putflush(subfdout, "Z", 1) == -1)
 			auth_error(ERRNO);
-		close(1);
 		_exit(0);
 	}
 

@@ -275,7 +275,6 @@ main(int argc, char **argv)
 		die_badaddr();
 	}
 	/* unknown action, pass mail to the next tool */
-	strerr_warn3(WARN, "Unknown action: ", action.s, 0);
 	clean(maildir);
 	return 0;
 }
