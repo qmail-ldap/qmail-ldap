@@ -404,7 +404,7 @@ void smtp_rcpt(arg) char *arg; {
     if (!addrallowed()) 
     { 
        err_nogateway(); 
-       log_ngw (mailfrom.s, addr.s);
+//       log_ngw (mailfrom.s, addr.s);
        return; 
     }
   }
