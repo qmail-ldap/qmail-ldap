@@ -562,6 +562,7 @@ void smtp_mail(arg) char *arg;
 {
   int i,j;
   char *rblname;
+  int bounceflag = 0;
 
   logpid(3); logstring(3,"remote sent 'mail from' ="); logstring(3,arg); logflush(3);
 
@@ -593,9 +594,10 @@ void smtp_mail(arg) char *arg;
   }
 
   /* NOBOUNCE check */
-  if (nobounce)
+  if (!addr.s[0] || !str_diff("#@[]", addr.s))
   {
-    if (!addr.s[0] || !str_diff("#@[]", addr.s))
+    bounceflag = 1;
+    if (nobounce)
     {
       err_554msg("RFC2821 bounces are administratively denied");
       if (errdisconnect) err_quit();
@@ -604,7 +606,7 @@ void smtp_mail(arg) char *arg;
   }
 
   /* Sanity checks */
-  if (sanitycheck)
+  if (sanitycheck && !bounceflag)
   {
     /* Invalid Mailfrom */
     if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len)
