@@ -1,13 +1,13 @@
 POPBEFORESMTP by Claudio Jeker <jeker@n-r-g.com> and 
 Andre Oppermann <opi@nrg4u.com>
-(c) 1998,1999,2000,2001,2002 Internet Business Solutions Ltd.
+(c) 2002,2003,2004 Internet Business Solutions Ltd.
 
-The POPBEFORESMTP patch is a part of the qmail-ldap patch.
-This patches for qmail come with NO WARRANTY.
+The POPBEFORESMTP tools are a part of the qmail-ldap patch.
+This patch for qmail comes with NO WARRANTY.
 
-These patches are under the BSD license.
+This patch is under the BSD license.
 
-RELEASE: current ($Date: 2002/09/29 16:43:00 $)
+RELEASE: current ($Date: 2004/03/26 21:02:46 $)
 
 POP-Before-SMTP:
 ======================
@@ -21,10 +21,6 @@ TOC:
   - pbscheck
   - pbsdbd
  EXAMPLES
-
-NEWS:
- 
- This is the first release of the POP-before-SMTP Tools.
 
 ================================================================================
 
