@@ -35,6 +35,9 @@
 #ifdef TLS_REMOTE /* openssl/ssh.h needs to be included befor zlib.h else ... */
 #include <sys/stat.h>
 #include <openssl/ssl.h>
+#ifdef TLSDEBUG
+#include <openssl/err.h>
+#endif
 #endif
 #ifdef DATA_COMPRESS
 #include <zlib.h>
