@@ -68,7 +68,8 @@ void readmail(char *file)
 	substdio_fdbuf(&ss, read, fd, buf, sizeof(buf));
 	for (;;) {
 		if (getln(&ss, &line, &match, '\n') == -1)
-			strerr_die4sys(100, FATAL, "unable to read '", file, "': ");
+			strerr_die4sys(100, FATAL, "unable to read '",
+			    file, "': ");
 		if (!match) {
 			close(fd);
 			return;
@@ -596,7 +597,7 @@ next:
 		s += i;
 		len -= i;
 		if (len == 0 && header != 0)
-			strerr_die2sys(100, FATAL, "parser error");
+			strerr_die2x(100, FATAL, "parser error: no body found");
 	} while (header != 0);
 
 	if (resubject.s == (char *)0) {

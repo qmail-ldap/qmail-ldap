@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/04/01 13:56:44 $ ($Revision: 1.90 $)
+RELEASE: $Date: 2003/04/07 17:12:53 $ ($Revision: 1.91 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,11 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Bad handling of return values. A EHLO may return a 502 or perhaps a 504.
+ In this case retry with HELO.
+
+NEWS for 20030401 stuff:
 
  Added big todo patch. Enable with -DBIGTODO in Makefile.
 
