@@ -495,8 +495,8 @@ qldap-profile.c
 qldap-profile.h
 qldap.c
 qldap.h
-qmail-forward
 qmail-forward.c
+qmail-group.c
 qmail-ldap.h
 qmail-ldaplookup.c
 qmail-quotawarn.c

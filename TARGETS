@@ -426,6 +426,8 @@ qldap-profile.o
 qldap.o
 qmail-forward
 qmail-forward.o
+qmail-group
+qmail-group.o
 qmail-ldaplookup
 qmail-ldaplookup.o
 qmail-quotawarn

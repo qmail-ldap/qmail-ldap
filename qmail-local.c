@@ -432,7 +432,7 @@ char **recips;
  qmail_put(&qqt,dtline.s,dtline.len);
 
  if (recips[1])
-   qmail_put(&qqt,"Precedence: bulk\n",17);
+   qmail_puts(&qqt,"Precedence: bulk\n");
 
  do
   {
@@ -635,9 +635,9 @@ char **argv;
  int qmode;
  int flagforwardonly2;
  int flagnoforward;
- int mboxdelivery;
- int localdelivery;
- int ldapprogdelivery;
+ int flagnolocal;
+ int flagnoprog;
+ int allowldapprog;
  char *s;
  char *rt;
 
@@ -764,8 +764,8 @@ char **argv;
  if (!stralloc_0(&foo)) temp_nomem();
  if (!env_put2("HOST4",foo.s)) temp_nomem();
 
- flagforwardonly = 0; flagforwardonly2 = 0; flagnoforward = 0;
- mboxdelivery = 1; localdelivery = 0; ldapprogdelivery = 0;
+ flagforwardonly = 0; flagforwardonly2 = 0; allowldapprog = 0;
+ flagnoforward = 0; flagnolocal = 0; flagnoprog = 0;
 
  /* quota, dotmode and forwarding handling - part 1 */
  /* setting the quota */
@@ -783,29 +783,16 @@ char **argv;
    } else if (!case_diffs(DOTMODE_LDAPWITHPROG, s)) {
      if (!flagdoit) sayit("DOTMODE_LDAPWITHPROG ",s,0);
      qmode = DO_LDAP;
-     ldapprogdelivery = 1;
+     allowldapprog = 1;
    } else if (!case_diffs(DOTMODE_DOTONLY, s)) {
      if (!flagdoit) sayit("DOTMODE_DOTONLY ",s,0);
      qmode = DO_DOT;
    } else if (!case_diffs(DOTMODE_BOTH, s)) {
      if (!flagdoit) sayit("DOTMODE_BOTH ",s,0);
      qmode = DO_BOTH;
-     ldapprogdelivery = 1;
-   } else if (!case_diffs(DOTMODE_NONE, s)) {
-     ++count_file;
-     if (!stralloc_copys(&cmds,aliasempty)) temp_nomem();
-     if (!stralloc_0(&cmds)) temp_nomem();
-     if (cmds.s[cmds.len - 2] == '/')
-       if (flagdoit) maildir(cmds.s);
-       else sayit("maildir ", cmds.s, cmds.len);
-     else
-       if (flagdoit) mailfile(cmds.s);
-       else sayit("mbox ", cmds.s, cmds.len);
-     count_print();
-     _exit(0); 
-   } else {
-     strerr_die3x(100,"Error: Non valid dot-mode found: ",s,". (LDAP-ERR #2.0.2)");
-   }
+     allowldapprog = 1;
+   } else
+     strerr_die3x(100,"Error: Non valid dot-mode found: ", s, ". (#5.3.5)");
  }
 	   
  /* prepare the cmds string to hold all the commands from the 
@@ -825,10 +812,10 @@ char **argv;
      s = foo.s;
      slen = foo.len-1;
      for(;;) {
-       if (!str_diff(MODE_FORWARD, s)) {
-         if (!flagdoit) sayit("forwardonly ",s,0);
+       if (!case_diffs(MODE_FORWARD, s)) {
+         if (!flagdoit) sayit("force forward only ",s,0);
          flagforwardonly2 = 1;
-       } else if (!str_diff(MODE_REPLY, s)) {
+       } else if (!case_diffs(MODE_REPLY, s)) {
          if(*sender) {
            ++count_forward;
            if ((rt = env_get(ENV_REPLYTEXT))) {
@@ -839,43 +826,28 @@ char **argv;
                sayit("replytext ",rt,str_len(rt));
              }
            } else {
-             strerr_warn1("Warning(ignored): "
-	       "Reply mode is on but there is no reply text.", 0);
+             strerr_warn1("Warning: Reply mode is on but there is no reply text.", 0);
            }
          }
-       } else if (!str_diff(MODE_ECHO, s)) {
-         if (*sender) {
-           ++count_forward;
-           recips = (char **) alloc(2 * sizeof(char *));
-           if (!recips) temp_nomem();
-           recips[0] = sender;
-           recips[1] = 0;
-           if (flagdoit) mailforward(recips);
-           else sayit("echo to ",sender,str_len(sender));
-         }
-         count_print();
-         _exit(0);
-       } else if (!str_diff(MODE_NOMBOX, s)) {
-         if (!flagdoit) sayit("no mbox delivery ",s,0);
-         mboxdelivery = 0;
-       } else if (!str_diff(MODE_NOFORWARD, s)) {
+       } else if (!case_diffs(MODE_NOLOCAL, s) || !case_diffs(MODE_NOMBOX, s)) {
+         if (!flagdoit) sayit("no file delivery ",s,0);
+         flagnolocal = 1;
+       } else if (!case_diffs(MODE_NOFORWARD, s)) {
 	 if (!flagdoit) sayit("no mail forwarding ",s,0);
 	 flagnoforward = 1;
-       } else if (!str_diff(MODE_NORMAL, s)) {
-         if (!flagdoit) sayit("reseting delivery to normal",s,0);
-         mboxdelivery = 1;
-         flagforwardonly2 = 0;
-	 flagnoforward = 0;
-         localdelivery = 0;
-       } else if (!str_diff(MODE_LDELIVERY, s)) {
-         if (!flagdoit) sayit("force local delivery ",s,0);
-         localdelivery = 1;
+       } else if (!case_diffs(MODE_NOPROG, s)) {
+         if (!flagdoit) sayit("no program delivery ",s,0);
+         flagnoprog = 1;
+       } else if (!case_diffs(MODE_LOCAL, s) ||
+		  !case_diffs(MODE_FORWARD, s) ||
+		  !case_diffs(MODE_FORWARD, s)) {
+	       /* ignore */;
        } else strerr_warn3("Warning: undefined mail delivery mode: ",
                      s," (ignored).", 0);
        j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
    }
-   if (ldapprogdelivery && (s = env_get(ENV_PROGRAM))) {
+   if (allowldapprog && !flagnoprog && (s = env_get(ENV_PROGRAM))) {
      unescape(s);
      s = foo.s;
      slen = foo.len-1;
@@ -886,7 +858,7 @@ char **argv;
        j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
    }
-   if ((s = env_get(ENV_FORWARDS))) {
+   if (!flagnoforward && (s = env_get(ENV_FORWARDS))) {
      unescape(s);
      s = foo.s;
      slen = foo.len-1;
@@ -897,10 +869,11 @@ char **argv;
        j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
    }
-   if (localdelivery) {
+   if (!flagnolocal) {
      if (!stralloc_cats(&cmds,aliasempty)) temp_nomem();
      if (!stralloc_cats(&cmds, "\n")) temp_nomem();
-   }    
+   } 
+   if (!stralloc_cats(&cmds, "#\n")) temp_nomem();
  } 
  if (qmode & DO_DOT) { /* start dotqmail */
    qmesearch(&fd,&flagforwardonly);
@@ -931,8 +904,9 @@ char **argv;
    if (fd != -1)
      if (slurpclose(fd,&cmds,256) == -1) temp_nomem();
 
- } else if (! qmode & DO_LDAP ) /* XXX: If non of DO_LDAP, DO_DOT */
-   strerr_die1x(100,"Error: No valid delivery mode selected. (LDAP-ERR #2.0.3)");
+ } else if (!qmode & DO_LDAP) /* impossible see dotmode handling */
+   strerr_die1x(100,"Error: No valid delivery mode selected. (#5.3.5)");
+
  if (!cmds.len)
   {
    if (!stralloc_copys(&cmds,aliasempty)) temp_nomem();
@@ -976,11 +950,14 @@ char **argv;
          break;
        case '.':
        case '/':
-	 if (! mboxdelivery ) break;
+	 if (flagnolocal) {
+	   if (flagdoit) break;
+	   else { sayit("disabled file delivery ", cmds.s + i, k - i); break; }
+	 }
 	 ++count_file;
 	 if (flagforwardonly) strerr_die1x(111,"Uh-oh: .qmail has file delivery but has x bit set. (#4.7.0)");
 	 if (flagforwardonly2) 
-	   strerr_die3x(111,"Uh-oh: ", LDAP_MODE, " has file delivery but has forwardonly set. (#4.7.0)");
+	   strerr_die1x(111,"Uh-oh: user has file delivery but is not allowed to. (#4.7.0)");
 	 if (cmds.s[k - 1] == '/')
            if (flagdoit) maildir(cmds.s + i);
            else sayit("maildir ",cmds.s + i,k - i);
@@ -989,10 +966,14 @@ char **argv;
            else sayit("mbox ",cmds.s + i,k - i);
          break;
        case '|':
+	 if (flagnoprog) {
+	   if (flagdoit) break;
+	   else { sayit("disabled program ", cmds.s + i, k - i); break; }
+	 }
 	 ++count_program;
 	 if (flagforwardonly) strerr_die1x(111,"Uh-oh: .qmail has prog delivery but has x bit set. (#4.7.0)");
 	 if (flagforwardonly2)
-	   strerr_die3x(111,"Uh-oh: ", LDAP_MODE, " has prog delivery but has forwardonly set. (#4.7.0)");
+	   strerr_die1x(111,"Uh-oh: user has prog delivery but is not allowed to. (#4.7.0)");
          if (flagdoit) mailprogram(cmds.s + i + 1);
          else sayit("program ",cmds.s + i + 1,k - i - 1);
          break;

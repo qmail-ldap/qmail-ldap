@@ -85,6 +85,22 @@ char *fn;
  return 1;
 }
 
+int control_readulong(ul,fn)
+unsigned long *ul;
+char *fn;
+{
+ unsigned long u;
+ switch(control_readline(&line,fn))
+  {
+   case 0: return 0;
+   case -1: return -1;
+  }
+ if (!stralloc_0(&line)) return -1;
+ if (!scan_ulong(line.s,&u)) return 0;
+ *ul = u;
+ return 1;
+}
+
 int control_readfile(sa,fn,flagme)
 stralloc *sa;
 char *fn;

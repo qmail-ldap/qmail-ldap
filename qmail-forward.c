@@ -25,23 +25,23 @@ usage(void)
 void
 temp_nomem(void)
 {
-	strerr_die2x(111,FATAL, "Out of memory. (#4.3.0)");
+	strerr_die2x(111, FATAL, "Out of memory. (#4.3.0)");
 }
 void
 temp_rewind(void)
 {
-	strerr_die2x(111,FATAL, "Unable to rewind message. (#4.3.0)");
+	strerr_die2x(111, FATAL, "Unable to rewind message. (#4.3.0)");
 }
 void
 temp_read(void)
 {
-	strerr_die3x(111,"Unable to read message: ",
+	strerr_die3x(111, "Unable to read message: ",
 	    error_str(errno), ". (#4.3.0)");
 }
 void
 temp_fork(void)
 {
-	strerr_die3x(111,"Unable to fork: ",error_str(errno),". (#4.3.0)");
+	strerr_die3x(111, "Unable to fork: ", error_str(errno), ". (#4.3.0)");
 }
 
 
@@ -58,15 +58,15 @@ void bouncexf(void)
 	int match;
 
 	if (seek_begin(0) == -1) temp_rewind();
-	substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
+	substdio_fdbuf(&ss, read, 0, buf, sizeof(buf));
 	for (;;)
 	{
-		if (getln(&ss,&messline,&match,'\n') != 0) temp_read();
+		if (getln(&ss, &messline, &match, '\n') != 0) temp_read();
 		if (!match) break;
 		if (messline.len <= 1)
 			break;
 		if (messline.len == dtline.len)
-			if (!str_diffn(messline.s,dtline.s,dtline.len))
+			if (!str_diffn(messline.s, dtline.s, dtline.len))
 				strerr_die2x(100, FATAL, 
 				    "This message is looping: "
 				    "it already has my Cluster-Delivered-To "
@@ -109,12 +109,12 @@ main (int argc, char **argv)
 	for (i = 0; i < dtline.len; ++i)
 		if (dtline.s[i] == '\n')
 			dtline.s[i] = '_';
-	if (!stralloc_cats(&dtline,"\n")) temp_nomem();
+	if (!stralloc_cats(&dtline, "\n")) temp_nomem();
 
 	bouncexf();
 	
 	if (seek_begin(0) == -1) temp_rewind();
-	substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
+	substdio_fdbuf(&ss, read, 0, buf, sizeof(buf));
 
 	if (qmail_remote(&qqt, remote) == -1) temp_fork();
 	qp = qmail_qp(&qqt);
@@ -132,10 +132,10 @@ main (int argc, char **argv)
 	qqx = qmail_close(&qqt);
 	if (*qqx) 
 		strerr_die3x(*qqx == 'D' ? 100 : 111,
-		    "Unable to cluster-forward message: ",qqx + 1,".");
+		    "Unable to cluster-forward message: ", qqx + 1, ".");
 	when = now();
-	strnum1[fmt_ulong(strnum1,(unsigned long) when)] = 0;
-	strnum2[fmt_ulong(strnum2,qp)] = 0;
+	strnum1[fmt_ulong(strnum1, (unsigned long) when)] = 0;
+	strnum2[fmt_ulong(strnum2, qp)] = 0;
 	strerr_die5x(0, "qmail-forward: ok ", strnum1, " qp ", strnum2, ".");
 }
 

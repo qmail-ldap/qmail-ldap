@@ -47,7 +47,8 @@ int		default_uid;
 int		default_gid;
 stralloc	default_messagestore = {0};
 stralloc	dotmode = {0};
-stralloc	quota = {0};
+unsigned long	quotasize = 0;
+unsigned long	quotacount = 0;
 
 
 static  int qldap_close(qldap *);
@@ -144,10 +145,12 @@ qldap_controls(void)
 	if (!stralloc_0(&dotmode)) return -1;
 	log(64, "init_ldap: control/ldapdefaultdotmode: %s\n", dotmode.s);
 
-	if (control_rldef(&quota, "control/ldapdefaultquota", 0, "") == -1) 
+	if (control_readulong(&quotasize, "control/defaultquotasize") == -1) 
 		return -1;
-	if (!stralloc_0(&quota)) return -1;
-	log(64, "init_ldap: control/ldapdefaultquota: %s\n", quota.s);
+	if (control_readulong(&quotacount, "control/defaultquotacount") == -1) 
+		return -1;
+	log(64, "init_ldap: control/defaultquotasize: %lu\n", quotasize);
+	log(64, "init_ldap: control/defaultquotacount: %lu\n", quotacount);
 
 	return 0;
 }
@@ -156,6 +159,12 @@ int
 qldap_need_rebind(void)
 {
 	return rebind;
+}
+
+char *
+qldap_basedn(void)
+{
+	return basedn.s;
 }
 
 qldap *
@@ -192,7 +201,7 @@ qldap_open(qldap *q)
 }
 
 int
-qldap_bind(qldap *q, char *binddn, char *passwd)
+qldap_bind(qldap *q, const char *binddn, const char *passwd)
 {
 	int rc, try = 0;
 	
@@ -249,7 +258,7 @@ retry:
 }
 
 int
-qldap_rebind(qldap *q, char *binddn, char *passwd)
+qldap_rebind(qldap *q, const char *binddn, const char *passwd)
 {
 	int rc;
 
@@ -300,7 +309,7 @@ qldap_free(qldap *q)
 /******  LDAP SEARCH & FILTER  ************************************************/
 
 int
-qldap_lookup(qldap *q, char *filter, const char *attrs[])
+qldap_lookup(qldap *q, const char *filter, const char *attrs[])
 {
 	/* search a unique entry */
 	struct	timeval tv;
@@ -336,6 +345,10 @@ qldap_lookup(qldap *q, char *filter, const char *attrs[])
 		log(64, "qldap_lookup: search for %s failed (%s)\n", 
 		    filter, ldap_err2string(rc) );
 		return TIMEOUT;
+	case LDAP_NO_SUCH_OBJECT:
+		log(64, "qldap_filter: search for %s failed (%s)\n", 
+		    filter, ldap_err2string(rc) );
+		return NOSUCH;
 	default:
 		log(64, "qldap_lookup: search for %s failed (%s)\n", 
 		    filter, ldap_err2string(rc) );
@@ -365,23 +378,111 @@ qldap_lookup(qldap *q, char *filter, const char *attrs[])
 	return OK;
 }
 
-/* to be done later */
-#if 0
-int qldap_filter()
+int
+qldap_filter(qldap *q, const char *filter, const char *attrs[],
+    char *bdn, int scope)
 {
+	
+	/* search a unique entry */
+	struct	timeval tv;
+	int	rc;
+	
 	/* search multiple entries */
+	CHECK(q, SEARCH);
+	
+	switch (scope) {
+	case SCOPE_BASE:
+		scope = LDAP_SCOPE_BASE;
+		break;
+	case SCOPE_ONELEVEL:
+		scope = LDAP_SCOPE_ONELEVEL;
+		break;
+	case SCOPE_SUBTREE:
+		scope = LDAP_SCOPE_SUBTREE;
+		break;
+	default:
+		return FAILED;
+	}
+
+	tv.tv_sec = ldap_timeout;
+	tv.tv_usec = 0;
+
+	rc = ldap_search_st(q->ld, bdn, scope, filter,
+	    attrs, 0, &tv, &q->res);
+	
+	switch (rc) {
+	/* probably more detailed information should be returned, eg.:
+	   LDAP_TIMELIMIT_EXCEEDED,
+	   LDAP_SIZELIMIT_EXCEEDED,
+	   LDAP_PARTIAL_RESULTS,
+	   LDAP_INSUFFICIENT_ACCESS,
+	   LDAP_BUSY,
+	   LDAP_UNAVAILABLE,
+	   LDAP_UNWILLING_TO_PERFORM,
+	   LDAP_TIMEOUT
+	 */
+
+	case LDAP_SUCCESS:
+		log(128, "qldap_filter: search for %s succeeded\n",
+		    filter);
+		break;
+	case LDAP_TIMEOUT:
+	case LDAP_TIMELIMIT_EXCEEDED:
+	case LDAP_BUSY:
+		log(64, "qldap_filter: search for %s failed (%s)\n", 
+		    filter, ldap_err2string(rc) );
+		return TIMEOUT;
+	case LDAP_NO_SUCH_OBJECT:
+		log(64, "qldap_filter: search for %s failed (%s)\n", 
+		    filter, ldap_err2string(rc) );
+		return NOSUCH;
+	default:
+		log(64, "qldap_filter: search for %s failed (%s)\n", 
+		    filter, ldap_err2string(rc) );
+		return FAILED;
+	}
+	
+	q->state = SEARCH;
+	return OK;
 }
 
-int qldap_first()
+int
+qldap_count(qldap *q)
 {
+	CHECK(q, EXTRACT);
+	return ldap_count_entries(q->ld, q->res);
+}
+
+int
+qldap_first(qldap *q)
+{
+	CHECK(q, EXTRACT);
 	/* get first match of a qldap_filter search */
+
+	q->msg = ldap_first_entry(q->ld, q->res);
+	if (q->msg == NULL) {
+		if (ldap_count_entries(q->ld, q->res) == 0)
+			return NOSUCH;
+		else
+			return FAILED;
+	}
+	q->state = EXTRACT;
+	return OK;
 }
 
-int qldap_next()
+int
+qldap_next(qldap *q)
 {
+	CHECK(q, EXTRACT);
 	/* get next match of a qldap_filter search */
+	if (q->msg == 0) return FAILED;
+
+	q->msg = ldap_next_entry(q->ld, q->msg);
+	if (q->msg == NULL)
+		return NOSUCH;
+	q->state = EXTRACT;
+	return OK;
 }
-#endif
 
 /******  ATTRIBUTE EXTRACTION *************************************************/
 
@@ -508,10 +609,11 @@ qldap_get_status(qldap *q, int *status)
 {
 	int	r;
 	
+	/* default value */
+	*status = STATUS_UNDEF;
 	/* get and check the status of the account */
 	r = qldap_get_attr(q, LDAP_ISACTIVE, &ldap_attr, SINGLE_VALUE);
 	if (r == NOSUCH) {
-		*status = STATUS_UNDEF;
 		return OK;
 	} else if (r == OK) {
 		if (!case_diffs(ldap_attr.s, ISACTIVE_BOUNCE))
@@ -524,7 +626,6 @@ qldap_get_status(qldap *q, int *status)
 		/* perhaps we should spill out a warning for unknown settings */
 		return OK;
 	}
-	*status = STATUS_UNDEF;
 	return r;
 }
 
@@ -560,61 +661,28 @@ qldap_get_dotmode(qldap *q, stralloc *dm)
 }
 
 int
-qldap_get_quota(qldap *q, stralloc *qs, unsigned long *max)
+qldap_get_quota(qldap *q, unsigned long *size, unsigned long *count,
+    unsigned long *max)
 /* XXX move to a quota file? Currently I don't think so. */
 {
 	int	r;
 	
-	/* set defaults */
-	if (!stralloc_copys(qs, "")) return ERRNO;
+	*size = quotasize;
+	*count = quotacount;
 	*max = 0;
 	
 	/* First get the maximum mail size. */
-	r = qldap_get_attr(q, LDAP_MAXMSIZE, &ldap_attr, SINGLE_VALUE);
+	r = qldap_get_ulong(q, LDAP_MAXMSIZE, max);
 	if (r != OK && r != NOSUCH)
 		return r;
-	if (r == OK) {
-		if (ldap_attr.s[scan_ulong(ldap_attr.s, max)] != '\0')
-			return BADVAL;
-	}
 
-	/* Try the LDAP_QUOTA_SIZE LDAP_QUOTA_COUNT couple */
-	r = qldap_get_attr(q, LDAP_QUOTA_SIZE, &ldap_attr, SINGLE_VALUE);
+	r = qldap_get_ulong(q, LDAP_QUOTA_SIZE, size);
 	if (r != OK && r != NOSUCH)
 		return r;
-	if (r == OK) {
-		if (!stralloc_catb(qs, "S", 1)) return ERRNO;
-		if (!stralloc_cats(qs, ldap_attr.s)) return ERRNO;
-	}
-	r = qldap_get_attr(q, LDAP_QUOTA_COUNT, &ldap_attr, SINGLE_VALUE);
+	r = qldap_get_ulong(q, LDAP_QUOTA_COUNT, max);
 	if (r != OK && r != NOSUCH)
 		return r;
-	if (r == OK) {
-		if (qs->len > 0)
-			if (!stralloc_catb(qs, ",", 1)) return ERRNO;
-		if (!stralloc_catb(qs, "C", 1)) return ERRNO;
-		if (!stralloc_cats(qs, ldap_attr.s)) return ERRNO;
-	}
-	if (qs->len > 0) {
-		if (!stralloc_0(qs)) return ERRNO;
-		return OK;
-	}
-	/* Still no quota specification so try LDAP_QUOTA */
-	r = qldap_get_attr(q, LDAP_QUOTA, &ldap_attr, SINGLE_VALUE);
-	if (r != OK && r != NOSUCH)
-		return r;
-	if (r == OK) {
-		if (!stralloc_cat(qs, &ldap_attr)) return ERRNO;
-		return OK;
-	}
 
-	/* last but not least use default if available */
-	if (quota.s && quota.len > 1) {
-		if (!stralloc_cat(qs, &quota)) return ERRNO;
-		return OK;
-	}
-
-	/* no quota defined but that's OK */
 	return OK;
 }
 
@@ -632,6 +700,42 @@ qldap_get_dn(qldap *q, stralloc *dn)
 		return ERRNO;
 	ldap_memfree(d);
 	return OK;
+}
+
+int
+qldap_get_ulong(qldap *q, const char *attr, unsigned long *ul)
+{
+	unsigned long ulval;
+	int	r;
+
+	r = qldap_get_attr(q, attr, &ldap_attr, SINGLE_VALUE);
+	if (r == OK) {
+		if (ldap_attr.s[scan_ulong(ldap_attr.s, &ulval)] != '\0')
+			return BADVAL;
+		*ul = ulval;
+	}
+	return r;
+}
+
+int
+qldap_get_bool(qldap *q, const char *attr, int *bool)
+{
+	int	r;
+
+	r = qldap_get_attr(q, attr, &ldap_attr, SINGLE_VALUE);
+	if (r == OK) {
+		if (!case_diffs("TRUE", ldap_attr.s))
+			*bool = 1;
+		else if (!case_diffs("1", ldap_attr.s))
+			*bool = 1;
+		else if (!case_diffs("FALSE", ldap_attr.s))
+			*bool = 0;
+		else if (!case_diffs("0", ldap_attr.s))
+			*bool = 0;
+		else
+			return BADVAL;
+	}
+	return r;
 }
 
 int
@@ -898,7 +1002,7 @@ check_next_state(qldap *q, int next)
 			return 0;
 	case EXTRACT:
 		/* current state is EXTRACT */
-		if (STATEIN(q, EXTRACT))
+		if (STATEIN(q, EXTRACT) || STATEIN(q, SEARCH))
 			return 1;
 		else
 			return 0;

@@ -87,7 +87,7 @@ SHELL=/bin/sh
 default: it qldap
 
 qldap: qmail-quotawarn qmail-reply auth_pop auth_imap digest qmail-ldaplookup \
-pbsadd pbscheck pbsdbd qmail-todo qmail-forward qmail-secretary
+pbsadd pbscheck pbsdbd qmail-todo qmail-forward qmail-secretary qmail-group
 
 addresses.0: \
 addresses.5
@@ -125,8 +125,8 @@ open.a sig.a prot.o auto_uids.o auto_qmail.o dns.lib socket.lib
 
 auth_imap.o: \
 compile auth_imap.c alloc.h byte.h env.h error.h exit.h fmt.h pbsexec.h \
-qldap-debug.h qldap-errno.h qmail-ldap.h readwrite.h scan.h sig.h str.h \
-stralloc.h substdio.h timeoutread.h auth_mod.h
+qldap-debug.h qldap-errno.h qmail-ldap.h scan.h sig.h str.h stralloc.h \
+substdio.h timeoutread.h auth_mod.h
 	./compile $(LDAPFLAGS) $(DEBUG) auth_imap.c
 
 auth_mod.o: \
@@ -154,8 +154,8 @@ open.a prot.o auto_uids.o auto_qmail.o dns.lib socket.lib
 
 auth_pop.o: \
 compile auth_pop.c byte.h env.h error.h exit.h pbsexec.h qldap-debug.h \
-qldap-errno.h qmail-ldap.h readwrite.h str.h stralloc.h substdio.h \
-timeoutread.h auth_mod.h
+qldap-errno.h qmail-ldap.h str.h stralloc.h substdio.h timeoutread.h \
+auth_mod.h
 	./compile $(LDAPFLAGS) $(DEBUG) auth_pop.c
 
 auto-ccld.sh: \
@@ -1453,6 +1453,23 @@ compile qmail-getpw.c readwrite.h substdio.h subfd.h substdio.h \
 error.h exit.h byte.h str.h case.h fmt.h auto_usera.h auto_break.h \
 qlx.h
 	./compile qmail-getpw.c
+
+qmail-group: \
+load qmail-group.o qmail.o now.o control.o case.a getln.a sig.a open.a \
+seek.a fd.a wait.a env.a qldap.o qldap-debug.o qldap-errno.o read-ctrl.o \
+check.o output.o stralloc.a alloc.a strerr.a substdio.a error.a fs.a str.a \
+coe.o auto_break.o auto_qmail.o
+	./load qmail-group qmail.o now.o control.o case.a getln.a sig.a \
+	open.a seek.a fd.a wait.a env.a qldap.o qldap-debug.o qldap-errno.o \
+	read-ctrl.o check.o output.o stralloc.a alloc.a fs.a strerr.a \
+	substdio.a error.a str.a coe.o auto_break.o auto_qmail.o $(LDAPLIBS) 
+
+qmail-group.o: \
+compile qmail-group.c alloc.h auto_break.h byte.h case.h coe.h control.h \
+env.h error.h fd.h fmt.h getln.h ndelay.h now.h open.h qldap.h qldap-errno.h \
+qmail.h qmail-ldap.h read-ctrl.h seek.h sig.h str.h stralloc.h strerr.h \
+substdio.h wait.h
+	./compile $(LDAPFLAGS) qmail-group.c
 
 qmail-header.0: \
 qmail-header.5

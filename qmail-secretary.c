@@ -529,7 +529,7 @@ void
 sendmoderator(stralloc *hash, int fd)
 {
 	struct qmail qqt;
-	char *qqx, *s;
+	char *qqx, *s, *smax;
 	unsigned long qp;
 	int r;
 	
@@ -547,7 +547,7 @@ sendmoderator(stralloc *hash, int fd)
 		goto fail_nomem;
 
 	qmail_from(&qqt, replyaddr(hash, "bounce"));
-	for (s = moderators.s; s < moderators.s + moderators.len;
+	for (s = moderators.s, smax = moderators.s + moderators.len; s < smax;
 	    s += str_len(s) + 1) {
 		qmail_to(&qqt, s);
 	}
@@ -581,7 +581,7 @@ sendmail(struct qmail *qq, int fd, int maxsize,
 	int offset, len, i, j;
 	
 	/* mail header */
-	qmail_put(qq,dtline.s,dtline.len);
+	qmail_put(qq, dtline.s, dtline.len);
 	/* XXX Date: qmail uses GMT based dates which is sometimes confusing */
 	/* message-id and date line */
 	starttime = now();
@@ -821,10 +821,8 @@ mvmessage(stralloc *hash, stralloc *newhash, const char *maildir)
 		sleep(2);
 	}	
 
-	if (link(s, t) == -1)
+	if (rename(s, t) == -1)
 		strerr_die2sys(111, FATAL, "Could not move file: ");
-	if (unlink(s) == -1)
-		strerr_warn2(WARN, "Could not unlink message: ", &strerr_sys);
 
 	fd = open_read(t);
 	if (fd == -1)
@@ -951,9 +949,9 @@ blast(stralloc *hash, const char *maildir, const char *subdir, char **args)
 		}
 	} else {
 		substdio_fdbuf(&ssout, write, 1, outbuf, sizeof(outbuf));
-		if (substdio_puts(&ssout, "OK ") == -1) goto fail;
+		if (substdio_puts(&ssout, "K") == -1) goto fail;
 		if (substdio_puts(&ssout, s) == -1) goto fail;
-		if (substdio_puts(&ssout, "\n") == -1) goto fail;
+		if (substdio_put(&ssout, "", 1) == -1) goto fail;
 		if (substdio_flush(&ssout) == -1) goto fail;
 		
 		return;

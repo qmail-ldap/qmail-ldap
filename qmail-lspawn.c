@@ -245,22 +245,22 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
 {
    const char *attrs[] = {  /* LDAP_MAIL, */ /* not needed */
                       /* LDAP_MAILALTERNATE, */
-                      LDAP_UID, /* the first 7 attrs are the default ones */
+                      LDAP_UID,
                       LDAP_QMAILUID,
                       LDAP_QMAILGID,
                       LDAP_ISACTIVE,
                       LDAP_MAILHOST,
                       LDAP_MAILSTORE,
                       LDAP_HOMEDIR,
-		      LDAP_QUOTA_SIZE,  /* the last 8 are aditional infos */
+		      LDAP_QUOTA_SIZE,
 		      LDAP_QUOTA_COUNT,
-                      LDAP_QUOTA,
                       LDAP_FORWARDS,
                       LDAP_PROGRAM,
                       LDAP_MODE,
                       LDAP_REPLYTEXT,
                       LDAP_DOTMODE, 
-		      LDAP_MAXMSIZE, 0 };
+		      LDAP_MAXMSIZE,
+		      LDAP_OBJECTCLASS, 0 };
    char num[FMT_ULONG];
    char *escaped;
    char *f;
@@ -268,8 +268,10 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
    struct qldap *q;
    struct stat st;
    unsigned long maxsize;
+   unsigned long size;
+   unsigned long count;
    int at;
-   int i;
+   int ext;
    int id;
    int len;
    int status;
@@ -291,7 +293,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
 
    len = str_len(escaped);
    for (at = len; escaped[at] != '@' && at >= 0 ; at--) ; 
-   i = at;
+   ext = at;
    /*
     * this handles the "catch all" and "-default" extension 
     * but also the normal eMail address.
@@ -305,13 +307,13 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      /* build the search string for the email address */
      if (!stralloc_copys(&filter, "(|(" )) cae(q, QLX_NOMEM);
      /* mail address */
-     if (!stralloc_cats(&filter, LDAP_MAIL)) _exit(QLX_NOMEM);
+     if (!stralloc_cats(&filter, LDAP_MAIL)) cae(q, QLX_NOMEM);
      if (!stralloc_cats(&filter, "=")) cae(q, QLX_NOMEM);
      /* username till current '-' */
-     if (!stralloc_catb(&filter, escaped, i)) cae(q, QLX_NOMEM);
-     if (i != at) { /* do not append catchall in the first round */
+     if (!stralloc_catb(&filter, escaped, ext)) cae(q, QLX_NOMEM);
+     if (ext != at) { /* do not append catchall in the first round */
        /* catchall or default */
-       if (i != 0) /* add '-' */
+       if (ext != 0) /* add '-' */
          if (!stralloc_cats(&filter, auto_break)) cae(q, QLX_NOMEM);
        if (!stralloc_cats(&filter, LDAP_CATCH_ALL)) cae(q, QLX_NOMEM);
      }
@@ -323,10 +325,10 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      if (!stralloc_cats(&filter, LDAP_MAILALTERNATE)) cae(q, QLX_NOMEM);
      if (!stralloc_cats(&filter, "=")) cae(q, QLX_NOMEM);
      /* username till current '-' */
-     if (!stralloc_catb(&filter, escaped, i)) cae(q, QLX_NOMEM);
-     if (i != at) { /* do not append catchall in the first round */
+     if (!stralloc_catb(&filter, escaped, ext)) cae(q, QLX_NOMEM);
+     if (ext != at) { /* do not append catchall in the first round */
        /* catchall or default */
-       if (i != 0) /* add '-' */
+       if (ext != 0) /* add '-' */
          if (!stralloc_cats(&filter, auto_break)) cae(q, QLX_NOMEM);
        if (!stralloc_cats(&filter, LDAP_CATCH_ALL)) cae(q, QLX_NOMEM);
      }
@@ -356,14 +358,14 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      case NOSUCH:
        break;
      }
-     if (rv == OK || i <= 0) break; /* something found or nothing found */
+     if (rv == OK || ext <= 0) break; /* something found or nothing found */
 #ifdef DASH_EXT
      /*
       * if mail starts with a - there is no "-catchall@" search
       * only "chatchall@" will be tried.
       */
-     while (--i > 0) {
-       if (escaped[i] == *auto_break) break;
+     while (--ext > 0) {
+       if (escaped[ext] == *auto_break) break;
      }
 #else
      /* normal qmail-ldap behavior test for username@domain.com and
@@ -397,7 +399,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
    }
 
    /* get the quota for the user of that maildir mbox */
-   rv = qldap_get_quota(q, &foo, &maxsize);
+   rv = qldap_get_quota(q, &size, &count, &maxsize);
    if (rv != OK) goto fail;
    /* check if incomming mail is smaller than max mail size */
    if (maxsize != 0) {
@@ -409,15 +411,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
        cae(q, QLX_MAXSIZE);
      }
    }
-   /* set the quota environment */
-   if (foo.len > 0) {
-     log(32, "%s: %s\n", ENV_QUOTA, foo.s);
-     if ( !env_put2(ENV_QUOTA, foo.s )) cae(q, QLX_NOMEM);
-   } else {
-     log(32, "no quota set\n");
-     if (!env_unset(ENV_QUOTA)) cae(q, QLX_NOMEM);
-   }
-   
+  
 #ifdef QLDAP_CLUSTER
    rv = qldap_get_attr(q, LDAP_MAILHOST, &host, SINGLE_VALUE);
    if (rv != OK && rv != NOSUCH) goto fail;
@@ -467,7 +461,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      log(32, "%s: %s\n", ENV_FORWARDS, foo.s);
      /* setup strict env */
      if (!env_put2(ENV_DOTMODE, DOTMODE_LDAPONLY)) _exit(QLX_NOMEM);
-     if (!env_put2(ENV_MODE, MODE_FORWARD)) _exit(QLX_NOMEM);
+     if (!env_put2(ENV_MODE, MODE_FONLY)) _exit(QLX_NOMEM);
      qldap_free(q);
      return 0;
    default:
@@ -502,26 +496,64 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
     * used for the dash-ext search. XXX currently we use the encrypted
     * mail address which is probably a bad thing.
     */
-   if (i < at && i != 0)
+   if (ext < at && ext != 0)
      if (!stralloc_cats(&nughde,"-")) cae(q, QLX_NOMEM);
    if (!stralloc_0(&nughde)) cae(q, QLX_NOMEM);
-   if (i < at && i != 0) {
-     if (!stralloc_catb(&nughde,escaped+i+1,at-i-1)) cae(q, QLX_NOMEM);
-   }
+   if (ext < at && ext != 0)
+     if (!stralloc_catb(&nughde,escaped+ext+1,at-ext-1)) cae(q, QLX_NOMEM);
    if (!stralloc_0(&nughde)) cae(q, QLX_NOMEM);
 
    /*
     * nughde is filled now setup the environment, with:
     * quota string (already done while checking mail size)
-    * dot mode
-    * delivery mode
+    * mail group handling
     * mail forwarders
     * delivery programs
     * reply text
+    * delivery mode
+    * dot mode
     */
 
-   /* get the forwarding addresses and build a list *
-    * equals to &jdoe@heaven.af.mil in .qmail       */
+   rv = qldap_get_attr(q, LDAP_OBJECTCLASS, &foo, MULTI_VALUE);
+   if (rv != OK) goto fail; /* objectclass is a must */
+   if (!env_unset(ENV_GROUP)) cae(q, QLX_NOMEM);
+   for (len = 0; len < foo.len;
+        len += byte_chr(foo.s + len, foo.len - len, ':')) {
+     if (case_startb(foo.s + len, foo.len - len, "qmailGroup")) {
+       rv = qldap_get_dn(q, &foo);
+       if (rv != OK) goto fail;
+       log(32, "%s: %s\n", ENV_GROUP, foo.s);
+       if (!env_put2(ENV_GROUP, foo.s )) cae(q, QLX_NOMEM);
+       break;
+     }
+   }
+
+   /*
+    * set the quota environment
+    */
+   if (size == 0 && count == 0) {
+     if (size != 0) {
+       if (!stralloc_copyb(&foo, num, fmt_ulong(num, size))) cae(q, QLX_NOMEM);
+       if (!stralloc_append(&foo, "S")) cae(q, QLX_NOMEM);
+     }
+     if (count != 0) {
+       if (size != 0)
+	 if (!stralloc_append(&foo, ",")) cae(q, QLX_NOMEM);
+       if (!stralloc_copyb(&foo, num, fmt_ulong(num, count))) cae(q, QLX_NOMEM);
+       if (!stralloc_append(&foo, "C")) cae(q, QLX_NOMEM);
+     }
+     if (!stralloc_0(&foo)) cae(q, QLX_NOMEM);
+     log(32, "%s: %s\n", ENV_QUOTA, foo.s);
+     if (!env_put2(ENV_QUOTA, foo.s )) cae(q, QLX_NOMEM);
+   } else {
+     log(32, "no quota set\n");
+     if (!env_unset(ENV_QUOTA)) cae(q, QLX_NOMEM);
+   }
+   
+   /*
+    * get the forwarding addresses and build a list
+    * equals to &jdoe@heaven.af.mil in .qmail
+    */
    rv = qldap_get_attr(q, LDAP_FORWARDS, &foo, MULTI_VALUE);
    switch (rv) {
    case OK:
@@ -535,8 +567,10 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      goto fail;
    }
 
-   /* get the path of the local delivery program *
-    * equals to |/usr/bin/program in .qmail      */
+   /*
+    * get the path of the local delivery program
+    * equals to |/usr/bin/program in .qmail
+    */
    rv = qldap_get_attr(q, LDAP_PROGRAM, &foo, MULTI_VALUE);
    switch (rv) {
    case OK:
@@ -551,8 +585,10 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      goto fail;
    }
 
-   /* prefetch the reply text so we can remove it if no deliverymode
-    * is set. */
+   /*
+    * prefetch the reply text so we can remove it if no deliverymode
+    * is set.
+    */
    rv = qldap_get_attr(q, LDAP_REPLYTEXT, &foo, SINGLE_VALUE);
    switch (rv) {
    case OK:
@@ -566,9 +602,11 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      goto fail;
    }
 
-   /* get the deliverymode of the mailbox:                    *
-    * reply, echo, forwardonly, normal, nombox, localdelivery */
-   rv = qldap_get_attr(q, LDAP_MODE, &foo, OLDCS_VALUE);
+   /*
+    * get the deliverymode of the mailbox:
+    * reply, noprogram, noforward, nolocal (nombox)
+    */
+   rv = qldap_get_attr(q, LDAP_MODE, &foo, MULTI_VALUE);
    switch (rv) {
    case OK:
      case_lowers(foo.s);

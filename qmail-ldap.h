@@ -46,7 +46,7 @@
 #define	QLDAP_TIMEOUT		30
 
 /*********************************************************************
-        ldap variables used in qmail-lspawn and checkpassword
+        ldap variables used in qmail-lspawn and auth_*
 *********************************************************************/
 #define LDAP_MAIL		"mail"
 #define LDAP_MAILALTERNATE	"mailAlternateAddress"
@@ -76,18 +76,34 @@
 #define DOTMODE_BOTH		"both"
 #define DOTMODE_NONE		"none"
 
-#define MODE_NORMAL		"normal"
-#define MODE_FORWARD		"forwardonly"
+#define MODE_FONLY		"forwardonly"
 #define MODE_NOFORWARD		"noforward"
 #define MODE_NOMBOX		"nombox"
-#define MODE_LDELIVERY		"localdelivery"
+#define MODE_NOLOCAL		"nolocal"
+#define MODE_NOPROG		"noprogram"
 #define MODE_REPLY		"reply"
-#define MODE_ECHO		"echo"
+/* these are silently ignored */
+#define MODE_LOCAL		"local"
+#define MODE_FORWARD		"forward"
+#define MODE_PROG		"program"
 
 #define ISACTIVE_BOUNCE		"disabled"
 #define ISACTIVE_DELETE		"deleted"
 #define ISACTIVE_NOPOP		"nopop"
 #define ISACTIVE_ACTIVE		"active"
+
+/*********************************************************************
+        ldap variables used in qmail-group
+*********************************************************************/
+#define LDAP_GROUPMEMONLY	"membersonly"
+#define LDAP_GROUPCONFIRM	"senderconfirm"
+#define LDAP_GROUPCONFRIMTEXT	"confirmtext"
+#define LDAP_GROUPMODERATTEXT	"moderatortext"
+#define LDAP_GROUPMODERATDN	"dnmoderator"
+#define LDAP_GROUPMODERAT822	"rfc822moderator"
+#define LDAP_GROUPMEMBERDN	"dnmember"
+#define LDAP_GROUPMEMBER822	"rfc822member"
+#define LDAP_GROUPMEMBERFILTER	"filtermember"
 
 
 /*********************************************************************
@@ -112,6 +128,8 @@
 #define ENV_REPLYTEXT		"QMAILREPLYTEXT"
 #define ENV_FORWARDS		"QMAILFORWARDS"
 #define ENV_PROGRAM		"QMAILDELIVERYPROGRAM"
+
+#define ENV_GROUP		"QLDAPGROUP"
 
 /* qmail-local.c only */
 #define DO_LDAP 	0x01
