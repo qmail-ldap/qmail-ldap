@@ -156,6 +156,7 @@ call_open(struct call *cc, const char *prog, int timeout, int flagstar)
 void
 call_close(struct call *cc)
 {
+	int wstat;
 	int r;
 	char ch;
 	
@@ -163,8 +164,10 @@ call_close(struct call *cc)
 	call_flush(cc);
 	close(cc->tofd);
 	while ((r = call_getc(cc, &ch)) == 1) ;
-	if (r == -1) ; /* bad thing happend */
+	if (r == -1) ; /* bad thing happend but who cares */
 	close(cc->fromfd);
+      
+	wait_pid(&wstat,cc->pid); /* just kill the zombie */
 }
 
 const char *
