@@ -63,8 +63,6 @@ void cleandied() {
 	log1("alert: qmail-todo: oh no! lost qmail-clean connection! dying...\n");
 	flagexitasap = 1; }
 
-int dfd;
-
 
 /* this file is not too long ------------------------------------- FILENAMES */
 
@@ -290,9 +288,6 @@ void comm_do(fd_set *wfds, fd_set *rfds)
 	int w;
 	int len;
 	len = comm_buf.len;
-	write(dfd, "write: ", 7);
-	write(dfd, comm_buf.s + comm_pos,len - comm_pos);
-	write(dfd, "\n\n", 2);
 	w = write(fdout,comm_buf.s + comm_pos,len - comm_pos);
 	if (w <= 0) {
 	  if ((w == -1) && (errno == error_pipe))
@@ -314,21 +309,15 @@ void comm_do(fd_set *wfds, fd_set *rfds)
       if (r <= 0) {
 	if ((r == -1) && (errno == error_pipe))
 	  senddied();
-	write(dfd, "read: failed non fatal\n", 23);
       } else {
 	switch(c) {
 	  case 'H':
-	    write(dfd, "read: sighup()\n",15);
 	    sighup();
 	    break;
 	  case 'X':
-	    write(dfd, "read: sigterm()\n",16);
 	    sigterm();
 	    break;
 	  default:
-	    write(dfd, "read: unknown char ",19);
-	    write(dfd, &c, 1);
-	    write(dfd, "\n", 1);
 	    log1("warning: qmail-todo: qmail-send speaks an obscure dialect\n");
 	    break;
 	}
@@ -594,7 +583,6 @@ void regetcontrols(void)
 
 void reread(void)
 {
-  write(dfd, "HUP\n", 4);
  if (chdir(auto_qmail) == -1)
   {
    log1("alert: qmail-todo: unable to reread controls: unable to switch to home directory\n");
@@ -618,9 +606,6 @@ void main()
  struct timeval tv;
  int c;
 
- dfd = open_trunc("/tmp/qmail-todo.out");
- if ( dfd == -1 ) _exit(1);
- 
  if (chdir(auto_qmail) == -1)
   { log1("alert: qmail-todo: cannot start: unable to switch to home directory\n"); _exit(111); }
  if (!getcontrols())
@@ -670,7 +655,6 @@ void main()
      comm_do(&wfds, &rfds);
     }
   }
- write(dfd, "goodby\n",7);
  _exit(0);
 }
 

@@ -1522,26 +1522,21 @@ void todo_del(char* s)
  switch(*s++) {
   case 'L':
     flagchan[0] = 1;
-		log1("qmail-send: recived message for local delivery\n");
     break;
   case 'R':
     flagchan[1] = 1;
-		log1("qmail-send: recived message for remote delivery\n");
     break;
   case 'B':
     flagchan[0] = 1;
     flagchan[1] = 1;
-		log1("qmail-send: recived message for both deliveries\n");
     break;
   case 'X':
-		log1("qmail-send: recived message for NO delivery\n");
     break;
   default:
     log1("warning: qmail-send unable to understand qmail-todo\n");
     return;
  }
  
- log3("qmail-send: new msg from qmail-todo id ", s, "\n");
  len = scan_ulong(s,&id);
  if (!len || s[len]) {
   log1("warning: qmail-send unable to understand qmail-todo\n");
@@ -1556,9 +1551,6 @@ void todo_del(char* s)
  for (c = 0;c < CHANNELS;++c) if (flagchan[c]) break;
  if (c == CHANNELS)
    while (!prioq_insert(&pqdone,&pe)) nomem();
- if (c == CHANNELS)
-	log1("qmail-send: message already done\n");
-	 
 
  return;
 }
@@ -1599,7 +1591,6 @@ fd_set *rfds;
 	  break;
 	default:
 	  log1("warning: qmail-send unable to understand qmail-todo: report mangled\n");
-	  log1("warning: recieved: "); logsafe(todoline.s); log1("\n");
 	  break;
       }
       todoline.len = 0;
