@@ -17,6 +17,8 @@
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 
+// #define MAKE_NETSCAPE_WORK /* make the Netscape download progress bar work with qmail-pop3d */
+
 void die() { _exit(0); }
 
 int saferead(fd,buf,len) int fd; char *buf; int len;
@@ -267,7 +269,18 @@ void pop3_top(arg) char *arg;
  
   fd = open_read(m[i].fn);
   if (fd == -1) { err_nosuch(); return; }
+
+#ifdef MAKE_NETSCAPE_WORK /* Based on a patch by sven@megabit.net */
+  puts("+OK ");
+  foo[fmt_uint(foo,m[i].size)] = 0;
+  puts(foo);
+
+  puts(" octets \r\n");
+  flush();
+#else
   okay();
+#endif
+
   substdio_fdbuf(&ssmsg,read,fd,ssmsgbuf,sizeof(ssmsgbuf));
   blast(&ssmsg,limit);
   close(fd);

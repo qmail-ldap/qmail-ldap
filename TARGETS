@@ -385,3 +385,13 @@ forgeries.0
 man
 setup
 check
+check.o
+base64.o
+digest_md4.o
+digest_md5.o
+digest_rmd160.o
+digest_sha1.o
+checkpassword
+checkpassword.o
+digest
+digest.o

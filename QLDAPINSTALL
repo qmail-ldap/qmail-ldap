@@ -1,0 +1,301 @@
+Betacode 19981114 by Andre Oppermann <opi@nrg4u.com>,
+Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
+(c) 1998 Internet Business Solutions Ltd.
+
+This LDAP patches for qmail come with NO WARRANTY.
+
+These patches are under the BSD license.
+
+
+TODO:
+
+done    - Implement working checkpassword with plaintext/cryt passwords
+done    - Implement crypto checkpassword (SHA, MD5, MD4, RMD160, crypt())
+done    - Build a complete debug facilities into checkpassword
+done    - Tool for generating crypto passwords
+done    - Implement some more ~control/ldap* files
+done    - Pass list of requested attributes to ldap_search_ext_s
+ongoing - Lot of code clean up's (debugging code needs to be debugged :)
+ongoing - Make qmail-lspawn debug messages work (again)
+ongoing - Debugging and testing, testing, testing
+ongoing - The big qmail-ldap picture
+
+
+NEWS:
+
+ checkpassword compiled with QLDAPDEBUG now does complete LDAP debugging.
+  Usage: ./checkpassword POPLogin POPPassword
+
+ digest computes MD4, MD5, RMD160 and SHA1 passwords (compatible to Netscape)
+  Usage: ./digest POPPassword
+
+INSTALL:
+
+1. Make shure you have fairly good knowledge of qmail and LDAP
+
+2. Read this document
+
+3. You need the following compiled and installed
+    - Mozilla Directory SDK (LDAP libs)
+    - OpenLDAP server (others might also work)
+
+   Don't ask me if you have compile|install problems with Directory SDK or
+   OpenLDAP!
+
+   QLDAP needs the Mozilla Libs because it uses ldap_search_ext_s
+   which supports LDAPv3. Very little tweaking is needed to replace
+   it with ldap_search_s.
+
+4. Apply the qmail-ldap patches to a clean qmail-1.03 source tree
+
+5. Compile and install the stuff (it's the same as in standard qmail
+   install)
+
+5.1 "make checkpassword" in the qmail directory and install checkpassword
+
+5.2 Enable QLDAPDEBUG in checkpassword and compile it again, this is for
+    debugging your LDAP setup
+
+5.3 "make digest" in the qmail directory
+
+6. Create the LDAP user database and start the LDAP server
+
+7. Create the proper ~control/ldap* files for qldap
+
+8. Test and Debug!
+
+
+CONFIG FILES:
+
+~control/ldapserver
+
+ Space separated list of Hostnames or IP addresses of LDAP servers
+ Required
+ Example: ldap.nrg4u.com
+
+~control/ldapbasedn
+
+ The base DN from where the search in the LDAP tree begins
+ Default: NULL
+ Example: o=Internet Pipeline, c=CH
+ Note: Referrals are ignored
+
+~control/ldaplogin
+
+ Username for the LDAP server connection
+ Default: NULL
+ Note: The user must have enough rights to lookup all user information
+
+~control/ldappassword
+
+ Password for the LDAP server connection
+ Default: NULL
+ Note: The passwort is in clear text
+
+~control/ldaplocaldelivery
+
+ Use the ~users/get-pw mechanism if the LDAP lookup finds nothing
+ Default: enabled
+ Example: 1
+ Note: boolean, use 0 (zero) or 1 (one)
+
+~control/ldapdefaultquota
+
+ The default amount of space one user can use
+ Default: unlimited
+ Example: 1000
+ Note: Is written in KBytes, is overided by mailQuota
+
+~control/ldapdefaultdotmode
+
+ The default interpretion of .qmail files
+ Default: ldaponly
+ Example: both
+ Values: both, dotonly, ldaponly, none
+ Note: Works only for deliveries based on LDAP lookups
+
+~control/ldapmessagestore
+
+ The default prepend path for mailMessageStore without trailing /
+ Default: NULL
+ Example: /maildisk/
+ Note: Used in virtual users environments
+
+~control/ldapuser
+
+ The default username used in virtual users environments
+ Default: NULL
+ Example: popusers
+ Note: Must be an existing username
+
+~control/ldapuid
+
+ The default UID used in virtual users environments
+ Default: NULL
+ Example: 1010
+ Note: Must match the username
+
+~control/ldapgid
+
+ The default GID used in virtual users environments
+ Default: NULL
+ Example: 1010
+ Note: Must match the username
+
+~control/custombouncetext
+
+ Additional custom text in bounce messages, eg. for providing contact
+ information of your ISP or messages in your language
+ Default: NULL
+ Example: You can contact us at (555) 555 5555
+ Note: Multiline
+
+~control/quotawarning
+
+ Custom text in quota waring message, eg. for providing contact information
+ of your ISP
+ Default: NULL
+ Example: You can contact us at (555) 555 5555
+ Note: Multiline
+
+
+LDAP PARAMETER FIELDS:
+
+mail
+
+ The users email address
+ Required
+ Example: jdoe@foo.bar
+
+mailAlternateAddress
+
+ Secondary (alias) mailaddresses for the same user
+ Example: jd@foo.bar
+
+qmailUser
+
+ Username of the user on the mailsystem
+ Example: jdoe
+ Note: Can be omitted in an virtual users environment
+
+qmailUID
+
+ UID of the user on the mailsystem
+ Example: 1010
+ Note: Can be omitted in an virtual users environment
+
+qmailGID
+
+ GID of the user on the mailsystem
+ Example: 1010
+ Note: Can be omitted in an virtual users environment
+
+mailMessageStore
+
+ Path to the maildir/mbox on the mail system
+ Example: /home/jdoe/
+ Note: Can be written relative in an virtual users environment
+
+mailQuota
+
+ The amount of space the user can use until all further msg get bounced
+ Example: 1000
+ Note: In KBytes, overides ldapdefaultquota
+
+mailForwardingAddress
+
+ Addresses to forward all incoming messages
+ Example: jdoe@new.place
+ Note: 
+
+deliveryProgramPath
+
+ 
+
+deliveryMode
+
+ 
+
+mailReplyText
+
+ 
+
+qmailDotMode
+
+ 
+
+uid
+
+ The username for POP3 delivery
+ Example: jdoe
+ Note: 
+
+userPassword
+
+ The password for POP3 delivery
+ Example: testit
+ Note: Can be encrypted with SHA-1, MD5, DES, crypt
+
+
+EXAMPLE QLDAP LDIF FILE:
+
+dn: cn=Andre Oppermann, o=Internet Pipeline, c=CH
+cn: Andre Oppermann
+sn: Oppermann
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: qmailUser
+mail: opi@opi.flirtbox.ch
+mailHost: opi.flirtbox.ch
+mailMessageStore: /usr/home/opi/maildir/
+mailQuota: 1000
+qmailUser: opi
+qmailUID: 1001
+qmailGID: 1001
+uid: opi
+userPassword: {MD5}b28a87511da157f147ed4766b0474a8a
+
+
+EXAMPLE SLAPD.CONF FILE:
+
+include         /usr/local/etc/ldap/slapd.at.conf
+include         /usr/local/etc/ldap/slapd.oc.conf
+schemacheck     on
+#referral       ldap://ldap.itd.umich.edu
+
+#######################################################################
+# ldbm database definitions
+#######################################################################
+
+database        ldbm
+suffix          ""
+directory       /var/qmail/users
+rootdn          "cn=root, o=Internet Pipeline, c=CH"
+rootpw          secret
+index           mail,mailAlternateAddress,uid
+index           default none
+
+
+ADD THIS SCHEMA TO SLAPD.OC.CONF
+
+objectclass qmailUser
+        requires
+                objectclass,
+                mail,
+                mailMessageStore,
+                uid,
+                userPassword
+        allows
+                mailAlternateAddress,
+                qmailUser,
+                qmailUID,
+                qmailGID,
+                mailQuota,
+                mailForwardingAddress,
+                deliveryProgramPath,
+                deliveryMode,
+                mailReplyText,
+                qmailDotMode
+
+
