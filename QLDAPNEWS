@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/01/08 08:47:20 $ ($Revision: 1.79 $)
+RELEASE: $Date: 2003/02/03 22:13:16 $ ($Revision: 1.80 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,17 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Bug fix because of a gratuitous recycling of a var in qmail-quotawarn if
+ the DOTMODE_NONE was used. Thanks to Chris Maxwell.
+
+ Don't print extended received header if the needed infos are not available.
+ This is for qmtp receives. Idea by Chris L. Mason.
+
+ Many bug fixes and enhancements in the NOTYET code of qmail-reply, inspired
+ by Neil Sequeira.
+
+NEWS for 20030101 stuff:
 
  Retry the ldap_bind with LDAPv2 if ldap_bind fails with LDAP_PROTOCOL_ERROR.
  This solves a problem with OpenLDAP > 2.0 client libs and a OpenLDAP 1.2

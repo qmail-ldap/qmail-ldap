@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/12/31 00:14:06 $ ($Revision: 1.27 $)
+RELEASE: $Date: 2003/02/03 22:13:16 $ ($Revision: 1.28 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -30,12 +30,10 @@ PS: planned means we see the use of the idea but there are a lot more
 ALSO ON THE LIST: (priority list ???)
 - improve the RBL handling (tagging, types, etc) (done)
 - add smtp-after-pop functionality (done)
-
 - add logging to pop3 (similiar to smtpd) (done)
-    what should be logged? (login name, all comandos after auth?)
+- check the enhanced debug code (one bug fix, done)
 
 - add mailGroup handling
-- check the enhanced debug code (one bug fix, done)
 - benchmarking the code
 - make the current code rock solid (even if it is not perfect)
 - better TLS support (better written??) (tls for pop???)
