@@ -1,11 +1,12 @@
 #include "qmail-ldap.h"
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <errno.h>
-#define QLDAP_PORT LDAP_PORT
+#include <lber.h>
+#include <ldap.h>
 #include "control.h"
 #include "stralloc.h"
 #include "env.h"
-#include "lber.h"
-#include "ldap.h"
 #include "auto_usera.h"
 #include "auto_uids.h"
 #include "auto_qmail.h"
@@ -13,21 +14,28 @@
 #include "check.h"
 #include "case.h"
 #include "qlx.h"
-#include <sys/types.h>
 #include "compatibility.h"
 #include "digest_md4.h"
 #include "digest_md5.h"
 #include "digest_rmd160.h"
 #include "digest_sha1.h"
 #include "str.h"
+#include "select.h"
+#include "ipalloc.h"
+#include "dns.h"
+#include "timeoutconn.h"
+#include "byte.h"
+#include "readwrite.h"
 
 #ifdef AUTOHOMEDIRMAKE
 #include "error.h"
 #include "wait.h"
 #endif
 
+#define QLDAP_PORT LDAP_PORT
+
 #ifndef NULL
- #define NULL 0
+#define NULL 0
 #endif
 
 #ifdef QLDAPDEBUG
@@ -80,6 +88,8 @@ char* sa2s(stralloc *sa) { return 0; }
 
 #endif
 
+static void forward_session();
+
 /* initialize the string arrays, this uses DJB's libs */
 stralloc    qldap_server = {0};
 stralloc    qldap_basedn = {0};
@@ -90,6 +100,7 @@ stralloc    qldap_uid = {0};
 stralloc    qldap_gid = {0};
 stralloc    qldap_messagestore = {0};
 stralloc    qldap_passwdappend = {0};
+stralloc    qldap_forwardhost = {0};
 #ifdef AUTOHOMEDIRMAKE
 stralloc    qldap_dirmaker = {0};
 #endif
@@ -695,3 +706,104 @@ char **argv;
 
 }
 
+static void copyloop(int infd, int outfd, int timeout)
+{
+	fd_set iofds;
+	fd_set savedfds;
+	int maxfd;			/* Maximum numbered fd used */
+	struct timeval tv;
+	unsigned long bytes;
+	char buf[4096];
+
+	/* Set up timeout */
+	tv.tv_sec = timeout;
+	tv.tv_usec = 0;
+
+	/* file descriptor bits */
+	FD_ZERO(&savedfds);
+	FD_SET(infd, &savedfds);
+	FD_SET(outfd, &savedfds);
+
+	if (infd > outfd) {
+		maxfd = infd;
+	} else {
+		maxfd = outfd;
+	}
+
+	debug_msg(OUTPUT, "Entering copyloop() - timeout is %d\n");
+	while(1) {
+		//memcpy(&iofds, &savedfds, sizeof(iofds));
+		byte_copy(&iofds, sizeof(iofds), &savedfds);
+		
+		if ( select( maxfd + 1, &iofds, (fd_set *)0, (fd_set *)0, &tv)
+			  <= 0 ) {
+			break;
+		}
+
+		if(FD_ISSET(infd, &iofds)) {
+			if((bytes = read(infd, buf, sizeof(buf))) <= 0)
+				break;
+			if(write(outfd, buf, bytes) != bytes)
+				break;
+		}
+		if(FD_ISSET(outfd, &iofds)) {
+			if((bytes = read(outfd, buf, sizeof(buf))) <= 0)
+				break;
+			if(write(infd, buf, bytes) != bytes)
+				break;
+		}
+	}
+	debug_msg(OUTPUT, "Leaving main copyloop\n");
+
+	shutdown(infd,0);
+	shutdown(outfd,0);
+	close(infd);
+	close(outfd);
+	return;
+}
+
+static void forward_session()
+{
+	ipalloc ip = {0};
+	int ffd;
+	int timeout = 60;
+	int ctimeout = 20;
+	
+	switch (dns_ip(&ip,&qldap_forwardhost)) {
+		case DNS_MEM:
+			debug_msg(OUTPUT, "Out of memory\n");
+			_exit(QLX_NOMEM);
+		case DNS_SOFT:
+			debug_msg(OUTPUT, "Sorry, I couldn't find any host by that name.\n");
+			_exit(33);
+		case DNS_HARD:
+			debug_msg(OUTPUT, "There is no host named '%s'\n", sa2s(&qldap_forwardhost));
+			_exit(30);
+		case 1:
+			if (ip.len <= 0) {
+				debug_msg(OUTPUT, "Sorry, I couldn't find any host by that name.\n");
+				_exit(33);
+			}
+	}
+	if ( ip.len != 1 ) {
+		debug_msg(OUTPUT, "Too many hosts found ???\n");
+		_exit(35);
+	}
+	
+	ffd = socket(AF_INET,SOCK_STREAM,0);
+	if (ffd == -1) {
+		debug_msg(OUTPUT, "socket made a booboo\n");
+		_exit(36);
+	}
+	
+	if (timeoutconn(ffd,&ip.ix[0].ip,110,ctimeout) != 0) {
+		debug_msg(OUTPUT, "timeoutconn made a booboo\n");
+		_exit(37);
+	}
+	
+	/* We have a connection */
+	copyloop(0, ffd, timeout);
+	
+	_exit(0);
+}
+	

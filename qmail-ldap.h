@@ -1,18 +1,16 @@
 #ifndef _QMAIL_LDAP_H_
 #define _QMAIL_LDAP_H_
 
-#define LDAP_ESCAPE_BUG /* If you are shur your ldap server does not *
-									have the nasty escape bug, comment me out */
+#define LDAP_CATCH_ALL "catchall"  
+/* this is the "catch all" string									*
+ * ATTN: escape the string correctly, remember					*
+ * '(', ')', '\', '*' and '\0' have to be escaped with '\'	*/
 
-#define LDAP_CATCH_ALL "catchall"  /* this is the "catch all" string *
- * ATTN: escape the string correctly, remember             *
- * '(', ')', '\', '*' and '\0' have to be escaped with '\' */
-
-/* the maximum and minimum uid allowed */
+/* the maximum and minimum uid allowed								*/
 #define PW_MAX 65535
 #define PW_MIN 100
 
-/* ldap variables used in qmail-lspawn and checkpassword */
+/* ldap variables used in qmail-lspawn and checkpassword		*/
 #define LDAP_MAIL "mail"
 #define LDAP_MAILALTERNATE "mailAlternateAddress"
 #define LDAP_QMAILUSER "qmailUser"
