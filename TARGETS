@@ -414,3 +414,9 @@ qmail-ldaplookup.o
 qmail-ldaplookup
 qldap-profile.o
 output.o
+pbscheck.o
+pbsdbd.o
+pbsadd.o
+pbscheck
+pbsadd
+pbsdbd

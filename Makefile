@@ -70,7 +70,8 @@ SHELL=/bin/sh
 
 default: it qldap
 
-qldap: qmail-quotawarn qmail-reply auth_pop auth_imap digest qmail-ldaplookup
+qldap: qmail-quotawarn qmail-reply auth_pop auth_imap digest qmail-ldaplookup \
+pbsadd pbscheck pbsdbd
 
 addresses.0: \
 addresses.5
@@ -1161,6 +1162,44 @@ output.o: \
 compile output.c output.h stralloc.h substdio.h fmt.h str.h scan.h \
 readwrite.h
 	./compile output.c
+
+pbsadd: \
+load pbsadd.o control.o now.o ip.o getln.a open.a env.a stralloc.a \
+alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o socket.lib
+	./load pbsadd control.o now.o ip.o getln.a open.a env.a \
+	stralloc.a alloc.a strerr.a substdio.a error.a str.a fs.a \
+	auto_qmail.o `cat socket.lib`
+
+pbsadd.o: \
+compile pbsadd.c alloc.h auto_qmail.h byte.h control.h env.h error.h \
+exit.h fmt.h ip.h now.h readwrite.h stralloc.h substdio.h
+	./compile pbsadd.c
+
+pbscheck: \
+load pbscheck.o control.o now.o timeoutread.o timeoutwrite.o \
+ip.o getln.a open.a env.a stralloc.a alloc.a strerr.a substdio.a \
+error.a str.a fs.a auto_qmail.o socket.lib
+	./load pbscheck control.o now.o timeoutread.o timeoutwrite.o \
+	ip.o getln.a open.a env.a stralloc.a alloc.a strerr.a substdio.a \
+	error.a str.a fs.a auto_qmail.o `cat socket.lib`
+
+pbscheck.o: \
+compile pbscheck.c alloc.h auto_qmail.h byte.h control.h env.h error.h \
+exit.h fmt.h ip.h now.h readwrite.h str.h stralloc.h substdio.h timeoutread.h \
+timeoutwrite.h
+	./compile pbscheck.c
+
+pbsdbd: \
+load pbsdbd.o control.o now.o ip.o ndelay.a getln.a open.a stralloc.a \
+alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o socket.lib
+	./load pbsdbd control.o now.o ip.o ndelay.a getln.a open.a \
+	stralloc.a alloc.a strerr.a substdio.a error.a str.a fs.a \
+	auto_qmail.o `cat socket.lib`
+
+pbsdbd.o: \
+compile pbsdbd.c alloc.h auto_qmail.h byte.h control.h ip.h ndelay.h \
+now.h stralloc.h strerr.h substdio.h uint32.h
+	./compile pbsdbd.c
 
 pinq: \
 warn-auto.sh pinq.sh conf-qmail conf-break conf-split

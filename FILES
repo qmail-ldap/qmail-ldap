@@ -475,3 +475,7 @@ qldap-profile.c
 qldap-profile.h
 output.h
 output.c
+pbscheck.c
+pbsdbd.c
+pbsadd.c
+POPBEFORESMTP
