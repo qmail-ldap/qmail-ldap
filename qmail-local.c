@@ -75,6 +75,7 @@ stralloc ueo = {0};
 stralloc cmds = {0};
 stralloc messline = {0};
 stralloc foo = {0};
+stralloc qwapp = {0};
 
 char buf[1024];
 char outbuf[1024];
@@ -210,9 +211,9 @@ void quota_warning(char *fn)
  int wstat;
 
  if (!env_get(ENV_QUOTAWARNING) ) return;
- if (!stralloc_copys(&foo, auto_qmail)) temp_nomem();
- if (!stralloc_cats(&foo, "/bin/qmail-quotawarn")) temp_nomem();
- if (!stralloc_0(&foo)) temp_nomem();
+ if (!stralloc_copys(&qwapp, auto_qmail)) temp_nomem();
+ if (!stralloc_cats(&qwapp, "/bin/qmail-quotawarn")) temp_nomem();
+ if (!stralloc_0(&qwapp)) temp_nomem();
 
  if (seek_begin(0) == -1) temp_rewind();
 
@@ -221,7 +222,7 @@ void quota_warning(char *fn)
    case -1:
      temp_fork();
    case 0:
-     args[0] = foo.s; args[1] = fn; args[2] = 0;
+     args[0] = qwapp.s; args[1] = fn; args[2] = 0;
      sig_pipedefault();
      execv(*args,args);
      strerr_die5x(111,"Unable to run quotawarn program: ", foo.s, ": ",error_str(errno),". (LDAP-ERR #2.3.0)");
@@ -830,14 +831,14 @@ char **argv;
          ldapprogdelivery = 1;
       } else if ( !str_diff(DOTMODE_NONE, s) ){
          ++count_file;
-         if (!stralloc_copys(&foo,aliasempty)) temp_nomem();
-         if (!stralloc_0(&foo)) temp_nomem();
-         if (foo.s[foo.len - 2] == '/')
-            if (flagdoit) maildir(foo.s);
-            else sayit("maildir ",foo.s, foo.len);
+         if (!stralloc_copys(&cmds,aliasempty)) temp_nomem();
+         if (!stralloc_0(&cmds)) temp_nomem();
+         if (cmds.s[cmds.len - 2] == '/')
+            if (flagdoit) maildir(cmds.s);
+            else sayit("maildir ", cmds.s, cmds.len);
          else
-            if (flagdoit) mailfile(foo.s);
-            else sayit("mbox ",foo.s, foo.len);
+            if (flagdoit) mailfile(cmds.s);
+            else sayit("mbox ", cmds.s, cmds.len);
          count_print();
          _exit(0); 
       } else {
