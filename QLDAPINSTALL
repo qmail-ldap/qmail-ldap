@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/06/29 19:01:59 $)
+RELEASE: current ($Date: 2004/08/03 20:27:14 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -1093,12 +1093,13 @@ LDAP_PROGRAM (default: "deliveryProgramPath")
 LDAP_MODE (default: "deliveryMode")
 
  multi field entries of these keywords
- - (normal): put message into maildir/mbox, plus forward and program delivery
+ - (no entry): default delivery, put message into maildir/mbox (localdelivery),
+   plus forward and program delivery if specified.
  - noforward: do not forward (ignores forwarding entries in ldap and .qmail)
  - nolocal: do not put message into maildir/mbox (ignores also .qmail)
  - noprogram: do not do program deliveries (ignores deliveryprogrampath, .qmail)
  - reply: send an auto_reply mail with text from mailReplyText
- Default: no QMAILMODE
+ Default: no entry -> default
  Example: noforward
           noprogram
  Note: The behaviour changed compared with previous qmail-ldap versions
