@@ -17,7 +17,7 @@
 # -DALTQUEUE to use a diffrent qmail-queue programm on runtime
 # -DDATA_COMPRESS to use the smtp on the fly DATA compression 
 # -DSMTPEXECCHECK to enable smtp DOS/Windows executable detection
-#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT 
+#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT -DDATA_COMPRESS
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
