@@ -60,7 +60,7 @@ void lookup(stralloc *mail);
 
 int timeout = 3;
 int
-saferead(int fd, char *buf, int len)
+saferead(int fd, void *buf, int len)
 {
 	return timeoutread(timeout,fd,buf,len);
 }

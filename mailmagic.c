@@ -20,7 +20,7 @@ sa_init(stralloc *header)
 }
 
 static int
-sa_read(int fd, char *buf, int len)
+sa_read(int fd, void *buf, int len)
 {
 	int	t;
 

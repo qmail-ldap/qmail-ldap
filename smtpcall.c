@@ -100,13 +100,13 @@ call_putsflush(struct call *cc, const char *s)
 static int mytimeout = 10;
 
 static int
-mywrite(int fd, char *buf, int len)
+mywrite(int fd, void *buf, int len)
 {
 	return timeoutwrite(mytimeout,fd,buf,len);
 }
 
 static int
-myread(int fd, char *buf, int len)
+myread(int fd, void *buf, int len)
 {
 	return timeoutread(mytimeout,fd,buf,len);
 }
