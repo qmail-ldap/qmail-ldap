@@ -1,0 +1,28 @@
+Betacode 20000320 by Andre Oppermann <opi@nrg4u.com>,
+Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
+(c) 1998,1999,2000 Internet Business Solutions Ltd.
+
+This LDAP patches for qmail come with NO WARRANTY.
+
+These patches are under the BSD license.
+
+
+TODO:
+
+ongoing - Debugging and testing, testing, testing
+ongoing - The big qmail-ldap picture
+ongoing - full code review by a third person
+planned - splitting the patch into smaler separate pieces
+planned - make it possible to have locals and rcpthosts in ldap
+          and perhaps also the rules for the tcpserver
+
+ALSO ON THE LIST:
+- add the new control files and their meaning to qmail-showctl (done)
+- find a solution with the mailmessagestore and homedir
+- solution for the problem with check.c (better and faster check 
+  algorithm) (done)
+- clean up in the maildir++ support
+- imap check, there seems to be some problems with Netscape
+- don't use getcwd and chdir in init_ldap
+- looping of messages in cluster mode, does the loop count work?
+
