@@ -147,6 +147,7 @@ void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
 void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command ="); logstring(3,arg); logflush(3); }
 void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because of 'SMTP SIZE' argument"); }
 void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
+void err_relay() { out("553 we don't relay (#5.7.1)\r\n"); }
 void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
 void err_wantrcpt() { out("503 RCPT first (#5.5.1)\r\n"); logline(3,"'rcpt to' first"); }
 void err_noop() { out("250 ok\r\n"); logline(3,"'noop'"); }
@@ -481,6 +482,22 @@ int rcptdenied()
   return 0;
 }
 
+int relayprobe() /* relay probes trying stupid old sendwhale bugs */
+{
+  int j;
+  j = addr.len;
+  while(--j >= 0)
+    if (addr.s[j] == '@') break;
+  if (j < 0) j = addr.len;
+  while(--j >= 0) {
+    if (addr.s[j] == '@') return 1; /* double @ */
+    if (addr.s[j] == '%') return 1; /* percent relaying */
+    if (addr.s[j] == '!') return 1; /* UUCP bang path */
+  }
+  return 0;
+}
+
+
 void smtp_helo(arg) char *arg;
 {
   smtp_greet("250 "); out("\r\n");
@@ -665,9 +682,23 @@ void smtp_rcpt(arg) char *arg; {
   {
     err_syntax();
     logpid(2); logstring(2,"syntax error in 'rcpt to' ="); logstring(2,arg); logflush(2);
+    if (errdisconnect) err_quit();
     return;
   }
   logpid(3); logstring(3,"rcpt to ="); logstring(3,addr.s); logflush(3);
+
+  /* XXX: blockrelay not yet fully done */
+  if (blockrelayprobe) /* don't enable this if you use percenthack */
+  {
+    if (relayprobe)
+    {
+      err_relay();
+      logline(3,"'rcpt to' denied = looks like sendwhale bug relay probe");
+      if (errdisconnect) err_quit();
+      return;
+    }
+  }
+
   if (relayclient)
   {
     --addr.len;
