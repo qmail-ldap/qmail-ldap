@@ -212,6 +212,8 @@ void smtp_help(char *arg)
 }
 void smtp_quit(char *arg)
 {
+  if (!stralloc_copys(&greeting,"Goodbye."))
+    die_nomem();
   smtp_line("221 ");
   logline(3,"quit, closing connection");
   flush();
@@ -232,6 +234,7 @@ const char *local;
 const char *relayclient;
 const char *relayok;
 const char *greeting550;
+const char *greeting421;
 int  spamflag = 0;
 
 stralloc helohost = {0};
@@ -369,6 +372,7 @@ void setup(void)
   if (env_get("RCPTCHECK")) rcptcheck = 1;
   if (env_get("LDAPSOFTOK")) ldapsoftok = 1;
   greeting550 = env_get("550GREETING");
+  greeting421 = env_get("421GREETING");
   relayok = relayclient = env_get("RELAYCLIENT");
 
   if (env_get("SMTPAUTH")) {
@@ -1606,6 +1610,19 @@ void cleanup(void)
 	ldaplookupdone();
 }
 
+void err_503or421(char *arg)
+{
+  if (greeting421)
+    out("421 Service temporarily not available (#4.3.2)\r\n");
+  else
+    out("503 bad sequence of commands (#5.5.1)\r\n");
+  if (errdisconnect) err_quit();
+}
+void err_badcommand(char *arg)
+{
+  out("503 bad sequence of commands (#5.5.1)\r\n");
+}
+
 struct commands smtpcommands[] = {
   { "rcpt", smtp_rcpt, 0 }
 , { "mail", smtp_mail, 0 }
@@ -1627,6 +1644,13 @@ struct commands smtpcommands[] = {
 , { 0, err_unimpl, flush }
 } ;
 
+struct commands smtprestricted[] = {
+  { "quit", smtp_quit, flush }
+, { "helo", err_503or421, flush }
+, { "ehlo", err_503or421, flush }
+, { 0, err_badcommand, flush }
+};
+
 int main(int argc, char **argv)
 {
 #ifdef TLS_SMTPD
@@ -1636,12 +1660,20 @@ int main(int argc, char **argv)
   if (chdir(auto_qmail) == -1) die_control();
   setup();
   if (ipme_init() != 1) die_ipme();
-  if (greeting550) {
-    stralloc_copys(&greeting,greeting550);
-    if (greeting.len == 0)
-      stralloc_copys(&greeting,"sorry, your mail was administratively denied. (#5.7.1)");
-    smtp_line("554 ");
-    err_quit();
+  if (greeting550 || greeting421) {
+    if (!stralloc_copys(&greeting,greeting550 ? greeting550 : greeting421))
+      die_nomem();
+    if (greeting.len == 0 && greeting550)
+      stralloc_copys(&greeting,
+	  "sorry, your mail was administratively denied. (#5.7.1)");
+    else if (greeting.len == 0 && greeting421)
+      stralloc_copys(&greeting,
+	  "Service temporarily not available (#4.3.2)");
+
+    smtp_line(greeting550 ? "554 " : "421 ");
+    if (errdisconnect) err_quit();
+    if (commands(&ssin,smtprestricted) == 0) die_read();
+    die_nomem();
   }
   smtp_greet("220 ");
   if (commands(&ssin,smtpcommands) == 0) die_read();
