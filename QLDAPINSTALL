@@ -263,12 +263,6 @@ CONFIG FILES:
        -cut-
        #!/bin/sh
        mkdir -m 700 -p $1
-       cd $1
-       if [ "$2" = "./" ]; then
-           mkdir -m 700 cur new tmp
-       else
-           maildirmake $2 # this does not work if your aliasempty is './'
-       fi
        #EOF
        -cut-
 
