@@ -5,7 +5,6 @@
 #include "stralloc.h"
 
 static stralloc escapedstr = {0};
-extern stralloc	objectclass;
 /*
  * For LDAP, '(', ')', '\', '*' and '\0' have to be escaped with '\'.
  * We ignore the '\0' case because it is not possible to have a '\0' in s.
@@ -28,6 +27,7 @@ filter_escape(char *s)
 }
 
 static stralloc ocfilter = {0};
+extern stralloc	objectclass;
 
 char *
 filter_objectclass(char *searchfilter)

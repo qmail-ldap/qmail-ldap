@@ -272,8 +272,12 @@ void pop3_quit()
   logf(4, "comm: quit");
 /* qmail-ldap stuff */
 /* this is just minimal support, because pop3 can not produce new mail */
-  quota_get(&q, 0);
-  quota_calc(".",&qfd, &q);
+  quota_get(&q, env_get(ENV_QUOTA));
+  if (quota_calc(".",&qfd, &q) == -1) {
+    /* second chance */
+    sleep(3);
+    quota_calc(".",&qfd, &q);
+  }
   for (i = 0;i < numm;++i)
     if (m[i].flagdeleted) {
       if ( qfd != -1 ) quota_rm(qfd, m[i].size, 1);

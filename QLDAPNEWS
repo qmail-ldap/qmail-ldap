@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/04 12:39:05 $ ($Revision: 1.116 $)
+RELEASE: $Date: 2003/09/05 15:19:05 $ ($Revision: 1.117 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,8 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ auth_* sets now the MAILDIRQUOTA and DATASIZE environment vars. 
 
  qmail-qmqpd supports now both clear and compressed communications.
 

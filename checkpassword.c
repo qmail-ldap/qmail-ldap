@@ -140,6 +140,35 @@ check_ldap(stralloc *login, stralloc *authdata,
 		if (r != OK) goto fail;
 		r = qldap_get_mailstore(q, &c->home, &c->maildir);
 		if (r != OK) goto fail;
+		size = count = max = 0;
+		r = qldap_get_quota(q, &size, &count, &max);
+		if (r != OK) goto fail;
+		if (max != 0) {
+			num[fmt_ulong(num, max)] = 0;
+			if (!env_put2("DATASIZE", num))
+				auth_error(ERRNO);
+		}
+		if (size != 0 || count != 0) {
+			if (size != 0) {
+				if (!stralloc_copyb(&ld, num,
+					    fmt_ulong(num, size)))
+					auth_error(ERRNO);
+				if (!stralloc_append(&ld, "S"))
+					auth_error(ERRNO);
+			}
+			if (count != 0) {
+				if (size != 0)
+					if (!stralloc_append(&ld, ","))
+						auth_error(ERRNO);
+				if (!stralloc_copyb(&ld, num,
+					    fmt_ulong(num, count)))
+					auth_error(ERRNO);
+				if (!stralloc_append(&ld, "C"))
+					auth_error(ERRNO);
+			}
+			if (!stralloc_0(&ld)) auth_error(ERRNO);
+			if (!env_put2(ENV_QUOTA, ld.s )) auth_error(ERRNO);
+		}
 	}
 	
 	if (qldap_need_rebind() == 0) {
