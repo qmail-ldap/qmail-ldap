@@ -1580,7 +1580,7 @@ void main()
      r = read(chanfdin[c],&ch,1);
    while ((r == -1) && (errno == error_intr));
    if (r < 1)
-    { log1("alert: cannot start: hath the daemon spawn no fire?\n"); _exit(111); }
+    { log1("alert: cannot start qmail-lspawn or it had an error! Check if ~control/ldapserver exists.\n"); _exit(111); }
    do
      r = read(chanfdin[c],&ch1,1);
    while ((r == -1) && (errno == error_intr));
