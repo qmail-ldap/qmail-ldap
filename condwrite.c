@@ -139,10 +139,12 @@ maildir_child(char *dir)
 
 	if (link(fntmptph,fnnewtph) == -1) goto fail;
 	/* if it was error_exist, almost certainly successful; i hate NFS */
-	tryunlinktmp(); _exit(99);
-	/* we exit with 99 so no more deliveries are done */
+	tryunlinktmp();
+	_exit(0);
 
-fail: tryunlinktmp(); _exit(1);
+fail:
+	tryunlinktmp();
+	_exit(1);
 }
 
 /* end child process */
@@ -151,7 +153,7 @@ fail: tryunlinktmp(); _exit(1);
 void
 quota_bounce(const char *type)
 {
-	strerr_die3x(100, "The users ", type,
+	strerr_die4x(100, FATAL, "The users ", type,
 	    " is over the allowed quota (size). (#5.2.2)");
 }
 
@@ -187,7 +189,7 @@ quota_warning(char *fn)
 	switch(wait_exitcode(wstat))
 	{
 	case 2:
-		strerr_die5x(111,"Unable to run quotawarn program: ",
+		strerr_die6x(111, FATAL, "Unable to run quotawarn program: ",
 		    qwapp.s, ": ",error_str(errno),". (#4.2.2)");
 	case 111: _exit(111);
 	case 0: break;
@@ -215,26 +217,27 @@ maildir_write(char *fn)
 	case OK:
 		break;
 	case MAILDIR_CORRUPT:
-		strerr_die3x(111,"The maildir '", fn,
+		strerr_die4x(111, FATAL, "The maildir '", fn,
 		    "' seems to be corrupted. (#4.2.1)");
 	case ERRNO:
 	default:
-		strerr_die3x(111,"Unable to create maildir '",
+		strerr_die4x(111, FATAL, "Unable to create maildir '",
 		    fn, "' (#4.3.0)");
 	}
 #endif
 
 	if (quotastring && *quotastring) {
 		if (fstat(0, &mailst) != 0)
-			strerr_die3x(111,"Can not stat mail for quota: ",
-			    error_str(errno),". (#4.3.0)");
+			strerr_die4x(111, FATAL,
+			    "Can not stat mail for quota: ",
+			    error_str(errno), ". (#4.3.0)");
 		mailsize = mailst.st_size;
 		quota_get(&q, quotastring);
 		if (quota_calc(fn, &msfd, &q) == -1) {
 			/* second chance */
 			sleep(3);
 			if (quota_calc(fn, &msfd, &q) == -1) {
-				strerr_die1x(111,
+				strerr_die2x(111, FATAL,
 				    "Temporary race condition while "
 				    "calculating quota. (#4.3.0)");
 			}
@@ -246,7 +249,7 @@ maildir_write(char *fn)
 				/* second chance */
 				sleep(3);
 				if (quota_recalc(fn, &msfd, &q) == -1)
-					strerr_die1x(111,
+					strerr_die2x(111, FATAL,
 					    "Temporary race condition while "
 					    "recalculating quota. (#4.3.0)");
 			}
@@ -284,12 +287,20 @@ maildir_write(char *fn)
 		temp_childcrashed();
 	switch(wait_exitcode(wstat))
 	{
-	case 0: _exit(99);
-	case 2: strerr_die1x(111,"Unable to chdir to maildir. (#4.2.1)");
-	case 3: strerr_die1x(111,"Timeout on maildir delivery. (#4.3.0)");
-	case 4: strerr_die1x(111,"Unable to read message. (#4.3.0)");
-	default: strerr_die1x(111,
-		     "Temporary error on maildir delivery. (#4.3.0)");
+	case 0:
+		/* we exit with 99 so no more deliveries are done */
+		_exit(99);
+	case 2:
+		strerr_die2x(111, FATAL,
+		    "Unable to chdir to maildir. (#4.2.1)");
+	case 3:
+		strerr_die2x(111, FATAL,
+		    "Timeout on maildir delivery. (#4.3.0)");
+	case 4:
+		strerr_die2x(111, FATAL, "Unable to read message. (#4.3.0)");
+	default:
+		strerr_die2x(111, FATAL,
+		    "Temporary error on maildir delivery. (#4.3.0)");
 	}
 }
 
@@ -314,11 +325,11 @@ mailfile(char *fn)
 		 	/* size of nonexisting mailfile */
 			filest.st_size = 0;
 			if ( errno != error_noent)
-				strerr_die5x(111,"Unable to quota ", fn,
+				strerr_die6x(111, FATAL, "Unable to quota ", fn,
 				    ": ",error_str(errno), ". (#4.3.0)");
 		}
 		if (fstat(0, &mailst) != 0)
-			strerr_die3x(111,"Unable to quota mail: ",
+			strerr_die4x(111, FATAL, "Unable to quota mail: ",
 			    error_str(errno), ". (#4.3.0)");
 
 		totalsize = (long) filest.st_size + (long) mailst.st_size;
@@ -335,7 +346,7 @@ mailfile(char *fn)
 
 	fd = open_append(fn);
 	if (fd == -1)
-		strerr_die5x(111,"Unable to open ",fn,": ",
+		strerr_die6x(111, FATAL, "Unable to open ",fn,": ",
 		    error_str(errno),". (#4.2.1)");
 
 	sig_alarmcatch(temp_slowlock);
@@ -354,7 +365,7 @@ mailfile(char *fn)
 	if (substdio_put(&ssout,dtline.s,dtline.len)) goto writeerrs;
 	for (;;) {
 		if (getln(&ss,&messline,&match,'\n') != 0) {
-			strerr_warn3("Unable to read message: ",
+			strerr_warn4(FATAL, "Unable to read message: ",
 			    error_str(errno),". (#4.3.0)",0);
 			if (flaglocked) seek_trunc(fd,pos); close(fd);
 			_exit(111);
@@ -376,7 +387,7 @@ mailfile(char *fn)
 	_exit(99);
 
 writeerrs:
-	strerr_warn5("Unable to write ",fn,": ",
+	strerr_warn6(FATAL, "Unable to write ",fn,": ",
 	    error_str(errno),". (#4.3.0)",0);
 	if (flaglocked) seek_trunc(fd,pos);
 	close(fd);

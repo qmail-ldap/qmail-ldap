@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/02/01 17:30:21 $ ($Revision: 1.172 $)
+RELEASE: $Date: 2004/02/01 19:16:04 $ ($Revision: 1.173 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,9 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Bug fix in condwrite. The maildir child should not exit 99 on finish the
+ parent should exit 99 and the child 0.
 
  In qmail-smtpd limit the accepted text line lenght to 10000 characters.
  The RFC proposes a maximum of a 1000 but be nice to broken MTA/MUAs and it
