@@ -1928,14 +1928,15 @@ wait.h lock.h
 
 qmail-remote: \
 load qmail-remote.o control.o constmap.o timeoutread.o timeoutwrite.o \
-timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o ipme.o quote.o base64.o \
-ndelay.a case.a sig.a open.a lock.a seek.a getln.a stralloc.a alloc.a \
-strerr.a substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
+timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o ipme.o quote.o xtext.o \
+base64.o ndelay.a case.a sig.a open.a lock.a seek.a getln.a stralloc.a \
+alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o \
+dns.lib socket.lib
 	./load qmail-remote control.o constmap.o timeoutread.o \
 	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
-	ipalloc.o ipme.o quote.o base64.o ndelay.a case.a sig.a \
-	open.a lock.a seek.a getln.a stralloc.a alloc.a strerr.a \
-	substdio.a error.a str.a fs.a auto_qmail.o \
+	ipalloc.o ipme.o quote.o xtext.o base64.o ndelay.a case.a \
+	sig.a open.a lock.a seek.a getln.a stralloc.a alloc.a \
+	strerr.a substdio.a error.a str.a fs.a auto_qmail.o \
 	`cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
 
 qmail-remote.0: \
@@ -2722,6 +2723,10 @@ compile wait_nohang.c haswaitp.h
 wait_pid.o: \
 compile wait_pid.c error.h haswaitp.h
 	./compile wait_pid.c
+
+xtext.o: \
+compile xtext.c xtext.h stralloc.h
+	./compile xtext.c
 
 cert:
 	$(OPENSSLBIN) req -new -x509 -nodes \

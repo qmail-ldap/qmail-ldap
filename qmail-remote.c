@@ -33,6 +33,7 @@
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 #include "base64.h"
+#include "xtext.h"
 #ifdef TLS_REMOTE /* openssl/ssh.h needs to be included befor zlib.h else ... */
 #include <sys/stat.h>
 #include <openssl/ssl.h>
@@ -437,6 +438,7 @@ stralloc recip = {0};
 #ifdef TLS_REMOTE
 stralloc sslcert = {0};
 #endif
+stralloc xtext = {0};
 
 void smtp(void)
 {
@@ -640,7 +642,9 @@ void smtp(void)
   }
   if (flagauth && auth_login.len && auth_passwd.len) {
     substdio_puts(&smtpto, " AUTH=<");
-    substdio_put(&smtpto,sender.s,sender.len);
+    if (!xtext_quote(&xtext, &sender))
+	    temp_nomem();
+    substdio_put(&smtpto,xtext.s,xtext.len);
     substdio_puts(&smtpto,">");
   }
   substdio_puts(&smtpto,"\r\n");
