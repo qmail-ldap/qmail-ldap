@@ -362,7 +362,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
       * if mail starts with a - there is no "-catchall@" search
       * only "chatchall@" will be tried.
       */
-     while (i-- > 0) {
+     while (--i > 0) {
        if (escaped[i] == *auto_break) break;
      }
 #else
@@ -477,7 +477,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
    /* get the user name */
    rv = qldap_get_user(q, &user);
    if (rv != OK) goto fail;
-   if (!stralloc_copys(&nughde, &user)) _exit(QLX_NOMEM);
+   if (!stralloc_copy(&nughde, &user)) _exit(QLX_NOMEM);
 
    /* get the UID for delivery on the local system */
    rv = qldap_get_uid(q, &id);
@@ -568,7 +568,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
 
    /* get the deliverymode of the mailbox:                    *
     * reply, echo, forwardonly, normal, nombox, localdelivery */
-   rv = qldap_get_attr(q, LDAP_REPLYTEXT, &foo, OLDCS_VALUE);
+   rv = qldap_get_attr(q, LDAP_MODE, &foo, OLDCS_VALUE);
    switch (rv) {
    case OK:
      case_lowers(foo.s);
@@ -729,6 +729,8 @@ char *s; char *r; int at;
    int gid;
    int rv;
    
+   if (env_get("GDBDEBUG")) sleep(10);
+   
    log_init(fdout, -1, 1);
 
    sig_hangupdefault(); /* clear the hup sig handler for the child */
@@ -744,8 +746,8 @@ char *s; char *r; int at;
    if (chdir(auto_qmail) == -1) _exit(QLX_USAGE);
 
    /* do the address lookup */
-   rv = qldap_get(&ra, r, fdmess);
-   switch( rv ) {
+   rv = qldap_get(&ra, s, fdmess);
+   switch (rv) {
    case 0:
      log(16, "LDAP lookup succeeded\n");
      break;

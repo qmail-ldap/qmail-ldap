@@ -687,13 +687,15 @@ qldap_get_attr(qldap *q, const char *attr, stralloc *val, int multi)
 		for (i = 0; i < nvals; i++) {
 			l = str_len(vals[i]);
 			for (j = 0; j < l; j++) {
+				if (i != 0)
+					if (!stralloc_append(val, &sc))
+						goto fail;
 				if (vals[i][j] == sc)
 					if (!stralloc_append(val, "\\"))
 						goto fail;
 				if (!stralloc_append(val, &vals[i][j]))
 					goto fail;
 			}
-			if (!stralloc_append(val, &sc)) goto fail;
 		}
 		if (!stralloc_0(val)) goto fail;
 		r = OK;
@@ -701,15 +703,17 @@ qldap_get_attr(qldap *q, const char *attr, stralloc *val, int multi)
 	case OLDCS_VALUE:
 		if (!stralloc_copys(val, "")) goto fail;
 		for (i = 0; i < nvals; i++) {
+			if (i != 0) if (!stralloc_append(val, &sc)) goto fail;
 			byte_repl(vals[i], str_len(vals[i]), ',', sc);
 			if (!stralloc_cats(val, vals[i])) goto fail;
-			if (!stralloc_append(val, &sc)) goto fail;
 		}
 		if (!stralloc_0(val)) goto fail;
 		r = OK;
 		break;
 	}
 	ldap_value_free(vals);
+
+	log(128, "qldap_get_attr(%s): %s\n", attr, val->s);
 	return r;
 
 fail:
