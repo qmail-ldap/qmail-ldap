@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20000501 ($Date: 2000/06/06 07:38:17 $)
+RELEASE: 20000501 ($Date: 2000/06/11 13:09:17 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -526,7 +526,7 @@ objectclass qmailUser
                 uid
         allows
                 mailMessageStore,
-                homeDirectory
+                homeDirectory,
                 userPassword,
                 mailAlternateAddress,
                 qmailUID,
