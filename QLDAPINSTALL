@@ -11,11 +11,23 @@ TODO:
 
 ongoing - Debugging and testing, testing, testing
 ongoing - The big qmail-ldap picture
-planned - support for mail clusters
+done    - support for mail clusters
+planned - full code review
+planned - splitting the patch into smaler separate pieces
 
 NEWS:
 
- Changed the make process, now with the make setup check also the qmail-ldap
+ Added cluster support, use -DQLDAP_CLUSTER for enabling.
+
+ Removed PWOPTS=-DLOOK_UP_PASSWD because it was only for checkpassword
+ and with ldaplocaldelivery you get the same result on the fly.
+
+ Few minor bug fixes (qmail-qmqpd.c, qmail-qmtpd.c, receive.c)
+
+ Updated QLDAPINSTALL and added new QLDAPNEWS because QLDAPINSTALL was
+ getting to long.
+
+ Changed the make process, now with "make setup check" also the qmail-ldap
  parts are build and installed. Have fun ...
 
  Few minor bug fixes (accountStatus, AUTO_MAILDIRMAKE)
@@ -39,26 +51,31 @@ INSTALL:
 2. Read this document
 
 3. You need the following compiled and installed
-    - OpenLDAP 1.2 (others might also work)
+    - OpenLDAP 1.2/1.2.1 (others might also work)
+    - Netscape LDAP sdk (tested libldapssl30 on Solaris 2.6)
 
    If you have problems with OpenLDAP look into their FAQ.
 
 4. Apply the qmail-ldap patches to a clean qmail-1.03 source tree
    normaly "cd qmail-1.03_source_tree; patch -p1 < location_of_patch"
-   works ;-)
+   works ;-). There seems to be a problem with the original patch utility
+   on Solaris based systems, use the gnu patch utility instead.
 
-5. Edit the conf-* files and the top of the Makefile (only the top ;) )
+5. Edit the conf-* files and the top of the Makefile (only the top ;-) )
    You can set/change:
-   - LDAPON=-DQLDAP (turns qmail-ldap on and off, don't change the part
-                     behind the '=' )
+   - LDAPON=-DQLDAP (turns qmail-ldap on and off) +
+            -DQLDAP_CLUSTER (turns the cluster support on) +
+            -DLDAP_ESCAPE_BUG (see NOTE)
      NOTE: at the moment -DLDAP_ESCAPE_BUG is also defined, this should be
            added as long as the ldap servers have problems with the 
            escapeing of LDAP filters
+
    - LDAPLIBS: the libraries you need for ldap, e.g. -lldap -llber
    - LDAPINCLUDES: perhaps you need a special include-path for ldap
 
    - MNW=-DMAKE_NETSCAPE_WORK (turns the patch on that fixes the problem 
      with the Netscape download progress bar and qmail-pop3d) 
+
    - MDIRMAKE=-DAUTOMAILDIRMAKE (turns the auto-MAILdir-make-patch on)
    - HDIRMAKE=-DAUTOHOMEDIRMAKE (compiles the auto-HOMEdir-make-patch 
      into the release, you need the ~control/dirmaker file to turn the 
@@ -66,11 +83,11 @@ INSTALL:
 
    - QLDAPBIND=-DQLDAP_BIND (when password are checked trought the
      ldap-server (not checkpassword))
-   - PWOPTS=-DLOOK_UP_PASSWD (turns local password lookups on)
    - SHADOWLIBS=-lshadow, SHADOWOPTS=-DPW_SHADOW are needed on some Systems
      (Solaris, Linux) for local password lookups (just like the original
      djb-checkpassword)
-   - DEBUG=-DQLDAPDEBUG (turns debugging of checkpassword on, see 5.3)
+   - DEBUG=-DQLDAPDEBUG (turns debugging of checkpassword on, see 6.1)
+
    - LSPAWN_LOG=-DQLSPAWN_LOG -DLOG_LEVEL=3 (qmail-lspawn compiled with 
      LSPAWN_LOG enabled does now some lspawn logging, only the number after
      -DLOG_LEVEL= has to be changed)
@@ -78,21 +95,23 @@ INSTALL:
               message is bounced the same informations are also included.
               Do not use DEBUG_LEVEL/INFO_LEVEL on production machines.
 
-5.1 Compile and install the stuff (it's the same as in standard qmail
-   install -> read the INSTALL file !!!). 
-   Now everything should be installed.
+5.1 Have a look at qmail-ldap.h, perhaps you want to change something there.
 
-5.2 Enable DEBUG in the Makefile remove checkpassword.o and compile 
+6.  Compile and install the stuff (it's the same as in standard qmail
+    install -> read the INSTALL file !!!). 
+    Now everything should be installed.
+
+6.1 Enable DEBUG in the Makefile remove checkpassword.o and compile 
     checkpassword again, this is for debugging your LDAP setup.
     Use make checkpassword to compile checkpassword again
 
      WARNING: don't make the debug version accessible to other users
 
-6. Create the LDAP user database and start the LDAP server
+7. Create the LDAP user database and start the LDAP server
 
-7. Create the proper ~control/ldap* files for qldap
+8. Create the proper ~control/ldap* files for qldap
 
-8. Test, Debug and Enjoy!
+9. Test, Debug and Enjoy!
 
 
 CONFIG FILES:
@@ -124,7 +143,8 @@ CONFIG FILES:
 
 ~control/ldaplocaldelivery
 
- Use the ~users/get-pw mechanism if the LDAP lookup finds nothing
+ If on lookup local passwd in qmail-lspawn and checkpassword
+ if the LDAP lookup finds nothing
  Default: enabled
  Example: 1
  Note: boolean, use 0 (zero) or 1 (one)
@@ -141,7 +161,7 @@ CONFIG FILES:
  The default interpretation of .qmail files
  Default: ldaponly
  Example: both
- Values: both, dotonly, ldaponly, none
+ Values: both, dotonly, ldaponly, ldapwithprog, none
  Note: Works only for deliveries based on LDAP lookups
 
 ~control/ldapmessagestore
@@ -150,6 +170,7 @@ CONFIG FILES:
  Default: NULL
  Example: /maildisk/
  Note: Used in virtual users environments
+       the / at the end is needed!
 
 ~control/ldapusername
 
@@ -190,6 +211,7 @@ CONFIG FILES:
 
 ~control/ldappasswdappend
 
+ XXX: not the right thing, will be removed somewhen.
  The default appendix to homedir-pathes form local passwd lookups
  Default: ./
  Example: ./Maildir/
@@ -236,16 +258,21 @@ CONFIG FILES:
 
        -cut-
        #!/bin/sh
-       mkdir $1
+       mkdir -m 700 -p $1
        cd $1
-       maildirmake $2 # this does not work if your aliasempty is './'
+       if [ "$2" = "./" ]; then
+           mkdir -m 700 cur new tmp
+       else
+           maildirmake $2 # this does not work if your aliasempty is './'
+       fi
        #EOF
        -cut-
 
 
-LDAP PARAMETER FIELDS:
+DEFAULT LDAP PARAMETER FIELDS:
 NOTE: keywords have to match exactly, so pay attention.
-
+      All fieldnames and keywords can be changed at compile time.
+      Just have a look at qmail-ldap.h.
 mail
 
  The users email address
@@ -280,6 +307,9 @@ mailMessageStore
  Path to the maildir/mbox on the mail system
  Example: /home/jdoe/
  Note: Can be written relative in a virtual users environment
+ XXX: at the moment mailMessageStore has to point to a directory
+      and has to end with a / (for checkpassword only). So Mailfiles
+      are only via the aliasempty argv of qmail-lspawn possible
 
 mailQuota
 
@@ -297,15 +327,16 @@ mailHost
 
  On which qmail server the messagestore of this user is located
  Example: qmail3.nrg4u.com
- Note: Currently not in use. Will be used in the future for qmail-ldap
-       server clustering. Must be equal to the ~control/me hostname
-       on the homeserver of the user.
+ Note: Must be equal to the ~control/me hostname on the homeserver 
+       of the user.
 
 deliveryProgramPath
 
  Program to execute with all incoming messages, multi field
  Example: /usr/bin/program -c -s
  Note: the same as |/usr/bin/program -c -s in .qmail
+       Works only with qmailDotMode set to ldapwithprog or both
+       with ldaponly set deliveryProgramPath is silently ignored
 
 deliveryMode
 
@@ -314,20 +345,20 @@ deliveryMode
            (Maildir/box delivery only if no forwards or programs are executed)
  - forwardonly: is equal to set the execute bit of .qmail
                 so only forwards are allowed
- - nombox: prevents maildir/mbox delivery
+ - nombox: ignor all maildir/mbox deliveries
  - localdelivery: forces maildir/mbox delivery (into $HOME/$ALIASEMPTY)
  - reply: send also an auto_reply mail with text from mailReplyText 
  - echo: something very strange, just echo the message (nothing else)
  Default: no QMAILMODE is eq to QMAILMODE=normal other stuff is ignored (with
           warning)
  Note: echo exits immediatly after the "echoing" (only useful for testing
-       purposes). echo and reply are executed directly and do not interfere
-       with the other settings.
+       purposes). reply is executed directly and does not interfere with
+       the other settings.
        "normal", "nombox", "localdelivery" and "forwardonly" are set one after
-       another (i.e. "nombox,localdelivery,normal" does only a "normal" delivery).
+       the other (i.e. "nombox,localdelivery,normal" resets to a "normal" delivery).
        There are some strange behavior when localdelivery and nombox/forwardonly
        are set, so handle them with care.
-       
+        
 mailReplyText
 
  A reply text for every incoming message (multiline)
@@ -352,9 +383,16 @@ userPassword
 
  The password for POP3 delivery
  Example: testit
- Note: Can be encrypted with {SHA}, {MD4}, {MD5}, {NS-MTA-MD5}, crypt
- or cleartext
+ Note: Can be encrypted with {SHA}, {MD4}, {MD5}, {NS-MTA-MD5}, {crypt}
+ or crypt/cleartext (but should not be used)
 
+accountStatus
+
+ The status of a user account.
+ Values: active (no restrictions), 
+         nopop (only mail delivery but no pop access), 
+         disabled (bounce incoming messages)
+ Default: no accountStatus is equal to active
 
 EXAMPLE QLDAP LDIF FILE:
 

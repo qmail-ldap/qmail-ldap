@@ -210,7 +210,7 @@ void get_qldap_controls()
    if (control_rldef(&qldap_defdotmode,"control/ldapdefaultdotmode",0,"ldaponly") == -1) _exit(222);
    if (!stralloc_0(&qldap_defdotmode)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"/home/") == -1) _exit(222);
+   if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"") == -1) _exit(222);
 
    if (control_rldef(&qldap_username,"control/ldapusername",0,"") != 1) _exit(222);
    
@@ -484,7 +484,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
 										  LDAP_MAILHOST,
                                 LDAP_ISACTIVE, NULL };
 
-   int            version, at, ext,
+   int            version, at,
                   rc, i, reply = 0,
                   num_entries = 0;
    char           *r;
@@ -531,7 +531,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       return 14;
    }
    if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
-   ext = 0; at = 0;
+   at = 0;
    r = mail->s;
    /* count the results, we must have exactly one */
    if ( (num_entries = ldap_count_entries(ld,res)) != 1) {
@@ -583,11 +583,9 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
 #ifdef QLDAP_CLUSTER
    /* check if the I'm the right host */
    if ( (vals = ldap_get_values(ld,msg,LDAP_MAILHOST)) != NULL ) {
-//    DEBUG("mailHost is: ", vals[0], " (I'm ", qldap_me.s);
-//		DEBUG(" )\n",0,0,0);
       if ( str_diff(qldap_me.s, vals[0]) ) {
 		  	/* hostname is different, so I reconnect */
-			DEBUG("forwarding to: ", vals[0], " \n", 0);
+			INFO("forwarding to: ", vals[0], " \n", 0);
 			forward_mail(vals[0], mail, from, fdmess);
 			/* that's it */
 		}
@@ -641,6 +639,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    /* get the path of the maildir or mbox */
    if ( (vals = ldap_get_values(ld,msg,LDAP_MAILSTORE)) != NULL ) {
 //      DEBUG("mailMessageStore: ", vals[0], "\n", 0);
+		/* XXX is the checking of the path needed ??? */
       if (vals[0][0] != '/') {
          if (qldap_messagestore.s[0] != '/') return 46;
          if (qldap_messagestore.s[qldap_messagestore.len -1] != '/') return 47;
@@ -661,9 +660,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    /* At the moment we ignore the dash-field and the extension field *
     * so we fill up the nughde structure with '\0'                   */
    
-   if (ext) if (!stralloc_cats(&nughde, "-")) _exit(QLX_NOMEM);
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-   if (ext) if (!stralloc_catb(&nughde, r+ext, at-ext)) _exit(QLX_NOMEM);
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
 
    /* get the quota for the user of that maildir mbox */
@@ -911,7 +908,7 @@ char *s; char *r; int at;
         INFO("LDAP lookup succeded, user found\n",0,0,0);
       break;
 
-		case 1: /* case: 11: case 12: case 13: case 14: *//*XXX: This is not a solution */
+		case 1: 
          WARNING("LDAP lookup failed, ",0,0,0);
          if (!stralloc_copys(&nughde,"")) _exit(QLX_NOMEM);
          if ( qldap_localdelivery == 1 ) {

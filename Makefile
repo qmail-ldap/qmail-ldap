@@ -28,9 +28,6 @@ MNW=-DMAKE_NETSCAPE_WORK
 # uncomment the next line
 #QLDAPBIND=-DQLDAP_BIND
 
-# comment out the next line if you don't need local passwd lookups
-PWOPTS=-DLOOK_UP_PASSWD
-
 # To use shadow passwords under Linux, uncomment the next two lines.
 #SHADOWLIBS=-lshadow
 #SHADOWOPTS=-DPW_SHADOW

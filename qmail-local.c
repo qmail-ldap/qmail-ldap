@@ -117,19 +117,6 @@ char *dir;
    if (error_temp(errno)) _exit(1); else _exit(2);
  }
 
-#ifdef AUTOMAILDIRMAKE_OFF /* disable this is not thr REAL THING(TM)*/
- /* this one handles the case where the aliasempty is "./" */
- if (stat("tmp", &st) == -1) {
-   if (errno == error_noent) {
-     umask(077);
-     if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(6); }
-     if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(6); }
-     if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(6); }
-   } else if (error_temp(errno)) _exit(1); else _exit(6);
- }
-#endif
-   
-/* XXX this looks weird and doesn't fit */ /* ??? What ??? */
 /* this one handles the case where the aliasempty is "./" */
 #ifdef AUTOMAILDIRMAKE 
  if ( !str_diff(dir, "./") ) {
@@ -881,6 +868,7 @@ char **argv;
       } else if ( !str_diff(DOTMODE_BOTH, s) ) {
          if (!flagdoit) sayit("DOTMODE_BOTH ",s,0);
          qmode = DO_BOTH;
+         ldapprogdelivery = 1;
       } else if ( !str_diff(DOTMODE_NONE, s) ){
          ++count_file;
          if (!stralloc_copys(&foo,aliasempty)) temp_nomem();

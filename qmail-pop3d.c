@@ -334,7 +334,7 @@ char **argv;
     die_nomaildir();
   } 
 #ifdef AUTOMAILDIRMAKE
-  else {
+  if ( !str_diff(argv[1], "./") ) {
    struct stat st;
 
    umask(077);
@@ -345,6 +345,7 @@ char **argv;
        die_maildir();
      }
    } else if (! S_ISDIR(st.st_mode) ) die_maildir();
+	
    if (stat("cur", &st) == -1) {
      if (errno == error_noent) {
        if (mkdir("cur",0700) == -1) die_maildir();
@@ -352,6 +353,7 @@ char **argv;
        die_maildir();
      }
    } else if (! S_ISDIR(st.st_mode) ) die_maildir();
+
    if (stat("tmp", &st) == -1) {
      if (errno == error_noent) {
        if (mkdir("tmp",0700) == -1) die_maildir();

@@ -48,7 +48,6 @@
  * To use shadow passwords under Linux, uncomment the 'SHADOWOPTS' line and
  * the 'SHADOWLIBS=-lshadow' line in the Makefile.
  */
-#ifdef LOOK_UP_PASSWD
 #include <pwd.h>
 #ifdef PW_SHADOW
 #include <shadow.h>
@@ -56,8 +55,6 @@
 #ifdef AIX
 #include <userpw.h>
 #endif
-
-#endif /* LOOK_UP_PASSWD */
 
 
 extern int errno;
@@ -104,6 +101,9 @@ stralloc    qldap_me = {0};
 #ifdef AUTOHOMEDIRMAKE
 stralloc    qldap_dirmaker = {0};
 #endif
+
+int         qldap_localdelivery = 1;
+
 /* init done */
 
 /* read the various LDAP control files */
@@ -132,13 +132,16 @@ void get_qldap_controls()
    if (!stralloc_0(&qldap_password)) _exit(QLX_NOMEM);
    debug_msg(OUTPUT," control/ldappassword \t: %s\n",qldap_password.s);
 
+   if (control_readint(&qldap_localdelivery,"control/ldaplocaldelivery") == -1) _exit(1);
+   debug_msg(OUTPUT," control/ldaplocaldelivery \t: %i\n", qldap_localdelivery);
+	
    if (control_rldef(&qldap_uid,"control/ldapuid",0,"") == -1) _exit(1);
    debug_msg(OUTPUT," control/ldapuid \t: %s\n",sa2s(&qldap_uid) );
    
    if (control_rldef(&qldap_gid,"control/ldapgid",0,"") == -1) _exit(1);
    debug_msg(OUTPUT," control/ldapgid \t: %s\n",sa2s(&qldap_gid) );
 
-   if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"/home/") == -1) _exit(1);
+   if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"") == -1) _exit(1);
    debug_msg(OUTPUT," control/ldapmessagestore: %s\n",sa2s(&qldap_messagestore) );
 
    if (control_rldef(&qldap_passwdappend,"control/ldappasswdappend",0,"./") == -1) 
@@ -425,14 +428,12 @@ char **argv;
               shift;
 
 
-#ifdef LOOK_UP_PASSWD
  struct passwd *pw;
- #ifdef PW_SHADOW
+#ifdef PW_SHADOW
  struct spwd *spw;
- #endif
- #ifdef AIX
+#endif
+#ifdef AIX
  struct userpw *spw;
- #endif
 #endif
 
 #ifdef QLDAPDEBUG
@@ -493,8 +494,9 @@ char **argv;
 
  /* do the ldap lookup based on the POP username */
  if(qldap_get(login, enteredpasswd, &uid, &gid) ) {
+   if (qldap_localdelivery == 1 ) {
 
-#ifdef LOOK_UP_PASSWD /* check for password and stuff in passwd */
+ /* check for password and stuff in passwd */
     debug_msg(OUTPUT,"\naction: ldap lookup not successful\n");
     debug_msg(OUTPUT,"\naction: try to get password from passwd-file\n\n");
     pw = getpwnam(login);
@@ -505,7 +507,7 @@ char **argv;
       debug_msg(OUTPUT," passwd-file lookup \t: login '%s' found\n",login);
     }
 
- #ifdef PW_SHADOW
+#ifdef PW_SHADOW
     spw = getspnam(login);
     if (!spw) {
       debug_msg(OUTPUT," passwd-file lookup \t: login '%s' not found in shadow file\n",login);
@@ -514,8 +516,8 @@ char **argv;
       debug_msg(OUTPUT," passwd-file lookup \t: login '%s' found in shadow file\n",login);
     }
     if (!stralloc_copys(&password, spw->sp_pwdp) ) _exit(QLX_NOMEM);
- #else
- #ifdef AIX
+#else
+#ifdef AIX
     spw = getuserpw(login);
     if (!spw) {
       debug_msg(OUTPUT," passwd-file lookup \t: login '%s' not found in shadow file\n",login);
@@ -524,10 +526,10 @@ char **argv;
       debug_msg(OUTPUT," passwd-file lookup \t: login '%s' found in shadow file\n",login);
     }
     if (!stralloc_copys(&password, spw->upw_passwd) ) _exit(QLX_NOMEM);
- #else
+#else
     if (!stralloc_copys(&password, pw->pw_passwd) ) _exit(QLX_NOMEM);
- #endif /* AIX */
- #endif /* PW_SHADOW */
+#endif /* AIX */
+#endif /* PW_SHADOW */
     if (!stralloc_0(&password) ) _exit(QLX_NOMEM);
     debug_msg(OUTPUT," passwd-file lookup \t: found password '%s'\n", password.s);
 
@@ -554,11 +556,12 @@ char **argv;
     }
     debug_msg(OUTPUT," comparing passwords \t: compare crypt succeeded\n");
 #endif
-#else /* do not check in passwd file */
-   _exit(1);
-#endif
- }
 
+  } else { /* do not check in passwd file */
+    debug_msg(OUTPUT," nothing found, giving up\n");
+    _exit(1);
+  }
+ }
 #ifndef QLDAP_BIND
  /* compare the password given by user and the stored one */
    debug_msg(OUTPUT,"\naction: comparing passwords\n\n");

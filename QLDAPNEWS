@@ -13,9 +13,23 @@ TODO:
 
 ongoing - Debugging and testing, testing, testing
 ongoing - The big qmail-ldap picture
-planned - support for mail clusters
+done    - support for mail clusters
+planned - full code review
 
 NEWS:
+
+ Added cluster support, use -DQLDAP_CLUSTER for enabling.
+
+ Removed PWOPTS=-DLOOK_UP_PASSWD because it was only for checkpassword
+ and with ldaplocaldelivery you get the same result on the fly.
+
+ Few minor bug fixes (qmail-qmqpd.c, qmail-qmtpd.c, receive.c)
+
+ Updated QLDAPINSTALL and added new QLDAPNEWS because QLDAPINSTALL was
+ getting to long.
+
+ Changed the make process, now with the make setup check also the qmail-ldap
+ parts are build and installed. Have fun ...
 
  Few minor bug fixes (accountStatus, AUTO_MAILDIRMAKE)
 
@@ -45,7 +59,6 @@ OLDER NEWS:
 
  Added a headerfile qmail-ldap.h where all parameters are set.
  This includes some changes in qmail-local.c qmail-lspawn.c and checkpassword.c
- (XXX have a look at qmail-quotawarn and qmail-reply)
 
  qmail-lspawn checks no longer for "correct" mailaddresses, now the possibe
  mailaddress is escaped ('(', ')', '*') before added to the search filter.

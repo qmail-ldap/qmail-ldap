@@ -57,6 +57,7 @@ long chck_idb(char *s, register unsigned int len)
 }
 
 /* XXX: this is not enough secure, will be removed soon */
+/* XXX: don't forget to remove it also in qmail-lspawn.c mailMessageStore */
 int chck_pathb(char *s, register unsigned int len)
 {
    register char *t;
