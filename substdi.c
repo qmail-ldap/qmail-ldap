@@ -36,7 +36,7 @@ register unsigned int len;
 int substdio_feed(s)
 register substdio *s;
 {
-  register unsigned int r;
+  register int r;
   register int q;
 
   if (s->p) return s->p;
