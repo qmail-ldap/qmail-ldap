@@ -135,7 +135,7 @@ void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); 
 void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
 
 void err_bmf() { out("553 syntax error, please forward to your postmaster (#5.7.1)\r\n"); }
-void err_hard(arg) char *arg; { out("554 syntax error, "); out(arg); out(" (#5.5.4)\r\n"); } */
+void err_hard(arg) char *arg; { out("554 syntax error, "); out(arg); out(" (#5.5.4)\r\n"); }
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
 #ifdef TLS
 void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
