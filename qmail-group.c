@@ -132,6 +132,7 @@ main(int argc, char **argv)
 	if (flagm)
 		secretary(maildir, 1);
 
+	reopen();
 	explode(qlc);
 	qldap_free(qlc);
 	
@@ -309,6 +310,8 @@ reopen(void)
 {
 	int fd;
 
+	if (!(fname.s && fname.len > 1))
+		return;
 	if (!stralloc_0(&fname)) temp_nomem();
 	fd = open_read(fname.s);
 	if (fd == -1)
@@ -413,7 +416,6 @@ secretary(char *maildir, int flagmoderate)
 			if (!stralloc_append(&fname, &sbuf[i])) temp_nomem();
 		}
 		close(pi[0]);
-		reopen();
 		return;
 	default: _exit(111);
 	}
