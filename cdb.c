@@ -19,6 +19,8 @@ static void uint32_unpack(const unsigned char *buf, uint32 *u)
   num += buf[2]; num <<= 8;
   num += buf[1]; num <<= 8;
   num += buf[0];
+
+  *u = num;
 }
 
 
