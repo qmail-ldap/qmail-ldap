@@ -93,6 +93,7 @@ void setup(void)
   
   if (fchdir(fdsourcedir) == -1)
     die_dirback();
+  close(fdsourcedir);
 
   for( i = 0; i < addresses.len; i++)
     if( addresses.s[i] == '\0' ) numservers++;
