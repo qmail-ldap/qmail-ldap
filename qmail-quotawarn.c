@@ -17,6 +17,7 @@
 #include "stralloc.h"
 #include "substdio.h"
 #include "wait.h"
+#include "qmail-ldap.h"
 
 /* global vars */
 stralloc warning={0};
@@ -54,8 +55,8 @@ int main (int argc, char **argv)
    
    fn = argv[1];
    
-   if (! (s = env_get("QMAILQUOTAWARNING") ) )
-      strerr_die1x(111,"ARRG: QMAILQUOTAWARNING not present (LDAP-ERR #5.1.1)");
+   if (! (s = env_get(ENV_QUOTAWARNING) ) )
+      strerr_die2x(111,ENV_QUOTAWARNING, " not present (LDAP-ERR #5.1.1)");
    if (!stralloc_copys(&warning,s)) temp_nomem();
    
    if (! (s = env_get("HOST") ) )

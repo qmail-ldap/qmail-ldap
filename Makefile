@@ -1,7 +1,9 @@
 # Edit this few lines to configure your ldap stuff and checkpassword
 
 # to enable qmail-ldap uncomment the next line
-LDAPON=-DQLDAP
+LDAPON=-DQLDAP -DLDAP_ESCAPE_BUG
+# -DLDAP_ESCAPE_BUG should be added as long as the ldap servers have 
+# problems with the escapeing of LDAP filters
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber

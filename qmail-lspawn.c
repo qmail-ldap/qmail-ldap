@@ -338,7 +338,7 @@ int len;
       REPORT_RETURN;
       
       case 202:
-         substdio_puts(ss, "DInternal error in ldap_set_option. (LDAP-ERR #202)\n");
+         substdio_puts(ss, "ZInternal error in ldap_set_option. (LDAP-ERR #202)\n");
       REPORT_RETURN;
 
       case 203:
@@ -346,7 +346,7 @@ int len;
       REPORT_RETURN;
 
       case 204:
-         substdio_puts(ss, "DInternal error in ldap_search_ext_s. (LDAP-ERR #204)\n");
+         substdio_puts(ss, "ZInternal error in ldap_search_ext_s. (LDAP-ERR #204)\n");
       REPORT_RETURN;
 
       case 210:
@@ -577,11 +577,11 @@ int qldap_get( stralloc *mail )
    /* get the UID for delivery on the local system */
    if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILUID)) != NULL ) {
 //      DEBUG("qmailUID: ", vals[0], "\n", 0);
-      if (100 > chck_ids(vals[0]) ) return 21;
+      if (PW_MIN > chck_ids(vals[0]) ) return 21;
       if (!stralloc_cats(&nughde, vals[0])) _exit(QLX_NOMEM);
    } else {
       if (!qldap_uid.len) return 42;
-      if (100 > chck_idb(qldap_uid.s,qldap_uid.len) ) return 43;
+      if (PW_MIN > chck_idb(qldap_uid.s,qldap_uid.len) ) return 43;
       if (!stralloc_cat(&nughde, &qldap_uid)) _exit(QLX_NOMEM);
    }
    ldap_value_free(vals);
@@ -591,11 +591,11 @@ int qldap_get( stralloc *mail )
    /* get the GID for delivery on the local system */
    if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILGID)) != NULL ) {
 //      DEBUG("qmailGID: ", vals[0], "\n", 0);
-      if ( 100 > chck_ids(vals[0]) ) return 22; 
+      if ( PW_MIN > chck_ids(vals[0]) ) return 22; 
       if (!stralloc_cats(&nughde, vals[0])) _exit(QLX_NOMEM);
    } else {
       if (!qldap_gid.len) return 44;
-      if ( 100 > chck_idb(qldap_gid.s,qldap_gid.len) ) return 45;
+      if ( PW_MIN > chck_idb(qldap_gid.s,qldap_gid.len) ) return 45;
       if (!stralloc_cat(&nughde, &qldap_gid)) _exit(QLX_NOMEM);
    }
    ldap_value_free(vals);
@@ -875,7 +875,7 @@ char *s; char *r; int at;
         INFO("LDAP lookup succeded, user found\n",0,0,0);
       break;
 
-      case 1: 
+		case 1: /* case: 11: case 12: case 13: case 14: *//*XXX: This is not a solution */
          WARNING("LDAP lookup failed, ",0,0,0);
          if (!stralloc_copys(&nughde,"")) _exit(QLX_NOMEM);
          if ( qldap_localdelivery == 1 ) {

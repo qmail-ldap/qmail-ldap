@@ -13,6 +13,7 @@
 #include "stralloc.h"
 #include "substdio.h"
 #include "wait.h"
+#include "qmail-ldap.h"
 
 /* some error-handling funktions */
 void temp_nomem() { strerr_die1x(111,"Out of memory. (LDAP-ERR #4.5.0)"); }
@@ -86,10 +87,10 @@ void get_env(stralloc *dtl, stralloc *to, stralloc *from, stralloc *replytext)
    } else {
       strerr_die1x(111,"DTLINE not present (LDAP-ERR #4.1.1)");
    }
-   if ( s = env_get("QMAILREPLYTEXT") ) {
+   if ( s = env_get(ENV_REPLYTEXT) ) {
       if (!stralloc_copys(replytext,s)) temp_nomem();
    } else { /* paranoia */
-      strerr_die1x(111,"QMAILREPLYTEXT not present (LDAP-ERR #4.1.2)");
+      strerr_die2x(111,ENV_REPLYTEXT, " not present (LDAP-ERR #4.1.2)");
    }
    if ( s = env_get("SENDER") ) {
       if (!stralloc_copys(to,s)) temp_nomem();

@@ -1,31 +1,6 @@
 #include "check.h"
 #include "stralloc.h"
-
-/* this function will be removed in near future  */
-int chck_mailb(char *s, register unsigned int len)
-{
-   int at=0;
-   register char *t;
-   
-   t = s;
-   
-   for (;;) {
-      /* [a-z]|[0-9]|[.-_]@[a-z]|[0-9]|[.-]  */
-      if(!len) { if (at) return 1; else break; }
-      if ( ( *t >= 'a' && *t <= 'z' ) || ( *t >= '0' && *t <= '9' ) || *t == '.' || *t == '-' || ( !at && *t == '_' ) || ( !at && *t == '@' && (at=1) ) ) { ++t; --len; } else return 0;
-      /* [a-z]|[0-9]|[.-_]@[a-z]|[0-9]|[.-]  */
-      if(!len) { if (at) return 1; else break; }
-      if ( ( *t >= 'a' && *t <= 'z' ) || ( *t >= '0' && *t <= '9' ) || *t == '.' || *t == '-' || ( !at && *t == '_' ) || ( !at && *t == '@' && (at=1) ) ) { ++t; --len; } else return 0;
-      /* [a-z]|[0-9]|[.-_]@[a-z]|[0-9]|[.-]  */
-      if(!len) { if (at) return 1; else break; }
-      if ( ( *t >= 'a' && *t <= 'z' ) || ( *t >= '0' && *t <= '9' ) || *t == '.' || *t == '-' || ( !at && *t == '_' ) || ( !at && *t == '@' && (at=1) ) ) { ++t; --len; } else return 0;
-      /* [a-z]|[0-9]|[.-_]@[a-z]|[0-9]|[.-]  */
-      if(!len) { if (at) return 1; else break; }
-      if ( ( *t >= 'a' && *t <= 'z' ) || ( *t >= '0' && *t <= '9' ) || *t == '.' || *t == '-' || ( !at && *t == '_' ) || ( !at && *t == '@' && (at=1) ) ) { ++t; --len; } else return 0;
-   }
-   
-}
-
+#include "qmail-ldap.h"
 
 int chck_userb(char *s, register unsigned int len)
 {
@@ -75,13 +50,13 @@ long chck_idb(char *s, register unsigned int len)
       if ( *t >= '0' && *t <= '9' ) { b = b*10 + (*t - '0'); ++t; --len; } else return 0;
    }
    
-   if ( b <= 65535 ) /* see passwd(4) normaly also bigger uids/gids are allowed but ... */
+   if ( b <= PW_MAX ) /* see passwd(4) normaly also bigger uids/gids are allowed but ... */
       return b;
    return 0;
    
 }
 
-/* XXX: is this enough secure */
+/* XXX: this is not enough secure, will be removed soon */
 int chck_pathb(char *s, register unsigned int len)
 {
    register char *t;
@@ -126,12 +101,23 @@ int escape_forldap(stralloc *toescape)
    
    s = toescape->s;
    t = escape_tmp.s;
-   
+
    for(;;) {
+#ifndef LDAP_ESCAPE_BUG
       if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
       if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
       if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
       if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
+#else
+      if(!len) break; 
+		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '_' ; 
+		else *t++ = *s++; 
+		len--;
+      if(!len) break; 
+		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '_' ; 
+		else *t++ = *s++; 
+		len--;
+#endif
    }
    *t = '\0';
    if (!stralloc_copys(toescape, escape_tmp.s)) { /* ARRG: almost certainly successful */
@@ -142,10 +128,6 @@ int escape_forldap(stralloc *toescape)
    return 1;
 }
    
-   
-/* this function will be removed in near future  */
-int chck_mails(char *s) { return chck_mailb(s, str_len(s) ); }
-
 int chck_users(char *s) { return chck_userb(s, str_len(s) ); }
 long chck_ids(char *s) { return chck_idb(s, str_len(s) ); }
 int chck_paths(char *s) { return chck_pathb(s, str_len(s) ); }

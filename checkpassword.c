@@ -282,7 +282,7 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
    /* get the UID for setuid() for POP retrieval */
    if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILUID)) != NULL ) {
       *uid = chck_ids(vals[0]);
-      if (100 > *uid ) {
+      if (PW_MIN > *uid ) {
          debug_msg(OUTPUT," ldap search results \t: UID failed for '%s'\n",vals[0]);
          _exit(1);
       } else {
@@ -296,7 +296,7 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
          debug_msg(OUTPUT," ldap search results \t: no UID found, taking control/ldapuid\n");
       }
       *uid = chck_idb(qldap_uid.s,qldap_uid.len);
-      if (100 > *uid ) {
+      if (PW_MIN > *uid ) {
          debug_msg(OUTPUT," ldap search results \t: control/ldapuid check failed for '%s'\n",sa2s(&qldap_uid) );
          _exit(1);
       } else {
@@ -308,7 +308,7 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
    /* get the GID for setgid() for POP retrieval */
    if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILGID)) != NULL ) {
       *gid = chck_ids(vals[0]);
-      if ( 100 > *gid ) {
+      if ( PW_MIN > *gid ) {
          debug_msg(OUTPUT," ldap search results \t: GID failed for '%s'\n",vals[0]);
          _exit(1);
       } else {
@@ -322,7 +322,7 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
          debug_msg(OUTPUT," ldap search results \t: no GID found, taking control/ldapgid\n");
       }
       *gid = chck_idb(qldap_gid.s,qldap_gid.len);
-      if ( 100 > *gid ) {
+      if ( PW_MIN > *gid ) {
          debug_msg(OUTPUT," ldap search results \t: control/ldapgid check failed for '%s'\n",sa2s(&qldap_gid) );
          _exit(1);
       } else {
