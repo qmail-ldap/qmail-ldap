@@ -6,15 +6,16 @@ exec 2>&1
 QMAIL="%QMAIL%"
 ME=$(head -1 $QMAIL/control/me)
 ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty 2> /dev/null )
-if test X"$ALIASEMPTY" = "X"; then
-	ALIASEMPTY=./Maildir/
-fi
+ALIASEMPTY=${ALIASEMPTY:="./Maildir/"}
 
 PATH="$QMAIL/bin:$PATH"
 
 # source the environemt in ./env
 eval `env - envdir ./env awk '\
         BEGIN { for (i in ENVIRON) printf "%s=\"%s\"\n", i, ENVIRON[i] }'`
+
+# enforce some sane defaults
+# Nothing so far
 
 exec envdir ./env \
 	tcpserver -v -HRl $ME -x$QMAIL/control/qmail-pop3d.cdb \

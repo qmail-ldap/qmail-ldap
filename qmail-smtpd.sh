@@ -3,7 +3,6 @@ exec 2>&1
 #
 # SMTP service 
 #
-USER=qmaild
 QMAIL="%QMAIL%"
 ME=$(head -1 $QMAIL/control/me)
 CONCURRENCY=${CONCURRENCY:=50}
@@ -13,6 +12,9 @@ PATH="$QMAIL/bin:$PATH"
 # source the environemt in ./env
 eval `env - envdir ./env awk '\
         BEGIN { for (i in ENVIRON) printf "%s=\"%s\"\n", i, ENVIRON[i] }'`
+
+# enforce some sane defaults
+USER=${USER:="qmaild"}
 
 exec envdir ./env \
 	envuidgid $USER \

@@ -5,9 +5,7 @@ exec 2>&1
 #
 QMAIL="%QMAIL%"
 ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty 2> /dev/null)
-if test X"$ALIASEMPTY" = "X"; then
-	ALIASEMPTY=./Maildir/
-fi
+ALIASEMPTY=${ALIASEMPTY:="./Maildir/"}
 
 PATH="$QMAIL/bin:$PATH"
 
