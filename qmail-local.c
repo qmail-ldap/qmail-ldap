@@ -939,6 +939,7 @@ char **argv;
             if ( !str_diff("forwardonly", s) ) {
                if (!flagdoit) sayit("forwardonly ",s,0);
                flagforwardonly = 1;
+               mboxdelivery = 0;
 	    } else if ( !str_diff("reply", s) ) {
 	       if( *sender ) {
 	          ++count_forward;

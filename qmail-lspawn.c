@@ -605,6 +605,9 @@ int qldap_get( stralloc *mail )
       } else if ( !str_diff("forwardonly", vals[0]) ) {
          if ( !env_put2("QMAILMODE", "forwardonly") ) _exit(QLX_NOMEM);
          if ( !env_unset("QMAILREPLYTEXT") ) _exit(QLX_NOMEM);
+      } else if ( !str_diff("nombox", vals[0]) ) {
+         if ( !env_put2("QMAILMODE", "nombox") ) _exit(QLX_NOMEM);
+         if ( !env_unset("QMAILREPLYTEXT") ) _exit(QLX_NOMEM);
       } else {
          if ( !env_unset("QMAILMODE") ) _exit(QLX_NOMEM);
          if ( !env_unset("QMAILREPLYTEXT") ) _exit(QLX_NOMEM);
