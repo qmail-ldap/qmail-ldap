@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/05/05 17:31:55 $)
+RELEASE: current ($Date: 2004/06/02 07:59:33 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -253,8 +253,10 @@ INSTALL:
 CONFIG FILES:
 
 ~control/aliasempty
+OR
+~control/defaultdelivery
 
- Default delivery mode used by the startup scripts.
+ Default delivery mode used by and only by the startup scripts.
  Default: ./Maildir/
  Example: ./
  Note: If you have a more complex default delivery you need to edit the
@@ -278,8 +280,8 @@ CONFIG FILES:
  Default: rcpthosts and morercpthosts.cdb
  Note: qmail-smtpd reads locals(.cdb) as well and there is no need anymore
        to replicate all domains here too. Only domains you are doing queueing
-       for must be listed here. As soon as you regenerate locals.cdb it will
-       become active. Use bin/qmail-cdb to create the morercpthosts.cdb file.
+       for must be listed here. As soon as you regenerate rcpthosts.cdb it will
+       become active. Use bin/qmail-cdb to create the rcpthosts.cdb file.
        Alternatively you can do "make" in ~control/ directory. See the
        Makefile for more information.
        If this file exists rcpthosts and morercpthosts.cdb are ignored.
