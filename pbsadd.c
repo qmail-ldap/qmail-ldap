@@ -135,6 +135,7 @@ int addenv(char *buf, int len)
   int i;
   int vlen;
   int elen;
+  int telen;
   int olen;
   char *e;
   char *v;
@@ -145,8 +146,10 @@ int addenv(char *buf, int len)
   
   e = envs.s;
   for(i=0; i < numenvs; i++) {
+    telen = str_len(e);
+    elen = str_chr(e, '=');
+    if ( telen != elen ) e[elen] = '\0'; 
     v = env_get(e);
-    elen = str_len(e);
     vlen = v?str_len(v):0;
     if ( vlen + elen + 1 > 255 ) {
       log_envvar(e);
@@ -168,7 +171,7 @@ int addenv(char *buf, int len)
       log_envsize();
       return olen;
     }
-    e += elen + 1;
+    e += telen + 1;
   }
   return len;
 }

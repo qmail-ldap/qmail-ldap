@@ -7,7 +7,7 @@ This patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/05/06 10:04:49 $)
+RELEASE: current ($Date: 2002/05/28 13:03:44 $)
 
 POP-Before-SMTP:
 ======================
@@ -125,10 +125,18 @@ CONFIG FILES
 
  Additional environment variables to include.
  pbscheck will set these variables to the values pbsadd returned.
+ It is possible to rewrite the variables. A line like
+ USER=TCPREMOTEINFO will cause pbscheck to set the environment TCPREMOTEINFO
+ to the value set as USER in pbsadd. If you like to prepend some identifier
+ in front of the value you can this like this:
+ USER=TCPREMOTEINFO=[pbs]   this will add [pbs] in front of the value returned
+ by pbsadd.
  Multiline.
  Default: none
- Example: TCPREMOTEINFO
-          HOME
+ Example: HOST
+          TCPREMOTEIP=FROMIP
+          USER=TCPREMOTEINFO=[pbs]
+          
 
 ================================================================================
 
@@ -138,7 +146,7 @@ pbsadd:
   usage: pbsadd subprogram ...
   
   pbsadd will try to add the IP address $TCPREMOTEIP to all pbsdbd servers
-  listed in ~control/pbsserver. Afterwards the subprogram with its arguments
+  listed in ~control/pbsserver. Afterward the subprogram with its arguments
   is started.
   On non fatal errors the subprogram will be started without successfully 
   update the database on the pbsdbd servers.
@@ -148,7 +156,7 @@ pbscheck:
   
   pbscheck checks if the IP address $TCPREMOTEIP is allowed to relay.
   It will send queries to the pbsdbd servers listed in ~control/pbsserver.
-  The first query will be sent to a randomly choosen server, if this timeouts
+  The first query will be sent to a randomly chosen server, if this timeouts
   all servers will be tried one after another.
   If the IP is allowed to relay the environment $RELAYCLIENT is set.
   On non fatal errors the subprogram will be started without setting

@@ -88,12 +88,20 @@ void die_nomem()
   log("pbscheck out of memory");
   die();
 }
+void die_envs()
+{
+  err("554 to many additiona environments defined (#5.3.5)");
+  log("pbsadd control/pbsenvs has to many entries");
+  die();
+}
 
 char buf[1024];
 
 stralloc addresses = {0};
+stralloc envs = {0};
 struct ip_address *servers;
 int numservers = 0;
+int numenvs = 0;
 unsigned int serverport = 2821;
 
 
@@ -110,10 +118,15 @@ void setup(void)
 
   if (control_readint(&serverport,"control/pbsport") == -1) die_control();
   if (serverport > 65000) die_control();
+  if (control_readfile(&envs,"control/pbsenv",0) == -1) die_control();
  
   for( i = 0; i < addresses.len; i++)
     if( addresses.s[i] == '\0' ) numservers++;
   
+  for( i = 0; i < envs.len; i++)
+    if( envs.s[i] == '\0' ) numenvs++;
+  if( numenvs > 255 ) die_envs();
+
   servers = (struct ip_address*)alloc(numservers * sizeof(struct ip_address));
   if (! servers ) die_nomem();
   
@@ -163,11 +176,46 @@ int env_snap()
   envsnap[en] = 0;
 }
 
+stralloc vbuf = {0};
+
+char* env_rewrite(char** name, char** value)
+{
+  char *e;
+  int i;
+  int llen;
+  int nlen;
+  int elen;
+
+  e = envs.s;
+  nlen = str_len(*name);
+  
+  for(i=0; i < numenvs; i++) {
+    llen = str_len(e);
+    if ( byte_equal(*name, nlen, e) )
+      if ( *(e + nlen) == '=' ) {
+	elen = str_chr(e + nlen + 1, '=');
+	if ( *(e + nlen + elen + 1) == '=') {
+	  *(e + nlen + elen + 1) = '\0';
+	  if (!stralloc_copys(&vbuf, e + nlen + elen + 2) ) die_nomem();
+	  if (!stralloc_cats(&vbuf, *value) ) die_nomem();
+	  if (!stralloc_0(&vbuf)) die_nomem();
+	  *value = vbuf.s;
+	}
+	*name = e + nlen + 1;
+	return;
+      }
+    e += llen + 1;
+  }
+}
+
 void setenv(char *env, int envlen)
 {
+  char *v;
+  char *e;
   int numenv;
   int elen;
   int nlen;
+  int tlen;
   int i;
   
   if (!env_snap()) die_nomem();
@@ -183,7 +231,12 @@ void setenv(char *env, int envlen)
     }
     nlen=(unsigned char)*(env+elen);
     *(env+elen)=0;
-    if (!env_put(env)) die_nomem();
+    tlen = str_chr(env, '=');
+    env[tlen] = '\0';
+    e = env;
+    v = env + tlen + 1;
+    env_rewrite(&e, &v);
+    if (!env_put2(e, v)) die_nomem();
     env+=elen+1; envlen-=(elen+1);
   }
 }
@@ -203,14 +256,6 @@ int main (int argc, char** argv)
   childargs = argv + 1;
   if (!*childargs) die_usage();
     
-  x = env_get("RELAYCLIENT");
-  if (x) {
-    /* do we need the additional environment from pbsdbd? */
-    execvp(*childargs,childargs);
-    /* should never reach this point */
-    die_exec();
-  }
-  
   setup();
   
   t = now() ^ getpid(); /* at least on OpenBSD this is mostly random */
