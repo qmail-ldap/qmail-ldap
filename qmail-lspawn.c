@@ -855,14 +855,14 @@ char *s; char *r; int at;
 #ifdef QLDAP_CLUSTER
 stralloc dtline = {0};
 
-void bouncexf()
+void bouncexf(int fdmess)
 {
  char buf[1024];
  int match;
  substdio ss;
 
- if (seek_begin(0) == -1) _exit(QLX_SYS);
- substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
+ if (seek_begin(fdmess) == -1) _exit(QLX_SYS);
+ substdio_fdbuf(&ss,read,fdmess,buf,sizeof(buf));
  for (;;)
   {
    if (getln(&ss,&foo,&match,'\n') != 0) _exit(QLX_SYS);
@@ -890,7 +890,7 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
 
    bouncexf();
    
-   if (seek_begin(0) == -1) _exit(QLX_SYS);
+   if (seek_begin(fdmess) == -1) _exit(QLX_SYS);
    if (pipe(pi) == -1) _exit(QLX_SYS);
 
    switch( child = fork() ) {
