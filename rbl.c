@@ -11,7 +11,6 @@
 
 static stralloc rblmessage = {0};
 int rblprintheader = 0;
-char *rblonlyheader;
 
 /* functions borrowed from qmail-smtpd.c */
 extern void safeput();
@@ -120,8 +119,6 @@ int rblcheck(char *remoteip, char** rblname, int rbloh)
   int r = 1;
   int i;
 
-  rblonlyheader = &rbloh;
-
   if(!stralloc_copys(&rblmessage, "")) die_nomem();
   if(!rbl_start(remoteip)) return 0;
 
@@ -135,7 +132,7 @@ int rblcheck(char *remoteip, char** rblname, int rbloh)
     } else if (r == 1) {
       logstring(2,"found match, ");
       *rblname = rbl[i].message;
-      if (rblonlyheader) {
+      if (rbloh) {
 	logstring(2,"tag header"); logflush(2);
 	rbladdheader(rbl[i].baseaddr, rbl[i].matchon, rbl[i].message);
 	continue;
