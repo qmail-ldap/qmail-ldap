@@ -386,7 +386,8 @@ char *arg;
   return 1;
 }
 
-int badmxcheck(dom) char *dom;
+int badmxcheck(dom)
+char *dom;
 {
   ipalloc checkip = {0};
   int ret = 0;

@@ -1536,15 +1536,16 @@ void todo_del(char* s)
     flagchan[1] = 1;
     break;
   case 'X':
+    log1("warning: qmail-todo neither by land nor by sea...\n");
     break;
   default:
-    log1("warning: qmail-send unable to understand qmail-todo\n");
+    log1("warning: qmail-todo has a unknown feature or dialect.\n");
     return;
  }
  
  len = scan_ulong(s,&id);
  if (!len || s[len]) {
-  log1("warning: qmail-send unable to understand qmail-todo\n");
+  log1("warning: qmail-todo please don't muble.\n");
   return;
  }
 
