@@ -27,6 +27,9 @@
 #include "check.h"
 #include "qldap-debug.h"
 #include "output.h"
+#ifdef QLDAP_CLUSTER
+#include "constmap.h"
+#endif
 
 /* Edit the first lines in the Makefile to enable local passwd lookups 
  * and debug options.
@@ -68,6 +71,8 @@ static int cmp_passwd(unsigned char *clear, char *encrypted);
 static int get_local_maildir(stralloc *home, stralloc *maildir);
 
 #ifdef QLDAP_CLUSTER
+extern struct constmap qldap_mailhosts;
+
 static void copyloop(int infd, int outfd, int timeout);
 static void forward_session(char *host, char *name, char *passwd);
 #endif
@@ -177,7 +182,10 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	
 #ifdef QLDAP_CLUSTER
 	/* for cluster check if I'm on the right host */
-	if ( cluster && info.host && str_diff(qldap_me.s, info.host) ) {
+	if ( cluster && info.host &&
+		 str_diff(qldap_me.s, info.host) &&
+		 !constmap(&qldap_mailhosts, info.host, str_len(info.host)) ) {
+
 		/* hostname is different, so I reconnect */
 		log(8, "check_ldap: forwarding session to %s\n", info.host);
 		forward_session(info.host, login->s, authdata->s);

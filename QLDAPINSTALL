@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/09/22 16:12:46 $)
+RELEASE: current ($Date: 2001/09/29 21:48:32 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -31,6 +31,8 @@ IMPORTANT NEWS:
  have a look at the QLDAPNEWS.
 
  new logging facilities for qmail-lspawn and auth_*
+
+ new control file ldapclusterhosts. See Section CONFIG FILES.
 
 ================================================================================
 
@@ -268,6 +270,15 @@ CONFIG FILES:
  Note: boolean, use 0 (zero) or 1 (one)
  ATTN: the control files me, rcpthosts and locals have to be set carfully
        or you will have big problems.
+
+~control/ldapclusterhosts
+
+ ldapclusterhosts contains a number of hostnames (FQDM) to check togehter
+ with ~control/me when clustering is on. This file is useful if you want to
+ run multiple instances of qmail-ldap on one machine.
+ Default: none
+ Example: customersmtp.nrg4u.com
+ Note: multiline
 
 ~control/ldapdefaultquota
 

@@ -25,6 +25,7 @@
 #include "sgetopt.h"
 #include "env.h"
 #include "auto_break.h"
+#include "constmap.h"
 
 /* Edit the first lines in the Makefile to enable local passwd lookups 
  * and debug options.
@@ -45,6 +46,10 @@ typedef enum mode_d { unset=0, uid, mail} mode_d;
 
 extern stralloc qldap_me;
 extern stralloc qldap_objectclass;
+
+#ifdef QLDAP_CLUSTER
+extern struct constmap qldap_mailhosts;
+#endif
 
 int rebind; 
 int cluster;
@@ -252,7 +257,13 @@ int main(int argc, char **argv)
 	}
 
 	output(&ssout, "\t\t%s: %s\n", LDAP_MAILHOST, info.host);
-	if ( cluster && info.host && str_diff(qldap_me.s, info.host) ) {
+	if ( cluster && info.host &&
+		 str_diff(qldap_me.s, info.host) 
+#ifdef QLDAP_CLUSTER 
+		 /* qldap_mailhosts only defined when QLDAP_CLUSTER defined */
+		 && !constmap(&qldap_mailhosts, info.host, str_len(info.host)) 
+#endif
+		 ) {
 		/* hostname is different, so I would reconnect */
 		output(&ssout, "\tINFO    would reconnect to host %s\n", info.host);
 	}

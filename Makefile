@@ -98,13 +98,15 @@ load auth_imap.o checkpassword.o check.o control.o getln.a qldap-debug.o \
 fs.a open.a stralloc.a alloc.a substdio.a error.a env.a auto_qmail.o \
 str.a base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
 dns.o timeoutconn.o ndelay.a ipalloc.o dns.lib socket.lib qldap-ldaplib.o \
-timeoutread.o qldap-mdm.o wait.a sig.a prot.o qldap-errno.o output.o
+timeoutread.o qldap-mdm.o wait.a sig.a prot.o qldap-errno.o output.o \
+constmap.o case.a
 	./load auth_imap checkpassword.o check.o control.o qldap-ldaplib.o \
 	qldap-debug.o output.o auto_qmail.o dns.o timeoutconn.o timeoutread.o \
 	ip.o base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
-	qldap-mdm.o wait.a qldap-errno.o error.a fs.a ndelay.a sig.a prot.o \
-	$(LDAPLIBS) $(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
+	ipalloc.o constmap.o case.a getln.a open.a env.a stralloc.a alloc.a \
+	substdio.a str.a qldap-mdm.o wait.a qldap-errno.o error.a fs.a \
+	ndelay.a sig.a prot.o $(LDAPLIBS) $(SHADOWLIBS) \
+	`cat dns.lib` `cat socket.lib`
 
 auth_pop.o: \
 compile auth_pop.c error.h qldap-errno.h readwrite.h stralloc.h env.h \
@@ -117,13 +119,15 @@ load auth_pop.o checkpassword.o check.o control.o getln.a qldap-debug.o \
 fs.a open.a stralloc.a alloc.a substdio.a error.a env.a auto_qmail.o \
 str.a base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
 dns.o timeoutconn.o ndelay.a ipalloc.o dns.lib socket.lib qldap-ldaplib.o \
-timeoutread.o qldap-mdm.o wait.a prot.o qldap-errno.o output.o
+timeoutread.o qldap-mdm.o wait.a prot.o qldap-errno.o output.o \
+constmap.o case.a
 	./load auth_pop checkpassword.o check.o control.o qldap-ldaplib.o \
 	qldap-debug.o output.o auto_qmail.o dns.o timeoutconn.o timeoutread.o \
 	ip.o base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
-	qldap-mdm.o wait.a qldap-errno.o error.a fs.a ndelay.a prot.o \
-	$(LDAPLIBS) $(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
+	ipalloc.o constmap.o case.a getln.a open.a env.a stralloc.a alloc.a \
+	substdio.a str.a qldap-mdm.o wait.a qldap-errno.o error.a fs.a \
+	ndelay.a prot.o $(LDAPLIBS) $(SHADOWLIBS) \
+	`cat dns.lib` `cat socket.lib`
 
 auto-ccld.sh: \
 conf-cc conf-ld warn-auto.sh
@@ -1393,12 +1397,13 @@ qmail-ldaplookup: \
 load qmail-ldaplookup.o stralloc.a error.a qldap-ldaplib.o qldap-debug.o \
 qldap-errno.o str.a alloc.a check.o control.o env.a fs.a open.a \
 base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-auto_qmail.o getln.a substdio.a strerr.a output.o getopt.a auto_break.o
+auto_qmail.o getln.a substdio.a strerr.a output.o getopt.a auto_break.o \
+constmap.o case.a
 	./load qmail-ldaplookup qldap-ldaplib.o  control.o error.a \
 	getln.a stralloc.a qldap-debug.o output.o qldap-errno.o check.o fs.a \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-	open.a env.a getopt.a strerr.a substdio.a str.a alloc.a \
-	auto_qmail.o auto_break.o $(LDAPLIBS) $(SHADOWLIBS)
+	open.a env.a getopt.a strerr.a constmap.o substdio.a str.a alloc.a \
+	case.a auto_qmail.o auto_break.o $(LDAPLIBS) $(SHADOWLIBS)
 
 qmail-ldaplookup.o: \
 compile qmail-ldaplookup.c qmail-ldap.h qldap-errno.h stralloc.h \
@@ -1412,10 +1417,10 @@ load qmail-lspawn.o spawn.o prot.o slurpclose.o coe.o control.o check.o \
 sig.a strerr.a getln.a wait.a case.a cdb.a fd.a open.a stralloc.a \
 alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_uids.o \
 auto_spawn.o auto_usera.o env.a qldap-ldaplib.o qldap-debug.o \
-qldap-errno.o seek.a output.o auto_break.o
+qldap-errno.o seek.a output.o auto_break.o constmap.o
 	./load qmail-lspawn spawn.o prot.o slurpclose.o coe.o control.o \
-	check.o qldap-ldaplib.o qldap-debug.o output.o sig.a strerr.a getln.a \
-	wait.a case.a cdb.a fd.a seek.a open.a env.a stralloc.a alloc.a \
+	check.o qldap-ldaplib.o qldap-debug.o output.o sig.a strerr.a constmap.o \
+	getln.a wait.a case.a cdb.a fd.a seek.a open.a env.a stralloc.a alloc.a \
 	substdio.a str.a qldap-errno.o error.a fs.a auto_qmail.o \
 	auto_uids.o auto_usera.o auto_spawn.o auto_break.o $(LDAPLIBS)
 

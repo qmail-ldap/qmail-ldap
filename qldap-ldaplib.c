@@ -15,6 +15,9 @@
 #include "qldap-debug.h"
 #include "fmt.h"
 #include <sys/time.h> /* for ldap search timeout */
+#ifdef QLDAP_CLUSTER
+#include "constmap.h"
+#endif
 
 #define QLDAP_PORT LDAP_PORT
 #ifndef PORT_LDAP /* this is for testing purposes, so you can overwrite 
@@ -32,6 +35,11 @@ static int ldap_get_extrainfo(LDAP *ld, LDAPMessage *msg, extrainfo *info);
 /* internal data structures */
 stralloc qldap_me = {0};				/* server name, also external visible */
 stralloc qldap_objectclass = {0};		/* the search objectclass, external visible */
+
+#ifdef QLDAP_CLUSTER
+struct constmap qldap_mailhosts;		/* mailhost constmap for clustering */
+static stralloc qldap_mh = {0};			/* buffer for constmap */
+#endif
 
 /* internal use only vars */
 static stralloc qldap_server = {0};		/* name of ldap server */
@@ -154,12 +162,26 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 			return -1;
 		log(64, "init_ldap: control/ldaplocaldelivery: %i\n", *localdelivery);
 	}
+#ifdef QLDAP_CLUSTER
 	if (cluster != 0 ) {
 		t = cf;
 		t += fmt_strn(cf, "control/ldapcluster", 64); *t=0;
 		if (control_readint(cluster, ctrl_file) == -1) return -1;
 		log(64, "init_ldap: control/ldapcluster: %i\n", *cluster);
 	}
+	if ( cluster != 0 && *cluster == 1 ) {
+		t = cf;
+		t += fmt_strn(cf, "control/ldapclusterhosts", 64); *t=0;		
+		if (control_readfile(&qldap_mh,ctrl_file,0) == -1)
+			return -1;
+		log(64, "init_ldap: control/ldapclusterhosts: read\n");
+		if (!constmap_init(&qldap_mailhosts, qldap_mh.s, qldap_mh.len,0))
+			return -1;
+	} else {
+		if (!constmap_init(&qldap_mailhosts, "", 0, 0) )
+			return -1;
+	}
+#endif
 	if ( bind != 0 ) {
 		t = cf;
 		t += fmt_strn(cf, "control/ldaprebind", 64); *t=0;

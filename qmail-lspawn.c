@@ -33,6 +33,7 @@
 #include <pwd.h>
 #include <sys/types.h>
 #ifdef QLDAP_CLUSTER
+#include "constmap.h"
 #include "seek.h"
 #include "getln.h"
 #endif
@@ -54,6 +55,8 @@ stralloc    foo = {0};
 /* init done */
 
 #ifdef QLDAP_CLUSTER
+extern struct constmap qldap_mailhosts;
+
 /* declaration of the mail forwarder function */
 void forward_mail(char *host, stralloc *to, char *from, int fdmess);
 #endif
@@ -475,7 +478,9 @@ ldap_fail:
 
 #ifdef QLDAP_CLUSTER
    /* check if the I'm the right host */
-   if ( qldap_cluster && info.host && str_diff(qldap_me.s, info.host) ) {
+   if ( qldap_cluster && info.host && 
+        str_diff(qldap_me.s, info.host) &&
+        !constmap(&qldap_mailhosts, info.host, str_len(info.host)) ) {
       /* hostname is different, so I reconnect */
       forward_mail(info.host, mail, from, fdmess);
       /* that's it. Function does not return */

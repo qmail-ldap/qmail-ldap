@@ -291,6 +291,7 @@ void main()
   do_int("ldaplocaldelivery","1","local passwd lookup is "," (1 = on, 0 = off)");
   do_int("ldaprebind","0","ldap rebinding is "," (1 = on, 0 = off)");
   do_int("ldapcluster","0","clustering is "," (1 = on, 0 = off)");
+  do_lst("ldapclusterhosts","No alternate MailHosts for clustering listed.", "Alternate MailHosts for clustering: ", "");
 
   do_lst("quotawarning","No quotawarning.","","");
   do_lst("custombouncetext","No custombouncetext.","","");
@@ -356,6 +357,7 @@ void main()
     if (str_equal(d->d_name,"tarpitdelay")) continue;
     if (str_equal(d->d_name,"badrcptto")) continue;
     if (str_equal(d->d_name,"dirmaker")) continue;
+    if (str_equal(d->d_name,"ldapclusterhosts")) continue;
     if (str_equal(d->d_name,"ldappasswdappend")) {
         substdio_puts(subfdout,"ldappasswdappend: No longer used, please remove.\n");
         continue;
