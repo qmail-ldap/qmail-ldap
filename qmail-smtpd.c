@@ -912,7 +912,7 @@ void smtp_rcpt(arg) char *arg; {
 
 #ifdef DATA_COMPRESS
 z_stream stream;
-char zbuf[1024];
+char zbuf[4096];
 int compdata = 0;
 
 int compression_init(void)

@@ -166,7 +166,7 @@ int ssl_timeoutwrite(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
 
 #ifdef DATA_COMPRESS
 z_stream stream;
-char zbuf[1024];
+char zbuf[4096];
 int compdata = 0;
 int wantcomp = 0;
 
