@@ -460,6 +460,7 @@ char *arg;
     terminator = ' ';
     arg += str_chr(arg,':');
     if (*arg == ':') ++arg;
+    if (*arg == '\0') return 0;
     while (*arg == ' ') ++arg;
   }
 
