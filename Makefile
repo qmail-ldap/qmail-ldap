@@ -1589,8 +1589,7 @@ substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
 	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
 	ipalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
 	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
-	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib`
-#	-L/usr/local/ssl/lib -lssl -lcrypto
+	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib` ${TLSLIBS}
 
 qmail-remote.0: \
 qmail-remote.8
@@ -1699,8 +1698,7 @@ fs.a auto_qmail.o dns.lib socket.lib
 	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
 	alloc.a substdio.a error.a str.a fs.a auto_qmail.o dns.o \
-	`cat dns.lib` `cat socket.lib`
-#	-L/usr/local/ssl/lib -lssl -lcrypto
+	`cat dns.lib` `cat socket.lib` ${TLSLIBS}
 
 qmail-smtpd.0: \
 qmail-smtpd.8
