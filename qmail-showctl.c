@@ -252,7 +252,6 @@ void main()
   do_str("idhost",1,"idhost","Message-ID host name is ");
   do_str("localiphost",1,"localiphost","Local IP address becomes ");
   do_lst("locals","Messages for me are delivered locally.","Messages for "," are delivered locally.");
-  do_int("maxrcptcount","0",""," RCPT TOs are accepted before sending 553 (0 = off)");
   do_str("me",0,"undefined! Uh-oh","My name is ");
   do_str("outgoingip",0,"0.0.0.0","Bind qmail-remote to ");
   do_int("pbscachesize","1048576","PBS cachesize is "," bytes");
@@ -269,7 +268,6 @@ void main()
   do_int("queuelifetime","604800","Message lifetime in the queue is "," seconds");
   do_lst("quotawarning","No quotawarning.","","");
   do_lst("rbllist","No RBL listed.","RBL to check: ",".");
-  do_int("rblonlyheader","0","Only tag RBLs in mail header: "," (1 = on, 0 = off)");
 
   if (do_lst("rcpthosts","SMTP clients may send messages to any recipient.","SMTP clients may send messages to recipients at ","."))
     do_lst("morercpthosts","No effect.","SMTP clients may send messages to recipients at ",".");
@@ -294,8 +292,6 @@ void main()
   do_lst("relaymailfrom","Relaymailfrom not enabled.","Envelope senders allowed to relay: ",".");
   do_str("smtpgreeting",1,"smtpgreeting","SMTP greeting: 220 ");
   do_lst("smtproutes","No artificial SMTP routes.","SMTP route: ","");
-  do_int("tarpitcount","0",""," RCPT TOs are accepted before tarpitting (0 = off)");
-  do_int("tarpitdelay","5",""," seconds of delay to introduce after each subsequent RCPT TO");
   do_int("timeoutconnect","60","SMTP client connection timeout is "," seconds");
   do_int("timeoutremote","1200","SMTP client data timeout is "," seconds");
   do_int("timeoutsmtpd","1200","SMTP server data timeout is "," seconds");
@@ -303,16 +299,18 @@ void main()
 
 
   substdio_puts(subfdout,"\n\n\nNow the qmail-ldap specific files:\n");
-  do_str("ldapserver",0,"undefined! Uh-oh","My LDAP Server is ");
   do_str("ldapbasedn",0,"NULL","LDAP basedn: ");
+  do_str("ldapserver",0,"undefined! Uh-oh","My LDAP Server is ");
   do_str("ldaplogin",0,"NULL","LDAP login: ");
   do_str("ldappassword",0,"NULL","LDAP password: ");
   do_int("ldaptimeout","30","LDAP server timeout is "," seconds");
   do_str("ldapuid",0,"not defined","Default UID is ");
   do_str("ldapgid",0,"not defined","Default GID is ");
+  do_str("ldapobjectclass",0,"not defined","The objectclass to limit ldap filter is ");
   do_str("ldapmessagestore",0,"not defined","Prefix for non absolute paths is ");
   do_str("ldapdefaultdotmode",0,"ldaponly","Default dot mode for ldap users is ");
-  do_str("ldapdefaultquota",0,"unlimited","Default quota for ldap users is ");
+  do_int("defaultquotasize","0","Mailbox size quota is "," bytes (0 is unlimited).");
+  do_int("defaultquotacount","0","Mailbox count quota is "," messages (0 is unlimited).");
   do_int("ldaplocaldelivery","1","Local passwd lookup is "," (1 = on, 0 = off)");
   do_int("ldaprebind","0","Ldap rebinding is "," (1 = on, 0 = off)");
   do_int("ldapcluster","0","Clustering is "," (1 = on, 0 = off)");
@@ -325,8 +323,6 @@ void main()
   while (d = readdir(dir)) {
     if (str_equal(d->d_name,".")) continue;
     if (str_equal(d->d_name,"..")) continue;
-    if (str_equal(d->d_name,"bouncefrom")) continue;
-    if (str_equal(d->d_name,"bouncehost")) continue;
     if (str_equal(d->d_name,"badmailfrom")) continue;
     if (str_equal(d->d_name,"badmailfrom-unknown")) continue;
     if (str_equal(d->d_name,"badrcptto")) continue;
@@ -340,6 +336,8 @@ void main()
     if (str_equal(d->d_name,"databytes")) continue;
     if (str_equal(d->d_name,"defaultdomain")) continue;
     if (str_equal(d->d_name,"defaulthost")) continue;
+    if (str_equal(d->d_name,"defaultquotacount")) continue;
+    if (str_equal(d->d_name,"defaultquotasize")) continue;
     if (str_equal(d->d_name,"dirmaker")) continue;
     if (str_equal(d->d_name,"doublebouncehost")) continue;
     if (str_equal(d->d_name,"doublebounceto")) continue;
@@ -350,7 +348,6 @@ void main()
     if (str_equal(d->d_name,"ldapcluster")) continue;
     if (str_equal(d->d_name,"ldapclusterhosts")) continue;
     if (str_equal(d->d_name,"ldapdefaultdotmode")) continue;
-    if (str_equal(d->d_name,"ldapdefaultquota")) continue;
     if (str_equal(d->d_name,"ldapgid")) continue;
     if (str_equal(d->d_name,"ldaplocaldelivery")) continue;
     if (str_equal(d->d_name,"ldaplogin")) continue;
@@ -363,7 +360,6 @@ void main()
     if (str_equal(d->d_name,"ldapuid")) continue;
     if (str_equal(d->d_name,"localiphost")) continue;
     if (str_equal(d->d_name,"locals")) continue;
-    if (str_equal(d->d_name,"maxrcptcount")) continue;
     if (str_equal(d->d_name,"me")) continue;
     if (str_equal(d->d_name,"morercpthosts")) continue;
     if (str_equal(d->d_name,"morercpthosts.cdb")) continue;
@@ -382,23 +378,23 @@ void main()
     if (str_equal(d->d_name,"queuelifetime")) continue;
     if (str_equal(d->d_name,"quotawarning")) continue;
     if (str_equal(d->d_name,"rbllist")) continue;
-    if (str_equal(d->d_name,"rblonlyheader")) continue;
     if (str_equal(d->d_name,"rcpthosts")) continue;
     if (str_equal(d->d_name,"relaymailfrom")) continue;
     if (str_equal(d->d_name,"smtpgreeting")) continue;
     if (str_equal(d->d_name,"smtproutes")) continue;
-    if (str_equal(d->d_name,"tarpitcount")) continue;
-    if (str_equal(d->d_name,"tarpitdelay")) continue;
     if (str_equal(d->d_name,"timeoutconnect")) continue;
     if (str_equal(d->d_name,"timeoutremote")) continue;
     if (str_equal(d->d_name,"timeoutsmtpd")) continue;
     if (str_equal(d->d_name,"virtualdomains")) continue;
-    if (str_equal(d->d_name,"ldappasswdappend")) {
-        substdio_puts(subfdout,"ldappasswdappend: No longer used, please remove.\n");
-        continue;
-    }
-    if (str_equal(d->d_name,"ldapusername")) {
-        substdio_puts(subfdout,"ldapusername: No longer used, please remove.\n");
+    if (str_equal(d->d_name,"ldapusername") ||
+	str_equal(d->d_name,"ldappasswdappend") ||
+	str_equal(d->d_name,"ldapdefaultquota") ||
+	str_equal(d->d_name,"rblonlyheader") ||
+	str_equal(d->d_name,"maxrcptcount") ||
+	str_equal(d->d_name,"tarpitdelay") ||
+	str_equal(d->d_name,"tarpitcount")) {
+        substdio_puts(subfdout,d->d_name);
+        substdio_puts(subfdout,": No longer used, please remove.\n");
         continue;
     }
     substdio_puts(subfdout,d->d_name);

@@ -12,5 +12,7 @@ int make_passwd(const char *, char *, stralloc *);
 /* feed salt pool for passwd generation */
 int feed_salt(char *, int);
 
+/* feed crypt(3) format to the passwd function */
+void feed_crypt(const char *);
 
 #endif

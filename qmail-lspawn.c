@@ -226,7 +226,6 @@ int len;
 }
 
 stralloc nughde = {0};
-stralloc filter = {0};
 stralloc host = {0};
 stralloc user = {0};
 stralloc homedir = {0};
@@ -262,24 +261,18 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
 		      LDAP_MAXMSIZE,
 		      LDAP_OBJECTCLASS, 0};
    char num[FMT_ULONG];
-   char *escaped;
    char *f;
    struct passwd *pw;
    struct qldap *q;
    struct stat st;
+   unsigned long count;
    unsigned long maxsize;
    unsigned long size;
-   unsigned long count;
-   int at;
-   int ext;
+   int done;
    int id;
    int len;
    int status;
    int rv;
-
-   /* check the mailaddress for illegal characters
-    * escape '*', ,'\', '(' and ')' with a preceding '\' */
-   if (!(escaped = ldap_escape(mail->s))) _exit(QLX_NOMEM);
 
    /* TODO more debug output is needed */
    q = qldap_new();
@@ -291,9 +284,6 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
    rv = qldap_bind(q, 0, 0);
    if (rv != OK) goto fail;
 
-   len = str_len(escaped);
-   for (at = len; escaped[at] != '@' && at >= 0 ; at--) ; 
-   ext = at;
    /*
     * this handles the "catch all" and "-default" extension 
     * but also the normal eMail address.
@@ -303,40 +293,9 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
     * len = length of escaped mailaddress
     * i = position of current '-' or '@'
     */
+   done = 0;
    do {
-     /* build the search string for the email address */
-     if (!stralloc_copys(&filter, "(|(" )) cae(q, QLX_NOMEM);
-     /* mail address */
-     if (!stralloc_cats(&filter, LDAP_MAIL)) cae(q, QLX_NOMEM);
-     if (!stralloc_cats(&filter, "=")) cae(q, QLX_NOMEM);
-     /* username till current '-' */
-     if (!stralloc_catb(&filter, escaped, ext)) cae(q, QLX_NOMEM);
-     if (ext != at) { /* do not append catchall in the first round */
-       /* catchall or default */
-       if (ext != 0) /* add '-' */
-         if (!stralloc_cats(&filter, auto_break)) cae(q, QLX_NOMEM);
-       if (!stralloc_cats(&filter, LDAP_CATCH_ALL)) cae(q, QLX_NOMEM);
-     }
-     /* @damin.com */
-     if (!stralloc_catb(&filter, escaped+at, len-at)) cae(q, QLX_NOMEM);
-
-     /* mailalternate address */
-     if (!stralloc_cats(&filter, ")(")) cae(q, QLX_NOMEM);
-     if (!stralloc_cats(&filter, LDAP_MAILALTERNATE)) cae(q, QLX_NOMEM);
-     if (!stralloc_cats(&filter, "=")) cae(q, QLX_NOMEM);
-     /* username till current '-' */
-     if (!stralloc_catb(&filter, escaped, ext)) cae(q, QLX_NOMEM);
-     if (ext != at) { /* do not append catchall in the first round */
-       /* catchall or default */
-       if (ext != 0) /* add '-' */
-         if (!stralloc_cats(&filter, auto_break)) cae(q, QLX_NOMEM);
-       if (!stralloc_cats(&filter, LDAP_CATCH_ALL)) cae(q, QLX_NOMEM);
-     }
-     /* @domain.com */
-     if (!stralloc_catb(&filter, escaped+at, len-at)) cae(q, QLX_NOMEM);
-     if (!stralloc_cats(&filter, "))")) cae(q, QLX_NOMEM);
-     if (!stralloc_0(&filter)) cae(q, QLX_NOMEM);
-     f = ldap_ocfilter(filter.s);
+     f = filter_mail(mail->s, &done);
      if (f == (char *)0) cae(q, QLX_NOMEM);
      
      log(16, "ldapfilter: '%s'\n", f);
@@ -358,21 +317,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      case NOSUCH:
        break;
      }
-     if (rv == OK || ext <= 0) break; /* something found or nothing found */
-#ifdef DASH_EXT
-     /*
-      * if mail starts with a - there is no "-catchall@" search
-      * only "chatchall@" will be tried.
-      */
-     while (--ext > 0) {
-       if (escaped[ext] == *auto_break) break;
-     }
-#else
-     /* normal qmail-ldap behavior test for username@domain.com and
-        catchall@domain.com */
-     ext = 0;
-#endif
-   } while (1);
+   } while (rv != OK && !done);
 
    /* nothing found, try a local lookup or a alias delivery */
    if (rv == NOSUCH) {
@@ -492,14 +437,20 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
 
    /*
     *  Fill up the dash-field and the extension field with the values
-    * used for the dash-ext search. XXX currently we use the encrypted
-    * mail address which is probably a bad thing.
+    * used for the dash-ext search.
     */
-   if (ext < at && ext != 0)
+   rv = filter_mail_ext();
+   if (rv != -1)
      if (!stralloc_cats(&nughde,"-")) cae(q, QLX_NOMEM);
    if (!stralloc_0(&nughde)) cae(q, QLX_NOMEM);
-   if (ext < at && ext != 0)
-     if (!stralloc_catb(&nughde,escaped+ext+1,at-ext-1)) cae(q, QLX_NOMEM);
+   if (rv != -1) {
+     int at, ext, i;
+     at = str_rchr(mail->s, '@');
+     if (mail->s[at] != '@') cae(q, QLX_USAGE);
+     for (ext = 0, i = 0; i < rv && ext < at; ext++)
+       if (mail->s[ext] == *auto_break) i++;
+     if (!stralloc_catb(&nughde, mail->s+i+1,at-ext-1)) cae(q, QLX_NOMEM);
+   }
    if (!stralloc_0(&nughde)) cae(q, QLX_NOMEM);
 
    /*

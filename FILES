@@ -491,6 +491,7 @@ qldap-debug.c
 qldap-debug.h
 qldap-errno.c
 qldap-errno.h
+qldap-filter.c
 qldap-profile.c
 qldap-profile.h
 qldap.c

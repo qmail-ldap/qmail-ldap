@@ -31,8 +31,8 @@ void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage:\tdigest [ -c ] [ -s base64Salt ] [ -S hexSalt ] passwd\n"
-	    "\tdigest [ -v ] password hashedPassword\n");
+	    "usage:\tdigest [ -c ] [ -b | -5 | -C | -f cryptformat ] [ -s base64Salt ]\n\t[ -S hexSalt ] passwd\n"
+	    "\tdigest -v password hashedPassword\n");
 	exit(1);
 }
 
@@ -70,14 +70,31 @@ main(int argc, char *argv[])
 {
 	int	i, opt, m;
 	char	*clear, *encrypted;
+	const char *cformat;
 	
 	clear = NULL;
 	encrypted = NULL;
 	m = 0;
-	while ((opt = getopt(argc, argv, "cs:S:v")) != opteof)
+	cformat = "XX";
+	while ((opt = getopt(argc, argv, "5bcf:s:S:v")) != opteof)
 		switch (opt) {
+		case '5':
+			/* md5 format */
+			cformat = "$1$XXXXXXXX$";
+			break;
+		case 'b':
+			/* blowfish format */
+			cformat = "$2a$07$XXXXXXXXXXXXXXXXXXXXXXXX";
+			break;
+		case 'C':
+			/* good (acctually bad) old crypt */
+			cformat = "XX";
+			break;
 		case 'c':
 			m = 0;
+			break;
+		case 'f':
+			cformat = optarg;
 			break;
 		case 's':
 			if (b64_ptons(optarg, &salt) == -1) {
@@ -105,8 +122,9 @@ main(int argc, char *argv[])
 		if (argc != 1) usage();
 		clear = argv[0];
 		if (salt.s == 0)
-			getsalt(&salt, 16);
+			getsalt(&salt, 32);
 		feed_salt(salt.s, salt.len);
+		feed_crypt(cformat);
 		for (i = 0; mode[i] != 0; i++) {
 			if (make_passwd(mode[i], clear, &pw) == OK) {
 				stralloc_0(&pw);

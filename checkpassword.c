@@ -38,8 +38,6 @@
 
 #include "checkpassword.h"
 
-static char *searchfilter(char *);
-
 int (*checkfunc[])(stralloc *, stralloc *, struct credentials *, int) = {
 	check_ldap,
 	check_passwd,
@@ -110,7 +108,7 @@ check_ldap(stralloc *login, stralloc *authdata,
 			attrs[7] = 0;
 	}
 
-	filter = searchfilter(login->s);
+	filter = filter_uid(login->s);
 	if (filter == 0) { r = ERRNO; goto fail; }
 
 	r = qldap_lookup(q, filter, attrs);
@@ -296,28 +294,6 @@ chdir_or_make(char *home, char *maildir)
 		auth_error(MAILDIR_FAILED);
 	}
 #endif
-}
-
-stralloc filter = {0};
-
-static char *
-searchfilter(char *uid)
-{
-	char	*escaped;
-	
-	if (uid == (char *)0) return 0;
-	
-	escaped = ldap_escape(uid);
-	if (escaped == (char *)0) return 0;
-	
-	if (!stralloc_copys(&filter,"(") ||
-	    !stralloc_cats(&filter, LDAP_UID) ||
-	    !stralloc_cats(&filter, "=") ||
-	    !stralloc_cats(&filter, escaped) ||
-	    !stralloc_cats(&filter, ")") ||
-	    !stralloc_0(&filter))
-		return (char *)0;
-	return ldap_ocfilter(filter.s);
 }
 
 #ifdef QLDAP_CLUSTER

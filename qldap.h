@@ -70,7 +70,10 @@ int qldap_get_ulong(qldap *, const char *, unsigned long *);
 int qldap_get_bool(qldap *, const char *, int *);
 int qldap_get_attr(qldap *, const char *, stralloc *, int);
 
-char *ldap_escape(char *);
-char *ldap_ocfilter(char *);
-
+/* qldap-filter.c */
+char *filter_escape(char *);
+char *filter_objectclass(char *);
+char *filter_uid(char *);
+char *filter_mail(char *, int *);
+int filter_mail_ext(void);
 #endif

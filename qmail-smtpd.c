@@ -937,7 +937,8 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
 	flush();
 	die_read();
       }
-      return len;
+      if (stream.avail_out == len) continue;
+      return len - stream.avail_out;
     } while (1);
   }
 #endif

@@ -1,7 +1,9 @@
 #include "auto_qmail.h"
+#include "byte.h"
 #include "qmail.h"
 #include "received.h"
 #include "sig.h"
+#include "subfd.h"
 #include "substdio.h"
 #include "readwrite.h"
 #include "exit.h"
@@ -9,6 +11,56 @@
 #include "fmt.h"
 #include "env.h"
 #include "str.h"
+#ifdef QMQP_COMPRESS
+#include <zlib.h>
+
+z_stream stream;
+char zbuf[4096];
+int percent;
+extern substdio ssout;
+
+void out(const char *s1, const char *s2, const char *s3)
+{
+  char strnum[FMT_ULONG];
+  unsigned long len;
+
+  len = str_len(s1);
+  if (s2) len += str_len(s2);
+  if (s3) len += str_len(s3);
+  substdio_put(&ssout,strnum,fmt_ulong(strnum,(unsigned long)len));
+  substdio_puts(&ssout,":");
+  substdio_puts(&ssout,s1);
+  substdio_puts(subfderr,s1);
+  if (s2) { substdio_puts(&ssout,s2); substdio_puts(subfderr,s2); }
+  if (s3) { substdio_puts(&ssout,s3); substdio_puts(subfderr,s3); }
+  substdio_puts(subfderr, "\n");
+  substdio_puts(&ssout,",");
+  substdio_flush(&ssout);
+}
+void compression_init(void)
+{
+  stream.zalloc = Z_NULL;
+  stream.zfree = Z_NULL;
+  stream.opaque = Z_NULL;
+  stream.avail_in = 0;
+  stream.next_in = zbuf;
+  if (inflateInit(&stream) != Z_OK) {
+    out("ZInitalizing data compression failed: ", stream.msg, " #(4.3.0)");
+    _exit(111);
+  }
+}
+void compression_done(void)
+{
+  if (stream.avail_out != sizeof(zbuf)) {
+    /* there is some data left, ignore */
+  }
+  if (inflateEnd(&stream) != Z_OK) {
+    out("ZFinishing data compression failed: ", stream.msg, " #(4.3.0)");
+    _exit(111);
+  }
+  percent = 100 - (int)(100.0*stream.total_in/stream.total_out);
+}
+#endif
 
 void resources() { _exit(111); }
 
@@ -22,6 +74,39 @@ int safewrite(fd,buf,len) int fd; char *buf; int len;
 int saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
+#ifdef QMQP_COMPRESS
+  static int done = -1;
+  if (done == -1) {
+    compression_init();
+    done = 0;
+  }
+  if (done == 1) _exit(0);
+  stream.avail_out = len;
+  stream.next_out = buf;
+  do {
+    if (stream.avail_in == 0) {
+      r = read(fd,zbuf,sizeof(zbuf));
+      if (r <= 0) _exit(0); /* XXX ??? */
+      stream.avail_in = r;
+      stream.next_in = zbuf;
+    }
+    r = inflate(&stream, 0);
+    switch (r) {
+    case Z_OK:
+      if (stream.avail_out == 0)
+	return len;
+      break;
+    case Z_STREAM_END:
+      compression_done();
+      done = 1;
+      return len - stream.avail_out;
+    default:
+      out("ZReceiving compressed data failed: ", stream.msg, " #(4.3.0)");
+      return -1;
+    }
+    return len;
+  } while (1);
+#endif 
   r = read(fd,buf,len);
   if (r <= 0) _exit(0);
   return r;
@@ -82,7 +167,7 @@ void identify()
   received(&qq,"QMQP",local,remoteip,remotehost,remoteinfo,(char *) 0,(char *) 0,(char *) 0);
 }
 
-char buf[1000];
+char buf[1000 + 20 + FMT_ULONG];
 char strnum[FMT_ULONG];
 
 int getbuf()
@@ -159,6 +244,15 @@ main()
     len += fmt_ulong(buf + len,(unsigned long) now());
     len += fmt_str(buf + len," qp ");
     len += fmt_ulong(buf + len,qp);
+#ifdef QMQP_COMPRESS
+    len += fmt_str(buf + len, " ddc saved ");
+    if (percent < 0) {
+      len += fmt_str(buf + len, "-");
+      percent *= -1;
+    }
+    len += fmt_ulong(buf + len, percent);
+    len += fmt_str(buf + len, " percent");
+#endif
     buf[len] = 0;
     result = buf;
   }
@@ -169,6 +263,8 @@ main()
   substdio_put(&ssout,strnum,fmt_ulong(strnum,(unsigned long) str_len(result)));
   substdio_puts(&ssout,":");
   substdio_puts(&ssout,result);
+  substdio_puts(subfderr,result + 1);
+  substdio_puts(subfderr, "\n");
   substdio_puts(&ssout,",");
   substdio_flush(&ssout);
   _exit(0);

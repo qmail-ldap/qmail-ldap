@@ -16,6 +16,7 @@
 static stralloc hashed = {0};
 static stralloc salt = {0};
 static stralloc intermediate = {0};
+static stralloc cryptformat = {0};
 
 static int do_crypt(char *, char *);
 static int do_md4(char *, char *);
@@ -100,15 +101,41 @@ feed_salt(char *b, int l)
 	return OK;
 }
 
+void
+feed_crypt(const char *format)
+{
+	int len, slen;
+	
+	len = str_chr(format, 'X');
+	if (format[len] != 'X') goto fail;
+	if (!stralloc_copyb(&cryptformat, format, len)) goto fail;
+	for (slen = len; format[slen] == 'X'; slen++) ;
+	slen -= len;
+	if (BASE64_PTON_LEN(slen) > salt.len) goto fail;
+	if (b64_ntops(salt.s, slen, &intermediate) == -1) goto fail;
+	if (!stralloc_catb(&cryptformat, intermediate.s, slen)) goto fail;
+	if (!stralloc_0(&cryptformat)) goto fail;
+	return;
+	
+fail:
+       	/* crypt will fail later */
+	if (!stralloc_copys(&cryptformat, "")) return;
+	if (!stralloc_copys(&intermediate, "")) return;
+}
+
 static int
 do_crypt(char *clear, char *encrypted)
 {
 	if (encrypted) {
 		if (!stralloc_copys(&hashed, crypt(clear, encrypted)))
 			return ERRNO;
-	} else
+	} else {
 		/* salt and prefix */
-		return ILLVAL;
+		if (cryptformat.s == 0 || cryptformat.len == 0)
+			return ILLVAL;
+		if (!stralloc_copys(&hashed, crypt(clear, cryptformat.s)))
+			return ERRNO;
+	}
 	return OK;
 }
 

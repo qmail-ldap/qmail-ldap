@@ -11,6 +11,7 @@
 #include "localdelivery.h"
 #include "output.h"
 #include "qldap.h"
+#include "qldap-cluster.h"
 #include "qldap-debug.h"
 #include "qldap-errno.h"
 #include "qmail-ldap.h"
@@ -26,8 +27,6 @@
 #define FATAL "qmail-ldaplookup: fatal: "
 #define WARN "qmail-ldaplookup: warning: "
 
-typedef enum mode_d { unset=0, uid, mail} mode_d;
-
 void
 temp_nomem(void)
 {
@@ -39,7 +38,9 @@ usage(void)
 {
 	output(subfderr,
 	    "usage:\t%s [ -d level ] -u uid [ -p passwd ]\n"
-	    "\t%s [ -d level ] -m mail\n", optprogname, optprogname);
+	    "\t%s [ -d level ] -m mail\n"
+	    "\t%s [ -d level ] -f ldapfilter\n",
+	    optprogname, optprogname, optprogname, optprogname);
 	output(subfderr,
 	    "\t-d level:\tsets log-level to level\n"
 	    "\t-u uid: \tsearch for user id uid (pop3/imap lookup)\n"
@@ -50,6 +51,7 @@ usage(void)
 
 void fail(qldap *, const char *, int);
 void unescape(char *, stralloc *);
+static char *uidfilter(char *);
 
 
 ctrlfunc ctrls[] = {
@@ -69,12 +71,12 @@ stralloc bar = {0};
 
 int main(int argc, char **argv)
 {
+	enum { unset, uid, mail, filter } mode = unset;
 	qldap	*q;
 	struct passwd *pw;
-	mode_d	mode = unset;
-	char	*value = 0, *passwd = 0;
-	char	*filter, *s;
-	int	opt, r, slen, j, status, id;
+	char	*passwd = 0, *value = 0;
+	char	*f, *s;
+	int	opt, r, done, j, slen, status, id;
 	unsigned long size, count, maxsize;
 	
 	const char *attrs[] = { LDAP_MAIL,
@@ -109,27 +111,40 @@ int main(int argc, char **argv)
 				LDAP_PASSWD,
 				0};
 
-	while ((opt = getopt(argc, argv, "d:u:m:p:")) != opteof)
+	while ((opt = getopt(argc, argv, "d:u:m:p:f:")) != opteof)
 		switch (opt) {
 		case 'd':
 			if (env_put2("LOGLEVEL", optarg) == 0)
-				strerr_die2x(1, "ERROR: setting loglevel",
-				    error_str(errno));
+				strerr_die2sys(1, FATAL, "setting loglevel: ");
 			break;
 		case 'u':
-		case 'm':
-			if ( mode != unset ) usage();
-			mode = opt=='u'?uid:mail;
+			if (value != 0)
+				usage();
 			value = optarg;
+			mode = uid;
+			break;
+		case 'm':
+			if (value != 0)
+				usage();
+			value = optarg;
+			mode = mail;
+			break;
+		case 'f':
+			if (value != 0)
+				usage();
+			value = optarg;
+			mode = filter;
 			break;
 		case 'p':
-			if (mode != uid) usage();
+			if (geteuid() != 0)
+				strerr_die2x(1, FATAL,
+				    "only the superuser may comapre passwords");
 			passwd = optarg;
 			break;
 		default:
 			usage();
 		}
-	if (argc != optind || mode == unset) usage();
+	if (argc != optind) usage();
 
 	log_init(STDERR, -1, 0);
 
@@ -146,23 +161,47 @@ int main(int argc, char **argv)
 	r = qldap_bind(q, 0, 0);
 	if (r != OK) fail(q, "qldap_open", r);
 
-	output(subfdout, "sizeof(attrs): %i\n", sizeof(attrs));
-	if (mode == uid && qldap_need_rebind() != 0)
-		attrs[16] = 0; /* password */
-	
-	r = qldap_filter(q, filter, attrs, qldap_basedn(), SCOPE_SUBTREE);
-	if (r != OK) fail(q, "qldap_filter", r);
+	if (qldap_need_rebind() != 0)
+		attrs[sizeof(attrs)/4 - 2] = 0; /* password */
+	done = 0;
+	do {
+		switch (mode) {
+		case mail:
+			f = filter_mail(value, &done);
+			if (value == 0)
+				strerr_die2sys(1, FATAL, "building filter: ");
+			break;
+		case uid:
+			f = filter_uid(value);
+			done = 1;
+			if (value == 0)
+				strerr_die2sys(1, FATAL, "building filter: ");
+			break;
+		case filter:
+			f = value;
+			break;
+		default:
+			usage();
+		}
+		output(subfdout, "Searching ldap for:\n%s\nunder dn: %s\n\n",
+		    f, qldap_basedn());
+		r = qldap_filter(q, f, attrs, qldap_basedn(),
+		    SCOPE_SUBTREE);
+		if (r != OK) fail(q, "qldap_filter", r);
 
-	r = qldap_count(q);
-	if (r == -1) fail(q, "qldap_count", FAILED);
-	output(subfdout, "Found %i entries\n", r);
-	
+		r = qldap_count(q);
+		if (r == -1) fail(q, "qldap_count", FAILED);
+		output(subfdout, "Found %i entries\n\n", r);
+	} while (r == 0 && !done);
+
 	r = qldap_first(q);
 	if (r != OK) fail(q, "qldap_first", r);;
 	do {
 		r = qldap_get_dn(q, &foo);
 		if (r != OK) fail(q, "qldap_get_dn", r);
-		output(subfdout, "dn: %s\n", foo.s);
+		output(subfdout, "dn: %s\n"
+		    "-------------------------------------------------------\n",
+		    foo.s);
 		
 		r = qldap_get_attr(q, LDAP_OBJECTCLASS, &foo, MULTI_VALUE);
 		if (r != OK) fail(q, "qldap_get_attr(" LDAP_OBJECTCLASS ")", r);
@@ -171,7 +210,9 @@ int main(int argc, char **argv)
 		slen = bar.len-1;
 		for(;;) {
 			output(subfdout, "%s: %s\n",LDAP_OBJECTCLASS ,s);
-			j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
+			j = byte_chr(s,slen,0);
+			if (j++ == slen) break;
+			s += j; slen -= j;
 		}
 		
 		r = qldap_get_attr(q, LDAP_MAIL, &foo, SINGLE_VALUE);
@@ -179,14 +220,18 @@ int main(int argc, char **argv)
 		output(subfdout, "%s: %s\n", LDAP_MAIL, foo.s);
 
 		r = qldap_get_attr(q, LDAP_MAILALTERNATE, &foo, MULTI_VALUE);
-		if (r != OK && r != NOSUCH) fail(q, "qldap_get_attr(" LDAP_MAILALTERNATE ")", r);
+		if (r != OK && r != NOSUCH)
+			fail(q, "qldap_get_attr(" LDAP_MAILALTERNATE ")", r);
 		if (r == OK) {
 			unescape(foo.s, &bar);
 			s = bar.s;
 			slen = bar.len-1;
 			for(;;) {
-				output(subfdout, "%s: %s\n", LDAP_MAILALTERNATE, s);
-				j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
+				output(subfdout, "%s: %s\n",
+				    LDAP_MAILALTERNATE, s);
+				j = byte_chr(s,slen,0);
+				if (j++ == slen) break;
+				s += j; slen -= j;
 			}
 		}
 		
@@ -195,29 +240,36 @@ int main(int argc, char **argv)
 		if (r == OK)
 			output(subfdout, "%s: %s\n", LDAP_UID, foo.s);
 		else
-			output(subfdout, "%s: undefined (forward only account required)\n", LDAP_UID);
+			output(subfdout, "%s: undefined "
+			    "(forward only account required)\n", LDAP_UID);
 
 		r = qldap_get_status(q, &status);
 		if (r != OK) fail(q, "qldap_get_status", r);
 		switch (status) {
 		case STATUS_BOUNCE:
-			output(subfdout, "%s: %s\n", LDAP_ISACTIVE, ISACTIVE_BOUNCE);
+			output(subfdout, "%s: %s\n",
+			    LDAP_ISACTIVE, ISACTIVE_BOUNCE);
 			break;
 		case STATUS_NOPOP:
-			output(subfdout, "%s: %s\n", LDAP_ISACTIVE, ISACTIVE_NOPOP);
+			output(subfdout, "%s: %s\n",
+			    LDAP_ISACTIVE, ISACTIVE_NOPOP);
 			break;
 		case STATUS_OK:
-			output(subfdout, "%s: %s\n", LDAP_ISACTIVE, ISACTIVE_ACTIVE);
+			output(subfdout, "%s: %s\n",
+			    LDAP_ISACTIVE, ISACTIVE_ACTIVE);
 			break;
 		case STATUS_UNDEF:
-			output(subfdout, "%s: %s\n", LDAP_ISACTIVE, "undefined -> active");
+			output(subfdout, "%s: %s\n", LDAP_ISACTIVE,
+			    "undefined -> active");
 			break;
 		default:
-			strerr_warn2(WARN, "qldap_get_status returned unknown status", 0);
+			strerr_warn2(WARN,
+			    "qldap_get_status returned unknown status", 0);
 		}
 		
 		r = qldap_get_attr(q, LDAP_MAILHOST, &foo, SINGLE_VALUE);
-		if (r != OK && r != NOSUCH) fail(q, "qldap_get_attr(" LDAP_MAILHOST ")", r);
+		if (r != OK && r != NOSUCH)
+			fail(q, "qldap_get_attr(" LDAP_MAILHOST ")", r);
 		if (r == OK) {
 			output(subfdout, "%s: %s\n", LDAP_MAILHOST, foo.s);
 			/*
@@ -238,25 +290,32 @@ int main(int argc, char **argv)
 				output(subfdout, "aliasEmpty: using default\n");
 			break;
 		case NEEDED:
-			output(subfdout, "forward only delivery via alias user\n");
+			output(subfdout,
+			    "forward only delivery via alias user\n");
 			pw = getpwnam(auto_usera);
 			if (!pw)
-				strerr_die4x(100, FATAL, "Aiiieeeee, now alias user '",
+				strerr_die4x(100, FATAL,
+				    "Aiiieeeee, now alias user '",
 				    auto_usera, "'found in /etc/passwd.");
 			output(subfdout, "alias user: %s\n", pw->pw_name);
 			output(subfdout, "alias user uid: %i\n", pw->pw_uid);
 			output(subfdout, "alias user gid: %i\n", pw->pw_gid);
 			output(subfdout, "alias user home: %s\n", pw->pw_dir);
-			output(subfdout, "alias user aliasempty: %s\n", ALIASDEVNULL);
+			output(subfdout, "alias user aliasempty: %s\n",
+			    ALIASDEVNULL);
 			/* get the forwarding addresses */
 			r = qldap_get_attr(q, LDAP_FORWARDS, &foo, MULTI_VALUE);
-			if (r != OK) fail(q, "qldap_get_attr(" LDAP_FORWARDS ") for forward only user", r);
+			if (r != OK)
+				fail(q, "qldap_get_attr("
+				    LDAP_FORWARDS ") for forward only user", r);
 			unescape(foo.s, &bar);
 			s = bar.s;
 			slen = bar.len-1;
 			for(;;) {
 				output(subfdout, "%s: %s\n", LDAP_FORWARDS, s);
-				j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
+				j = byte_chr(s,slen,0);
+				if (j++ == slen) break;
+				s += j; slen -= j;
 			}
 			qldap_free(q);
 			return 0;
@@ -278,12 +337,16 @@ int main(int argc, char **argv)
 		
 		r = qldap_get_quota(q, &size, &count, &maxsize);
 		if (r != OK) fail(q, "qldap_get_quota", r);
-		output(subfdout, "%s: %lu%s\n", LDAP_QUOTA_SIZE, size, size==0?" (unlimited)":"");
-		output(subfdout, "%s: %lu%s\n", LDAP_QUOTA_COUNT, count, count==0?" (unlimited)":"");
-		output(subfdout, "%s: %lu%s\n", LDAP_MAXMSIZE, maxsize, maxsize==0?" (unlimited)":"");
+		output(subfdout, "%s: %u%s\n", LDAP_QUOTA_SIZE, size,
+		    size==0?" (unlimited)":"");
+		output(subfdout, "%s: %u%s\n", LDAP_QUOTA_COUNT, count,
+		    count==0?" (unlimited)":"");
+		output(subfdout, "%s: %u%s\n", LDAP_MAXMSIZE, maxsize,
+		    maxsize==0?" (unlimited)":"");
 
 		r = qldap_get_attr(q, LDAP_MODE, &foo, MULTI_VALUE);
-		if (r != OK && r != NOSUCH) fail(q, "qldap_get_attr(" LDAP_MODE ")", r);
+		if (r != OK && r != NOSUCH)
+			fail(q, "qldap_get_attr(" LDAP_MODE ")", r);
 		if (r == OK) {
 			unescape(foo.s, &bar);
 			s = bar.s;
@@ -299,48 +362,62 @@ int main(int argc, char **argv)
 				    case_diffs(MODE_FORWARD, s) &&
 				    case_diffs(MODE_PROG, s) &&
 				    case_diffs(MODE_NOREPLY, s))
-					strerr_warn4(WARN, "undefined mail delivery mode: ",
+					strerr_warn4(WARN,
+					    "undefined mail delivery mode: ",
 					    s," (ignored).", 0);
 				else if (!case_diffs(MODE_FORWARD, s))
-					strerr_warn4(WARN, "mail delivery mode: ",
-					    s," should not be used (used internally).", 0);
+					strerr_warn4(WARN,
+					    "mail delivery mode: ",
+					    s," should not be used "
+					    "(used internally).", 0);
 				output(subfdout, "%s: %s\n", LDAP_MODE, s);
-				j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
+				j = byte_chr(s,slen,0);
+				if (j++ == slen) break;
+				s += j; slen -= j;
 			}
 		}
 
 		r = qldap_get_attr(q, LDAP_FORWARDS, &foo, MULTI_VALUE);
-		if (r != OK && r != NOSUCH) fail(q, "qldap_get_attr(" LDAP_FORWARDS ")", r);
+		if (r != OK && r != NOSUCH)
+			fail(q, "qldap_get_attr(" LDAP_FORWARDS ")", r);
 		if (r == OK) {
 			unescape(foo.s, &bar);
 			s = bar.s;
 			slen = bar.len-1;
 			for(;;) {
 				output(subfdout, "%s: %s\n", LDAP_FORWARDS, s);
-				j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
+				j = byte_chr(s,slen,0);
+				if (j++ == slen) break;
+				s += j; slen -= j;
 			}
 		}
 
 		r = qldap_get_attr(q, LDAP_PROGRAM, &foo, MULTI_VALUE);
-		if (r != OK && r != NOSUCH) fail(q, "qldap_get_attr(" LDAP_PROGRAM ")", r);
+		if (r != OK && r != NOSUCH)
+			fail(q, "qldap_get_attr(" LDAP_PROGRAM ")", r);
 		if (r == OK) {
 			unescape(foo.s, &bar);
 			s = bar.s;
 			slen = bar.len-1;
 			for(;;) {
 				output(subfdout, "%s: %s\n", LDAP_PROGRAM, s);
-				j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
+				j = byte_chr(s,slen,0);
+				if (j++ == slen) break;
+				s += j; slen -= j;
 			}
 		}
 
 		r = qldap_get_attr(q, LDAP_REPLYTEXT, &foo, SINGLE_VALUE);
-		if (r != OK && r != NOSUCH) fail(q, "qldap_get_attr(" LDAP_REPLYTEXT ")", r);
+		if (r != OK && r != NOSUCH)
+			fail(q, "qldap_get_attr(" LDAP_REPLYTEXT ")", r);
 		if (r == OK)
-			output(subfdout, "%s:\n=== begin ===%s\n=== end ===\n", LDAP_REPLYTEXT, foo.s);
+			output(subfdout, "%s:\n=== begin ===\n%s\n"
+			    "=== end ===\n", LDAP_REPLYTEXT, foo.s);
 		else
 			output(subfdout, "%s: undefined\n", LDAP_REPLYTEXT);
 
 		r = qldap_next(q);
+		output(subfdout, "\n\n");
 	} while (r == OK);
 	if (r != NOSUCH) fail(q, "qldap_next", r);
 	qldap_free(q);

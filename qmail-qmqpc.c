@@ -17,6 +17,10 @@
 #include "auto_qmail.h"
 #include "control.h"
 #include "fmt.h"
+#ifdef QMQP_COMPRESS
+#include <zlib.h>
+#endif
+
 
 #ifndef PORT_QMQP /* this is for testing purposes */
 #define PORT_QMQP 628
@@ -36,6 +40,51 @@ void die_format() { _exit(91); }
 int lasterror = 55;
 int qmqpfd;
 
+#ifdef DATA_COMPRESS
+z_stream stream;
+char zbuf[4096];
+
+void compression_init(void)
+{
+  stream.zalloc = Z_NULL;
+  stream.zfree = Z_NULL;
+  stream.opaque = Z_NULL;
+  stream.avail_out = sizeof(zbuf);
+  stream.next_out = zbuf;
+  if (deflateInit(&stream,Z_DEFAULT_COMPRESSION) != Z_OK)
+    die_format();
+}
+void compression_done(void)
+{
+  int r;
+
+  do {
+    r = deflate(&stream,Z_FINISH);
+    switch (r) {
+    case Z_OK:
+      if (stream.avail_out == 0) {
+	r = timeoutwrite(60,qmqpfd,zbuf,sizeof(zbuf));
+	if (r <= 0) die_conn();
+	stream.avail_out = sizeof(zbuf);
+	stream.next_out = zbuf;
+	r = Z_OK;
+      }
+      break;
+    case Z_STREAM_END:
+      break;
+    default:
+      die_format();
+    }
+  } while (r!=Z_STREAM_END);
+  if (stream.avail_out != sizeof(zbuf)) {
+    /* write left data */
+    r = timeoutwrite(60,qmqpfd,zbuf,sizeof(zbuf)-stream.avail_out);
+    if (r <= 0) die_conn();
+  }
+  if (deflateEnd(&stream) != Z_OK) die_format();
+}
+#endif
+
 int saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
@@ -46,6 +95,32 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
 int safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
+#ifdef QMQP_COMPRESS
+  static int done = -1;
+  if (done == -1) {
+    compression_init();
+    done = 0;
+  }
+  if (done == 1) die_conn();
+  stream.avail_in = len;
+  stream.next_in = buf;
+  do {
+    r = deflate(&stream, 0);
+    switch (r) {
+    case Z_OK:
+      if (stream.avail_out == 0) {
+	r = timeoutwrite(60,qmqpfd,zbuf,sizeof(zbuf));
+	if (r <= 0) die_conn();
+	stream.avail_out = sizeof(zbuf);
+	stream.next_out = zbuf;
+      }
+      break;
+    default:
+      die_format();
+    }
+  } while (stream.avail_in != 0);
+  return len;
+#endif
   r = timeoutwrite(60,qmqpfd,buf,len);
   if (r <= 0) die_conn();
   return r;

@@ -35,7 +35,6 @@ struct qldap {
 	/* should we store server, binddn, basedn, password, ... */
 };
 
-/* TODO definition of global vars */
 stralloc	ldap_server = {0};
 stralloc	basedn = {0};
 stralloc	objectclass = {0};
@@ -826,51 +825,6 @@ fail:
 	stralloc_copys(val, "");
 	errno = r;
 	return ERRNO;
-}
-
-/******  HELPER FUNCTIONS  ****************************************************/
-
-/*
- * For LDAP, '(', ')', '\', '*' and '\0' have to be escaped with '\'.
- * We ignore the '\0' case because it is not possible to have a '\0' in s.
- */
-char *
-ldap_escape(char *s)
-{
-	static stralloc escaped = {0};
-	char	x;
-
-	/* pre reserve some space */
-	if (!stralloc_ready(&escaped, str_len(s))) return 0;
-	if (!stralloc_copys(&escaped, "")) return 0;
-	do {
-		x = *s;
-		if (x == '*' || x == '(' || x == ')' || x == '\\')
-			if (!stralloc_append(&escaped, "\\")) return 0;
-		if (!stralloc_append(&escaped, s)) return 0;
-	} while (*s++);
-	return escaped.s;
-}
-
-char *
-ldap_ocfilter(char *searchfilter)
-{
-	static stralloc filter = {0};
-
-	if (searchfilter == (char *)0) return 0;
-	if (objectclass.s == (char *)0 || objectclass.len == 0)
-		return searchfilter;
-	/* (&(objectclass=...)%searchfilter%) */
-	if (!stralloc_copys(&filter, "(&(") ||
-	    !stralloc_cats(&filter, LDAP_OBJECTCLASS) ||
-	    !stralloc_cats(&filter, "=") ||
-	    !stralloc_cat(&filter, &objectclass) ||
-	    !stralloc_cats(&filter, ")") ||
-	    !stralloc_cats(&filter, searchfilter) ||
-	    !stralloc_cats(&filter, ")") ||
-	    !stralloc_0(&filter))
-		return 0;
-	return filter.s;
 }
 
 /******  INTERNAL LDAP FUNCTIONS  *********************************************/

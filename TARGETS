@@ -422,6 +422,7 @@ pbsexec.o
 qldap-cluster.o
 qldap-debug.o
 qldap-errno.o
+qldap-filter.o
 qldap-profile.o
 qldap.o
 qmail-forward

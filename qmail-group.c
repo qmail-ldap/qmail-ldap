@@ -812,47 +812,13 @@ getentry(qldap *sq, char *mail)
 	const char *attrs[] = {
 		LDAP_MAIL,
 		0 };
-	char *escaped;
 	char *f;
-	int at, i, len, rv;
+	int done, rv;
 
-	/* this is a stripped version of the code in qmail-lspawn */
-
-	if (!(escaped = ldap_escape(mail))) return ERRNO;
-
-	len = str_len(escaped);
-	for (at = len; escaped[at] != '@' && at >= 0 ; at--) ;
-	i = at;
+	done = 0;
 	do {
 		/* build the search string for the email address */
-		if (!stralloc_copys(&filter, "(|(" )) return ERRNO;
-		if (!stralloc_cats(&filter, LDAP_MAIL)) return ERRNO;
-		if (!stralloc_cats(&filter, "=")) return ERRNO;
-		if (!stralloc_catb(&filter, escaped, i)) return ERRNO;
-		if (i != at) {
-			if (i != 0)
-				if (!stralloc_cats(&filter, auto_break))
-					return ERRNO;
-			if (!stralloc_cats(&filter, LDAP_CATCH_ALL))
-				return ERRNO;
-		}
-		if (!stralloc_catb(&filter, escaped+at, len-at)) return ERRNO;
-
-		if (!stralloc_cats(&filter, ")(")) return ERRNO;
-		if (!stralloc_cats(&filter, LDAP_MAILALTERNATE)) return ERRNO;
-		if (!stralloc_cats(&filter, "=")) return ERRNO;
-		if (!stralloc_catb(&filter, escaped, i)) return ERRNO;
-		if (i != at) {
-			if (i != 0)
-				if (!stralloc_cats(&filter, auto_break))
-					return ERRNO;
-			if (!stralloc_cats(&filter, LDAP_CATCH_ALL))
-				return ERRNO;
-		}
-		if (!stralloc_catb(&filter, escaped+at, len-at)) return ERRNO;
-		if (!stralloc_cats(&filter, "))")) return ERRNO;
-		if (!stralloc_0(&filter)) return ERRNO;
-		f = ldap_ocfilter(filter.s);
+		f = filter_mail(mail, &done);
 		if (f == (char *)0) return ERRNO;
 
 		/* do the search for the email address */
@@ -865,14 +831,6 @@ getentry(qldap *sq, char *mail)
 		default:
 			return rv;
 		}
-		if (i <= 0) return NOSUCH;
-#ifdef DASH_EXT
-		while (--i > 0) {
-			if (escaped[i] == *auto_break) break;
-		}
-#else
-		i = 0;
-#endif
-	} while (1);
-	return FAILED;
+	} while (!done);
+	return NOSUCH;
 }
