@@ -964,15 +964,16 @@ void acceptmessage(qp) unsigned long qp;
   logstring(2,"qp"); logstring(2,accept_buf); logflush(2);
 }
 
+#ifdef TLS_SMTPD
+stralloc protocolinfo = {0};
+#endif
+
 char receivedbytes[FMT_ULONG];
 void smtp_data() {
   int hops;
   unsigned long qp;
   char *qqx;
 /*  char buf[FMT_ULONG]; */
-#ifdef TLS_SMTPD
-  stralloc protocolinfo = {0};
-#endif
  
   logline(3,"smtp data");
   if (!seenmail) { err_wantmail(); return; }
