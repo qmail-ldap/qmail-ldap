@@ -139,10 +139,10 @@ int rewrite(char *recip)
     if (!stralloc_copyb(&lowaddr,addr.s + at + 1,addr.len - at - 1)) return 0;
     case_lowerb(lowaddr.s, lowaddr.len);
     fd = open_read(localscdb.s);
-    if (fd == -1) return -1;
+    if (fd == -1) return 0;
     r = cdb_seek(fd, lowaddr.s,lowaddr.len, &dlen);
     close(fd);
-    if (r == -1) return -1;
+    if (r == -1) return 0;
     if (r == 1) {
       if (!stralloc_cat(&rwline,&addr)) return 0;
       if (!stralloc_0(&rwline)) return 0;
