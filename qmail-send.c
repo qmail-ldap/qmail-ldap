@@ -975,13 +975,15 @@ int c;
 	   logsafe(dline[c].s + 3);
 	   log1("\n");
 	   dline[c].len = 0;
-	   return;
+	   break;
 	 default:
 	   log3("delivery ",strnum3,": report mangled, will defer\n");
 	}
-       job_close(d[c][delnum].j);
-       d[c][delnum].used = 0; --concurrencyused[c];
-       del_status();
+       if (dline[c].s[2] != 'L') {
+	 job_close(d[c][delnum].j);
+	 d[c][delnum].used = 0; --concurrencyused[c];
+	 del_status();
+       }
       }
      dline[c].len = 0;
     }
