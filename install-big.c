@@ -113,10 +113,10 @@ void hier()
   p(auto_qmail,"queue/lock/trigger",auto_uids,auto_gidq,0622);
 
   /* rules file for tcpserver */
-  c(auto_qmail,"control","qmail-smtpd.rules",auto_uido,auto_gidq,0644);
-  c(auto_qmail,"control","qmail-qmqpd.rules",auto_uido,auto_gidq,0644);
-  c(auto_qmail,"control","qmail-pop3d.rules",auto_uido,auto_gidq,0644);
-  c(auto_qmail,"control","qmail-imapd.rules",auto_uido,auto_gidq,0644);
+  C(auto_qmail,"control","qmail-smtpd.rules","qmail-smtpd.rules",auto_uido,auto_gidq,0644);
+  C(auto_qmail,"control","qmail-qmqpd.rules","qmail-qmqpd.rules",auto_uido,auto_gidq,0644);
+  C(auto_qmail,"control","qmail-pop3d.rules","qmail-pop3d.rules",auto_uido,auto_gidq,0644);
+  C(auto_qmail,"control","qmail-imapd.rules","qmail-imapd.rules",auto_uido,auto_gidq,0644);
   
   /* Makefile for cdb creation */
   C(auto_qmail,"control","Makefile","Makefile.cdb",auto_uido,auto_gidq,0644);

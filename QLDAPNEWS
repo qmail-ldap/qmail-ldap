@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/11/27 19:29:20 $ ($Revision: 1.156 $)
+RELEASE: $Date: 2003/11/27 20:02:11 $ ($Revision: 1.157 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,8 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Do not overwrite rules file on new install (make setup check).
 
  Make it possible to specify the number of concurrent connection of tcpserver
  controlled daemons (qmail-smtpd, qmail-qmqpd, qmail-pop3d, qmail-imapd).
