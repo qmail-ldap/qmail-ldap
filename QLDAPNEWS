@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/30 13:10:24 $ ($Revision: 1.127 $)
+RELEASE: $Date: 2003/09/30 13:33:24 $ ($Revision: 1.128 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,10 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ control/ldapserver is now read with control_readfile. Multiple servers
+ are now specified one per line. Using # for comments is allowed and empty
+ lines are removed.
 
  Fix bug in qmail-smtp addrparse function. If "mail from" or "rcpt to" did
  neither contain a '<' nor a ':' the function returned a nullsender instead

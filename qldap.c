@@ -84,9 +84,9 @@ qldap_controls(void)
 	     ldapdefaultdotmode ???
 	     ldapdefaultquota
 	 */
-	if (control_rldef(&ldap_server, "control/ldapserver", 0,
-		    (char *) 0) != 1)
+	if (control_readfile(&ldap_server, "control/ldapserver", 0) != 1)
 		return -1; /* ... the errno should be set by control_* */
+	byte_repl(ldap_server.s, ldap_server.len, '\0', ' ');
 	if (!stralloc_0(&ldap_server)) return -1;
 	log(64, "init_ldap: control/ldapserver: %s\n", ldap_server.s);
 

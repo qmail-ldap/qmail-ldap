@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/09/26 19:23:42 $)
+RELEASE: current ($Date: 2003/09/30 13:33:24 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -244,10 +244,13 @@ CONFIG FILES:
 
 ~control/ldapserver
 
- Space separated list of Hostnames or IP addresses of LDAP servers.
+ List of Hostnames or IP addresses of LDAP servers. One per line.
  An additional port can be supplied with the host:port notation.
  Required
- Example: ldap.nrg4u.com ldap2.nrg4u.com ldap3.nrg4u.com:1234
+ Example:
+   ldap.nrg4u.com
+   ldap2.nrg4u.com
+   ldap3.nrg4u.com:1234
 
 ~control/ldapbasedn
 
