@@ -12,6 +12,8 @@
 LDAPLIBS=-L/usr/local/lib -lldap -llber
 # and change the location of the include files here
 LDAPINCLUDES=-I/usr/local/include
+# on Slowaris you need -lresolv added like this:
+#LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber -lresolv
 # for example on my Linux box I use:
 #LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
 # if you need a special include-directory for ldap headers enable this
