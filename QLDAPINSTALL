@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20001010 ($Date: 2000/11/14 21:55:34 $)
+RELEASE: 20001101 ($Date: 2000/11/25 16:33:34 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -24,18 +24,6 @@ NEWS:
  see QLDAPNEWS
 
 IMPORTANT NEWS:
-
- enhancement for cluster support (loop detection)
-
- added new tool qmail-ldaplookup: with this program you can check the ldap
- db entries. Similar to the old checkpassword with debug support.
- Usage: qmail-ldaplookup {-m mailaddress | -u userid [passwd]}
- NOTE: because this tool could show critical data (like the hashed passwd)
-       it is installed with mode 700 (rwx------) only root has the permission 
-       to start it.
-
- Add the new control files and their meaning to qmail-showctl
- You can use qmail-showctl to check your setup.
 
  new check algorithm (see QLDAPNEWS)
 
@@ -290,6 +278,16 @@ CONFIG FILES:
  Note: You can override maxrcptcount by setting MAXRCPTCOUNT in qmail-smtpd's
        environment (with tcpserver).
 
+~control/relaymailfrom
+
+ This file contains envelope sender addresses that are allowed to relay through
+ this server.
+ Default: none
+ Example: user@domain or @domain
+ Note: Use with care, the envelope senders address can easily be spoofed and
+       then you are an open relay again. It is better to use a scheme like
+       POP before SMTP.
+
 ~control/rbllist
 
  Rbllist contains a number of RBL's to check for the given senders IP address.
@@ -332,6 +330,28 @@ CONFIG FILES:
  NO LONGER USED, PLEASE REMOVE THE FILE
  Now the auth modules extract the Maildir out of the .qmail file, but only
  on local (/etc/passwd) lookups.
+
+Environment variables without control file:
+
+LOGLEVEL
+
+ Level of log verbosity in qmail-smtpd
+ Default: none
+ Affects: qmail-smtpd
+ Example: 3
+ Note: integer value from 0-3, 
+
+DENYMAIL
+
+ Heavy sanity checking of the envelope sender address
+ Default: none
+ Affects: qmail-smtpd
+ Example: DNSCHECK
+ Note: The following variables are supported:
+        SPAM     -> refuse all mail
+        NOBOUNCE -> refuse null mail from
+        DNSCHECK -> validate that envelope senders domain has an MX or A record
+                    plus check for other invalid envelope sender constructs
 
 
 DEFAULT LDAP PARAMETER FIELDS:
