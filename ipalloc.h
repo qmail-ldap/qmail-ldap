@@ -4,7 +4,6 @@
 #include "ip.h"
 
 #ifdef TLS
-#include "stralloc.h"
 struct ip_mx { struct ip_address ip; int pref; char *fqdn; } ;
 #else
 struct ip_mx { struct ip_address ip; int pref; } ;

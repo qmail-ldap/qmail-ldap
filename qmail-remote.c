@@ -35,7 +35,9 @@
 #ifdef TLS
 #include <sys/stat.h>
 #include <openssl/ssl.h>
-SSL *ssl = NULL;
+
+SSL *ssl = 0;
+char *fqdn = 0;
 #endif
 
 #define HUGESMTPTEXT 5000
@@ -295,12 +297,7 @@ void blast()
 
 stralloc recip = {0};
 
-#ifdef TLS
-void smtp(fqdn)
-char *fqdn;
-#else
 void smtp()
-#endif
 {
   unsigned long code;
   int flagbother;
@@ -315,11 +312,13 @@ void smtp()
   stralloc servercert = {0};
   struct stat st;
 
-  if(!stralloc_copys(&servercert, "control/tlshosts/")) temp_nomem();
-  if(!stralloc_catb(&servercert, fqdn, str_len(fqdn))) temp_nomem();
-  if(!stralloc_catb(&servercert, ".pem", 4)) temp_nomem();
-  if(!stralloc_0(&servercert)) temp_nomem();
-  if (stat(servercert.s,&st) == 0)  needtlsauth = 1;
+  if( fqdn && *fqdn ) {
+    if(!stralloc_copys(&servercert, "control/tlshosts/")) temp_nomem();
+    if(!stralloc_cats(&servercert, fqdn)) temp_nomem();
+    if(!stralloc_cats(&servercert, ".pem")) temp_nomem();
+    if(!stralloc_0(&servercert)) temp_nomem();
+    if (stat(servercert.s,&st) == 0)  needtlsauth = 1;
+  }
 #endif
 
   if (smtpcode() != 220) quit("ZConnected to "," but greeting failed");
@@ -441,7 +440,7 @@ void smtp()
    }
   if ((!ssl) && needtlsauth)
    {out("ZNo TLS achieved while "); out(servercert.s); out(" exists.\n");
-    quit();}
+    zerodie();}
 #endif
 
   substdio_puts(&smtpto,"MAIL FROM:<");
@@ -638,11 +637,8 @@ char **argv;
     if (timeoutconn(smtpfd,&ip.ix[i].ip,(unsigned int) port,timeoutconnect) == 0) {
       tcpto_err(&ip.ix[i].ip,0);
       partner = ip.ix[i].ip;
-#ifdef TLS
-      smtp(ip.ix[i].fqdn); /* does not return */
-#else
+	  fqdn = ip.ix[i].fqdn;
       smtp(); /* does not return */
-#endif
     }
     tcpto_err(&ip.ix[i].ip,errno == error_timeout);
     close(smtpfd);
