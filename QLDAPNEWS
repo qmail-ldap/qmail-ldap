@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/30 12:59:19 $ ($Revision: 1.125 $)
+RELEASE: $Date: 2003/09/30 13:04:47 $ ($Revision: 1.126 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,21 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Fix bug in qmail-smtp addrparse function. If "mail from" or "rcpt to" did
+ neither contain a '<' nor a ':' the function returned a nullsender instead
+ of a syntax error. This bug is also present in stock qmail-1.03.
+
+ The copyloop used to forward pop3 and imap session can be simplified.
+ Neither pop3 nor imap are protocols which support half close so dump this
+ stuff. Half closing those forwarding sessions could be used as a dos attack.
+
+ qmail-todo ended in one infinite loop :) if qmail-send died befor sending
+ the synchronization flag. Normaly that happend if qmail-lspawn died because
+ of a missing control file.
+
+ Print the dynamic data compression message in qmail-remote only if compressed
+ data was sent. 
 
  qmail-smtpd now reads ~control/locals and merges this with ~control/rcpthosts.
  It is no longer neccessary to list a domain in both files. Anything listed
