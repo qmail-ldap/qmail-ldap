@@ -36,6 +36,10 @@
  #include "qlx.h"
  #include "auto_qmail.h"
  #include "control.h"
+ 
+ #define DO_LDAP 0x01
+ #define DO_DOT  0x02
+ #define DO_BOTH DO_LDAP | DO_DOT
 #endif
 
 void usage() { strerr_die1x(100,"qmail-local: usage: qmail-local [ -nN ] user homedir local dash ext domain sender aliasempty"); }
@@ -730,13 +734,17 @@ char **argv;
 #ifdef QLDAP /* set up the variables */
  int n, slen;
  int qmode;
- int numforward_env=0, c;
+ int numforward_env, c;
+ int mboxdelivery;
  char *s;
  char **recips_env;
+ /* should be global */
  stralloc forwarder = {0};
  stralloc program = {0};
  stralloc replytext = {0};
  stralloc subj = {0};
+ 
+ numforward_env = 0; mboxdelivery = 1;
 #endif
 
 
@@ -868,7 +876,8 @@ char **argv;
 #ifdef QLDAP /* quota, dotmode and forwarding handling - part 1 */
    /* setting the quota */
    if ( s = env_get("QMAILQUOTA") ) {
-      scan_ulong(s, &g_quota);
+      if (! scan_ulong(s, &g_quota) )
+         strerr_die3x(100,"AARRG: QMAILQUOTA is not a number, but: ",s,". (LDAP-ERR #2.0.1)");
       g_quota *= 1024; /* we need bytes not kbytes as quota */
       if (!flagdoit) sayit("quota ",s,str_len(s) );
    } else {
@@ -880,14 +889,14 @@ char **argv;
       case_lowers(s);
       if ( !str_diff("ldaponly", s) ) {
          if (!flagdoit) sayit("ldaponly ",s,0);
-         qmode = 1;
+         qmode = DO_LDAP;
       } else if ( !str_diff("dotonly", s) ) {
          if (!flagdoit) sayit("dotonly ",s,0);
-         qmode = 3;
+         qmode = DO_DOT;
       } else if ( !str_diff("both", s) ) {
          if (!flagdoit) sayit("both ",s,0);
-         qmode = 2;
-      } else {  /* none of them */
+         qmode = DO_BOTH;
+      } else if ( !str_diff("none", s) ){
          ++count_file;
          if (!stralloc_copys(&foo,aliasempty)) temp_nomem();
          if (!stralloc_0(&foo)) temp_nomem();
@@ -899,12 +908,32 @@ char **argv;
             else sayit("mbox ",foo.s, foo.len);
          count_print();
          _exit(0); 
+      } else {
+         strerr_die3x(100,"AARRG: Not expected QMAILDOTMODE found: ",s,". (LDAP-ERR #2.0.2)");
       }
-   } else qmode = 3;  /*no qmailmode, so I use standard .qmail */
+   } else qmode = DO_DOT;  /*no qmailmode, so I use standard .qmail */
 	   
-   if ( qmode <= 2 ) {
+   if ( qmode & DO_LDAP ) {
       /* setting the NEWSENDER so echo and forward will work */
       if (!stralloc_copys(&ueo,sender)) temp_nomem();
+      if (str_diff(sender,""))
+       if (str_diff(sender,"#@[]"))
+         if (qmeox("-owner") == 0)
+         {
+            if (qmeox("-owner-default") == 0)
+            {
+               if (!stralloc_copys(&ueo,local)) temp_nomem();
+               if (!stralloc_cats(&ueo,"-owner-@")) temp_nomem();
+               if (!stralloc_cats(&ueo,host)) temp_nomem();
+               if (!stralloc_cats(&ueo,"-@[]")) temp_nomem();
+            }
+            else
+            {
+               if (!stralloc_copys(&ueo,local)) temp_nomem();
+               if (!stralloc_cats(&ueo,"-owner@")) temp_nomem();
+               if (!stralloc_cats(&ueo,host)) temp_nomem();
+	        }
+	     }
       if (!stralloc_0(&ueo)) temp_nomem();
       if (!env_put2("NEWSENDER",ueo.s)) temp_nomem();
 
@@ -920,7 +949,7 @@ char **argv;
                   if ( s = env_get("QMAILREPLYTEXT") ) {
                      if (!stralloc_copys(&replytext, s)) temp_nomem();
                      getsubject(&subj);
-                     if (!env_put2("QMAILUSER",local)) temp_nomem(); /* setting the right reply-user */
+                     if (!env_put2("QMAILUSER",envrecip.s)) temp_nomem(); /* setting the right reply-user */
                      mailreply( sender, &replytext, &subj);
                   }
                } else { 
@@ -943,6 +972,9 @@ char **argv;
             }
             count_print();
             _exit(0);
+         } else if ( !str_diff("nombox", s) ) {
+            if (!flagdoit) sayit("no mbox delivery ",s,0);
+            mboxdelivery = 0;
          }
       }
    
@@ -976,14 +1008,14 @@ char **argv;
          slen = program.len-1;
          for(;;) {
             ++count_program;
-            if (flagforwardonly) strerr_die1x(111,"Uh-oh: .qmail has prog delivery but has x bit set. (#4.7.0)");
+            if (flagforwardonly) strerr_die1x(111,"Uh-oh: You want prog delivery but you have forwardonly set. (LDAP-ERR #2.1.0)");
             if (flagdoit) mailprogram(s);
             else sayit("program ",s,str_len(s) );
             n = byte_chr(s,slen,0); if (n++ == slen || ( flag99 && dummy(numforward_env, recips_env) ) ) break; s += n; slen -= n;
          }
       }
 		
-      if (!flagforwardonly && qmode == 1 ) {
+      if (!flagforwardonly && mboxdelivery ) {
          ++count_file;
          if (!stralloc_copys(&foo,aliasempty)) temp_nomem();
          if (!stralloc_0(&foo)) temp_nomem();
@@ -995,7 +1027,7 @@ char **argv;
             else sayit("mbox ",foo.s, foo.len);
       }
    }
-   if ( qmode >= 2) { /* start dotqmail */
+   if ( qmode & DO_DOT ) { /* start dotqmail */
 #endif /* end -- quota, dotmode and forward handling - part 1 */
 
  qmesearch(&fd,&flagforwardonly);
@@ -1109,7 +1141,7 @@ char **argv;
       recips_env[numforward_env] = 0;
       mailforward(recips_env);
    }
-   if (qmode <= 1) {
+   if (qmode & DO_LDAP) {
       count_print();
       _exit(0);
    }
