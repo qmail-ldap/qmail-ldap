@@ -379,8 +379,11 @@ int badmxcheck(dom) char *dom;
     case 1:
          if (checkip.len <= 0) ret=DNS_HARD; 
          break;
-  }
 
+    default:
+         ret=0;
+         break;
+  }
   return (ret);
 }
 
@@ -676,6 +679,7 @@ void smtp_mail(arg) char *arg;
                   why = "refused 'mail from' because return MX lookup failed temporarly";
                   break;
                 case DNS_HARD:
+                default:
                   flagbarf=1; 
                   why = "refused 'mail from' because return MX does not exist";
                   break;
@@ -689,9 +693,9 @@ void smtp_mail(arg) char *arg;
     if (flagbarf)
     {
       logpid(2); logstring(2,why); logstring(2,"for ="); logstring(2,addr.s); logflush(2);
-      if (flagbarf=2)
+      if (flagbarf==2)
         err_dns();
-      else if (spamflag=1)
+      else if (spamflag)
         err_spam();
       else
         err_hard(why);
