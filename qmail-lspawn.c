@@ -240,7 +240,7 @@ void cae(qldap *q, int n)
   _exit(n);
 }
 
-int qldap_get(stralloc *mail, char *rcpt, int fdmess)
+int qldap_get(stralloc *mail, int at, int fdmess)
 {
    const char *attrs[] = {  /* LDAP_MAIL, */ /* not needed */
                       /* LDAP_MAILALTERNATE, */
@@ -395,7 +395,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      if (!stralloc_0(&nughde)) cae(q, QLX_NOMEM);
      if (!stralloc_cats(&nughde, "-")) cae(q, QLX_NOMEM);
      if (!stralloc_0(&nughde)) cae(q, QLX_NOMEM);
-     if (!stralloc_cats(&nughde, rcpt)) cae(q, QLX_NOMEM);
+     if (!stralloc_catb(&nughde, mail->s, at)) cae(q, QLX_NOMEM);
      if (!stralloc_0(&nughde)) cae(q, QLX_NOMEM);
      aliasempty = ALIASDEVNULL;
      /* get the forwarding addresses */
@@ -444,9 +444,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
      if (!stralloc_cats(&nughde,"-")) cae(q, QLX_NOMEM);
    if (!stralloc_0(&nughde)) cae(q, QLX_NOMEM);
    if (rv != -1) {
-     int at, ext, i;
-     at = str_rchr(mail->s, '@');
-     if (mail->s[at] != '@') cae(q, QLX_USAGE);
+     int ext, i;
      for (ext = 0, i = 0; i < rv && ext < at; ext++)
        if (mail->s[ext] == *auto_break) i++;
      if (!stralloc_catb(&nughde, mail->s+i+1,at-ext-1)) cae(q, QLX_NOMEM);
@@ -734,7 +732,7 @@ char *s; char *r; int at;
    if (chdir(auto_qmail) == -1) _exit(QLX_USAGE);
 
    /* do the address lookup */
-   rv = qldap_get(&ra, s, fdmess);
+   rv = qldap_get(&ra, at, fdmess);
    switch (rv) {
    case 0:
      log(16, "LDAP lookup succeeded\n");

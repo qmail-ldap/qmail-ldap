@@ -817,9 +817,11 @@ char **argv;
      s = foo.s;
      slen = foo.len-1;
      for(;;) {
-       if (!case_diffs(MODE_FORWARD, s)) {
+       if (!case_diffs(MODE_FONLY, s)) {
          if (!flagdoit) sayit("force forward only ",s,0);
          flagforwardonly2 = 1;
+         flagnolocal = 1;
+         flagnoprog = 1;
        } else if (!case_diffs(MODE_REPLY, s)) {
          if(*sender) {
            ++count_forward;
