@@ -85,9 +85,9 @@ BACKUPPATH=/backup/qmail-backup/qmail-ldap.`date "+%Y%m%d-%H%M"`.tar
 
 SHELL=/bin/sh
 
-default: it qldap
+default: it ldap
 
-qldap: qmail-quotawarn qmail-reply auth_pop auth_imap digest qmail-ldaplookup \
+ldap: qmail-quotawarn qmail-reply auth_pop auth_imap digest qmail-ldaplookup \
 pbsadd pbscheck pbsdbd qmail-todo qmail-forward qmail-secretary qmail-group
 
 addresses.0: \
@@ -1541,10 +1541,10 @@ qmail-log.5
 	nroff -man qmail-log.5 > qmail-log.0
 
 qmail-ldaplookup: \
-load qmail-ldaplookup.o error.a stralloc.a qldap-debug.o output.o env.a \
-getopt.a strerr.a substdio.a fs.a str.a alloc.a
-	./load qmail-ldaplookup error.a stralloc.a qldap-debug.o output.o \
-	env.a getopt.a strerr.a substdio.a fs.a str.a alloc.a \
+load qmail-ldaplookup.o error.a stralloc.a qldap.o localdelivery.o qldap-errno.o qldap-debug.o output.o read-ctrl.o control.o env.a \
+getopt.a getln.a stralloc.a strerr.a substdio.a open.a fs.a str.a alloc.a case.a check.o auto_usera.o auto_qmail.o
+	./load qmail-ldaplookup error.a stralloc.a qldap.o localdelivery.o qldap-errno.o qldap-debug.o output.o \
+	read-ctrl.o control.o env.a getopt.a getln.a stralloc.a strerr.a substdio.a open.a fs.a str.a alloc.a case.a check.o auto_usera.o auto_qmail.o\
 	$(LDAPLIBS) $(SHADOWLIBS)
 
 qmail-ldaplookup.o: \
@@ -1881,12 +1881,12 @@ tcpto.h
 	./compile qmail-rspawn.c
 
 qmail-secretary: \
-load qmail-secretary.o base64.o control.o newfield.o now.o date822fmt.o \
-datetime.a mailmagic.o case.a getln.a qmail.o getopt.a seek.a fd.a wait.a \
-sig.a open.a stralloc.a env.a alloc.a strerr.a substdio.a error.a str.a \
-fs.a auto_qmail.o
-	./load qmail-secretary base64.o control.o newfield.o now.o \
-	date822fmt.o datetime.a mailmagic.o case.a getln.a qmail.o \
+load qmail-secretary.o base64.o digest_sha1.o control.o newfield.o now.o \
+date822fmt.o datetime.a mailmagic.o case.a getln.a qmail.o getopt.a seek.a \
+fd.a wait.a sig.a open.a stralloc.a env.a alloc.a strerr.a substdio.a error.a \
+str.a fs.a auto_qmail.o
+	./load qmail-secretary base64.o digest_sha1.o control.o newfield.o \
+	now.o date822fmt.o datetime.a mailmagic.o case.a getln.a qmail.o \
 	getopt.a seek.a fd.a wait.a sig.a open.a stralloc.a env.a \
 	alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o
 	
