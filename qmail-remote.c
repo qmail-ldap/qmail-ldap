@@ -637,7 +637,9 @@ char **argv;
     if (timeoutconn(smtpfd,&ip.ix[i].ip,(unsigned int) port,timeoutconnect) == 0) {
       tcpto_err(&ip.ix[i].ip,0);
       partner = ip.ix[i].ip;
+#ifndef TLS
 	  fqdn = ip.ix[i].fqdn;
+#endif
       smtp(); /* does not return */
     }
     tcpto_err(&ip.ix[i].ip,errno == error_timeout);
