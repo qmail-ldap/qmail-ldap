@@ -207,7 +207,6 @@ stralloc rmf = {0};
 struct constmap maprmf;
 int rblok = 0;
 stralloc rbl = {0};
-struct constmap maprbl;
 int tarpitcount = 0;
 int tarpitdelay = 5;
 int maxrcptcount = 0;
@@ -260,12 +259,11 @@ void setup()
   if (brtok)
     if (!constmap_init(&mapbadrcptto,brt.s,brt.len,0)) die_nomem();
 
-  rblok = control_readfile(&rmf,"control/rbllist",0);
+  rblok = control_readfile(&rbl,"control/rbllist",0);
   if (rblok == -1) die_control();
   if (rblok)
-    if (!constmap_init(&maprbl,rbl.s,rbl.len,0)) die_nomem();
-  rblenabled = env_get("RBL");
- 
+    rblenabled = env_get("RBL");
+  
   if (control_readint(&databytes,"control/databytes") == -1) die_control();
   x = env_get("DATABYTES");
   if (x) { scan_ulong(x,&u); databytes = u; }
@@ -445,11 +443,20 @@ int rbl_lookup(char *base)
 int rblcheck()
 {
   int r;
+  char *p;
 
   rbl_init();
-  /* should go through all RBL's listed in maprbl here */
-  r = rbl_lookup("rbl.maps.vix.com");
 
+  p = &rbl.s[0];
+  while(p < &rbl.s[0]+rbl.len)
+  {
+    r = rbl_lookup(p);
+      if (r == 2) return 2;
+      if (r == 1) return 1;
+    /* continue */
+    p = p+strlen(p);
+    p++;
+  }
   return r;
 }
 
@@ -602,7 +609,7 @@ void smtp_mail(arg) char *arg;
    DNSCHECK -> validate Mailfrom domain
   ************/
 
-  if (rblenabled)
+  if (rblenabled && !relayclient)
   {
     switch(rblcheck())
     {
