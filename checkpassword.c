@@ -782,6 +782,26 @@ static void copyloop(int infd, int outfd, int timeout)
 	return;
 }
 
+static void get_ok(int ffd)
+{
+	char temp;
+	int  len;
+	int  ok = 0;
+	
+	while (!read(ffd, &temp, 1) );
+	if ( temp == '+' ) {
+		while(1) {
+			len = read(ffd, &temp, 1);
+			if (len && temp == '\n' ) {
+			  return;
+			}
+		}
+	} else {
+		debug_msg(OUTPUT, "Other pop-server is not happy\n");
+		_exit(1);
+	}
+}
+
 static void forward_session(char *host, char *name, char *passwd)
 {
 	ipalloc ip = {0};
@@ -825,7 +845,9 @@ static void forward_session(char *host, char *name, char *passwd)
 	}
 	
 	/* We have a connection, first send user and pass */
+	get_ok(ffd);
 	write(ffd, "user ", 5); write(ffd, name, str_len(name) ); write(ffd, "\n", 1);
+	get_ok(ffd);
 	write(ffd, "pass ", 5); write(ffd, passwd, str_len(passwd) ); write(ffd, "\n",1);
 	/* Now the other server can handle this */
 	copyloop(0, ffd, timeout);
