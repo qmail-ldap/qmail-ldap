@@ -608,6 +608,7 @@ char **argv;
    } else if (!str_diffn("{NS-MTA-MD5}", password.s, 12) ) {
    /* NS-MTA-MD5 */
       shift = 12;
+      if (!strlen(password.s) == 76) _exit(1); /* boom */
       strncpy(salt,&password.s[44],32);
       salt[32] = 0;
       ns_mta_hash_alg(hashed,salt,entredpassword);

@@ -529,7 +529,7 @@ void smtp_data() {
   qp = qmail_qp(&qqt);
   out("354 go ahead\r\n");
  
-  received(&qqt,"SMTP",local,remoteip,remotehost,remoteinfo,fakehelo);
+  received(&qqt,"SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
   if (fakehelo) log_helo();
   blast(&hops);
   hops = (hops >= MAXHOPS);
