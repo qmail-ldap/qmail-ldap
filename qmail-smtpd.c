@@ -672,7 +672,7 @@ void smtp_mail(arg) char *arg;
   }
 
   /* return MX check */
-  if (returnmxcheck)
+  if (returnmxcheck && !bounceflag)
   {
     if ((i=byte_rchr(addr.s,addr.len,'@')) < addr.len)
       switch (badmxcheck(&addr.s[i+1]))
