@@ -49,6 +49,7 @@
 #include "qmail-ldap.h"
 #include "readwrite.h"
 #include "scan.h"
+#include "sgetopt.h"
 #include "sig.h"
 #include "str.h"
 #include "stralloc.h"
@@ -74,21 +75,24 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 {
 	char	*a, *s, *t, *l, *p;
 	int	waitstat;
-	int	i;
+	int	i, opt;
 
-	if (argc < 2)
-		auth_error(AUTH_CONF);
-	if (str_diff(argv[1], "-d") == 0) {
-		if (!argv[2])
+	while ((opt = getopt(argc, argv, "d:")) != opteof) {
+		switch (opt) {
+		case 'd':
+			pbstool = optarg;
+			break;
+		default:
 			auth_error(AUTH_CONF);
-		pbstool = argv[2];
-		argc -= 2;
-		argv += 2;
+		}
 	}
-	if (argc < 2)
+	argc -= optind;
+	argv += optind;
+
+	if (argc < 1)
 		auth_error(AUTH_CONF);
-	auth_argc = argc - 1;
-	auth_argv = argv + 1;
+	auth_argc = argc;
+	auth_argv = argv;
 
 	a = env_get("AUTHENTICATED");
 	if (a && *a) {  /* Already a good guy */
