@@ -317,7 +317,7 @@ static int quota_calcsize(quota_t *q, int *fd, char* buf, int len)
 	struct dirent *dp;
 	DIR *dirp;
 	
-	if ( q->quota_size == 0 || q->quota_count == 0 ) {
+	if ( q->quota_size == 0 && q->quota_count == 0 ) {
 		/* no quota defined */
 		return 0;
 	}
