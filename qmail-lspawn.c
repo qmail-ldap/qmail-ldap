@@ -259,8 +259,8 @@ int qldap_get(stralloc *mail, unsigned int at, int fdmess)
    unsigned long maxsize;
    unsigned long size;
    unsigned int len;
+   unsigned int id;
    int done;
-   int id;
    int status;
    int rv;
 
@@ -721,8 +721,8 @@ char *s; char *r; unsigned int at;
    unsigned long u;
    unsigned int xlen;
    unsigned int n;
-   int uid;
-   int gid;
+   unsigned int uid;
+   unsigned int gid;
    int rv;
    
    log_init(fdout, -1, 1);
@@ -850,7 +850,7 @@ char *s; char *r; unsigned int at;
    args[9] = (char *)aliasempty;
    args[10] = 0;
 
-   logit(8, "executing 'qmail-local -- %s %s %s %s %s %s %s %s' under uid=%i, gid=%i\n",
+   logit(8, "executing 'qmail-local -- %s %s %s %s %s %s %s %s' under uid=%u, gid=%u\n",
     args[2], args[3], args[4], args[5], args[6], args[7],
     args[8], args[9], uid, gid);
 

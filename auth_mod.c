@@ -225,16 +225,17 @@ static char copybuf[4096];
 static int
 allwrite(int (*op)(),int fd, void *buf,int len)
 {
-	int	w;
+	char	*b = buf;
+	int	 w;
 
 	while (len) {
-		w = op(fd,buf,len);
+		w = op(fd, b, len);
 		if (w == -1) {
 			if (errno == error_intr) continue;
 			return -1;
 		}
 		if (w == 0) ; /* luser's fault */
-		buf += w;
+		b += w;
 		len -= w;
 	}
 	return 0;

@@ -186,7 +186,7 @@ char *moderatoraddr(void);
 void sendconfirm(stralloc *, int);
 void sendmoderator(stralloc *, int);
 int sendmail(struct qmail *, int, int, stralloc *, stralloc *, stralloc *);
-void attachmail(struct qmail *, int, int);
+void attachmail(struct qmail *, int, unsigned int);
 void bouncefx(void);
 void createhash(int, stralloc *);
 char *createname(stralloc *, const char *, const char *, stralloc *);
@@ -744,10 +744,10 @@ sendmail(struct qmail *qq, int fd, int maxsize,
 char buf[4096];
 
 void
-attachmail(struct qmail *qq, int fd, int maxsize)
+attachmail(struct qmail *qq, int fd, unsigned int maxsize)
 {
-	substdio ss;
-	int match;
+	substdio	ss;
+	int		match;
 	
 	if (seek_begin(fd) == -1) {
 		qmail_fail(qq);
@@ -1076,7 +1076,8 @@ reset_sender(void)
 {
 	substdio	 ss;
 	char		*s;
-	int		 match, i;
+	unsigned int	 i;
+	int		 match;
 
 	if (seek_begin(0) == -1) temp_rewind();
 	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));

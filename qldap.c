@@ -77,8 +77,8 @@ stralloc	default_messagestore = {0};
 stralloc	dotmode = {0};
 unsigned int	ldap_timeout = QLDAP_TIMEOUT;	/* default timeout is 30 secs */
 int		rebind = 0;			/* default off */
-int		default_uid = 0;
-int		default_gid = 0;
+unsigned int	default_uid = 0;
+unsigned int	default_gid = 0;
 unsigned long	quotasize = 0;
 unsigned long	quotacount = 0;
 
@@ -552,7 +552,7 @@ qldap_next(qldap *q)
 static stralloc ldap_attr = {0};
 
 int
-qldap_get_uid(qldap *q, int *uid)
+qldap_get_uid(qldap *q, unsigned int *uid)
 {
 	unsigned long	ul;
 	int		r;
@@ -575,7 +575,7 @@ qldap_get_uid(qldap *q, int *uid)
 }
 
 int
-qldap_get_gid(qldap *q, int *gid)
+qldap_get_gid(qldap *q, unsigned int *gid)
 {
 	unsigned long	ul;
 	int		r;

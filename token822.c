@@ -146,7 +146,7 @@ unsigned int linelen;
        *s++ = ',';
 #define NSUW \
  s[0] = '\n'; s[1] = ' '; \
- if (linee && (!linelen || (s - lineb <= linelen))) \
+ if (linee && (!linelen || ((unsigned long)(s - lineb) <= linelen))) \
   { while (linee < s) { linee[0] = linee[2]; ++linee; } linee -= 2; } \
  else { if (linee) lineb = linee + 1; linee = s; s += 2; }
        NSUW

@@ -92,8 +92,8 @@ int qldap_next(qldap *);
 /* possible errors of all get functions:
  * FAILED ERRNO BADVAL ILLVAL NEEDED NOSUCH TOOMANY
  */
-int qldap_get_uid(qldap *, int *);
-int qldap_get_gid(qldap *, int *);
+int qldap_get_uid(qldap *, unsigned int *);
+int qldap_get_gid(qldap *, unsigned int *);
 int qldap_get_mailstore(qldap *, stralloc *, stralloc *);
 int qldap_get_user(qldap *, stralloc *);
 int qldap_get_status(qldap *, int *);

@@ -86,7 +86,7 @@ int cdb_read(struct cdb *c,char *buf,unsigned int len,uint32 pos)
 static int match(struct cdb *c,const char *key,unsigned int len,uint32 pos)
 {
   char buf[32];
-  int n;
+  unsigned int n;
 
   while (len > 0) {
     n = sizeof buf;

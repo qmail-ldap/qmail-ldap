@@ -142,9 +142,9 @@ int rewrite(char *recip)
 {
   unsigned int i;
   unsigned int j;
+  unsigned int at;
   const char *x;
   static stralloc addr = {0};
-  int at;
 
   if (!stralloc_copys(&rwline,"T")) return 0;
   if (!stralloc_copys(&addr,recip)) return 0;
@@ -191,8 +191,9 @@ int rewrite(char *recip)
       return 1;
     }
 
-  for (i = 0;i <= addr.len;++i)
-    if (!i || (i == at + 1) || (i == addr.len) || ((i > at) && (addr.s[i] == '.')))
+  for (i = 0; i <= addr.len;++i)
+    if (!i || i == at + 1 || i == addr.len ||
+	(i > at && addr.s[i] == '.'))
       if ((x = constmap(&mapvdoms,addr.s + i,addr.len - i))) {
         if (!*x) break;
         if (!stralloc_cats(&rwline,x)) return 0;
@@ -212,7 +213,7 @@ int rewrite(char *recip)
 substdio sstoqc; char sstoqcbuf[1024];
 substdio ssfromqc; char ssfromqcbuf[1024];
 stralloc comm_buf = {0};
-int comm_pos;
+unsigned int comm_pos;
 int fdout = -1;
 int fdin = -1;
 
@@ -370,7 +371,7 @@ void comm_do(fd_set *wfds, fd_set *rfds)
 	int w;
 	unsigned int len;
 	len = comm_buf.len;
-	w = write(fdout,comm_buf.s + comm_pos,len - comm_pos);
+	w = subwrite(fdout, comm_buf.s + comm_pos,len - comm_pos);
 	if (w <= 0) {
 	  if ((w == -1) && (errno == error_pipe))
 	    senddied();

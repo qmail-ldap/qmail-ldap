@@ -69,18 +69,21 @@ temp_nomem(void)
 {
 	strerr_die2x(111, FATAL, "Out of memory.");
 }
+
 void
 temp_rewind(void)
 {
 	strerr_die2x(111, FATAL, "Unable to rewind message.");
 }
+
 void
 temp_fork(void)
 {
 	strerr_die2sys(111, FATAL, "Unable to fork: ");
 }
 
-void usage(void)
+void
+usage(void)
 {
 	strerr_die1x(100,
 	    "qmail-reply: usage: qmail-reply [-f mailfile] [-j junkfile] "
@@ -90,7 +93,8 @@ void usage(void)
 stralloc replytext = {0};
 stralloc hashed = {0};
 
-void hashreplytext(void)
+void
+hashreplytext(void)
 {
 	MD5_CTX ctx;
 	unsigned char buffer[MD5_LEN];
@@ -103,7 +107,8 @@ void hashreplytext(void)
 	if (!stralloc_0(&hashed) == -1) temp_nomem();
 }
 
-void envmail(void)
+void
+envmail(void)
 {
 	char *s;
 
@@ -119,7 +124,8 @@ void envmail(void)
 char buffer[1024];
 stralloc line = {0};
 
-void readmail(char *file)
+void
+readmail(char *file)
 {
 	substdio ss;
 	int fd;
@@ -150,7 +156,8 @@ stralloc from={0};
 stralloc host={0};
 stralloc dtline={0};
 
-void get_env(void)
+void
+get_env(void)
 {
 	char *s;
 	unsigned int i;
@@ -179,13 +186,15 @@ void get_env(void)
 stralloc junkfrom={0};
 struct constmap mapjunk;
 
-void junkread(char *path)
+void
+junkread(char *path)
 {
 	if (control_readfile(&junkfrom, path, 0) != 1)
 		strerr_die4sys(100, FATAL, "Unable to read '", path, "': ");
 }
 
-int junksender(char *addr, int len)
+int
+junksender(char *addr, unsigned int len)
 {
 	unsigned int		at, dash, i;
 	static const char	*(junkignore[]) = {
@@ -233,7 +242,8 @@ int junksender(char *addr, int len)
 	return 0;
 }	
 
-datetime_sec get_stamp(char const *hex)
+datetime_sec
+get_stamp(char const *hex)
 {
 	unsigned long t;
 	unsigned char c;
@@ -254,7 +264,8 @@ datetime_sec get_stamp(char const *hex)
 	return (datetime_sec) t;	
 }
 
-char* stamp(datetime_sec tm)
+char *
+stamp(datetime_sec tm)
 {
 	static char stampbuf[10];
 	static const char* digit = "0123456789abcdef";
@@ -285,7 +296,8 @@ datetime_sec timeout;
 
 int checkstamp(char *, unsigned int);
 
-int recent_lookup(char *buf, unsigned int len)
+int
+recent_lookup(char *buf, unsigned int len)
 {
 	char *s;
 	datetime_sec last;
@@ -328,7 +340,8 @@ done:
 	return checkstamp(buf, len);
 }
 
-int trylock(void)
+int
+trylock(void)
 {
 	struct stat st;
 	int fd;
@@ -361,7 +374,8 @@ retry:
 	return 1;
 }
 
-void unlock(void)
+void
+unlock(void)
 {
 	if (unlink("qmail-reply.lock") == -1)
 		strerr_warn2(WARN, "Unable to unlock: ", &strerr_sys);
@@ -370,7 +384,8 @@ void unlock(void)
 stralloc sfs = {0};
 stralloc spath = {0};
 
-int checkstamp(char *buf, unsigned int len)
+int
+checkstamp(char *buf, unsigned int len)
 {
 	struct stat st;
 	
@@ -387,7 +402,8 @@ int checkstamp(char *buf, unsigned int len)
 	return 1;
 }
 
-void addstamps(void)
+void
+addstamps(void)
 {
 	DIR *dir;
 	direntry *d;
@@ -427,7 +443,8 @@ void addstamps(void)
 	if (d) strerr_warn2(WARN, "Out of memory.", 0);
 }
 
-void deletestamps(void)
+void
+deletestamps(void)
 {
 	unsigned int i;
 	char *s;
@@ -441,14 +458,16 @@ void deletestamps(void)
 char rsoutbuf[SUBSTDIO_OUTSIZE];
 char fntmptph[32 + 2*FMT_ULONG];
 
-void sigalrm(void)
+void
+sigalrm(void)
 {
 	unlink(fntmptph);
 	unlock();
 	strerr_die2x(111, FATAL, "Timeout while writing db file");
 }
 
-void recent_update(char *buf, unsigned int len)
+void
+recent_update(char *buf, unsigned int len)
 {
 	struct stat st;
 	substdio ss;
@@ -537,7 +556,8 @@ fail:
 	return;
 }
 
-void touchstamp(char *buf, unsigned int len)
+void
+touchstamp(char *buf, unsigned int len)
 {
 	int fd;
 
@@ -551,7 +571,8 @@ void touchstamp(char *buf, unsigned int len)
 	close(fd);
 }
 
-int recent(char *buf, unsigned int len, char *dir)
+int
+recent(char *buf, unsigned int len, char *dir)
 {
 	if (dir == 0) return 0;
 
@@ -583,7 +604,8 @@ int recent(char *buf, unsigned int len, char *dir)
 	}
 }
 
-unsigned int getfield(char *s, unsigned int len)
+unsigned int
+getfield(char *s, unsigned int len)
 {
 	unsigned int l;
 
@@ -613,7 +635,8 @@ unsigned int getfield(char *s, unsigned int len)
 
 stralloc subject = {0};
 
-int parseheader(/* TODO names for to/cc checking */ void)
+int
+parseheader(/* TODO names for to/cc checking */ void)
 {
 	substdio ss;
 	char *s;
@@ -739,7 +762,8 @@ struct mheader mheader[] = {
 	{ 0, 0, 0, 0 }
 };
 
-void sendmail(void)
+void
+sendmail(void)
 {
 	struct qmail qqt;
 	const char *qqx;
@@ -791,7 +815,8 @@ fail_nomem:
 	temp_nomem();
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	char *maildir;
 	int flagenv;

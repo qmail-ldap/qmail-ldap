@@ -393,14 +393,14 @@ static int doit(void)
 	unsigned int envlen;
 	unsigned int i;
 
-	if (buf[1] + 2 >= len) {
+	if ((unsigned int)buf[1] + 2 >= len) {
 		strerr_warn2(warning, "bad packet", 0);
 		return 0;
 	}
 
 	timenow = now();
 
-	switch(buf[0]) {
+	switch (buf[0]) {
 	case 'Q':
 		//strerr_warn2(info, "query packet", 0);
 		if (checkaddr(&buf[2], buf[1], timenow,

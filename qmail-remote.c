@@ -80,7 +80,7 @@ struct ip_address outip;
 void out(const char *s) { if (substdio_puts(subfdoutsmall,s) == -1) _exit(0); }
 void zero(void) { if (substdio_put(subfdoutsmall,"\0",1) == -1) _exit(0); }
 void zerodie(void) { zero(); substdio_flush(subfdoutsmall); _exit(0); }
-void outsafe(stralloc *sa) { int i; char ch;
+void outsafe(stralloc *sa) { unsigned int i; char ch;
 for (i = 0;i < sa->len;++i) {
 ch = sa->s[i]; if (ch < 33) ch = '?'; if (ch > 126) ch = '?';
 if (substdio_put(subfdoutsmall,&ch,1) == -1) _exit(0); } }
@@ -885,7 +885,7 @@ int main(int argc, char **argv)
   unsigned int i, j;
   unsigned long randm;
   char **recips;
-  unsigned long prefme;
+  int prefme;
   int flagallaliases;
   int flagalias;
   const char *relayhost;

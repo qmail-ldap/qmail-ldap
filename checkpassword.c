@@ -229,17 +229,17 @@ fail:
 }
 
 void
-change_uid(int uid, int gid)
+change_uid(unsigned int uid, unsigned int gid)
 {
-	int	id;
+	unsigned int	id;
 	
 	id = geteuid();
-	if (id != 0 && (id == uid || id == -1)) {
+	if (id != 0 && (id == uid || uid == (unsigned int)-1)) {
 		/* not running as root so return */
 		logit(32, "change_uid: already running non root\n");
 		return;
 	}
-	if (uid == -1 && gid == -1) {
+	if (uid == (unsigned int)-1 && gid == (unsigned int)-1) {
 		/* run as non-privileged user qmaild group nofiles */
 		uid = auto_uidd;
 		gid = auto_gidn;

@@ -280,7 +280,8 @@ reset_sender(void)
 {
 	substdio	 ss;
 	char		*s;
-	int		 match, i;
+	int		 match;
+	unsigned int	 i;
 
 	if (seek_begin(0) == -1) temp_rewind();
 	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
@@ -399,7 +400,7 @@ secretary(char *maildir, int flagcheck)
 	int child, wstat;
 	unsigned int i, numargs;
 	int pi[2];
-	int r;
+	int r, j;
 
 	if (!stralloc_copys(&fname, "")) temp_nomem();
 
@@ -455,22 +456,22 @@ secretary(char *maildir, int flagcheck)
 		_exit(100);
 	case 0: case 99:
 		/* XXX a for(;;) loop would be great */
-		r = read(pi[0], sbuf, sizeof(sbuf));
+		r = subread(pi[0], sbuf, sizeof(sbuf));
 		if (r == -1) /* read error on a readable pipe, be serious */
 			strerr_die2sys(111, FATAL,
 			    "Unable to read secretary result: ");
 		if (r == 0)
 			/* need to wait for confirmation */
 			_exit(0);
-		for (i = 0; i < r; i++) {
-			if (i == 0) {
-				if (sbuf[i] != 'K')
+		for (j = 0; j < r; i++) {
+			if (j == 0) {
+				if (sbuf[j] != 'K')
 					strerr_die2x(111, FATAL,
 					    "Strange secretary dialect");
 				else
 					continue;
 			}
-			if (!stralloc_append(&fname, &sbuf[i])) temp_nomem();
+			if (!stralloc_append(&fname, &sbuf[j])) temp_nomem();
 		}
 		close(pi[0]);
 		return;

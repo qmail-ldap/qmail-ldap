@@ -67,19 +67,23 @@ void temp_nomem(void)
 {
 	strerr_die2x(111, FATAL, "Out of memory. (#4.3.0)");
 }
+
 void temp_rewind(void)
 {
 	strerr_die2x(111, FATAL, "Unable to rewind message. (#4.3.0)");
 }
+
 void temp_childcrashed(void)
 {
 	strerr_die2x(111, FATAL, "Aack, child crashed. (#4.3.0)");
 }
+
 void temp_fork(void)
 {
 	strerr_die4x(111, FATAL, "Unable to fork: ",
 	    error_str(errno), ". (#4.3.0)");
 }
+
 void
 temp_slowlock(void)
 {
@@ -87,71 +91,88 @@ temp_slowlock(void)
 	    "File has been locked for 30 seconds straight. (#4.3.0)");
 }
 
-char *quotastring;
+char		 fntmptph[80 + FMT_ULONG * 2];
+char		 fnnewtph[83 + FMT_ULONG * 3];
 
-stralloc dtline = {0};
-stralloc rpline = {0};
-stralloc ufline = {0};
-stralloc messline = {0};
+void
+tryunlinktmp(void)
+{
+	unlink(fntmptph);
+}
 
-char buf[1024];
-char outbuf[1024];
+void
+sigalrm(void)
+{
+	tryunlinktmp();
+	_exit(3);
+}
 
-char fntmptph[80 + FMT_ULONG * 2];
-char fnnewtph[83 + FMT_ULONG * 3];
-void tryunlinktmp() { unlink(fntmptph); }
-void sigalrm() { tryunlinktmp(); _exit(3); }
-int msfd = -1; /* global filedescriptor to the quota file */
+char		*quotastring;
+
+stralloc	 dtline = {0};
+stralloc	 rpline = {0};
+stralloc	 ufline = {0};
+stralloc	 messline = {0};
+
+char		 buf[1024];
+char		 outbuf[1024];
+int		 msfd = -1; /* global filedescriptor to the quota file */
 
 void
 maildir_child(char *dir)
 {
-	unsigned long pid;
-	unsigned long tnow;
-	char host[64];
-	char *s;
-	int loop;
-	struct stat st;
-	int fd;
-	substdio ss;
-	substdio ssout;
+	substdio	 ss, ssout;
+	struct stat	 st;
+	unsigned long	 pid, tnow;
+	char		 host[64];
+	char		*s;
+	int		 loop, fd;
 
 	sig_alarmcatch(sigalrm);
 	if (chdir(dir) == -1) {
-		if (error_temp(errno)) _exit(1); else _exit(2);
+		if (error_temp(errno))
+			_exit(1);
+		else
+			_exit(2);
 	}
 
 	pid = getpid();
 	host[0] = 0;
-	gethostname(host,sizeof(host));
-	for (loop = 0;;++loop)
-	{
+	gethostname(host, sizeof(host));
+	for (loop = 0;;++loop) {
 		tnow = now();
 		s = fntmptph;
-		s += fmt_str(s,"tmp/");
-		s += fmt_ulong(s,tnow); *s++ = '.';
-		s += fmt_ulong(s,pid); *s++ = '.';
-		s += fmt_strn(s,host,sizeof(host)); *s++ = 0;
-		if (stat(fntmptph,&st) == -1) if (errno == error_noent) break;
+		s += fmt_str(s, "tmp/");
+		s += fmt_ulong(s, tnow); *s++ = '.';
+		s += fmt_ulong(s, pid); *s++ = '.';
+		s += fmt_strn(s, host, sizeof(host)); *s++ = 0;
+		if (stat(fntmptph, &st) == -1)
+			if (errno == error_noent)
+				break;
 		/* really should never get to this point */
-		if (loop == 2) _exit(1);
+		if (loop == 2)
+			_exit(1);
 		sleep(2);
 	}
-	str_copy(fnnewtph,fntmptph);
-	byte_copy(fnnewtph,3,"new");
+	str_copy(fnnewtph, fntmptph);
+	byte_copy(fnnewtph, 3, "new");
 
 	alarm(86400);
 	fd = open_excl(fntmptph);
-	if (fd == -1) _exit(1);
+	if (fd == -1)
+		_exit(1);
 
-	substdio_fdbuf(&ss,subread,0,buf,sizeof(buf));
-	substdio_fdbuf(&ssout,subwrite,fd,outbuf,sizeof(outbuf));
-	if (substdio_put(&ssout,rpline.s,rpline.len) == -1) goto fail;
-	if (substdio_put(&ssout,dtline.s,dtline.len) == -1) goto fail;
+	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
+	substdio_fdbuf(&ssout, subwrite, fd, outbuf, sizeof(outbuf));
+	if (substdio_put(&ssout, rpline.s, rpline.len) == -1) goto fail;
+	if (substdio_put(&ssout, dtline.s, dtline.len) == -1) goto fail;
 
-	switch(substdio_copy(&ssout,&ss)) {
-	case -2: tryunlinktmp(); _exit(4);
-	case -3: goto fail;
+	switch(substdio_copy(&ssout, &ss)) {
+	case -2:
+		tryunlinktmp();
+		_exit(4);
+	case -3:
+		goto fail;
 	}
 
 	if (substdio_flush(&ssout) == -1) goto fail;
@@ -160,18 +181,18 @@ maildir_child(char *dir)
 	if (close(fd) == -1) goto fail; /* NFS dorks */
 
 	s = fnnewtph;
-	while( *s ) s++;
+	while(*s) s++;
 	s += fmt_str(s,",S=");
-	s += fmt_ulong(s,(unsigned long) st.st_size);
+	s += fmt_ulong(s,(unsigned long)st.st_size);
 	*s++ = 0;
 
-	if( quotastring && *quotastring ) {
+	if(quotastring && *quotastring) {
 		/* finally update the quota file "maildirsize" */
-		quota_add(msfd, (unsigned long) st.st_size, 1);
+		quota_add(msfd, (unsigned long)st.st_size, 1);
 		close(msfd);
 	}
 
-	if (link(fntmptph,fnnewtph) == -1) goto fail;
+	if (link(fntmptph, fnnewtph) == -1) goto fail;
 	/* if it was error_exist, almost certainly successful; i hate NFS */
 	tryunlinktmp();
 	_exit(0);
@@ -191,14 +212,13 @@ quota_bounce(const char *type)
 	    " is over the allowed quota (size). (#5.2.2)");
 }
 
-stralloc qwapp = {0};
+stralloc	qwapp = {0};
 
 void
 quota_warning(char *fn)
 {
-	int child;
-	char *(args[3]);
-	int wstat;
+	char	*(args[3]);
+	int	 child, wstat;
 
 	if (!stralloc_copys(&qwapp, auto_qmail)) temp_nomem();
 	if (!stralloc_cats(&qwapp, "/bin/qmail-quotawarn")) temp_nomem();
@@ -206,8 +226,7 @@ quota_warning(char *fn)
 
 	if (seek_begin(0) == -1) temp_rewind();
 
-	switch(child = fork())
-	{
+	switch(child = fork()) {
 	case -1:
 		temp_fork();
 	case 0:
@@ -220,14 +239,16 @@ quota_warning(char *fn)
 	wait_pid(&wstat,child);
 	if (wait_crashed(wstat))
 		temp_childcrashed();
-	switch(wait_exitcode(wstat))
-	{
+	switch(wait_exitcode(wstat)) {
 	case 2:
 		strerr_die6x(111, FATAL, "Unable to run quotawarn program: ",
 		    qwapp.s, ": ",error_str(errno),". (#4.2.2)");
-	case 111: _exit(111);
-	case 0: break;
-	default: _exit(100);
+	case 111:
+		_exit(111);
+	case 0:
+		break;
+	default:
+		_exit(100);
 	}
 
 }
@@ -237,14 +258,10 @@ quota_warning(char *fn)
 void
 maildir_write(char *fn)
 {
-	int child;
-	int wstat;
-
-	/* quota handling maildir */
-	struct stat mailst;
-	int perc;
-	quota_t q;
-	unsigned long mailsize;
+	struct stat	mailst;
+	quota_t		q;
+	unsigned long	mailsize;
+	int		child, wstat, perc;
 
 #ifdef AUTOMAILDIRMAKE
 	switch (maildir_make(fn)) {
@@ -304,8 +321,7 @@ maildir_write(char *fn)
 
 	if (seek_begin(0) == -1) temp_rewind();
 
-	switch(child = fork())
-	{
+	switch(child = fork()) {
 	case -1:
 		temp_fork();
 	case 0:
@@ -313,7 +329,8 @@ maildir_write(char *fn)
 		_exit(111);
 	}
 
-	if (msfd != -1) close(msfd);
+	if (msfd != -1)
+		close(msfd);
 	/* close the maildirsize fd in the parent */
 
 	wait_pid(&wstat,child);
@@ -341,17 +358,12 @@ maildir_write(char *fn)
 void
 mailfile(char *fn)
 {
-	int fd;
-	substdio ss;
-	substdio ssout;
-	int match;
-	seek_pos pos;
-	int flaglocked;
-
-	/* quota handling mbox */
-	struct stat filest, mailst;
-	long int totalsize;
-	quota_t q;
+	substdio	ss, ssout;
+	struct stat	filest, mailst;
+	quota_t		q;
+	seek_pos	pos;
+	unsigned long	totalsize;
+	int		fd, match, flaglocked;
 
 	if(quotastring && *quotastring) {
 		quota_get(&q, quotastring);
@@ -366,11 +378,12 @@ mailfile(char *fn)
 			strerr_die4x(111, FATAL, "Unable to quota mail: ",
 			    error_str(errno), ". (#4.3.0)");
 
-		totalsize = (long) filest.st_size + (long) mailst.st_size;
-		if ( totalsize*100/q.quota_size >= QUOTA_WARNING_LEVEL)
+		totalsize = (unsigned long)filest.st_size +
+		    (unsigned long)mailst.st_size;
+		if (totalsize * 100 / q.quota_size >= QUOTA_WARNING_LEVEL)
 			/* drop a warning when mailbox is around 80% full */
 			quota_warning(fn);
-		if ( totalsize > q.quota_size )
+		if (totalsize > q.quota_size)
 			quota_bounce("mailbox");
 	}
 
@@ -392,46 +405,49 @@ mailfile(char *fn)
 	seek_end(fd);
 	pos = seek_cur(fd);
 
-	substdio_fdbuf(&ss,subread,0,buf,sizeof(buf));
-	substdio_fdbuf(&ssout,subwrite,fd,outbuf,sizeof(outbuf));
-	if (substdio_put(&ssout,ufline.s,ufline.len)) goto writeerrs;
-	if (substdio_put(&ssout,rpline.s,rpline.len)) goto writeerrs;
-	if (substdio_put(&ssout,dtline.s,dtline.len)) goto writeerrs;
+	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
+	substdio_fdbuf(&ssout, subwrite, fd, outbuf, sizeof(outbuf));
+	if (substdio_put(&ssout, ufline.s, ufline.len)) goto writeerrs;
+	if (substdio_put(&ssout, rpline.s, rpline.len)) goto writeerrs;
+	if (substdio_put(&ssout, dtline.s, dtline.len)) goto writeerrs;
+
 	for (;;) {
-		if (getln(&ss,&messline,&match,'\n') != 0) {
+		if (getln(&ss, &messline, &match, '\n') != 0) {
 			strerr_warn4(FATAL, "Unable to read message: ",
 			    error_str(errno),". (#4.3.0)",0);
-			if (flaglocked) seek_trunc(fd,pos); close(fd);
+			if (flaglocked)
+				seek_trunc(fd, pos);
+			close(fd);
 			_exit(111);
 		}
 		if (!match && !messline.len) break;
-		if (gfrom(messline.s,messline.len))
-			if (substdio_bput(&ssout,">",1)) goto writeerrs;
-		if (substdio_bput(&ssout,messline.s,messline.len))
+		if (gfrom(messline.s, messline.len))
+			if (substdio_bput(&ssout, ">", 1)) goto writeerrs;
+		if (substdio_bput(&ssout, messline.s, messline.len))
 			goto writeerrs;
 		if (!match) {
-			if (substdio_bputs(&ssout,"\n")) goto writeerrs;
+			if (substdio_bputs(&ssout, "\n")) goto writeerrs;
 			break;
 		}
 	}
-	if (substdio_bputs(&ssout,"\n")) goto writeerrs;
+	if (substdio_bputs(&ssout, "\n")) goto writeerrs;
 	if (substdio_flush(&ssout)) goto writeerrs;
 	if (fsync(fd) == -1) goto writeerrs;
 	close(fd);
 	_exit(99);
 
 writeerrs:
-	strerr_warn6(FATAL, "Unable to write ",fn,": ",
-	    error_str(errno),". (#4.3.0)",0);
-	if (flaglocked) seek_trunc(fd,pos);
+	strerr_warn6(FATAL, "Unable to write ", fn, ": ",
+	    error_str(errno), ". (#4.3.0)",0);
+	if (flaglocked) seek_trunc(fd, pos);
 	close(fd);
 	_exit(111);
 }
 
 int main(int argc, char **argv)
 {
-	char *s;
-	int pid, wstat;
+	char	*s;
+	int	 pid, wstat;
 
 	if (!env_init()) temp_nomem();
 	if (!argv[1] || !argv[2])
@@ -461,14 +477,19 @@ int main(int argc, char **argv)
 		if (error_temp(errno)) _exit(111);
 		_exit(100);
 	}
+
 	if (wait_pid(&wstat,pid) == -1)
 		strerr_die2x(111,FATAL,"wait failed");
 	if (wait_crashed(wstat))
 		temp_childcrashed();
+
 	switch(wait_exitcode(wstat)) {
-	case 0: break;
-	case 111: strerr_die2x(111,FATAL,"temporary child error");
-	default: _exit(0);
+	case 0:
+		break;
+	case 111:
+		strerr_die2x(111,FATAL,"temporary child error");
+	default:
+		  _exit(0);
 	}
 
 	if (seek_begin(0) == -1)
@@ -483,5 +504,6 @@ int main(int argc, char **argv)
 		maildir_write(argv[1]);
 	else
 		mailfile(argv[1]);
-	return 100;
+
+	return (100);
 }

@@ -35,9 +35,9 @@ static int issafe(ch) char ch;
 
 void logsafe(s) const char *s;
 {
- int i;
+ unsigned int i;
  while (!stralloc_copys(&foo,s)) nomem();
- for (i = 0;i < foo.len;++i)
+ for (i = 0; i < foo.len;++i)
    if (foo.s[i] == '\n')
      foo.s[i] = '/';
    else

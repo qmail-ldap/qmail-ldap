@@ -287,31 +287,26 @@ char **argv;
 	 {
 	  unsigned int j;
 	  unsigned int b;
-	  int t;
-	  for (j=0, b=0; j<r; j++)
-	   {
-	    if (inbuf[j] == 15)
-	     {
+	  unsigned int t;
+	  for (j=0, b=0; j < (unsigned int)r; j++) {
+	    if (inbuf[j] == 15) {
 	      while (!stralloc_readyplus(&d[i].output,j-b)) sleep(10); /*XXX*/
 	      byte_copy(d[i].output.s + d[i].output.len,j-b,inbuf+b);
 	      d[i].output.len += j-b;
 	      LOGON(i);
 	      b = j+1;
-	     }
-	    else if ( inbuf[j] == 16 )
-	     {
+	    } else if ( inbuf[j] == 16 ) {
 	      while (!stralloc_readyplus(&d[i].log,j-b)) sleep(10); /*XXX*/
 	      byte_copy(d[i].log.s + d[i].log.len,j-b,inbuf+b);
 	      d[i].log.len += j-b;
 	      b = j+1;
 	      LOGOFF(i);
 	      if (truncreport > 100)
-		if (d[i].log.len > truncreport)
-		 {
+		if (d[i].log.len > truncreport) {
 		  const char *truncmess = "\nError report too long, sorry.\n";
 		  d[i].log.len = truncreport - str_len(truncmess) - 3;
 		  stralloc_cats(&d[i].log,truncmess);
-		 }
+		}
 	      ch = i; substdio_put(&ssout,&ch,1);
 	      ch = i >> 8; substdio_put(&ssout,&ch,1);
 	      ch = 'L'; substdio_put(&ssout,&ch,1);
@@ -320,9 +315,9 @@ char **argv;
 	      substdio_put(&ssout,"",1);
 	      substdio_flush(&ssout);
 	      d[i].log.len = 0;
-	     }
-	   }
-	  if (b == r) continue;
+	    }
+	  }
+	  if (b == (unsigned int)r) continue;
 	  if ( IS_LOG(i) )
 	   {
 	    while (!stralloc_readyplus(&d[i].log,r-b)) sleep(10); /*XXX*/

@@ -5,7 +5,7 @@ struct token822
  {
   int type;
   const char *s;
-  int slen;
+  unsigned int slen;
  }
 ;
 

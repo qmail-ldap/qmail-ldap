@@ -16,7 +16,7 @@ int main(argc,argv)
 int argc;
 char **argv;
 {
- int j;
+ unsigned int j;
 
  if (!argv[1]) _exit(100);
 

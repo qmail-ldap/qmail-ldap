@@ -16,10 +16,10 @@ const char *prefix1;
 const char *prefix2;
 const char *prefix3;
 const char *file;
-int type;
+unsigned int type;
 int uid;
 int gid;
-int mode;
+unsigned int mode;
 {
   struct stat st;
 
@@ -31,9 +31,9 @@ int mode;
     return;
   }
 
-  if ((uid != -1) && (st.st_uid != uid))
+  if ((uid != -1) && (st.st_uid != (unsigned int)uid))
     strerr_warn6(WARNING,prefix1,prefix2,prefix3,file," has wrong owner",0);
-  if ((gid != -1) && (st.st_gid != gid))
+  if ((gid != -1) && (st.st_gid != (unsigned int)gid))
     strerr_warn6(WARNING,prefix1,prefix2,prefix3,file," has wrong group",0);
   if ((st.st_mode & 07777) != mode)
     strerr_warn6(WARNING,prefix1,prefix2,prefix3,file," has wrong permissions",0);

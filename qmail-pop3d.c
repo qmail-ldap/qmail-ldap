@@ -321,7 +321,7 @@ void pop3_dele(char *arg)
 
   logit(4, "comm: dele: "); logitf(4, arg);
   i = msgno(arg);
-  if (i == -1) return;
+  if (i == (unsigned int)-1) return;
   m[i].flagdeleted = 1;
   if (i + 1 > last) last = i + 1;
   okay();
@@ -341,7 +341,7 @@ void dolisting(char *arg, int flaguidl)
   unsigned int i;
   if (*arg) {
     i = msgno(arg);
-    if (i == -1) return;
+    if (i == (unsigned int)-1) return;
     putstr("+OK ");
     list(i,flaguidl);
   }
@@ -373,7 +373,7 @@ void pop3_top(char *arg)
  
   logit(4, "comm: retr/top: "); logitf(4, arg);
   i = msgno(arg);
-  if (i == -1) return;
+  if (i == (unsigned int)-1) return;
  
   arg += scan_ulong(arg,&limit);
   while (*arg == ' ') ++arg;

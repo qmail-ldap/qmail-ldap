@@ -64,9 +64,9 @@ static char **auth_argv;
 void
 auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 {
-	char	*l, *p;
-	int	uplen;
-	int	i, opt;
+	char		*l, *p;
+	unsigned int	uplen, u;
+	int		n, opt;
 
 	while ((opt = getopt(argc, argv, "d:")) != opteof) {
 		switch (opt) {
@@ -87,27 +87,27 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	
 	for (uplen = 0;;) {
 		do {
-			i = subread(3, auth_up + uplen,
+			n = subread(3, auth_up + uplen,
 			    sizeof(auth_up) - uplen);
-		} while (i == -1 && errno == EINTR);
-		if (i == -1)
+		} while (n == -1 && errno == EINTR);
+		if (n == -1)
 			auth_error(ERRNO);
-		if (i == 0) break;
-		uplen += i;
+		if (n == 0) break;
+		uplen += n;
 		if (uplen >= sizeof(auth_up))
 			auth_error(PANIC);
 	}
 	close(3);
 	auth_up[uplen++] = '\0';
 	
-	i = 0;
+	u = 0;
 	l = auth_up;
-	while (auth_up[i++]) ;
-	if (i == uplen)
+	while (auth_up[u++]) ;
+	if (u == uplen)
 		auth_error(NEEDED);
-	p = auth_up + i;
-	while (auth_up[i++]) ;
-	if (i == uplen)
+	p = auth_up + u;
+	while (auth_up[u++]) ;
+	if (u == uplen)
 		auth_error(NEEDED);
 
 	if (!stralloc_copys(login, l))

@@ -76,7 +76,7 @@ static stralloc line = {0};
 #define REPLY_SUBJ "Your Mail"
 #endif
 
-static unsigned int
+static int
 magicsubject(stralloc *l, stralloc *h, stralloc *s)
 {
 	unsigned int i, j;

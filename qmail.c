@@ -146,7 +146,7 @@ struct qmail *qq;
   if (!qq->flagerr) if (substdio_flush(&qq->ss) == -1) qq->flagerr = 1;
   close(qq->fde);
 
-  if (wait_pid(&wstat,qq->pid) != qq->pid)
+  if ((unsigned long)wait_pid(&wstat,qq->pid) != qq->pid)
     return "Zqq waitpid surprise (#4.3.0)";
   if (wait_crashed(wstat))
     return "Zqq crashed (#4.3.0)";

@@ -73,9 +73,9 @@ static char **auth_argv;
 void
 auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 {
-	char	*a, *s, *t, *l, *p;
-	int	waitstat;
-	int	i, opt;
+	char		*a, *s, *t, *l, *p;
+	int		 waitstat, opt, n;
+	unsigned int	 u;
 
 	while ((opt = getopt(argc, argv, "d:")) != opteof) {
 		switch (opt) {
@@ -111,13 +111,13 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 #endif
 	for (auth_uplen = 0;;) {
 		do {
-			i = read(3, auth_up + auth_uplen,
+			n = read(3, auth_up + auth_uplen,
 			    sizeof(auth_up) - auth_uplen);
-		} while ((i == -1) && (errno == EINTR));
-		if (i == -1)
+		} while ((n == -1) && (errno == EINTR));
+		if (n == -1)
 			auth_error(ERRNO);
-		if (i == 0) break;
-		auth_uplen += i;
+		if (n == 0) break;
+		auth_uplen += n;
 		if (auth_uplen >= sizeof(auth_up)) {
 			auth_error(PANIC);
 		}
@@ -128,17 +128,17 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	/*
 	 * get the different fields: service<NL>AUTHTYPE<NL>AUTHDATA
 	 */
-	i = 0;
+	u = 0;
 	s = auth_up; /* ignore service field */
-	while (auth_up[i] && auth_up[i] != '\n' ) i++;
-	if (i >= auth_uplen)
+	while (auth_up[u] && auth_up[u] != '\n' ) u++;
+	if (u >= auth_uplen)
 		auth_error(NEEDED);
-	auth_up[i++] = '\0';
-	t = auth_up + i; /* type has to be "login" else fail ... */
-	while (auth_up[i] && auth_up[i] != '\n' ) i++;
-	if (i >= auth_uplen)
+	auth_up[u++] = '\0';
+	t = auth_up + u; /* type has to be "login" else fail ... */
+	while (auth_up[u] && auth_up[u] != '\n' ) u++;
+	if (u >= auth_uplen)
 		auth_error(NEEDED);
-	auth_up[i++] = '\0';
+	auth_up[u++] = '\0';
 	if (str_diff("login", t)) {
 		/* 
 		 * this modul supports only "login"-type,
@@ -147,17 +147,17 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 		 */
 		auth_fail("unknown", AUTH_TYPE);
 	}
-	l = auth_up + i; /* next login */
-	while (auth_up[i] && auth_up[i] != '\n' ) i++;
-	if (i >= auth_uplen)
+	l = auth_up + u; /* next login */
+	while (auth_up[u] && auth_up[u] != '\n' ) u++;
+	if (u >= auth_uplen)
 		auth_error(NEEDED);
-	auth_up[i++] = '\0';
-	p = auth_up + i; /* and the password */
-	while (auth_up[i] && auth_up[i] != '\n' ) i++;
-	if (i >= auth_uplen)
+	auth_up[u++] = '\0';
+	p = auth_up + u; /* and the password */
+	while (auth_up[u] && auth_up[u] != '\n' ) u++;
+	if (u >= auth_uplen)
 		auth_error(NEEDED);
-	auth_up[i++] = '\0';
-	if (i > auth_uplen) /* paranoia */
+	auth_up[u++] = '\0';
+	if (u > auth_uplen) /* paranoia */
 		auth_error(NEEDED);
 
 	/* copy the login and password into the coresponding structures */
@@ -175,17 +175,18 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 void
 auth_fail(const char *login, int reason)
 {
-	int i;
-	int pi[2];
-	char *t;
-	t = auth_up;
+	unsigned int	 i;
+	int		 pi[2], n;
+	char		*t = auth_up;
 	
 	logit(2, "warning: auth_fail: user %s failed\n", login);
 	if (reason == NOSUCH || reason == AUTH_TYPE) {
 		logit(4, "warning: auth_fail: %s\n", qldap_err_str(reason));
 		if (!env_unset("AUTHENTICATED"))
 			auth_error(ERRNO);
-		for (i=0; i<auth_uplen; i++) if (!auth_up[i]) auth_up[i] = '\n';
+		for (i=0; i < auth_uplen; i++)
+			if (!auth_up[i])
+				auth_up[i] = '\n';
 		close(3);
 		if (pipe(pi) == -1)
 			auth_error(ERRNO);
@@ -206,13 +207,13 @@ auth_fail(const char *login, int reason)
 		/* child process */
 		close(pi[0]);
 		while (auth_uplen) {
-			i = write(pi[1],t,auth_uplen);
-			if (i == -1) {
+			n = subwrite(pi[1],t,auth_uplen);
+			if (n == -1) {
 				if (errno == error_intr) continue;
 				/* note that some data may have been written */
 			}
-			t += i;
-			auth_uplen -= i;
+			t += n;
+			auth_uplen -= n;
 		}
 		byte_zero(auth_up, sizeof(auth_up));
 		close(pi[1]);

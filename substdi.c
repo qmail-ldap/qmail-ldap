@@ -55,10 +55,11 @@ register substdio *s;
 register char *buf;
 register unsigned int len;
 {
-  register int r;
+  unsigned int u;
+  int r;
  
   if (s->p > 0) return getthis(s,buf,len);
-  r = s->n; if (r <= len) return oneread(s->op,s->fd,buf,r);
+  u = s->n; if (u <= len) return oneread(s->op,s->fd,buf,u);
   r = substdio_feed(s); if (r <= 0) return r;
   return getthis(s,buf,len);
 }

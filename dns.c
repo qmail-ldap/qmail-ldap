@@ -299,7 +299,7 @@ int spref;
  int r;
  struct ip_mx ix;
 #ifdef FUCKVERISIGN
- int j;
+ unsigned int j;
  struct ip_mx tldix;
 #endif
 

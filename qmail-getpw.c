@@ -28,7 +28,7 @@ int userext()
 
   extension = local + str_len(local);
   for (;;) {
-    if (extension - local < sizeof(username))
+    if ((unsigned long)(extension - local) < sizeof(username))
       if (!*extension || (*extension == *auto_break)) {
 	byte_copy(username,extension - local,local);
 	username[extension - local] = 0;

@@ -54,7 +54,7 @@ int flagcolon;
   if (cm->num < 0) return 0;
  
   h = 64;
-  while (h && (h < cm->num)) h += h;
+  while (h && (h < cm->num)) h += h; /* XXX why is num an int */
   cm->mask = h - 1;
  
   cm->first = (int *) alloc(sizeof(int) * h);

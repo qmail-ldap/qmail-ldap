@@ -22,7 +22,7 @@ ipalloc ipme = {0};
 int ipme_is(ip)
 struct ip_address *ip;
 {
-  int i;
+  unsigned int i;
   if (ipme_init() != 1) return -1;
   for (i = 0;i < ipme.len;++i)
     if (byte_equal(&ipme.ix[i].ip,4,ip))
@@ -38,7 +38,7 @@ int ipme_init()
   char *x;
   struct ifreq *ifr;
   struct sockaddr_in *s_in;
-  int len;
+  unsigned int len;
   int s;
   struct ip_mx ix;
  

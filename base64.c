@@ -127,7 +127,7 @@ b64_ntop(unsigned char const *src, size_t srclength,
 	size_t datalength = 0;
 	unsigned char input[3];
 	unsigned char output[4];
-	int i;
+	size_t i;
 
 	while (2 < srclength) {
 		input[0] = *src++;

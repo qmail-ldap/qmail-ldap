@@ -314,7 +314,7 @@ char *fn;
 
  /* quota handling mbox */
  struct stat filest, mailst;
- long totalsize;
+ unsigned long totalsize;
  quota_t q;
 
  if( quotastring && *quotastring ) {
@@ -328,11 +328,11 @@ char *fn;
    if (fstat(0, &mailst) != 0)
      strerr_die3x(111,"Unable to quota mail: ",error_str(errno), ". (#4.3.0)");
    
-   totalsize = (long) filest.st_size + (long) mailst.st_size;
-   if ( totalsize*100/q.quota_size >= QUOTA_WARNING_LEVEL)
+   totalsize = (unsigned long) filest.st_size + (unsigned long) mailst.st_size;
+   if (totalsize * 100 / q.quota_size >= QUOTA_WARNING_LEVEL)
      /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
-   if ( totalsize > q.quota_size )
+   if (totalsize > q.quota_size)
      quota_bounce("mailbox");
  }
  
@@ -549,7 +549,7 @@ void qmesearch(fd,cutable)
 int *fd;
 int *cutable;
 {
-  int i;
+  unsigned int i;
 
   if (!stralloc_copys(&qme,".qmail")) temp_nomem();
   if (!stralloc_cats(&qme,dash)) temp_nomem();

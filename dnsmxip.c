@@ -20,7 +20,7 @@ int main(argc,argv)
 int argc;
 char **argv;
 {
- int j;
+ unsigned int j;
  unsigned long r;
 
  if (!argv[1]) _exit(100);

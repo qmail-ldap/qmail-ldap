@@ -109,7 +109,7 @@ int main()
 	}
        else
 	{
-	 int i;
+	 unsigned int i;
          if (!stralloc_ready(&ufline,line.len)) die_nomem();
          if (!stralloc_copys(&ufline,"From ")) die_nomem();
 	 for (i = 14;i < line.len - 2;++i)

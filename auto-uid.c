@@ -41,7 +41,7 @@ char **argv;
 
   strnum[fmt_ulong(strnum,(unsigned long) pw->pw_uid)] = 0;
 
-  outs("int ");
+  outs("unsigned int ");
   outs(name);
   outs(" = ");
   outs(strnum);

@@ -1240,7 +1240,7 @@ int saferead(int fd,void *buf,int len)
 	flush();
 	die_read();
       }
-      if (stream.avail_out == len) continue;
+      if (stream.avail_out == (unsigned int)len) continue;
       return len - stream.avail_out;
     } while (1);
   }

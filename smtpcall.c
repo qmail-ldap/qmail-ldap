@@ -194,7 +194,7 @@ call_close(struct call *cc)
 	int r;
 	char ch;
 	
-	if (cc->pid == -1) return; /* nothing running */
+	if ((long)cc->pid == -1) return; /* nothing running */
 	call_flush(cc);
 	close(cc->tofd);
 	while ((r = call_getc(cc, &ch)) == 1) ;
@@ -213,7 +213,7 @@ auth_close(struct call *cc, stralloc *user, const char *pre)
 	char c;
 
 	s = 0; c = 0;
-	if (cc->pid == -1)
+	if ((long)cc->pid == -1)
 		return "454 unable to start authentication process. "
 		    "(#4.3.0)\r\n";
 	
@@ -259,7 +259,7 @@ auth_close(struct call *cc, stralloc *user, const char *pre)
 	close(cc->tofd);
 	close(cc->fromfd);
       
-	if (wait_pid(&wstat,cc->pid) != cc->pid)
+	if ((unsigned long)wait_pid(&wstat,cc->pid) != cc->pid)
 		return "454 authentication waitpid surprise (#4.3.0)\r\n";
 	if (wait_crashed(wstat))
 		return "454 authentication process crashed (#4.3.0)\r\n";
