@@ -7,7 +7,7 @@ This patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/04/24 07:25:52 $)
+RELEASE: current ($Date: 2002/05/24 09:39:08 $)
 
 EXTTODO:
 ======================
@@ -33,7 +33,7 @@ WHAT DOES IT DO
  qmail with a big local and remote concurrency could deliver a tremendous 
  amount of messages but normally this can not be achieved because qmail-send
  becomes a bottleneck on those high volumes servers.
- qmail-send  all new messages before distributing them for local
+ qmail-send preprocesses all new messages before distributing them for local
  or remote delivering. In one run qmail-send does one todo run but has the 
  ability to close multiple jobs. Because of this layout qmail-send can not 
  feed all the new available (local/remote) delivery slots and therefor it is 
