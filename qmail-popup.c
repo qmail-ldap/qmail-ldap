@@ -62,6 +62,26 @@ void die_fork() { err("unable to fork"); die(); }
 void die_childcrashed() { err("aack, child crashed"); }
 void die_badauth() { err("authorization failed"); }
 
+/* checkpassword error exit codes:
+ * 1 = error in server configuration
+ * 2 = unable to contact authorization server
+ * 25= user record incorrect
+ * 3 = authorization failed
+ * 4 = account disabled
+ * 5 = mailhost is unreachable
+ * 6 = mailbox is corrupted
+ * 7 = unable to start pop daemon
+ */
+
+void die_1() { err("error in server configuration"); die(); }
+void die_2() { err("unable to contact authorization server"); die(); }
+void die_25() { err("user record incorrect"); die(); }
+void die_3() { err("authorization failed"); die(); }
+void die_4() { err("account disabled"); die(); }
+void die_5() { err("mailhost is unreachable"); die(); }
+void die_6() { err("mailbox is corrupted"); die(); }
+void die_7() { err("unable to start pop daemon"); die(); }
+
 void err_syntax() { err("syntax error"); }
 void err_wantuser() { err("USER first"); }
 void err_authoriz() { err("authorization first"); }
@@ -115,7 +135,17 @@ char *pass;
   byte_zero(upbuf,sizeof upbuf);
   if (wait_pid(&wstat,child) == -1) die();
   if (wait_crashed(wstat)) die_childcrashed();
-  if (wait_exitcode(wstat)) die_badauth();
+  switch (wait_exitcode(wstat)) {
+    case 1: die_1();
+    case 2: die_2();
+    case 25: die_25();
+    case 3: die_3();
+    case 4: die_4();
+    case 5: die_5();
+    case 6: die_6();
+    case 7: die_7();
+    default: die_badauth();
+  }
   die();
 }
 void pop3_greet()

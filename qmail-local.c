@@ -318,7 +318,7 @@ char *fn;
    case 3: strerr_die1x(111,"Timeout on maildir delivery. (#4.3.0)");
    case 4: strerr_die1x(111,"Unable to read message. (#4.3.0)");
 #ifdef AUTOMAILDIRMAKE
-	case 5: strerr_die1x(111,"Temporary error on maildir creation. (LDAP-ERR #2.5.1)");
+   case 5: strerr_die1x(111,"Temporary error on maildir creation. (LDAP-ERR #2.5.1)");
    case 6: strerr_die3x(111,"Unable to create maildir '", fn, "' (LDAP-ERR #2.5.2)");
    case 7: strerr_die3x(111,"The maildir '", fn, "' seems to be corrupted. (LDAP-ERR #2.5.3)");
 #endif
