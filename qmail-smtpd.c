@@ -22,22 +22,20 @@
 #include "exit.h"
 #include "rcpthosts.h"
 #include "rbl.h"
-#ifndef TLS_SMTPD
 #include "timeoutread.h"
 #include "timeoutwrite.h"
-#endif
 #include "commands.h"
 #include "dns.h"
+#ifdef SMTPEXECCHECK
+#include "execcheck.h"
+#endif
 #ifdef TLS_SMTPD
 #include <openssl/ssl.h>
 SSL *ssl = NULL;
-stralloc clientcert = {0};
 #endif
 #ifdef DATA_COMPRESS
+/* zlib needs to be after openssl includes or build will fail */
 #include <zlib.h>
-#endif
-#ifdef SMTPEXECCHECK
-#include "execcheck.h"
 #endif
 
 #define MAXHOPS 100
@@ -148,9 +146,6 @@ void err_bmfunknown() { out("553 sorry, your mail from a host without RR DNS was
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
 void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
-#ifdef TLS_SMTPD
-void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
-#endif
 void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command: "); logstring(3,arg); logflush(3); }
 void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because: 'SMTP SIZE' too big"); }
 void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
@@ -603,7 +598,7 @@ void smtp_ehlo(arg) char *arg;
   out("250-DATAZ\r\n");
 #endif
 #ifdef TLS_SMTPD
-  if (ssl)
+  if (!ssl)
     out("250-STARTTLS\r\n");
 #endif
   out("250 8BITMIME\r\n");
@@ -818,71 +813,14 @@ void smtp_rcpt(arg) char *arg; {
     if (!stralloc_cats(&addr,relayclient)) die_nomem();
     if (!stralloc_0(&addr)) die_nomem();
   } else {
-#ifndef TLS_SMTPD
     if (!addrallowed())
     { 
       err_nogateway(); 
-      logpid(2); logstring(2,"no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
+      logpid(2); logstring(2,"no mail relay for 'rcpt to': ");
+      logstring(2,arg); logflush(2);
       if (errdisconnect) err_quit();
       return; 
     }
-#else
-    if (!addrallowed())
-    {
-      if (ssl)
-      {
-        STACK_OF(X509_NAME) *sk;
-        X509 *peercert;
-        stralloc tlsclients = {0};
-        struct constmap maptlsclients;
-
-        SSL_set_verify(ssl, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE, NULL);
-        if ((sk = SSL_load_client_CA_file("control/clientca.pem")) == NULL)
-        {
-           err_nogateway();
-           logpid(2); logstring(2,"unable to read ~control/clientca.pem, no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
-           return;
-        }
-        SSL_set_client_CA_list(ssl, sk);
-        if((control_readfile(&tlsclients,"control/tlsclients",0) != 1) ||
-           !constmap_init(&maptlsclients,tlsclients.s,tlsclients.len,0))
-        {
-           err_nogateway();
-           logpid(2); logstring(2,"unable to read or process ~control/tlsclients, no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
-           return;
-        }
-
-        SSL_renegotiate(ssl);
-        SSL_do_handshake(ssl);
-        ssl->state = SSL_ST_ACCEPT;
-        SSL_do_handshake(ssl);
-        if ((SSL_get_verify_result(ssl) == X509_V_OK) &&
-             (peercert = SSL_get_peer_certificate(ssl)))
-        {
-           if (!constmap(&maptlsclients,clientcert.s,clientcert.len))
-           {
-              err_nogwcert();
-              logpid(2); logstring(2,"client cert no found, no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
-              return;
-           }
-           relayclient = 0;
-        }
-        else
-        {
-           err_nogwcert();
-           logpid(2); logstring(2,"either not X509 or no certificate presented, no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
-           return;
-        }
-      }
-      else
-      {
-        err_nogateway();
-        logpid(2); logstring(2,"no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
-        return;
-      }
-    }
-#endif
-
   } /* else from if relayclient */
   ++rcptcount;
   if (maxrcptcount && rcptcount > maxrcptcount)
@@ -1152,10 +1090,6 @@ void smtp_data() {
     else
 #endif
     if (!stralloc_cats(&protocolinfo, " encrypted SMTP")) die_nomem();
-    if (clientcert.len) {
-      if (!stralloc_cats(&protocolinfo," cert ")) die_nomem();
-      if (!stralloc_cat(&protocolinfo,&clientcert)) die_nomem();
-    }
   } else {
 #ifdef DATA_COMPRESS
     if (wantcomp) { if (!stralloc_copys(&protocolinfo,"compressed SMTP")) die_nomem(); }
@@ -1277,7 +1211,6 @@ void smtp_tls(arg) char *arg;
     return;
   }
   SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_cb);
-  SSL_CTX_load_verify_locations(ctx, "control/clientca.pem",NULL);
  
   out("220 ready for tls\r\n"); flush();
 
