@@ -385,7 +385,7 @@ compile checkpassword.c qmail-ldap.h stralloc.h auth_mod.h qldap-ldaplib.h \
 qldap-errno.h readwrite.h error.h str.h open.h substdio.h getln.h select.h \
 compatibility.h digest_md4.h digest_md5.h digest_rmd160.h digest_sha1.h dns.h \
 ipalloc.h timeoutconn.h byte.h scan.h fmt.h alloc.h qldap-debug.h
-	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(PWOPTS) $(QLDAPBIND) \
+	./compile $(LDAPFLAGS) ${TLSON} $(SHADOWOPTS) $(PWOPTS) $(QLDAPBIND) \
 	$(DEBUG) $(LDAPINCLUDES) checkpassword.c
 
 chkshsgr: \
@@ -535,7 +535,7 @@ alloc.a error.a fs.a str.a
 dns.o: \
 compile dns.c ip.h ipalloc.h ip.h gen_alloc.h fmt.h alloc.h str.h \
 stralloc.h gen_alloc.h dns.h case.h
-	./compile dns.c
+	./compile ${TLSON} dns.c
 
 dnscname: \
 load dnscname.o dns.o dnsdoe.o ip.o ipalloc.o stralloc.a alloc.a \
@@ -563,7 +563,7 @@ substdio.a error.a str.a fs.a dns.lib socket.lib
 dnsfq.o: \
 compile dnsfq.c substdio.h subfd.h substdio.h stralloc.h gen_alloc.h \
 dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h exit.h
-	./compile dnsfq.c
+	./compile ${TLSON} dnsfq.c
 
 dnsip: \
 load dnsip.o dns.o dnsdoe.o ip.o ipalloc.o stralloc.a alloc.a \
@@ -575,7 +575,7 @@ substdio.a error.a str.a fs.a dns.lib socket.lib
 dnsip.o: \
 compile dnsip.c substdio.h subfd.h substdio.h stralloc.h gen_alloc.h \
 dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h exit.h
-	./compile dnsip.c
+	./compile ${TLSON} dnsip.c
 
 dnsmxip: \
 load dnsmxip.o dns.o dnsdoe.o ip.o ipalloc.o now.o stralloc.a alloc.a \
@@ -588,7 +588,7 @@ dnsmxip.o: \
 compile dnsmxip.c substdio.h subfd.h substdio.h stralloc.h \
 gen_alloc.h fmt.h dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h \
 now.h datetime.h exit.h
-	./compile dnsmxip.c
+	./compile ${TLSON} dnsmxip.c
 
 dnsptr: \
 load dnsptr.o dns.o dnsdoe.o ip.o ipalloc.o stralloc.a alloc.a \
@@ -918,12 +918,12 @@ compile ip.c fmt.h scan.h ip.h
 ipalloc.o: \
 compile ipalloc.c alloc.h gen_allocdefs.h ip.h ipalloc.h ip.h \
 gen_alloc.h
-	./compile ipalloc.c
+	./compile ${TLSON} ipalloc.c
 
 ipme.o: \
 compile ipme.c hassalen.h byte.h ip.h ipalloc.h ip.h gen_alloc.h \
 stralloc.h gen_alloc.h ipme.h ip.h ipalloc.h
-	./compile ipme.c
+	./compile ${TLSON} ipme.c
 
 ipmeprint: \
 load ipmeprint.o ipme.o ip.o ipalloc.o stralloc.a alloc.a substdio.a \
@@ -934,7 +934,7 @@ error.a str.a fs.a socket.lib
 ipmeprint.o: \
 compile ipmeprint.c subfd.h substdio.h substdio.h ip.h ipme.h ip.h \
 ipalloc.h ip.h gen_alloc.h exit.h
-	./compile ipmeprint.c
+	./compile ${TLSON} ipmeprint.c
 
 it: \
 qmail-local qmail-lspawn qmail-getpw qmail-remote qmail-rspawn \
