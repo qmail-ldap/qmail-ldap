@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/08/31 15:08:44 $)
+RELEASE: current ($Date: 2003/08/31 15:19:21 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -80,6 +80,8 @@ INSTALL:
                 variable QMAILQUEUE. Also known as qmailqueue patch.
                -DDATA_COMPRESS to enable smtp on the fly data compression.
                 It is needed to set ZLIB accordingly.
+               -DQMQP_COMPRESS to enable QMQP on the fly data compression.
+                Can be used in clusters. It is needed to set ZLIB accordingly.
                -DSMTPEXECCHECK to enable Russell Nelsons antivirus patch
 	        for qmail-smtpd. To turn it on set the REJECTEXEC env-var.
      NOTE: at the moment -DLDAP_ESCAPE_BUG is not defined, this should be
@@ -96,8 +98,9 @@ INSTALL:
      NOTE: if you need this you may run into shared library problems
            see http://www.lifewithqmail.org/ldap/.
 
-   - ZLIB is used when DATA_COMPRESS is defined. Normaly -lz should work,
-     if libz is installed in a different location use -L/path/to/zlibdir -lz
+   - ZLIB is used when DATA_COMPRESS and QMAP_COMPRESS is defined. Normaly
+     -lz should work, if libz is installed in a different location use
+     -L/path/to/zlibdir -lz
    - MNW=-DMAKE_NETSCAPE_WORK (turns on the patch that fixes the problem 
      with the Netscape download progress bar and qmail-pop3d)
 

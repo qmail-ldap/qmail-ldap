@@ -14,8 +14,9 @@
 # from a specified account to another (swiss bigbrother law)
 # -DALTQUEUE to use a diffrent qmail-queue programm on runtime
 # -DDATA_COMPRESS to use the smtp on the fly DATA compression 
+# -DQMQP_COMPRESS to use the QMQP on the fly compression (for clusters)
 # -DSMTPEXECCHECK to enable smtp DOS/Windows executable detection
-#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT -DDATA_COMPRESS
+#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT -DDATA_COMPRESS -DQMQP_COMPRESS
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
@@ -28,7 +29,7 @@ LDAPINCLUDES=-I/usr/local/include
 # if you need a special include-directory for ldap headers enable this
 #LDAPINCLUDES=-I/opt/OpenLDAP/include
 
-# ZLIB needed for -DDATA_COMPRESS
+# ZLIB needed for -DDATA_COMPRESS and -DQMQP_COMPRESS
 #ZLIB=-lz
 # of you installed zlib in a different path you can use something like this
 #ZLIB=-L/opt/zlib/lib -lz

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/08/31 15:08:44 $ ($Revision: 1.109 $)
+RELEASE: $Date: 2003/08/31 15:19:21 $ ($Revision: 1.110 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -94,7 +94,7 @@ NEWS for current stuff:
 
  compile time option to enable ZLIB compression for QMQP cluster communication.
  this is useful when cluster hosts are in different locations and have slow
- or metered connections between them. Enable in Makefile with -DQMQPZ.
+ or metered connections between them. Enable in Makefile with -DQMQP_COMPRESSION.
 
  major cleanup, actually a huge cleanup, currently over 75 modified or added
  files.
