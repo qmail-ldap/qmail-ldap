@@ -87,6 +87,7 @@ main(int argc, char **argv)
 	/* filter out loops as soon as poosible */
 	bouncefx();
 	
+	flagc = flags = flagm = 0;
 	qlc = ldapgroup(dname, &flagc, &flags, &flagm);
 	/* need to distinguish between new messages and responses */
 
@@ -164,7 +165,7 @@ init(void)
 		if (!stralloc_copys(&base, local)) temp_nomem();
 	}
 	if (!stralloc_copys(&dtline, "Delivered-To: ")) temp_nomem();
-	if (!stralloc_cat(&dtline, base)) temp_nomem();
+	if (!stralloc_cat(&dtline, &base)) temp_nomem();
 	if (!stralloc_cats(&dtline, "@")) temp_nomem();
 	if (!stralloc_cats(&dtline, host)) temp_nomem();
 	for (i = 0; i < dtline.len; ++i)
@@ -218,7 +219,7 @@ blast(void)
 	if (qmail_open(&qqt) == -1) temp_fork();
 	qp = qmail_qp(&qqt);
 	/* mail header */
-	qmail_put(qqt, dtline.s, dtline.len);
+	qmail_put(&qqt, dtline.s, dtline.len);
 	qmail_puts(&qqt,"Precedence: bulk\n");
 	do {
 		if (getln(&ss, &line, &match, '\n') != 0) {
@@ -228,9 +229,9 @@ blast(void)
 		qmail_put(&qqt, line.s, line.len);
 	} while (match);
 
-	if (!stralloc_copy(&line,&local)) temp_nomem();
+	if (!stralloc_copys(&line,local)) temp_nomem();
 	if (!stralloc_cats(&line,"-return-@")) temp_nomem();
-	if (!stralloc_cat(&line,&host)) temp_nomem();
+	if (!stralloc_cats(&line,host)) temp_nomem();
 	if (!stralloc_cats(&line,"-@[]")) temp_nomem();
 	if (!stralloc_0(&line)) temp_nomem();
 	qmail_from(&qqt, line.s);
@@ -386,7 +387,7 @@ getmoderators(qldap *q)
 	int r;
 	
 	nummoderators = 0; sq = 0;
-	if (!stralloc_copys(&nummoderators, "")) { r = ERRNO; goto fail; }
+	if (!stralloc_copys(&moderators, "")) { r = ERRNO; goto fail; }
 
 	extract_addrs822(q, LDAP_GROUPMODERAT822,
 	    &moderators, &nummoderators);
@@ -434,7 +435,7 @@ explode(qldap *q)
 	r = qldap_bind(sq, grouplogin.s, grouppassword.s);
 	if (r != OK) goto fail;
 
-	extract_addrsdn(q, sq, LDAP_GROUPMEMBER822, &recips, 0);
+	extract_addrsdn(q, sq, LDAP_GROUPMEMBERDN, &recips, 0);
 	extract_addrsfilter(q, sq, LDAP_GROUPMEMBERFILTER, &recips, 0);
 	
 	qldap_free(sq);
