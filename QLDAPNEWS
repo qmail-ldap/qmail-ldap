@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/08/29 12:10:45 $ ($Revision: 1.64 $)
+RELEASE: $Date: 2002/08/30 14:57:25 $ ($Revision: 1.65 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,9 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Fixed bugs in pbscheck and pbsadd which caused unexpected behaviour if
+ multiple servers where specified.
 
  Fixed multiple bugs in maildir++ quota handling.
    bug in read5120(), if open failed it could cause a loop.
