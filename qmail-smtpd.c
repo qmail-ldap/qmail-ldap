@@ -140,7 +140,7 @@ void logflush(int level)
 
 void cleanup(void);
 
-void die_read(void) { logline(1,"read error, connection closed"); cleanup(); _exit(1); }
+void die_read(void) { logline(1,"read error or connection closed"); cleanup(); _exit(1); }
 void die_write(void) { logline(1,"write error, connection closed"); cleanup(); _exit(1); }
 void die_alarm(void) { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); cleanup(); _exit(1); }
 void die_nomem(void) { out("421 out of memory (#4.3.0)\r\n"); logline(1,"out of memory, closing connection"); flush(); cleanup(); _exit(1); }
@@ -1413,8 +1413,8 @@ void smtp_data(char *arg) {
   }
 #ifdef SMTPEXECCHECK
   if (execcheck_flag()) {
-    out("552 we don't accept email with executable content (#5.3.4)\r\n");
-    logline(2,"windows executable detected");
+    out("552 we don't accept email with this MIME content (#5.3.4)\r\n");
+    logline(2,"bad MIME attachement detected");
     if (errdisconnect) err_quit();
     return;
   }
