@@ -189,7 +189,7 @@ char *dir;
 
 #ifdef QLDAP /* quota handling maildir */
 
-void quota_bounce(void) { strerr_die1x(100, "The users mailbox has overdrawn the quota."); }
+void quota_bounce(void) { strerr_die1x(100, "The users mailbox is over the allowed quota (size)."); }
 
 void quota_warning(char *fn)
 {
@@ -212,7 +212,7 @@ void quota_warning(char *fn)
      args[0] = foo.s; args[1] = fn; args[2] = 0;
      sig_pipedefault();
      execv(*args,args);
-     strerr_die5x(111,"Unable to run ", foo.s, ": ",error_str(errno),". (#4.3.0)");
+     strerr_die5x(111,"Unable to run quotawarn program: ", foo.s, ": ",error_str(errno),". (LDAP-ERR #2.3.0)");
   }
 
  wait_pid(&wstat,child);
@@ -271,7 +271,7 @@ char *fn;
 
  if(g_quota != 0 ) {
    if (fstat(0, &mailst) != 0)
-       strerr_die5x(111,"Unable to quota ", "mail", ": ",error_str(errno),". (LDAP-ERR #2.4.1)");
+       strerr_die5x(111,"Unable to open for quota ", "mail", ": ",error_str(errno),". (LDAP-ERR #2.4.1)");
 
    if (!stralloc_copys(&dir,fn)) temp_nomem();
    if (!stralloc_cats(&dir,"cur/")) temp_nomem();
@@ -317,7 +317,7 @@ char *fn;
    case 3: strerr_die1x(111,"Timeout on maildir delivery. (#4.3.0)");
    case 4: strerr_die1x(111,"Unable to read message. (#4.3.0)");
 #ifdef AUTOMAILDIRMAKE
-   case 5: strerr_die1x(111,"Unable to make maildir. (LDAP-ERR #2.4.4)");
+   case 5: strerr_die1x(111,"Unable to make maildirs. (LDAP-ERR #2.4.4)");
 #endif
    default: strerr_die1x(111,"Temporary error on maildir delivery. (#4.3.0)");
   }
@@ -722,7 +722,7 @@ char **argv;
          dirargs[0] = s; dirargs[1] = homedir;
          dirargs[2] = aliasempty; dirargs[3] = 0;
          execv(*dirargs,dirargs);
-         strerr_die5x(111,"Unable to run ",s,": ",error_str(errno),". (LDAP-ERR #2.3.0)");
+         strerr_die5x(111,"Error while running automatic dirmaker:",s,": ",error_str(errno),". (LDAP-ERR #2.3.0)");
        }
 
        wait_pid(&wstat,child);
@@ -734,14 +734,14 @@ char **argv;
          strerr_die3x(111,s,": exited non zero",". (LDAP-ERR #2.3.0)");
        }
        if (chdir(homedir) == -1) 
-          strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
+          strerr_die5x(111,"Unable to switch to ",homedir," even after running dirmaker: ",error_str(errno),". (LDAP-ERR #2.3.0)");
      } else {
-       strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
+       strerr_die5x(111,"Unable to switch to ",homedir,", it does exist but is not accessable: ",error_str(errno),". (LDAP-ERR #2.3.0)");
      }
    }
 
  if (chdir(homedir) == -1)
-   strerr_die5x(111,"Even after homedircreation I'm unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
+   strerr_die5x(111,"Even after automatic dirmaking I'm unable to switch to ",homedir,": ",error_str(errno),". (LDAP-ERR #2.3.0)");
 #else
    strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
 #endif
@@ -845,7 +845,7 @@ char **argv;
    /* setting the quota */
    if ( s = env_get(ENV_QUOTA) ) {
       if (! scan_ulong(s, &g_quota) )
-         strerr_die3x(100,"AARRG: the quota is not a number, but: ",s,". (LDAP-ERR #2.0.1)");
+         strerr_die3x(100,"Format error: the quota is not a number: ",s,". (LDAP-ERR #2.0.1)");
       g_quota *= 1024; /* we need bytes not kbytes as quota */
       if (!flagdoit) sayit("quota in kB ",s,str_len(s) );
    } else {
@@ -881,7 +881,7 @@ char **argv;
          count_print();
          _exit(0); 
       } else {
-         strerr_die3x(100,"AARRG: Not expected dot-mode found: ",s,". (LDAP-ERR #2.0.2)");
+         strerr_die3x(100,"Error: No valid dot-mode found: ",s,". (LDAP-ERR #2.0.2)");
       }
    } else qmode = DO_DOT;  /* no qmailmode, so I use standard .qmail */
 	   
@@ -919,7 +919,7 @@ char **argv;
                sayit("replytext ",s,str_len(s));
              }
            } else {
-             strerr_warn1("AARRG: Reply mode is on but there is no reply text (ignored). (LDAP-ERR #2.1.1)", 0);
+             strerr_warn1("Error: Reply mode is on but there is no reply text (ignored). (LDAP-ERR #2.1.1)", 0);
            }
          }
        } else if ( !str_diff(MODE_ECHO, s) ) {
@@ -945,7 +945,7 @@ char **argv;
        } else if ( !str_diff(MODE_LDELIVERY, s) ) {
          if (!flagdoit) sayit("force local delivery ",s,0);
          localdelivery = 1;
-       } else strerr_warn1("AARRG: undefined mail mode (ignored). (LDAP-ERR #2.1.2)", 0);
+       } else strerr_warn1("Error: undefined mail mode (ignored). (LDAP-ERR #2.1.2)", 0);
        
        j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
@@ -1020,7 +1020,7 @@ char **argv;
 
 #ifdef QLDAP
  } else if (! qmode & DO_LDAP ) /* XXX: If non of DO_LDAP, DO-DOT */
-   strerr_die1x(100,"AARRG: No correct delivery mode selected. (LDAP-ERR #2.0.3)");
+   strerr_die1x(100,"Error: No valid delivery mode selected. (LDAP-ERR #2.0.3)");
 #endif
  if (!cmds.len)
   {
