@@ -12,7 +12,9 @@ TVoIARMAA
 TVouARsAA
 TVrQAT8AA
 # .ZIPfile signature seen in SoBig.E:
-UEsDBBQAA
+# This signature is to generic and blocks valid zip files so disable it.
+#UEsDBBQAA
+
 # .GIF file found in the current fake Microsoft patch virus making the rounds.
 R0lGODlhaAA7APcAAP///+rp6puSp6GZrDUjUUc6Zn53mFJMdbGvvVtXh2xre8bF1x8cU4yLprOy
 # .ZIPfile signature of MyDoom:
