@@ -27,17 +27,18 @@
 #define PORT_QMQP 628
 #endif
 
-void die_success() { _exit(0); }
-void die_perm() { _exit(31); }
-void nomem() { _exit(51); }
-void die_read() { if (errno == error_nomem) nomem(); _exit(54); }
-void die_control() { _exit(55); }
-void die_socket() { _exit(56); }
-void die_home() { _exit(61); }
-void die_temp() { _exit(71); }
-void die_conn() { _exit(74); }
-void die_format() { _exit(91); }
+void die_success(void) { _exit(0); }
+void die_perm(void) { _exit(31); }
+void nomem(void) { _exit(51); }
+void die_read(void) { if (errno == error_nomem) nomem(); _exit(54); }
+void die_control(void) { _exit(55); }
+void die_socket(void) { _exit(56); }
+void die_home(void) { _exit(61); }
+void die_temp(void) { _exit(71); }
+void die_conn(void) { _exit(74); }
+void die_format(void) { _exit(91); }
 
+int timeoutconnect = 60;
 int lasterror = 55;
 int qmqpfd;
 
@@ -183,7 +184,7 @@ char *server;
   qmqpfd = socket(AF_INET,SOCK_STREAM,0);
   if (qmqpfd == -1) die_socket();
 
-  if (timeoutconn(qmqpfd,&ip,&outip,PORT_QMQP,10) != 0) {
+  if (timeoutconn(qmqpfd,&ip,&outip,PORT_QMQP,timeoutconnect) != 0) {
     lasterror = 73;
     if (errno == error_timeout) lasterror = 72;
     close(qmqpfd);
@@ -248,6 +249,9 @@ char **argv;
     if (!stralloc_0(&servers)) nomem();
   } else
   if (control_readfile(&servers,"control/qmqpservers",0) != 1) die_control();
+
+  if (control_readint(&timeoutconnect,"control/timeoutconnect") == -1)
+    die_control();
 
   if (control_rldef(&outgoingip, "control/qmqpcip", 0, "0.0.0.0") == -1)
 	  die_control();
