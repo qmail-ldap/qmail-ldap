@@ -35,7 +35,7 @@ static void env_unsetlen(s,len) const char *s; unsigned int len;
  
  i = en;
  do {
-   i--;
+   --i;
    if (!str_diffn(s,environ[i],len))
      if (environ[i][len] == '=')
        env_goodbye(i);
