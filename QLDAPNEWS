@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/09/29 21:48:32 $ ($Revision: 1.44 $)
+RELEASE: $Date: 2001/10/09 19:23:43 $ ($Revision: 1.45 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,13 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Add a precedence bulk header when we forward a message to more than one
+ recipient. So auto-reply programs at the recipients will not answer such
+ mails. A message forwarded to more than one recipient is now considered
+ a mailing list email.
+
+NEWS for 20011001 stuff:
 
  added a variation of Henning Brauer's alternate mailhost patch.
  For more info: mailto:<qmail-ldap-get.5350@argus.pipeline.ch>
