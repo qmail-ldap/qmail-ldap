@@ -423,7 +423,7 @@ void auth_forward(int fd, char *login, char *passwd)
 	substdio_put(&ss, login, str_len(login) ); 
 	substdio_put(&ss, " ", 1);
 	substdio_put(&ss, passwd, str_len(passwd) ); 
-	substdio_put(&ss, "\n\r",1);
+	substdio_put(&ss, "\r\n",1);
 	substdio_flush(&ss);
 
 }
