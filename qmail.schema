@@ -65,7 +65,9 @@ attributetype ( 1.3.6.1.4.1.7914.1.2.1.7 NAME 'mailForwardingAddress'
 
 attributetype ( 1.3.6.1.4.1.7914.1.2.1.8 NAME 'deliveryProgramPath'
 	DESC 'Program to execute for all incoming mails.'
-	SYNTAX 1.3.6.1.4.1.1466.115.121.1.44 )
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
 
 attributetype ( 1.3.6.1.4.1.7914.1.2.1.9 NAME 'qmailDotMode'
 	DESC 'Interpretation of .qmail files: both, dotonly, ldaponly, ldapwithprog, none'
