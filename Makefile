@@ -4,22 +4,22 @@
 LDAPON=-DQLDAP
  
 # Perhaps you have different ldap libraries, change them here
-#LDAPLIBS=-lldap -llber
+LDAPLIBS=-lldap -llber
 # for example on my Linux box I use:
-LDAPLIBS=-L/opt/ldap/lib -lpthread -lldapssl30
+#LDAPLIBS=-L/opt/ldap/lib -lpthread -lldapssl30
 # if you need a special include-directory for ldap headers enable this
-LDAPINCLUDES=-I/opt/ldap/include
+#LDAPINCLUDES=-I/opt/ldap/include
 
 # uncomment the next line if you need also local passwd lookups
 PWOPTS=-DLOOK_UP_PASSWD
 
 # checkpassword compiled with DEBUG endabled does now complete LDAP debugging
-DEBUG=-DQLDAPDEBUG
+#DEBUG=-DQLDAPDEBUG
 # WARNING: you need a NONE DEBUG checkpassword to run with qmail-pop3d
 
 # To use shadow passwords under Linux, uncomment the next two lines.
 #SHADOWLIBS=-lshadow
-SHADOWOPTS=-DPW_SHADOW
+#SHADOWOPTS=-DPW_SHADOW
 # To use shadow passwords under Solaris, uncomment the SHADOWOPTS line.
 
 # STOP editing HERE !!!
@@ -1265,7 +1265,7 @@ fs.a datetime.a auto_qmail.o auto_patrn.o control.o socket.lib
 	slurpclose.o case.a getln.a getopt.a sig.a open.a seek.a \
 	lock.a fd.a wait.a env.a stralloc.a alloc.a strerr.a \
 	substdio.a error.a str.a fs.a datetime.a auto_qmail.o \
-	auto_patrn.o control.o `cat socket.lib`
+	auto_patrn.o `cat socket.lib`
 
 qmail-local.0: \
 qmail-local.8
@@ -1276,7 +1276,7 @@ compile qmail-local.c readwrite.h sig.h env.h byte.h exit.h fork.h \
 open.h wait.h lock.h seek.h substdio.h getln.h strerr.h subfd.h \
 substdio.h sgetopt.h subgetopt.h alloc.h error.h stralloc.h \
 gen_alloc.h fmt.h str.h now.h datetime.h case.h quote.h qmail.h \
-substdio.h slurpclose.h myctime.h gfrom.h auto_patrn.h
+substdio.h slurpclose.h myctime.h gfrom.h auto_patrn.h auto_qmail.h
 	./compile $(LDAPON) qmail-local.c
 
 qmail-log.0: \
@@ -1565,13 +1565,15 @@ tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
 
 qmail-reply: \
 load qmail-reply.o case.a getln.a sig.a open.a seek.a env.a fd.a \
-wait.a stralloc.a alloc.a strerr.a substdio.a error.a str.a
+wait.a stralloc.a alloc.a strerr.a substdio.a error.a str.a auto_qmail.o
 	./load qmail-reply case.a getln.a sig.a open.a seek.a env.a \
-	fd.a wait.a stralloc.a alloc.a strerr.a substdio.a error.a str.a
+	fd.a wait.a stralloc.a alloc.a strerr.a substdio.a error.a \
+	str.a auto_qmail.o
 
 qmail-reply.o: \
 compile qmail-reply.c case.h env.h error.h exit.h getln.h qlx.h \
-readwrite.h seek.h sig.h str.h strerr.h stralloc.h substdio.h wait.h
+readwrite.h seek.h sig.h str.h strerr.h stralloc.h substdio.h \
+wait.h auto_qmail.h
 	./compile $(LDAPON) qmail-reply.c
 
 qmail-rspawn: \

@@ -52,6 +52,7 @@ stralloc    qldap_user = {0};
 stralloc    qldap_password = {0};
 stralloc    qldap_defdotmode = {0};
 stralloc    qldap_defaultquota = {0};
+stralloc    qldap_quotawarning = {0};
 
 stralloc    qldap_messagestore = {0};
 stralloc    qldap_username = {0};
@@ -94,6 +95,12 @@ void get_qldap_controls()
    if (control_rldef(&qldap_username,"../../control/ldapusername",0,"") != 1);
    if (control_rldef(&qldap_uid,"../../control/ldapuid",0,"") != 1);
    if (control_rldef(&qldap_gid,"../../control/ldapgid",0,"") != 1);
+   if (control_readfile(&qldap_quotawarning,"../../control/quotawarning",0) == 1 ) {
+      if (!stralloc_0(&qldap_quotawarning)) _exit(QLX_NOMEM);
+      if ( !env_put2("QMAILQUOTAWARNING", qldap_quotawarning.s )) _exit(QLX_NOMEM);
+   } else {
+      if ( !env_unset("QMAILQUOTAWARNING") ) _exit(QLX_NOMEM);
+   }
 
 /* reading of the various LDAP control files done */
    

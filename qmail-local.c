@@ -33,6 +33,7 @@
 
 #ifdef QLDAP /* includes for LDAP mode */
  #include <dirent.h>
+ #include "auto_qmail.h"
  
  #define DO_LDAP 0x01
  #define DO_DOT  0x02
@@ -68,7 +69,7 @@ char *aliasempty;
 
  stralloc forwarder = {0};
  stralloc program = {0};
- stralloc qmail = {0};
+ stralloc temp = {0};
 #endif
 
 stralloc safeext = {0};
@@ -165,6 +166,9 @@ void quota_warning(char *fn)
  int wstat;
 
  if ( env_get("QMAILQUOTAWARNING") ) return;
+ if (!stralloc_copys(&temp, auto_qmail)) temp_nomem();
+ if (!stralloc_copys(&temp, "/bin/qmail-quotawarn")) temp_nomem();
+ if (!stralloc_0(&temp)) temp_nomem();
 
  if (seek_begin(0) == -1) temp_rewind();
 
@@ -173,10 +177,10 @@ void quota_warning(char *fn)
    case -1:
      temp_fork();
    case 0:
-     args[0] = "qmail-quotawarn"; args[1] = fn; args[2] = 0;
+     args[0] = temp.s; args[1] = fn; args[2] = 0;
      sig_pipedefault();
      execv(*args,args);
-     strerr_die3x(111,"Unable to run qmail-quotawarn: ",error_str(errno),". (#4.3.0)");
+     strerr_die5x(111,"Unable to run ", temp.s, ": ",error_str(errno),". (#4.3.0)");
   }
 
  wait_pid(&wstat,child);
@@ -201,7 +205,7 @@ char *dir;
    unsigned long int temp = 0;
    
    if ( (dirp = opendir(dir)) == 0 )
-     strerr_die3x(111," Unable to quota: can not opend specified maildir: ",dir,". (LDAP-ERR #2.4.2)");
+     strerr_die3x(111,"Unable to quota: can not opend specified maildir: ",dir,". (LDAP-ERR #2.4.2)");
    while ((dp = readdir(dirp)) != 0) {
      if (!stralloc_copys(&file,dir)) temp_nomem();
      if (!stralloc_cats(&file,dp->d_name)) temp_nomem();
@@ -844,12 +848,12 @@ char **argv;
       if ( s = env_get("QMAILMODE") ) {
          int tt;
          case_lowers(s);
-         if (!stralloc_copys(&qmail, s)) temp_nomem();
-         if (!stralloc_0(&qmail)) temp_nomem();
-         
-         tt = replace(qmail.s, qmail.len, ',', '\0') + 1;
-         s = forwarder.s;
-         slen = forwarder.len-1;
+         if (!stralloc_copys(&temp, s)) temp_nomem();
+         if (!stralloc_0(&temp)) temp_nomem();
+
+         tt = replace(temp.s, temp.len, ',', '\0') + 1;
+         s = temp.s;
+         slen = temp.len-1;
          for(c=0 ; tt > c; c++) {
             if ( !str_diff("forwardonly", s) ) {
                if (!flagdoit) sayit("forwardonly ",s,0);
@@ -929,12 +933,13 @@ char **argv;
          ++count_file;
          if (!stralloc_copys(&foo,aliasempty)) temp_nomem();
          if (!stralloc_0(&foo)) temp_nomem();
-         if (foo.s[foo.len - 2] == '/')
+         if (foo.s[foo.len - 2] == '/') {
             if (flagdoit) maildir(foo.s);
             else sayit("maildir ",foo.s, foo.len);
-         else
+         } else {
             if (flagdoit) mailfile(foo.s);
             else sayit("mbox ",foo.s, foo.len);
+         }
       }
    }
    if ( qmode & DO_DOT ) { /* start dotqmail */

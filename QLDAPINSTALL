@@ -44,6 +44,13 @@ NEWS:
 
  Added Chris Johnson's <cjohnson-qmail@palomine.net> tarpitting patch.
 
+ Added qmail-quotawarn and qmail-reply for better handling of quota-warnings
+ and auto reply
+
+ deliveryMode is now a comma separated list see LDAP PARAMETER FIELDS
+
+ Fixed a few things in qmail-local and also enhanced the Makefile
+
 INSTALL:
 
 1. Make sure you have fairly good knowledge of qmail and LDAP
@@ -62,6 +69,8 @@ INSTALL:
    it with ldap_search_s.
 
 4. Apply the qmail-ldap patches to a clean qmail-1.03 source tree
+   normaly "cd qmail-1.03_source_tree; patch -p1 < location_of_patch"
+   works ;-)
 
 5. Edit the conf-* files and the top of the Makefile (only the top ;) )
    You can set/change:
@@ -78,22 +87,35 @@ INSTALL:
 5.1 Compile and install the stuff (it's the same as in standard qmail
    install)
 
-5.2 "make checkpassword" in the qmail directory and install checkpassword
+5.2 "make qldap" to make the qmail-ldap specific programs (checkpassword,
+    qmail-reply, qmail-quotawarn and digest)
     * Under Linux or Solaris, do you want to use shadow passwords? If so,
       uncomment the appropriate lines in Makefile
     How to install:
-       1. Compile the checkpassword program:
-          # make checkpassword
+       1. Compile the qmail-ldap specific stuff:
+          # make qldap
        2. Install the checkpassword program:
-          # cp checkpassword /bin/checkpassword
+          # mv checkpassword /bin/checkpassword
+          # chown root:root /bin/checkpassword
           # chmod 700 /bin/checkpassword
+       3. Install qmail-reply and qmail-quotawarn
+          # cp qmail-reply `head -1 conf-qmail`/bin
+          # cp qmail-quotawarn `head -1 conf-qmail`/bin
+       4. check the modes and owner of the installed files
+          # ls -l `head -1 conf-qmail`/bin/qmail-reply
+          # ls -l `head -1 conf-qmail`/bin/qmail-quotawarn
+       If needed something like this should do the trick:
+          # chmod 755 `head -1 conf-qmail`/bin/qmail-reply
+          # chmod 755 `head -1 conf-qmail`/bin/qmail-quotawarn
+          # chown root:root `head -1 conf-qmail`/bin/qmail-reply
+          # chown root:root `head -1 conf-qmail`/bin/qmail-quotawarn
+
      WARNING: checkpassword should only be runable by root
               don't make the debug version accessible to other users
 
 5.3 Enable DEBUG in the Makefile and compile checkpassword again, this is for
     debugging your LDAP setup
-
-5.4 "make digest" in the qmail directory
+    use make checkpassword to compile checkpassword again
 
 6. Create the LDAP user database and start the LDAP server
 
@@ -265,24 +287,25 @@ mailQuota
 
 mailForwardingAddress
 
- Addresses to forward all incoming messages
+ Addresses to forward all incoming messages, comma separated
  Example: jdoe@new.place
  Note: 
 
 deliveryProgramPath
 
- Program to execute with all incoming messages
+ Program to execute with all incoming messages, comma separated
  Example: /usr/bin/program -c -s
  Note: the same as |/usr/bin/program -c -s in .qmail
 
 deliveryMode
 
- Switch to enable some special features:
+ Comma separated list of these keywords
  - normal or unset: the normal behavior
                     (Maildir/box delivery, forward, program-executing)
  - forwardonly: only forwards are allowed
  - reply: like normal but send an auto_reply mail with text from mailReplyText 
  - echo: something very strange, just echo the message (nothing else)
+ - nombox: like normal but no Maildir/box delivery
  Default: everything else is treated as normal (normally not set)
 
 mailReplyText
