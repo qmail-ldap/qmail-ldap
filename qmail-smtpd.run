@@ -8,10 +8,10 @@ QMAIL=/var/qmail
 ME=$(head -1 $QMAIL/control/me)
 CONCURRENCY=${CONCURRENCY:=50}
 
+PATH=$PATH:"$QMAIL/bin"
+
 /* source the environemt in ./env */
 eval `env - envdir ./env env`
-
-PATH=$PATH:"$QMAIL/bin"
 
 exec envdir ./env \
 	envuidgid $USER \

@@ -11,10 +11,10 @@ if test X"$ALIASEMPTY" = "X"; then
 	ALIASEMPTY="./Maildir/"
 fi
 
+PATH=$PATH:"$QMAIL/bin"
+
 /* source the environemt in ./env */
 eval `env - envdir ./env env`
-
-PATH=$PATH:"$QMAIL/bin"
 
 exec envdir ./env \
 	tcpserver -v -HRl $ME -x$QMAIL/control/qmail-imapd.cdb \
