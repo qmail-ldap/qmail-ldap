@@ -1146,14 +1146,24 @@ void smtp_data() {
 
 #ifdef TLS_SMTPD
   if(ssl){
-   if (!stralloc_copys(&protocolinfo, SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
-   if (!stralloc_catb(&protocolinfo, " encrypted SMTP", 15)) die_nomem();
-   if (clientcert.len){
-     if (!stralloc_catb(&protocolinfo," cert ", 6)) die_nomem();
-     if (!stralloc_catb(&protocolinfo,clientcert.s, clientcert.len)) die_nomem();
-   }
-   if (!stralloc_0(&protocolinfo)) die_nomem();
-  } else if (!stralloc_copyb(&protocolinfo,"SMTP",5)) die_nomem();
+    if (!stralloc_copys(&protocolinfo, SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
+#ifdef DATA_COMPRESS
+    if (wantcomp) { if (!stralloc_cats(&protocolinfo, " encrypted compressed SMTP")) die_nomem(); }
+    else
+#endif
+    if (!stralloc_cats(&protocolinfo, " encrypted SMTP")) die_nomem();
+    if (clientcert.len) {
+      if (!stralloc_cats(&protocolinfo," cert ")) die_nomem();
+      if (!stralloc_cat(&protocolinfo,&clientcert)) die_nomem();
+    }
+  } else {
+#ifdef DATA_COMPRESS
+    if (wantcomp) { if (!stralloc_copys(&protocolinfo,"compressed SMTP")) die_nomem(); }
+    else
+#endif
+    if (!stralloc_copys(&protocolinfo,"SMTP")) die_nomem();
+  }
+  if (!stralloc_0(&protocolinfo)) die_nomem();
   received(&qqt,protocolinfo.s,local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
 #else 
 #ifdef DATA_COMPRESS
