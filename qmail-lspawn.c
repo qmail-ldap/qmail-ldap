@@ -28,6 +28,9 @@
 #include "auto_uids.h"
 #include "fmt.h"
 #include "check.h"
+#include <pwd.h>
+#include <sys/types.h>
+
 
 #endif /* end -- Includes needed to make LDAP work */
 
@@ -732,21 +735,25 @@ char *s; char *r; int at;
 
 #ifdef QLDAP /* the alias-user handling for LDAP only mode - part 2 */
          } else {
+            struct passwd *pw;
             char num[FMT_ULONG];
 
-            if (!stralloc_copys(&nughde,auto_usera)) _exit(QLX_NOMEM);
+            pw = getpwnam(auto_usera);
+            if (!pw) _exit(QLX_NOALIAS);
+            
+            if (!stralloc_copys(&nughde, pw->pw_name)) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-            if (!stralloc_copys(&nughde,num,fmt_ulong(num, (long) auto_uida ))) _exit(QLX_NOMEM);
+            if (!stralloc_copys(&nughde,num,fmt_ulong(num, (long) pw->pw_uid))) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-            if (!stralloc_copyb(&nughde,num,fmt_ulong(num, (long) auto_gidn ))) _exit(QLX_NOMEM);
+            if (!stralloc_copyb(&nughde,num,fmt_ulong(num, (long) pw->pw_gid))) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-            if (!stralloc_copys(&nughde,"/home/")) _exit(QLX_NOMEM);
-            if (!stralloc_copys(&nughde,auto_usera)) _exit(QLX_NOMEM);
+            if (!stralloc_copys(&nughde, pw->pw_dir)) _exit(QLX_NOMEM); 
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
             if (!stralloc_copys(&nughde,"-")) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
             if (!stralloc_copys(&nughde,r)) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+            free(pw);
          }
       break;
         
