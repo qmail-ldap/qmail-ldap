@@ -1,4 +1,4 @@
-Betacode 19990805 by Andre Oppermann <opi@nrg4u.com>,
+Betacode 19991007 by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998,1999 Internet Business Solutions Ltd.
 
@@ -313,7 +313,7 @@ mailMessageStore
  Note: Can be written relative in a virtual users environment
  XXX: at the moment mailMessageStore has to point to a directory
       and has to end with a / (for checkpassword only). So Mailfiles
-      are only via the aliasempty argv of qmail-lspawn possible
+      are possible only via the aliasempty argument of qmail-lspawn
 
 mailQuota
 
@@ -409,7 +409,7 @@ objectClass: inetOrgPerson
 objectClass: qmailUser
 mail: opi@opi.flirtbox.ch
 mailHost: opi.flirtbox.ch
-mailMessageStore: /usr/home/opi/maildir/
+mailMessageStore: /usr/home/opi/Maildir/
 mailQuota: 1000
 qmailUser: opi
 qmailUID: 1001
