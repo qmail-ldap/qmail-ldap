@@ -296,7 +296,7 @@ int len;
       REPORT_RETURN;
       
    case 240:
-         substdio_puts(ss, "DPermanet error in qmail-qmqpc (as mail forwarder) (LDAP-ERR #240)\n");
+         substdio_puts(ss, "DPermanent error in qmail-qmqpc (as mail forwarder) (LDAP-ERR #240)\n");
       REPORT_RETURN;
       
    case 241:
@@ -410,7 +410,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       if (qldap_objectclass.len) {
         if (!stralloc_cats(&filter,LDAP_OBJECTCLASS)) _exit(QLX_NOMEM);
         if (!stralloc_cats(&filter,"=")) _exit(QLX_NOMEM);
-        if (!stralloc_cat(&filter,qldap_objectclass)) _exit(QLX_NOMEM);
+        if (!stralloc_cat(&filter,&qldap_objectclass)) _exit(QLX_NOMEM);
         if (!stralloc_cats(&filter,")(")) _exit(QLX_NOMEM);
       } /* end */
       if (!stralloc_cats(&filter,LDAP_MAIL)) _exit(QLX_NOMEM);

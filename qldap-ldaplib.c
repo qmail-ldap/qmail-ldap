@@ -419,7 +419,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 			qldap_errno = LDAP_ERRNO;
 			return -1;
 		}
-		debug(64, "%s (default)\n", qldap_uid.s);
+		debug(64, "%s (default)\n", qldap_gid.s);
 		str_copy( info->gid, qldap_gid.s );
 	}
 	ldap_value_free(vals);

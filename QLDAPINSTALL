@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/01/01 23:53:50 $)
+RELEASE: current ($Date: 2001/03/01 18:57:27 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -258,7 +258,7 @@ CONFIG FILES:
 
  The default prefix for path's in mailMessageStore without trailing /
  Default: NULL
- Example: /maildisk/
+ Example: /maildisk
  Note: Used in virtual users environments
 
 ~control/ldapuid

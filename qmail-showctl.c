@@ -287,7 +287,7 @@ void main()
   do_str("ldapmessagestore",0,"not defined","Prefix for non absolute paths: ");
   do_str("ldapdefaultdotmode",0,"not defined","Default dot mode for ldap users: ");
   do_str("ldapdefaultquota",0,"not defined","Default quota for ldap users: ");
-  do_str("dirmaker",0,"not defined","Location of programm to create homedirs: ");
+  do_str("dirmaker",0,"not defined","Location of program to create homedirs: ");
   do_int("ldaplocaldelivery","1","local passwd lookup is "," (1 = on, 0 = off)");
   do_int("ldaprebind","0","ldap rebinding is "," (1 = on, 0 = off)");
   do_int("ldapcluster","0","clustering is "," (1 = on, 0 = off)");
