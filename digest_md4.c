@@ -55,7 +55,7 @@ typedef unsigned char *POINTER;
 #define S33 11
 #define S34 15
 
-static void MD4Transform __P ((uint32 [4], const unsigned char [64]));
+static void MD4Transform ();
 
 #ifdef __LITTLE_ENDIAN__
 #define Encode byte_copy
