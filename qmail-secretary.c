@@ -607,18 +607,30 @@ sendmoderator(stralloc *hash, int fd)
 	if (moderators.s == NULL || moderators.len == 0)
 		strerr_die2x(100, FATAL,
 		    "no moderators found but needed.");
-		
+
 	if (qmail_open(&qqt) == -1) temp_fork();
 	qp = qmail_qp(&qqt);
-	
+
 	if (sendmail(&qqt, fd, 128*1024, &header, &approvetext, hash) == -1)
 		goto fail_nomem;
 
 	qmail_from(&qqt, replyaddr(hash, "bounce"));
+
+	/* first check if the mail is comming from a moderator */
 	for (s = moderators.s, smax = moderators.s + moderators.len; s < smax;
 	    s += str_len(s) + 1) {
-		qmail_to(&qqt, s);
+		if (!str_diff(sender, s)) {
+			qmail_to(&qqt, s);
+			break;
+		}
 	}
+	/* not from a moderator so send to all moderators */
+	if (s >= smax)
+		for (s = moderators.s, smax = moderators.s + moderators.len;
+		    s < smax; s += str_len(s) + 1) {
+			qmail_to(&qqt, s);
+		}
+
 	qqx = qmail_close(&qqt);
 	if (!*qqx) {
 		strnum[fmt_ulong(strnum,qmail_qp(&qqt))] = 0;
