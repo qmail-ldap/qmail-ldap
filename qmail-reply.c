@@ -135,7 +135,7 @@ void get_env(void)
 	if (!stralloc_copys(&from, s)) temp_nomem();
 
 	i = byte_chr(from.s, from.len, '@');
-	if ( i == 0 || i >= from.len )
+	if (i == 0 || i >= from.len)
 	  strerr_die2x(100, FATAL, "Bad RECIPIENT address.");
 
 	if (!(s = env_get("HOST")))
