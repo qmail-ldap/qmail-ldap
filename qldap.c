@@ -701,7 +701,14 @@ qldap_get_dn(qldap *q, stralloc *dn)
 		return NOSUCH;
 	if (!stralloc_copys(dn, d) || !stralloc_0(dn))
 		return ERRNO;
+#ifdef LDAP_OPT_PROTOCOL_VERSION
+	/*
+	 * OpenLDAP 1.x does not have ldap_memfree() use free() instead.
+	 */
 	ldap_memfree(d);
+#else
+	free(d);
+#endif
 	return OK;
 }
 
