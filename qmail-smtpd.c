@@ -179,6 +179,7 @@ char *remotehost;
 char *remoteinfo;
 char *local;
 char *relayclient;
+char *relayok;
 char *denymail;
 int  spamflag = 0;
 
@@ -266,7 +267,6 @@ void setup()
   logstring(2,local);
 
   relayok = relayclient = env_get("RELAYCLIENT");
-//  relayclient = env_get("RELAYCLIENT");
   if (relayclient) { logstring(2,", relayclient set"); }
   denymail = env_get("DENYMAIL");
   logflush(2);
