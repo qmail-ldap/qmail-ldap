@@ -31,6 +31,9 @@
 #include <pwd.h>
 #include <sys/types.h>
 
+#ifndef NULL
+ #define NULL 0
+#endif
 
 #endif /* end -- Includes needed to make LDAP work */
 

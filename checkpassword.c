@@ -19,6 +19,10 @@
 #include "digest_sha1.h"
 #include "str.h"
 
+#ifndef NULL
+ #define NULL 0
+#endif
+
 #ifdef QLDAPDEBUG
 #warning __checkpassword_DEBUG_version_set_in_Makefile__
 #warning __you_need_a_none_debug_version_to_run_with_qmail-pop3d__
