@@ -298,8 +298,8 @@ int main(int argc, char **argv)
 	}
 
 	if ( mode == uid && passwd && !rebind && 
-			extra[10].vals && extra[10].vals[0] ) {
-		ret = cmp_passwd((unsigned char *) passwd, extra[10].vals[0] );
+			extra[11].vals && extra[11].vals[0] ) {
+		ret = cmp_passwd((unsigned char *) passwd, extra[11].vals[0] );
 		output(&ssout, "qldap_lookup:\tpassword compare was %s\n", 
 				ret==0?"successful":"not successful");
 	}
