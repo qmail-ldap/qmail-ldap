@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/07/26 12:13:37 $ ($Revision: 1.63 $)
+RELEASE: $Date: 2002/08/29 12:10:45 $ ($Revision: 1.64 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,18 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Fixed multiple bugs in maildir++ quota handling.
+   bug in read5120(), if open failed it could cause a loop.
+   bug with handling of subdirectories (path concatenation).
+   bug with interpretation of quota strings for courier 0C means
+   no files allowed whereas for qmail-ldap it was unlimited.
+
+ Fixed some spelling errors.
+ 
+ Bugfix in auth_imap. The procedure for failed logons had a bug.
+
+NEWS for 20020801 stuff:
 
  Fixed an error in the patch file.
 
