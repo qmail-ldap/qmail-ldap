@@ -14,8 +14,8 @@ void auth_fail(int argc, char **argv, char *login);
 /* Checks if it was a hard fail (bad password) or just a soft error (user not found)
    argc and argv are the arguments of the next auth_module. */
 
-void auth_success(int argc, char **argv, char *login, unsigned long uid,
-	   			 unsigned long gid, char* home, char *homemaker, char *md);
+void auth_success(int argc, char **argv, char *login, int uid, int gid,
+	   			  char* home, char *homemaker, char *md);
 /* starts the next auth_module, or what ever (argv ... ) */
 
 void auth_error(void);

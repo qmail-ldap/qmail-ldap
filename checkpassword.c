@@ -163,7 +163,7 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 #endif
 
 	scan_ulong(info.uid, uid);	/* get uid, gid and home */
-	scan_ulong(info.gid, gid);	/* XXX the values have to be verified */
+	scan_ulong(info.gid, gid);	/* the values are checked later */
 	if ( ! stralloc_copys(home, info.mms) ) {	/* ... the same for the path */
 		qldap_errno = ERRNO;
 		return -1;

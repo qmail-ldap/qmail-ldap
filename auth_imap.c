@@ -15,6 +15,7 @@
 #include "wait.h"
 #include "scan.h"
 #include "alloc.h"
+#include "prot.h"
 #include "auth_mod.h"
 #include "qmail-ldap.h"
 #include "qldap-debug.h"
@@ -23,18 +24,19 @@
 #endif
 
 unsigned int auth_port;
+/* those are global defined so that auth_fail can use them */
+#define UP_LEN 1024
+char up[UP_LEN];
+int  uplen;
 
 void auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 /* this function should return the 0-terminated string login and authdata
  * argc and argv are the arguments of the next auth_module. */
 {
-#define UP_LEN 1024
-	char up[UP_LEN];
 	char *s;
 	char *t;
 	char *l;
 	char *p;
-	int  uplen;
 	int  i;
 	const char *a=env_get("AUTHENTICATED");
 	int waitstat;
@@ -149,6 +151,9 @@ void auth_fail(int argc, char **argv, char *login)
 /* Checks if it was a hard fail (bad password) or just a soft error (user not found)
    argc and argv are the arguments of the next auth_module. */
 {
+	int i;
+	int pi[2];
+	
 	debug(2, "warning: auth_fail: user %s faild\n", login);
 	if ( qldap_errno == AUTH_NOSUCH ) {
 		debug(4, "warning: auth_fail: user %s not found\n", login);
@@ -156,13 +161,45 @@ void auth_fail(int argc, char **argv, char *login)
 			qldap_errno = ERRNO;
 			auth_error();
 		}
-		execvp( argv[1],argv + 1); /* start next auth module */
+		for( i=0; i<uplen; i++ ) if ( !up[i] ) { up[i] = '\n'; }
+		close(3);
+		if (pipe(pi) == -1) {
+			qldap_errno = ERRNO;
+			auth_error();
+		}
+		if (pi[0] != 3) { /* be serious, we closed 3 so ... */
+			qldap_errno = AUTH_PANIC;
+			auth_error();
+		}
+		switch( fork() ) {
+			case -1:
+				qldap_errno = ERRNO;
+				auth_error();
+			case 0:
+				close(pi[1]);
+				sig_pipedefault();
+				execvp( argv[1],argv + 1); /* start next auth module */
+				qldap_errno = ERRNO;
+				auth_error();
+		}
+		close(pi[0]);
+		while (uplen) {
+			i = write(pi[1],up,uplen);
+			if (i == -1) {
+				if (errno == error_intr) continue;
+				/* note that some data may have been written */
+			}
+			up += i;
+			uplen -= i;
+		}
+		close(pi[1]);
+		_exit(0);
 	}
 	auth_error(); /* complete failure */
 }
 
-void auth_success(int argc, char **argv, char *login, unsigned long uid,
-	   			 unsigned long gid, char* home, char* homedirmake, char *md)
+void auth_success(int argc, char **argv, char *login, int uid, int gid,
+	   			  char* home, char* homedirmake, char *md)
 /* starts the next auth_module, or what ever (argv ... ) */
 {
 	debug(16, "auth_success: login=%s, uid=%u, ",
@@ -188,13 +225,13 @@ void auth_success(int argc, char **argv, char *login, unsigned long uid,
 	}
 
 	/* first set the group id */
-	if (setgid(gid) == -1) {
+	if (prot_gid(gid) == -1) {
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
 	debug(32, "auth_success: setgid succeded (%i)\n", gid);
 	/* ... then the user id */
-	if (setuid(uid) == -1) {
+	if (prot_uid(uid) == -1) {
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}

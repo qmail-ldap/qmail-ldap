@@ -82,13 +82,13 @@ load auth_imap.o checkpassword.o check.o control.o getln.a qldap-debug.o \
 fs.a open.a stralloc.a alloc.a substdio.a error.a env.a auto_qmail.o \
 str.a base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
 dns.o timeoutconn.o ndelay.a ipalloc.o dns.lib socket.lib qldap-ldaplib.o \
-timeoutread.o qldap-mdm.o wait.a sig.a
+timeoutread.o qldap-mdm.o wait.a sig.a prot.o
 	./load auth_imap checkpassword.o check.o control.o qldap-ldaplib.o \
 	qldap-debug.o auto_qmail.o dns.o timeoutconn.o timeoutread.o ip.o \
 	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-	qldap-mdm.o wait.a error.a fs.a ndelay.a sig.a $(LDAPLIBS) -lcrypt \
-	$(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
+	qldap-mdm.o wait.a error.a fs.a ndelay.a sig.a prot.o $(LDAPLIBS) \
+	-lcrypt $(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
 
 auth_pop.o: \
 compile auth_pop.c error.h qldap-errno.h readwrite.h stralloc.h env.h \
@@ -101,12 +101,12 @@ load auth_pop.o checkpassword.o check.o control.o getln.a qldap-debug.o \
 fs.a open.a stralloc.a alloc.a substdio.a error.a env.a auto_qmail.o \
 str.a base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
 dns.o timeoutconn.o ndelay.a ipalloc.o dns.lib socket.lib qldap-ldaplib.o \
-timeoutread.o qldap-mdm.o wait.a
+timeoutread.o qldap-mdm.o wait.a prot.o
 	./load auth_pop checkpassword.o check.o control.o qldap-ldaplib.o \
 	qldap-debug.o auto_qmail.o dns.o timeoutconn.o timeoutread.o ip.o \
 	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-	qldap-mdm.o wait.a error.a fs.a ndelay.a $(LDAPLIBS) -lcrypt \
+	qldap-mdm.o wait.a error.a fs.a ndelay.a prot.o $(LDAPLIBS) -lcrypt \
 	$(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
 
 auto-ccld.sh: \

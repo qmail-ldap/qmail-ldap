@@ -446,8 +446,13 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       debug(32, "%s: %s\n", ENV_QUOTA, extra[0].vals[0]);
       if ( !env_put2(ENV_QUOTA, extra[0].vals[0] ) ) _exit(QLX_NOMEM);
    } else {
-      debug(32, "%s: %s\n", ENV_QUOTA, qldap_defaultquota.s);
-      if ( !env_put2(ENV_QUOTA, qldap_defaultquota.s )) _exit(QLX_NOMEM);
+      if ( qldap_defaultquota.s ) {
+         debug(32, "%s: %s\n", ENV_QUOTA, qldap_defaultquota.s);
+         if ( !env_put2(ENV_QUOTA, qldap_defaultquota.s )) _exit(QLX_NOMEM);
+      } else {
+         debug(32, "no quota set\n");
+         if ( !env_unset(ENV_QUOTA) ) _exit(QLX_NOMEM);
+      }
    }
    ldap_value_free(extra[0].vals);
 

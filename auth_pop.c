@@ -8,6 +8,7 @@
 #include "str.h"
 #include "exit.h"
 #include "timeoutread.h"
+#include "prot.h"
 #include "auth_mod.h"
 #include "qmail-ldap.h"
 #include "qldap-debug.h"
@@ -99,8 +100,8 @@ void auth_fail(int argc, char **argv, char *login)
 	auth_error();	
 }
 
-void auth_success(int argc, char **argv, char *login, unsigned long uid,
-	   			 unsigned long gid, char* home, char* homedirmake, char *md)
+void auth_success(int argc, char **argv, char *login, int uid, int gid,
+	   			  char* home, char* homedirmake, char *md)
 /* starts the next auth_module, or what ever (argv ... ) */
 {
 	debug(16, "auth_success: login=%s, uid=%u, ",
@@ -126,13 +127,13 @@ void auth_success(int argc, char **argv, char *login, unsigned long uid,
 	}
 
 	/* first set the group id */
-	if (setgid(gid) == -1) {
+	if (prot_gid(gid) == -1) {
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
 	debug(32, "auth_success: setgid succeded (%i)\n", gid);
 	/* ... then the user id */
-	if (setuid(uid) == -1) {
+	if (prot_uid(uid) == -1) {
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
