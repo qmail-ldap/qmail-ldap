@@ -1,4 +1,3 @@
-Common subdirectories: qmail-ldap/CVS and qmail-test/CVS
 diff -BbuN qmail-ldap/Makefile qmail-test/Makefile
 --- qmail-ldap/Makefile	Thu Jul 20 22:07:09 2000
 +++ qmail-test/Makefile	Thu Jul 20 22:55:52 2000
