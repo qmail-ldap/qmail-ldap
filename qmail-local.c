@@ -446,7 +446,7 @@ char **recips;
 
  qmail_put(&qqt,dtline.s,dtline.len);
 
- if (*recips[1])
+ if (recips[1])
    qmail_put(&qqt,"Precedence: bulk\n",17);
 
  do
