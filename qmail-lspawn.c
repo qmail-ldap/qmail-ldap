@@ -200,10 +200,10 @@ int len;
      return;
 #ifdef QLDAP_CLUSTER
    case QLX_CLUSTERSOFT:
-     substdio_puts(ss, "ZTemporary error in qmail-qmqpc, as mail forwarder. (#4.4.4)\n");
+     substdio_puts(ss, "ZTemporary error while executing qmail-forward. (#4.4.4)\n");
      return;
    case QLX_CLUSTERHARD:
-     substdio_puts(ss, "DPermanent error in qmail-qmqpc, as mail forwarder. (#5.4.4)\n");
+     substdio_puts(ss, "DPermanent error while executing qmail-forward. (#5.4.4)\n");
      return;
 #endif /* QLDAP_CLUSTER */
 #ifdef AUTOHOMEDIRMAKE
