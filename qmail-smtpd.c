@@ -70,6 +70,7 @@ void smtp_greet(code) char *code;
 void smtp_help()
 {
   out("214 qmail home page: http://pobox.com/~djb/qmail.html\r\n");
+  out("214 qmail-ldap patch home page: http://www.nrg4u.com\r\n");
 }
 void smtp_quit()
 {
