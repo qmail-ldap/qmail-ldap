@@ -123,9 +123,11 @@ void check_header_and_get_subject(stralloc *subject)
    substdio ss;
    int match;
    int len;
+   int subj_set;
    stralloc temp = {0};
    stralloc line = {0};
 
+   subj_set = 0;
    if (seek_begin(0) == -1) temp_rewind();
    substdio_fdbuf(&ss, read, 0, buf, sizeof(buf) );
    do {
@@ -133,8 +135,12 @@ void check_header_and_get_subject(stralloc *subject)
          strerr_warn3("Unable to read message: ",error_str(errno),". (LDAP-ERR #4.3.0)",0);
          break; /* something bad happend, but we ignore it :-( */
       }
-      if( !str_diffn("\n", line.s, 1) )
+      if( !str_diffn("\n", line.s, 1) ) {
+         if ( subj_set == 0 ) {
+            if (!stralloc_copys(subject, "Re: Your mail")) temp_nomem();
+         } 
          return;
+      }
       case_lowerb(line.s, (len = byte_chr(line.s,line.len,':') ) );
       if( !str_diffn("subject:", line.s, len+1) ) {
          temp.s = line.s+len+1; /* cut away "subject:" without ' ' */
@@ -142,7 +148,8 @@ void check_header_and_get_subject(stralloc *subject)
          if (temp.len > 1 ) { /* subject has to be more than 1 char (normaly a \n) */
             if (!stralloc_copys(subject, "Re:")) temp_nomem();
             if (!stralloc_cat(subject, &temp)) temp_nomem();
-           temp.s = 0; temp.len = 0;
+            temp.s = 0; temp.len = 0;
+            subj_set=1;
          }
       }
       if( !str_diffn("mailing-list:", line.s, len+1) ) exit(0); /* don't send to mailing-lists */
@@ -160,7 +167,10 @@ void check_header_and_get_subject(stralloc *subject)
          }
       }   
    } while (match);
-   strerr_die1x(100,"Premature end of header AARRG, giving up. (LDAP-ERR #4.5.0)");
+   strerr_warn1("Premature end of header AARRG, giving up. (LDAP-ERR #4.5.0)");
+   if ( subj_set == 0 ) {
+      if (!stralloc_copys(subject, "Re: Your mail")) temp_nomem();
+   } 
 }
 
 /* reply function */
