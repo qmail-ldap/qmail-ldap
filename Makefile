@@ -1744,11 +1744,13 @@ tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
 	./compile ${TLSON} ${TLSINCLUDES} qmail-remote.c
 
 qmail-reply: \
-load qmail-reply.o case.a getln.a sig.a open.a seek.a env.a fd.a \
-wait.a stralloc.a alloc.a strerr.a substdio.a error.a str.a auto_qmail.o
-	./load qmail-reply case.a getln.a sig.a open.a seek.a env.a \
-	fd.a wait.a stralloc.a alloc.a strerr.a substdio.a error.a \
-	str.a auto_qmail.o
+load qmail-reply.o case.a control.o constmap.o getln.a sig.a now.o open.a \
+seek.a env.a qmail.o getopt.a fd.a wait.a stralloc.a alloc.a strerr.a \
+substdio.a error.a str.a fs.a auto_qmail.o
+	./load qmail-reply case.a control.o constmap.o getln.a sig.a \
+	now.o open.a seek.a env.a qmail.o getopt.a fd.a \
+	wait.a stralloc.a alloc.a strerr.a substdio.a error.a \
+	str.a fs.a auto_qmail.o
 
 qmail-reply.o: \
 compile qmail-reply.c case.h env.h error.h exit.h getln.h qlx.h \
