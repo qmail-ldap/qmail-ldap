@@ -84,6 +84,7 @@ char fntmptph[80 + FMT_ULONG * 2];
 char fnnewtph[83 + FMT_ULONG * 3];
 void tryunlinktmp() { unlink(fntmptph); }
 void sigalrm() { tryunlinktmp(); _exit(3); }
+int msfd; /* global filedescriptor to the quota file */
 
 void maildir_child(dir)
 char *dir;
@@ -183,6 +184,10 @@ char *dir;
  s += fmt_str(s,",S=");
  s += fmt_ulong(s,(unsigned long) st.st_size);
  *s++ = 0;
+
+ /* finally update the quota file "maildirsize" */
+ quota_add(msfd, (unsigned long) st.st_size, 1, quotastring, ".");
+ close(msfd);
   
  if (link(fntmptph,fnnewtph) == -1) goto fail;
    /* if it was error_exist, almost certainly successful; i hate NFS */
@@ -242,18 +247,17 @@ char *fn;
  /* quota handling maildir */
  struct stat mailst;
  int perc;
- int fd;
  long int mailsize;
 
  if( quotastring && *quotastring ) {
    if (fstat(0, &mailst) != 0)
        strerr_die3x(111,"Can not stat mail for quota: ",error_str(errno),". (LDAP-ERR #2.4.1)");
    mailsize = mailst.st_size;
-   perc = quota_maildir(fn, quotastring, &fd, mailsize, 1);
+   perc = quota_maildir(fn, quotastring, &msfd, mailsize, 1);
    if ( perc == -1 ) {
      /* second chance */
      sleep(3);
-     perc = quota_maildir(fn, quotastring, &fd, mailsize, 1);
+     perc = quota_maildir(fn, quotastring, &msfd, mailsize, 1);
 	 /* XXX fd can be -1 when perc = 0 quota_add/rm take care of that */
      if ( perc == -1 )
        strerr_die1x(111,"Temporary race condition while calculating quota. (LDAP-ERR #2.4.2)");
@@ -263,9 +267,6 @@ char *fn;
    else if ( perc > QUOTA_WARNING_LEVEL ) 
 	 /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
-
-   quota_add(fd, mailsize , 1);
-   close(fd);
  }
  
  /* end -- quota handling maildir */

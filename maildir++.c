@@ -33,18 +33,88 @@ static char		buf[1024];
 static void sigalrm() { unlink(foo.s); 
 	strerr_die1x(111,"Timeout while writing maildirsize. (QUOTA #1.0.2)"); }
 
-void quota_add(int fd, long int size, int count)
+void quota_add(int fd, long int size, int count, char *quota, char *dir )
 /* add size and count to the quota (maildirsize) */
 {
 	char		num[FMT_ULONG];
+	char		*s;
 	seek_pos	pos;
 	substdio	ss;
-	
-	if ( fd == -1 ) return;
+	long int	q_size;
+	int			q_count;
+	int			pid;
+	int			loop;
+	time_t		maxtime;
+	struct stat	st;
+
+	if ( fd == -1 ) {
+		if ( !quota ) return;
+		if ( !dir ) return;
+		/* write maildirsize in standart Maildir manner */
+		/* first get quota */
+		get_quota(quota, &q_size, &q_count);
+		sig_alarmcatch(sigalrm);
+		for (loop = 0; ; ++loop) {
+			maxtime = now();
+			pid = getpid();
+			if ( ! stralloc_copys(&foo, dir) ) temp_nomem();
+			if ( ! stralloc_cats(&foo, "/tmp/maildirsize.") ) temp_nomem();
+			if ( ! stralloc_readyplus(&foo, 2*FMT_ULONG+2) ) temp_nomem();
+			if ( ! stralloc_0(&foo) ) temp_nomem();
+			s = foo.s;
+			while (*s) s++;
+			s += fmt_ulong(s,maxtime); *s++ = '.';
+			s += fmt_ulong(s,pid); *s++ = 0;
+			if (stat(foo.s,&st) == -1) if (errno == error_noent) break;
+			/* really should never get to this point */
+			if (loop == 2) _exit(1);
+			sleep(2);
+		}
+
+		alarm(86400);
+
+		if ( ( fd = open_excl(foo.s) ) == -1 ) {
+			if ( errno == error_noent ) return;
+			goto addfail_unlink;
+		}
+		substdio_fdbuf(&ss,write,fd,buf,sizeof(buf));
+		if (substdio_put(&ss, num, fmt_ulong(num, (long) q_size) ) == -1) 
+			goto addfail_unlink;
+		if (substdio_puts(&ss,"S,") == -1) goto addfail_unlink;
+		if (substdio_put(&ss, num, fmt_ulong(num, (long) q_count) ) == -1) 
+			goto addfail_unlink;
+		if (substdio_puts(&ss,"C\n") == -1) goto addfail_unlink;
+		if (substdio_flush(&ss) == -1) goto addfail_unlink; 
+		if (fsync(fd) == -1) goto addfail_unlink; 
+		if (close(fd) == -1) goto addfail_unlink; /* NFS dorks */
+		
+		if ( ! stralloc_copys(&maildirsize, dir) ) temp_nomem();
+		if ( ! stralloc_cats(&maildirsize, "/maildirsize") ) temp_nomem();
+		if ( ! stralloc_0(&maildirsize) ) temp_nomem();
+		/* try to link */
+		if (link(foo.s,maildirsize.s) == -1) {
+			if ( errno != error_exist ) 
+				goto addfail_unlink;
+			else { /* Uh Oh file exists race condition */
+				unlink(maildirsize.s);
+				return;
+			}
+		}
+		unlink(foo.s);
+
+		/* unset the alarm, else %*#! may happen */
+		alarm(0);
+		sig_alarmdefault();
+		if ( ( fd = open_append(maildirsize.s) ) == -1 ) {
+			strerr_warn3("Unable to add quota: ", error_str(errno), 
+					". (QUOTA #1.2.3)",0);
+			_exit(111);
+		}
+	}
 
 	seek_end(fd);
 	pos = seek_cur(fd); /* for savety */
-	
+
 	substdio_fdbuf(&ss,write,fd,buf,sizeof(buf));
 	/* create string of the form '1232 12\n' and add it to the quota */
 	if ( ! stralloc_ready(&foo2, 2*FMT_ULONG+2) ) temp_nomem();
@@ -58,28 +128,35 @@ void quota_add(int fd, long int size, int count)
 	if (substdio_flush(&ss) == -1) goto addfail; 
 	if (fsync(fd) == -1) goto addfail; 
 	return;
-	
+
 addfail:
 	strerr_warn3("Unable to add quota: ", error_str(errno), 
 			". (QUOTA #1.2.1)",0);
 	seek_trunc(fd,pos); /* recover from error */
 	close(fd);
 	_exit(111);
+
+addfail_unlink:
+	strerr_warn3("Unable to add quota: ", error_str(errno), 
+			". (QUOTA #1.2.2)",0);
+	unlink(foo.s);
+	_exit(111);
+	
 }
-			
+
 void quota_rm(int fd, long int size, int count)
-/* remove size and count from the quota (maildirsize) *
- * both size and count are POSITVE integers           */
+	/* remove size and count from the quota (maildirsize) *
+	 * both size and count are POSITVE integers           */
 {
 	char		num[FMT_ULONG];
 	seek_pos	pos;
 	substdio	ss;
-	
+
 	if ( fd == -1 ) return;
-	
+
 	seek_end(fd);
 	pos = seek_cur(fd); /* again savety */
-	
+
 	substdio_fdbuf(&ss,write,fd,buf,sizeof(buf));
 	/* create string of the form '-1232 -12\n' and add it to the quota */
 	if ( ! stralloc_ready(&foo2, 2*FMT_ULONG+4) ) temp_nomem();
@@ -94,7 +171,7 @@ void quota_rm(int fd, long int size, int count)
 	if (substdio_flush(&ss) == -1) goto rmfail; 
 	if (fsync(fd) == -1) goto rmfail; 
 	return;
-	
+
 rmfail:
 	strerr_warn3("Unable to remove quota: ", error_str(errno), 
 			". (QUOTA #1.3.1)",0);
@@ -237,7 +314,7 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize,
 				maxtime = now();
 				pid = getpid();
 				if ( ! stralloc_copys(&foo, dir) ) temp_nomem();
-				if ( ! stralloc_cats(&foo, "tmp/maildirsize.") ) temp_nomem();
+				if ( ! stralloc_cats(&foo, "/tmp/maildirsize.") ) temp_nomem();
 				if ( ! stralloc_readyplus(&foo, 2*FMT_ULONG+2) ) temp_nomem();
 				if ( ! stralloc_0(&foo) ) temp_nomem();
 				s = foo.s;

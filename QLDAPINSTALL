@@ -1,4 +1,4 @@
-Betacode 20000320 by Andre Oppermann <opi@nrg4u.com>,
+QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998,1999,2000 Internet Business Solutions Ltd.
 
@@ -6,60 +6,33 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
+RELEASE: 20000501 ($Date: 2000/05/11 20:59:30 $)
 
 TODO:
 
-ongoing - Debugging and testing, testing, testing
-ongoing - The big qmail-ldap picture
-done    - support for mail clusters
-ongoing - full code review
-planned - splitting the patch into smaler separate pieces
-done    - ldap authentication for courier-imap
-needed  - add the new control files and their meaning to qmail-showctl
-needed  - find a solution with the mailmessagestore and homedir
-needed  - solution for the problem with check.c (better and faster check 
-          algorithm
-planned - make it possible to have locals and rcpthosts in ldap
-          and perhaps also the rules for the tcpserver
+ see QLDAPTODO
 
 NEWS:
 
+ see QLDAPNEWS
+
+IMPORTANT NEWS:
+
  added new tool qmail-ldaplookup with this program you can check the ldap
  db entries. Similar to the old checkpassword with debug support.
- Synopsis: qmail-ldaplookup {-m mailaddress | -u userid [passwd]}
+ Usage: qmail-ldaplookup {-m mailaddress | -u userid [passwd]}
  NOTE: because this tool could show critical data (like the hashed passwd)
        it is installed with mode 000 (no rights for anybody)
        You should only give root the permision to start it.
 
- bugfixes in qmail-lspawn.c and checkpassword.c
+ Add the new control files and their meaning to qmail-showctl
+ You can use qmail-showctl to check your setup.
 
- changed the connection forwarding under pop and imap. Now it should work 
- correctly, or at least better then befor ;-)
+ new check algorithm (see QLDAPNEWS)
 
- to have the possibility to compare cleartextpasswords (password how are 
- stored cleartext in ldap) define CLEARTEXTPASSWORD. Because this setting
- is a security disaster it is normaly off. All other modes (hashed MD4, MD5,
- SHA and the standart DES crypt) are not affected.
+ new mailMessageStore/homedirectory handling (see QLDAPNEWS)
 
- Added new debug facility that is usable for the auth tools and qmail-lspawn.
- The debug-level can now be changed at runtime and everything gets logged via
- splogger or any other logger connected to stderr of the execution chain.
- You can set the debug level easily with the DEUBUGLEVEL environment variable.
-
- Created a new auth tool for pop3 and imap. The old checkpassword is not 
- needed anymore. The new programs are auth_pop and auth_imap.
-
- Rewritten qmail-lspawn and the auth tools. Both programs use now the same
- debug and ldap functions, which are now moved to new files (qldap-*).
- The complete ldap lookup is now more flexible, so you can easier add your 
- special stuff.
-
- The qmailUser ldap field and the corresponding conf file are no longer used,
- they have been replaced with the uid field.
-
- Added maildir++ support, this means especially better quota support via the
- maildir++ maildirsize file. For more info have a look at courier-imap
- http://www.inter7.com/courierimap/
+--------------------------------------------------------------------------------
 
 INSTALL:
 
@@ -88,6 +61,7 @@ INSTALL:
    You can set/change:
    - LDAPFLAGS=-DQLDAP_CLUSTER (turns the cluster support on) +
                -DLDAP_ESCAPE_BUG (see NOTE)
+               -DCLEARTEXTPASSWD (for cleartext passwords in ldap bad idea)
      NOTE: at the moment -DLDAP_ESCAPE_BUG is not defined, this should be
            added if your ldap server has problems with the escapeing of 
            LDAP filters (fixed as of OpenLDAP 1.2.8 and higher)
@@ -112,6 +86,15 @@ INSTALL:
 
 5.1 Have a look at qmail-ldap.h, perhaps you want to change something there.
 
+5.2 Have a look at check.c if you want to change the ldap field check behaviour
+    In the standart patch we check for this (in regexp form):
+     user: [a-zA-Z0-9@_.][a-zA-Z0-9@_.-]* (for the LDAP_UID field)
+     path: [a-zA-Z0-9@_./:=][a-zA-Z0-9@_.-/:=]* 
+           (for LDAP_MAILSTORE and LDAP_HOMEDIR)
+     prog: [a-zA-Z0-9@_./:=\\\t\n "'+,][a-zA-Z0-9@_.-/:=\\\t\n "'+,]* 
+           (for LDAP_PROGRAM with RESTRICT_PROG on)
+     NOTE: have a look at QLDAPNEWS for more info
+
 6.  Compile and install the stuff (it's the same as in standard qmail
     install -> read the INSTALL file and the FAQ !!!).
     Now everything should be installed with correct permisions.
@@ -124,7 +107,7 @@ INSTALL:
 
 10. Debugging: as said befor you can compile qmail-lspawn and the auth modules 
     with a flexible debuging facility (option DEBUG).
-    The debug output gets logged trough splogger or your favorite loggin tool 
+    The debug output gets logged through splogger or your favorite loggin tool 
     connected to stderr for tcpserver-pop/imap chain.
     To turn on debugging you need only to define the DEBUGLEVEL environment 
     variable (e.g. with env, env DEBUGLEVEL=3 qmail-start ...)
@@ -144,8 +127,8 @@ INSTALL:
 
      WARNING: on production machines don't use levels over 3 or you will get 
               incredible huge logfiles.
-     NOTE: to high debuglevels are reduced to the maximum allowd debug level
-           if the level parameter form init_debug() is smaler.
+     NOTE: too high debuglevels are reduced to the maximum allowed debug level
+           if the level parameter in init_debug() is smaler.
            Perhaps a compare with a bit mask will be added somewhen, so that
            DEBUGLEVEL=3 will report warnings and errors but DEBUGLEVEL=2 will
            only report warnings.
@@ -345,6 +328,7 @@ LDAP_QMAILGID (default: "qmailGID")
  Example: 1010
  Note: Can be omitted in a virtual users environment
 
+XXX UPDATE ME XXX
 LDAP_MAILSTORE (default: "mailMessageStore")
 
  Path to the maildir/mbox on the mail system
@@ -431,7 +415,8 @@ LDAP_PASSWD (default: "userPassword")
  The password for POP3 delivery
  Example: testit
  Note: Can be encrypted with {SHA}, {MD4}, {MD5}, {NS-MTA-MD5}, {crypt}
- or crypt/cleartext (but should not be used)
+ crypt (without {crypt} prefix) or cleartext (only if compiled with
+ -DCLEARTEXTPASSWD (a bad idea on production systems) )
 
 LDAP_ISACTIVE (default: "accountStatus")
 
@@ -486,20 +471,20 @@ objectclass qmailUser
         requires
                 objectclass,
                 mail,
-                mailMessageStore,
-                uid,
-                userPassword
+                uid
         allows
+                mailMessageStore,
+                userPassword,
                 mailAlternateAddress,
                 qmailUID,
                 qmailGID,
                 mailQuota,
-                mailForwardingAddress,
                 mailHost,
+                mailForwardingAddress,
                 deliveryProgramPath,
+                qmailDotMode,
                 deliveryMode,
                 mailReplyText,
-                qmailDotMode,
                 accountStatus
 
 

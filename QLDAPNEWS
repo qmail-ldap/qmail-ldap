@@ -1,4 +1,4 @@
-Betacode 20000301 by Andre Oppermann <opi@nrg4u.com>,
+QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998,1999,2000 Internet Business Solutions Ltd.
 
@@ -6,30 +6,128 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-This is the NEWS and TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
+RELEASE: $Date: 2000/05/11 20:59:31 $ ($Revision: 1.7 $)
+
+
+This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
 
 TODO:
 
- see QLDAPINSTALL
+ see QLDAPTODO
 
-NEWS:
+NEWS for current stuff:
+
+ bugfix in maildir++.c and qmail-local.c, now quota_add should add the correct 
+ size of the mail. Until now only the message without DTLINE and RPLINE was 
+ sized
+
+ bugfixes in "empty file list :)"
+
+
+NEWS for 20000501 patch (and some also for 20000401):
+ 
+ Add the new control files and their meaning to qmail-showctl
+ You can use qmail-showctl to check your setup.
+
+ added new tool qmail-ldaplookup with this program you can check the ldap
+ db entries. Similar to the old checkpassword with debug support.
+ Usage: qmail-ldaplookup {-m mailaddress | -u userid [passwd]}
+ NOTE: because this tool could show critical data (like the hashed passwd)
+       it is installed with mode 000 (no rights for anybody)
+       You should only give root the permision to start it.
+
+ new mailMessageStore/homedirectory handling
+  because a lot of people request it and because I was also unhappy with it
+  I have rewritten, enhanced the mailMessageStore handling.
+  Now the homedir and aliasempty are set via both mailMessageStore 
+  (LDAP_MAILSTORE) and homedirectory (LDAP_HOMEDIR).
+  It works like this:
+    IF LDAP_HOMEDIR exists it is used as $HOME (qmail-locals 3rd ARGV)
+      IF also LDAP_MAILSTORE exists LDAP_MAILSTORE is used as aliasempty
+      (last ARGV of qmail-local)
+      ELSE (no LDAP_MAILSTORE ) use the aliasempty specified 
+        in /var/qmail/rc or simmilar
+      FI
+    ELSE IF LDAP_MAILSTORE exists but no LDAP_HOMEDIR exists
+      IF LDAP_MAILSTORE is absolute use LDAP_MAILSTORE as 
+        $HOME and use standart aliasempty
+      ELSE (LDAP_MAILSTORE not absolute) use control/ldapmessagestore as
+        prefix to LDAP_MAILSTORE and use this as $HOME and use std. aliasempty
+    ELSE neither LDAP_MAILSTORE nor LDAP_HOMEDIR exists
+        use ~alias as $HOME and ALIASDEVNULL as aliasempty 
+    FI
+  
+  NOTE: the case neither LDAP_MAILSTORE nor LDAP_HOMEDIR is a bit special
+        ~alias is installed as root.qmail mode 02755 (rwxr-sr-x) so no user
+        can write to this directory. ALIASDEVNULL is defined in qmail-ldap.h
+        normaly /dev/null can be used (forward-only and ldaponly will be forced
+        in the next release) or a special alert tool can be used 
+        ("|/var/qmail/bin/myalerttool")
+  NOTE2: if you use "homedirectory" and "mailMessageStore" in an incompatible 
+        way and you want the old behaviour back define LDAP_HOMEDIR in 
+        qmail-ldap.h as an nonexsitent ldap db field like noHomedirectory.
+
+ new check algorithm, I think it's faster and better.
+ Have a look at check.c. At the end of the file there is a array with all
+ ASCII chars (7bit). You can allow or deny char by adding:
+  DENY_ALL:   allways deny this char
+  ALLOW_ALL:  allways allow this char
+  ALLOW_USER: allow this char for username checks (chck_user)
+  DENY_USER:  deny this char for username checks (chck_user)
+  ALLOW_PATH: allow this char for path checks (chck_path)
+  DENY_PATH:  deny this char for path checks (chck_path)
+  ALLOW_PROG: allow this char for program checks (chck_prog)
+  DENY_PROG:  deny this char for program checks (chck_prog)
+  NOT_FIRST:  deny this char at the beginning of a string
+  SPACE:      alias to ALLOW_PROG
+  PARANOIA:   deny most shell special chars like '|' or '*' for program checks
+              can be turned on or of in qmail-ldap.h
+  Example:
+   /* 7  \007 ^G */ DENY_ALL, /* deny control chars */
+   /* 45 '-'     */ ALLOW_ALL|NOT_FIRST, /* allowed but not first */
+   /* 47 '/'     */ ALLOW_ALL&DENY_USER, /* allowed only for path and prog */
+   /* 58 ':'     */ ALLOW_PROG|ALLOW_PATH, /* like before */
+ 
+  As you can see ALLOWs have to be ORed together whereas DENYs have to be ANDed
+  NOT_FIRST has to be ORed and PARANOIA has to be ANDed.
+
+ getcwd and chdir no longer used in qldap-ldaplib.c init_ldap function. 
+
+ changed the connection forwarding under pop and imap. Now it should work 
+ correctly, or at least better then before ;-)
+
+ major cleanup in maildir++ support (mainly maildir++.c)
+ 
+ bugfixes in qmail-lspawn.c, qmail-reply.c and checkpassword.c
+ 
+
+
+NEWS for previous releases:
 
  Added new debug facility that is usable for the auth tools and qmail-lspawn.
  The debug-level can now be changed at runtime and everything gets logged via
  splogger or any other logger connected to stderr of the execution chain.
+ You can set the debug level easily with the DEUBUGLEVEL environment variable.
 
  Created a new auth tool for pop3 and imap. The old checkpassword is not 
  needed anymore. The new programs are auth_pop and auth_imap.
+ To have the possibility to compare cleartextpasswords (password how are 
+ stored cleartext in ldap) define CLEARTEXTPASSWORD. Because this setting
+ is a security disaster it is normaly off. All other modes (hashed MD4, MD5,
+ SHA and the standart DES crypt) are not affected.
  
  Rewritten qmail-lspawn and the auth tools. Both programs use now the same 
  debug and ldap functions, which are now moved to new files (qldap-*).
+ The complete ldap lookup is now more flexible, so you can easier add your 
+ special stuff.
+
+ The qmailUser ldap field and the corresponding conf file are no longer used,
+ they have been replaced with the uid field.
 
  Added maildir++ support, this means especially better quota support via the
  maildir++ maildirsize file. For more info have a look at courier-imap
  http://www.inter7.com/courierimap/
-
-OLDER NEWS:
 
  Added signal-handler for qmail-lspawn, now with a SIGHUP the qmail-lspawn
  parent process reloads the his settings ( via the ~control files )
