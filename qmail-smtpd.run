@@ -10,8 +10,9 @@ CONCURRENCY=${CONCURRENCY:=50}
 
 PATH=$PATH:"$QMAIL/bin"
 
-/* source the environemt in ./env */
-eval `env - envdir ./env env`
+# source the environemt in ./env
+eval `env - envdir ./env '\
+        BEGIN { for (i in ENVIRON) printf "%s=\"%s\"\n", i, ENVIRON[i] }'`
 
 exec envdir ./env \
 	envuidgid $USER \
