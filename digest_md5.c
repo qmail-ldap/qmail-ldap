@@ -415,3 +415,58 @@ MD5DataBase64 (data, len, buf, buflen)
     return(buf);
 }
 
+/* Netscape MTA MD5 as found in Netscape MailServer < 2.02 and Software.com's
+   Post.Office */
+
+static char * ns_mta_hextab = "0123456789abcdef";
+
+void
+ns_mta_hexify(char *buffer, char *str, int len)
+{
+  char *pch = str;
+  char ch;
+  int i;
+
+  for(i = 0;i < len; i ++) {
+    ch = pch[i];
+    buffer[2*i] = ns_mta_hextab[(ch>>4)&15];
+    buffer[2*i+1] = ns_mta_hextab[ch&15];
+  }
+
+  return;
+}
+
+char *
+ns_mta_hash_alg(char *buffer, char *salt, char *passwd)
+{
+  MD5_CTX context;
+  char saltstr[2048];
+  unsigned char digest[16];
+
+  sprintf(saltstr,"%s%c%s%c%s",salt,89,passwd,247,salt);
+
+  MD5Init(&context);
+  MD5Update(&context,(unsigned char *)saltstr,strlen(saltstr));
+  MD5Final(digest,&context);
+  ns_mta_hexify(buffer,(char*)digest,16);
+  buffer[32] = '\0';
+  return(buffer);
+}
+
+int
+ns_mta_md5_cmp_pw(char * clear, char *mangled)
+{
+  char mta_hash[33];
+  char mta_salt[33];
+  char buffer[65];
+  int  gaga;
+
+  strncpy(mta_hash,mangled,32);
+  strncpy(mta_salt,&mangled[32],32);
+
+  mta_hash[32] = mta_salt[32] = 0;
+  gaga = strcmp(mta_hash,ns_mta_hash_alg(buffer,mta_salt,clear));
+
+  return(gaga);
+}
+

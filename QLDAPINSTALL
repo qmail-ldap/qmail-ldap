@@ -60,6 +60,8 @@ NEWS:
  antispam patch for qmail v1.01, based on Lionel Widdifield's patch.
  Please read ANTISPAM for more information.
 
+ Added automatic maildirmaker to qmail-local. This can be enabled with
+ ~control/automaildirmake
 
 INSTALL:
 
@@ -254,6 +256,15 @@ CONFIG FILES:
  Note: This can be useful if a spammer sends lots of messages to a
  nonexistant user from an invalid address, as otherwise, postmaster
  will get lots of double bounces.
+
+~control/automaildirmake
+
+ The existance of this file gives qmail-local the permission to create
+ nonexistant maildirs.
+ Default: none
+ Example: content doesn't matter
+ Note: First you have to send an email to the new user to have qmail-local
+ make the maildirs, after that pop3 can be used.
 
 
 LDAP PARAMETER FIELDS:

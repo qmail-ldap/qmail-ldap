@@ -419,7 +419,8 @@ void main(argc,argv)
 int argc;
 char **argv;
 {
- char hashed[40] = "0000000000000000000000000000000000000000";
+ char hashed[100];
+ char salt[33];
  char *login,
       *encrypted,
       *entredpassword;
@@ -604,9 +605,19 @@ char **argv;
 #ifdef QLDAPDEBUG
       printf(" comparing passwords \t: calculated  '{MD5}%s'\n",hashed);
 #endif
-   } else if (!str_diffn("{SHA}", password.s, 6) ) {
+   } else if (!str_diffn("{NS-MTA-MD5}", password.s, 12) ) {
+   /* NS-MTA-MD5 */
+      shift = 12;
+      strncpy(salt,&password.s[44],32);
+      salt[32] = 0;
+      ns_mta_hash_alg(hashed,salt,entredpassword);
+      strncpy(&hashed[32],salt,33);
+#ifdef QLDAPDEBUG
+      printf(" comparing passwords \t: calculated  '{NS-MTA-MD5}%s'\n",hashed);
+#endif
+   } else if (!str_diffn("{SHA}", password.s, 5) ) {
    /* SHA */
-      shift = 6;
+      shift = 5;
       SHA1DataBase64(entredpassword,strlen(entredpassword),hashed,sizeof(hashed));
 #ifdef QLDAPDEBUG
       printf(" comparing passwords \t: calculated  '{SHA}%s'\n",hashed);

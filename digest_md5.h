@@ -45,4 +45,8 @@ char  *MD5Data __P((const unsigned char *, size_t, char *));
 
 char  *MD5DataBase64 __P((const unsigned char *, size_t, char *, size_t));
 
+void   ns_mta_hexify(char *, char *, int);
+char  *ns_mta_hash_alg(char *, char *, char *);
+int    ns_mta_md5_cmp_pw(char *, char *);
+
 #endif /* _MD5_H_ */
