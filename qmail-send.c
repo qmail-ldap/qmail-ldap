@@ -1469,8 +1469,8 @@ fd_set *rfds;
 
  for (c = 0;c < CHANNELS;++c) flagchan[c] = 0;
 
- substdio_fdbuf(&ss,read,fd,todobuf,sizeof(todobuf));
- substdio_fdbuf(&ssinfo,write,fdinfo,todobufinfo,sizeof(todobufinfo));
+ substdio_fdbuf(&ss,subread,fd,todobuf,sizeof(todobuf));
+ substdio_fdbuf(&ssinfo,subwrite,fdinfo,todobufinfo,sizeof(todobufinfo));
 
  uid = 0;
  pid = 0;
@@ -1523,7 +1523,7 @@ fd_set *rfds;
 	 if (fdchan[c] == -1)
           { log3("warning: unable to create ",fn.s,"\n"); goto fail; }
 	 substdio_fdbuf(&sschan[c]
-	   ,write,fdchan[c],todobufchan[c],sizeof(todobufchan[c]));
+	   ,subwrite,fdchan[c],todobufchan[c],sizeof(todobufchan[c]));
 	 flagchan[c] = 1;
 	}
        if (substdio_bput(&sschan[c],rwline.s,rwline.len) == -1)
