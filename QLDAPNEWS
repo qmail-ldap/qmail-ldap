@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/28 08:09:10 $ ($Revision: 1.123 $)
+RELEASE: $Date: 2003/09/30 09:29:50 $ ($Revision: 1.124 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,10 +17,16 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
- 
- Fixing clustering. This was terribly broken since the rewrite (20030901).
 
- Bug fix in qldap_get_status reported by <krits at home dot pl>
+ qmail-smtpd now reads ~control/locals and merges this with ~control/rcpthosts.
+ It is no longer neccessary to list a domain in both files. Anything listed
+ in locals is now automatically accepted by qmail-smtpd. rcpthosts is only
+ used and needed for domains we have to do spooling for.
+
+ Fixing clustering. The cluster forwarding was broke during the rewrite
+ (20030901).
+
+ Bug fix in qldap_get_status reported by <krits at home dot pl>.
 
  Removed some unneccesary verbositiy in qmail-secretary.
 
@@ -29,8 +35,8 @@ NEWS for current stuff:
 
  Added auth_smtp and AUTH capabilities to qmail-smtpd. Enabled via the 
  SMTPAUTH env var. If SMTPAUTH is set to TLSREQUIRED it is neccesairy to
- do a STARTTLS befor issuing an AUTH command. If AUTHREQUIRED is set the user
- MUST successfully authenticate befor issuing a MAIL command.
+ do a STARTTLS before issuing an AUTH command. If AUTHREQUIRED is set the
+ user MUST successfully authenticate before issuing a MAIL FROM command.
  The string in the env var AUTHPREPEND will be prepended to the userid.
 
  qmail-reply will no longer send replies to mails tagged with a X-RBL header.
@@ -49,9 +55,24 @@ NEWS for current stuff:
 
  New tool qmail-verify which is used for email address verification.
 
- smtp recipient verify. Enabled with RCPTCHECK env var.
+ smtp recipient verify. This qmail-smtpd feature will look up every RCPT TO
+ address in ldap with qmail-verify to check the recipients existence. If it
+ does not exist, qmail-smtpd will answer directly with a 550 reply instead
+ of accepting the email and bouncing it later. Only addresses whose domain
+ part is listed in ~control/locals are checked (because only there we know
+ the definite answer). Relaying and rcpthosts works as before, recipient is
+ not checked for those. Enabled with RCPTCHECK env var.
 
- smtp sender verify. Enabled with SENDERCHECK env var.
+ smtp sender verify. This qmail-smtpd feature will look up every MAIL FROM
+ address in ldap with qmail-verify to check the senders existence. If it
+ does not exist, qmail-smtpd will reject with 550 reply. In normal mode
+ only (envelope) senders whose domain part is listed in ~control/locals
+ are checked. Otherwise no-one else from outside could send mail to local
+ users anymore. In mode LOOSE it will only allow verified sender plus any
+ sender with its domain listed in ~control/rcpthosts. In STRICT mode it
+ will allow only ldap verified senders. With this you can for example
+ enforce that users within your network must use a valid sender which
+ exists in ldap. Enabled with SENDERCHECK env var.
 
  550greeting to reject smtp connections right away in the smtp
  greeting message. Use this to permanently reject all messages coming
@@ -59,8 +80,8 @@ NEWS for current stuff:
 
  smtpclustercookie feature for large smtp MX clusters behind load
  balancers or NAT devices. The cookie is presentented in the smtp
- greeting as last string before \r\n. If qmail-remote compares the
- cookie with it's own and when they match, assumes that the message
+ greeting as last string before \r\n. qmail-remote compares the
+ cookie with it's own and if they match assumes that the message
  is looping. Cookies are set in ~control/smtpclustercookies. Length
  is limited to 32 characters. Fill with some random printable chars.
 
@@ -73,13 +94,16 @@ NEWS for current stuff:
  smtpclustercookie]\r\n". You don't have to put the hostname of the
  machine into smtpgreeting anymore. It is just a text. Can be empty.
 
- auth_* sets now the MAILDIRQUOTA and DATASIZE environment vars. 
+ auth_* sets now the MAILDIRQUOTA and DATASIZE environment vars (for
+ maildrop).
 
- qmail-qmqpd supports now both clear and compressed communications.
+ qmail-qmqpd supports now both clear and ZLIB compressed communications.
 
- SHADOWLIBS forgotten in the digest link rule.
+ SHADOWLIBS added in the digest link rule.
 
- bug fix in auth_imap
+ bug fix in auth_imap. courier-imap login program which is invoking
+ auth_imap did not adhere to its own specs and sends too much stuff.
+
 
 NEWS for 20030901 stuff:
 
