@@ -131,7 +131,7 @@ void logflush(level) int level;
 void die_read() { logline(1,"read error, connection closed"); _exit(1); }
 void die_alarm() { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); _exit(1); }
 void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); logline(1,"out of memory, closing connection"); flush(); _exit(1); }
-void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); logline(1,"unable to real controls, closing connection"); flush(); _exit(1); }
+void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); logline(1,"unable to read controls, closing connection"); flush(); _exit(1); }
 void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); logline(1,"unable to figure out my IP address, closing connection"); flush(); _exit(1); }
 void err_dns() { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
 void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
