@@ -353,7 +353,8 @@ char *fn;
      /* probably we could do a second check (to deliver very big messages) */
      quota_bounce();
    } else if ( totalsize > g_quota/100UL*80UL ) /* drop a warning when mailbox is around 80% full */
-     quota_warning(fn);
+/* XXX disabled because qmail-quotawarn is currently only fot maildirs */
+/*     quota_warning(fn); */
  }
  
 #endif /* end -- quota handling mbox */
