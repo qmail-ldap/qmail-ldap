@@ -109,8 +109,8 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 /* starts the next auth_module, or what ever (argv ... ) */
 {
 	log(16, "auth_success: login=%s, uid=%u, ", login, uid);
-	log(16, "gid=%u, home=%s, maildir=%s, aliasempty=%s, hdm=%s\n",
-			gid, home, md, argv[2], homedirmake );
+	log(16, "gid=%u, home=%s, maildir=%s, hdm=%s\n",
+			gid, home, md, homedirmake );
 	
 	/* check the uid and the gid */
 	if ( UID_MIN > uid || uid > UID_MAX ) {
