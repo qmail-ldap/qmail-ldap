@@ -66,6 +66,8 @@ check_ldap(stralloc *login, stralloc *authdata,
 				LDAP_MAILHOST,
 				LDAP_MAILSTORE,
 				LDAP_HOMEDIR,
+				LDAP_QUOTA_SIZE,
+				LDAP_QUOTA_COUNT,
 				LDAP_PASSWD, 0}; /* passwd is extra */
 
 	/* TODO more debug output is needed */
