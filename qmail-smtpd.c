@@ -1339,6 +1339,7 @@ void smtp_data() {
 #endif
   logline(3,"smtp data");
 
+  ldaplookupdone();
   if (!seenmail) {
     err_wantmail();
     if (errdisconnect) err_quit();

@@ -1,3 +1,4 @@
+#include "error.h"
 #include "getln.h"
 #include "qldap.h"
 #include "qldap-errno.h"
@@ -6,6 +7,7 @@
 #include "stralloc.h"
 #include "subfd.h"
 #include "substdio.h"
+#include "timeoutread.h"
 
 struct qldap *q;
 
@@ -55,6 +57,17 @@ temp_fail(void)
 
 void lookup(stralloc *mail);
 
+
+int timeout = 3;
+int
+saferead(int fd, char *buf, int len)
+{
+	return timeoutread(timeout,fd,buf,len);
+}
+
+char ssinbuf[512];
+substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
+
 stralloc line = {0};
 ctrlfunc	ctrls[] = {
 		qldap_controls,
@@ -70,12 +83,12 @@ main(int argc, char **argv)
 	
 	q = 0;
 	do {
-		if (getln(subfdin, &line, &match, '\0') != 0)
-			/*
-			 * read error on a readable pipe, we asume
-			 * that the parent died.
-			 */
-			die_read();
+		if (getln(&ssin, &line, &match, '\0') != 0) {
+			if (errno != error_timeout)
+				die_read();
+			cleanup();
+			continue;
+		}
 		if (!match) {
 			cleanup(); /* other side closed pipe */
 			break;
@@ -198,5 +211,6 @@ cleanup(void)
 {
 	if (q != 0)
 		qldap_free(q);
+	q = 0;
 }
 
