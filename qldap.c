@@ -153,9 +153,11 @@ qldap_ctrl_generic(void)
 
 	if (control_readfile(&ldap_server, "control/ldapserver", 0) != 1)
 		return -1; /* ... the errno should be set by control_* */
-	byte_repl(ldap_server.s, ldap_server.len, '\0', ' ');
-	if (!stralloc_0(&ldap_server)) return -1;
-	logit(64, "init_ldap: control/ldapserver: %s\n", ldap_server.s);
+	if (ldap_server.len)
+		byte_repl(ldap_server.s, ldap_server.len - 1, '\0', ' ');
+	else
+		if (!stralloc_0(&ldap_server)) return -1;
+	logit(64, "init_ldap: control/ldapserver: '%s'\n", ldap_server.s);
 
 	if (control_rldef(&basedn, "control/ldapbasedn", 0, "") == -1)
 		return -1;
