@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/06/29 19:01:59 $ ($Revision: 1.198 $)
+RELEASE: $Date: 2004/07/01 14:34:08 $ ($Revision: 1.199 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -28,28 +28,29 @@ NEWS for current stuff:
  and SSL encryption even without this file as a certificate is optional for
  the client side. 
 
- To enable SMTP STARTTLS a the path to the cert file needs to be set in
+ To enable SMTP STARTTLS the path to the cert file needs to be set in
  ~control/smtpcert or set via the env var SSLCERT.
 
  If the defaultdelivery aka aliasempty is not a local delivery qmail-local
- my start additionally programs while running qmail-reply. Reported by
+ may start additional programs while running qmail-reply. Reported by
  Florian Pflug.
 
  Fix the SIGHUP handling between qmail-send and qmail-local.
 
- Messages sent from a moderator to a group only need to be approved from the
- moderator himself. 
+ Messages sent from a moderator to a group only need to be approved by the
+ moderator himself.
 
  qmail-todo started to spin if qmail-send exited non nicely (aka crashed).
 
- Fix some path and sh issues in the run scripts reported by Toni Mueller 
- and Ted Zlatanov while doing that add some ssl run scripts.
+ Fix some path and 'sh' issues in the run scripts reported by Toni Mueller 
+ and Ted Zlatanov. While doing that add some ssl run scripts.
 
  Fix QUOTATRASH option by including LDAPFLAGS to the maildir++.o target.
  Reported by Zachary Denison.
 
- Replaced the cdb functions with the public domain mmaped version of tcpserver.
- This makes it possible to keep the file open and do extremly fast searches.
+ Replaced the cdb functions with the public domain mmaped version from
+ tcpserver. This makes it possible to keep the file open and do extremly
+ fast searches.
 
  Add license to files that are under our (Andre or mine) copyright. At least
  it is now clear what is our stuff and what is coming from djb.
