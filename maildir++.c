@@ -397,10 +397,13 @@ quota_calcsize(quota_t *q, int *fd, char *buf, int len)
 	
 	dirp = opendir(path.s);
 	while (dirp && (dp = readdir(dirp)) != 0) {
-		if ( dp->d_name[0] == '.'
-				&& dp->d_name[1] != '\0' 
-				&& dp->d_name[1] != '.'
-				&& str_diff(".Trash", dp->d_name) ) {
+		if (dp->d_name[0] == '.' &&
+		    dp->d_name[1] != '\0' &&
+		    dp->d_name[1] != '.'
+#ifndef QUOTATRASH
+		    && str_diff(".Trash", dp->d_name)
+#endif
+		   ) {
 			
 			path.len = plen;
 			if (!stralloc_cats(&path, dp->d_name)) temp_nomem();
@@ -537,10 +540,13 @@ check_maxtime(time_t t)
 	
 	i = 0;
 	while (dirp && (dp = readdir(dirp)) != 0) {
-		if (dp->d_name[0] == '.'
-				&& dp->d_name[1] != '\0'
-				&& dp->d_name[1] != '.'
-				&& str_diff(".Trash", dp->d_name)) {
+		if (dp->d_name[0] == '.' &&
+		    dp->d_name[1] != '\0' &&
+		    dp->d_name[1] != '.'
+#ifndef QUOTATRASH
+		    && str_diff(".Trash", dp->d_name)
+#endif
+		   ) {
 
 			path.len = slen;
 			if (!stralloc_cats(&path, dp->d_name)) temp_nomem();
