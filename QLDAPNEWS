@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/01/04 16:57:17 $ ($Revision: 1.78 $)
+RELEASE: $Date: 2003/01/08 08:47:20 $ ($Revision: 1.79 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,10 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Retry the ldap_bind with LDAPv2 if ldap_bind fails with LDAP_PROTOCOL_ERROR.
+ This solves a problem with OpenLDAP > 2.0 client libs and a OpenLDAP 1.2
+ Server. Inspired by Henning Brauer.
 
  New qmail-reply program. Now it is possible to define a header section
  with %HEADER%. With this change it is possible to define special Content-type

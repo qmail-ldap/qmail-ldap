@@ -249,7 +249,6 @@ int qldap_open(void)
 		}
 		log(128, "init successful");
 
-#if 0
 		version = LDAP_VERSION2;
 		if ( ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &version)
 				== LDAP_OPT_SUCCESS ) {
@@ -258,7 +257,6 @@ int qldap_open(void)
 			qldap_errno = LDAP_INIT;
 			return -1;
 		}
-#endif
 	}
 #endif
 
@@ -274,11 +272,29 @@ int qldap_open(void)
 		   *LDAP_INVALID_CREDENTIALS*,
 		   LDAP_AUTH_UNKNOWN
 		*/
-		if (rc == LDAP_SERVER_DOWN) {
+		switch (rc) {
+		case LDAP_SERVER_DOWN:
 			qldap_errno = LDAP_BIND_UNREACH;
 			return -1;
-		}
-		else {
+		case LDAP_PROTOCOL_ERROR:
+			/* bind failed try Version 2 */
+#ifdef LDAP_OPT_PROTOCOL_VERSION
+			version = LDAP_VERSION2;
+			if ( ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &version)
+			    == LDAP_OPT_SUCCESS ) {
+				log(128, ", set_option successful");
+			} else {
+				qldap_errno = LDAP_INIT;
+				return -1;
+			}
+#endif
+			if ( (rc = ldap_simple_bind_s(ld,qldap_user.s,qldap_password.s))
+			    != LDAP_SUCCESS ) {
+				log(128, ", bind NOT successful (%s)\n", ldap_err2string(rc) );
+				return -1;
+			}
+			break;
+		default:
 			qldap_errno = LDAP_BIND;
 			return -1;
 		}
