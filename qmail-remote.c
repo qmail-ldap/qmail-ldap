@@ -340,6 +340,7 @@ void smtp()
 
   code = smtpcode();
   if (code >= 500) quit("DConnected to "," but greeting failed");
+  if (code >= 400) return;
   if (code != 220) quit("ZConnected to "," but greeting failed");
  
   flagsize = 0;
@@ -356,6 +357,7 @@ void smtp()
    substdio_flush(&smtpto);
    code = smtpcode();
    if (code >= 500) quit("DConnected to "," but my name was rejected");
+   if (code >= 400) return;
    if (code != 250) quit("ZConnected to "," but my name was rejected");
   }
 
@@ -545,7 +547,7 @@ void qmtp()
   substdio_put(&smtpto,":\n",2);
   while (len > 0) {
     n = substdio_feed(&ssin);
-    if (n <= 0) _exit(32); /* wise guy again */
+    if (n <= 0) temp_read(); /* wise guy again */
     x = substdio_PEEK(&ssin);
     substdio_put(&smtpto,x,n);
     substdio_SEEK(&ssin,n);
@@ -617,7 +619,7 @@ void qmtp()
     zero();
   }
   if (!flagallok) {
-    out("DGiving up on ");outhost();out("\n");
+    out("ZGiving up on ");outhost();out("\n");
   } else {
     out("KAll received okay by ");outhost();out("\n");
   }
@@ -788,7 +790,8 @@ char **argv;
 #ifdef TLS_REMOTE
 	  fqdn = ip.ix[i].fqdn;
 #endif
-      smtp(); /* does not return */
+      smtp(); /* should not return unless the start code or the HELO code
+	         returns a temporary failure. */
     }
     tcpto_err(&ip.ix[i].ip,errno == error_timeout);
     close(smtpfd);

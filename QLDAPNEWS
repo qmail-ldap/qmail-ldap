@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/06/09 09:58:56 $ ($Revision: 1.97 $)
+RELEASE: $Date: 2003/06/09 10:06:05 $ ($Revision: 1.98 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -23,6 +23,12 @@ NEWS for current stuff:
  we have a few modes -- manly forwardonly, noforward, localdelivery,
  normal and nombox -- that are exclusive. Anyway for now this should make
  life a bit easier.
+
+ Nicer log output in qmail-smtpd and rbl code.
+
+ qmail-remote tries now higher MX servers if the previous server temporary
+ fails in the HELO/EHLO command exchange. >=500 errors result in a delivery
+ error.
 
 NEWS for 20030501 stuff:
 
