@@ -81,6 +81,7 @@ call_flush(struct call *cc)
 	return 0;
 
 }
+
 int
 call_putflush(struct call *cc, const char *s, unsigned int len)
 {
