@@ -27,7 +27,17 @@
 int qfd;
 /* end qmail-ldap stuff */
  
-void die() { _exit(0); }
+/* level 0 = no logging
+         1 = fatal errors
+         2 = login/logout accounting
+         3 = session errors
+	 4 = verbose
+ */
+int loglevel = 0;
+
+void log_quit();
+
+void die() { log_quit(); _exit(0); }
 
 int saferead(fd,buf,len) int fd; char *buf; int len;
 {
@@ -71,20 +81,24 @@ void err(s) char *s;
   flush();
 }
 
-void die_nomem() { err("out of memory"); die(); }
-void die_nomaildir() { err("this user has no $HOME/Maildir"); die(); }
+void die_nomem() { err("out of memory");
+	logf(1, "panic: out of memory"); die(); }
+void die_nomaildir() { err("this user has no $HOME/Maildir");
+	logf(1, "panic: this user has no $HOME/Maildir"); die(); }
 #ifdef AUTOMAILDIRMAKE
-void die_maildir() { err("this user has a defective Maildir"); die(); }
+void die_maildir() { err("this user has a defective Maildir"); 
+	logf(1, "panic: this user has a defective Maildir"); die(); }
 #endif
-void die_scan() { err("unable to scan $HOME/Maildir"); die(); }
+void die_scan() { err("unable to scan $HOME/Maildir");
+	logf(1, "unable to scan $HOME/Maildir"); die(); }
 
-void err_syntax() { err("syntax error"); }
-void err_unimpl() { err("unimplemented"); }
-void err_deleted() { err("already deleted"); }
-void err_nozero() { err("messages are counted from 1"); }
-void err_toobig() { err("not that many messages"); }
-void err_nosuch() { err("unable to open that message"); }
-void err_nounlink() { err("unable to unlink all deleted messages"); }
+void err_syntax() { err("syntax error"); logf(3, "error: syntax error"); }
+void err_unimpl() { err("unimplemented"); logf(3, "error: unimplemented"); }
+void err_deleted() { err("already deleted"); logf(3, "already deleted"); }
+void err_nozero() { err("messages are counted from 1"); logf(3, "messages are counted from 1"); }
+void err_toobig() { err("not that many messages"); logf(3, "not that many messages"); }
+void err_nosuch() { err("unable to open that message"); logf(3, "unable to open that message"); }
+void err_nounlink() { err("unable to unlink all deleted messages"); logf(3, "unable to unlink all deleted messages"); }
 
 void okay() { puts("+OK \r\n"); flush(); }
 
@@ -93,6 +107,70 @@ void printfn(fn) char *fn;
   fn += 4;
   put(fn,str_chr(fn,':'));
 }
+
+stralloc logs_pidhostinfo = {0};
+unsigned long log_bytes = 0;
+
+void log(int l, char *s) { if(l <= loglevel) substdio_puts(&ssfderr,s);}
+void logf(int l, char *s) {
+	if(l > loglevel) return;
+	substdio_puts(&ssfderr,s);
+	substdio_putsflush(&ssfderr,"\n");
+}
+
+void log_quit()
+{
+  char strnum[FMT_ULONG];
+
+  log(2, "acct:");
+  log(2, logs_pidhostinfo.s);
+  log(2, "logout ");
+  strnum[fmt_ulong(strnum,log_bytes)] = 0;
+  log(2, strnum); logf(2, " bytes transferred");
+}
+
+void log_init()
+{
+  char strnum[FMT_ULONG];
+  char *remotehost;
+  char *remoteip;
+  char *remoteinfo;
+  char *user;
+  char *l;
+  unsigned long v;
+  
+  l = env_get("LOGLEVEL");
+  if (l) { scan_ulong(l,&v); loglevel = v; };
+
+  
+  
+  remoteip = env_get("TCPREMOTEIP");
+  if (!remoteip) remoteip = "unknown";
+  remotehost = env_get("TCPREMOTEHOST");
+  if (!remotehost) remotehost = "unknown";
+  remoteinfo = env_get("TCPREMOTEINFO");
+  if (!remoteinfo) remoteinfo = "";
+  user = env_get("USER");
+  if (!user) user = "unknown";
+
+  if (!stralloc_copys(&logs_pidhostinfo, " pid ")) die_nomem();
+  strnum[fmt_ulong(strnum,getpid())] = 0;
+  if (!stralloc_cats(&logs_pidhostinfo, strnum)) die_nomem();
+  if (!stralloc_cats(&logs_pidhostinfo, ": ")) die_nomem();
+
+  if (!stralloc_cats(&logs_pidhostinfo, remotehost)) die_nomem();
+  if (!stralloc_cats(&logs_pidhostinfo, ":")) die_nomem();
+  if (!stralloc_cats(&logs_pidhostinfo, remoteip)) die_nomem();
+  if (!stralloc_cats(&logs_pidhostinfo, ":")) die_nomem();
+  if (!stralloc_cats(&logs_pidhostinfo, remoteinfo)) die_nomem();
+  if (!stralloc_cats(&logs_pidhostinfo, " ")) die_nomem();
+  if (!stralloc_cats(&logs_pidhostinfo, user)) die_nomem();
+  if (!stralloc_cats(&logs_pidhostinfo, " ")) die_nomem();
+  if (!stralloc_0(&logs_pidhostinfo)) die_nomem();
+
+  log(2, "acct:"); log(2, logs_pidhostinfo.s); logf(2, "login");
+}
+
 
 char strnum[FMT_ULONG];
 stralloc line = {0};
@@ -116,6 +194,7 @@ unsigned long limit;
         put(".",1);
     put(line.s,line.len);
     put("\r\n",2);
+    log_bytes += line.len + 2;
     if (!match) break;
   }
   put("\r\n.\r\n",5);
@@ -165,6 +244,7 @@ void pop3_stat()
   unsigned long total;
   unsigned int count;
  
+  logf(4, "comm: stat");
   total = 0;
   count = 0;
   for (i = 0;i < numm;++i) if (!m[i].flagdeleted) {
@@ -183,6 +263,7 @@ void pop3_rset()
 {
   int i;
 
+  logf(4, "comm: rset");
   for (i = 0;i < numm;++i) m[i].flagdeleted = 0;
   last = 0;
   okay();
@@ -190,6 +271,7 @@ void pop3_rset()
 
 void pop3_last()
 {
+  logf(4, "comm: last");
   puts("+OK ");
   put(strnum,fmt_uint(strnum,last));
   puts("\r\n");
@@ -201,6 +283,7 @@ void pop3_quit()
   int i;
   quota_t q;
   
+  logf(4, "comm: quit");
 /* qmail-ldap stuff */
 /* this is just minimal support, because pop3 can not produce new mail */
   quota_get(&q, 0);
@@ -238,6 +321,8 @@ int msgno(arg) char *arg;
 void pop3_dele(arg) char *arg;
 {
   int i;
+
+  log(4, "comm: dele: "); logf(4, arg);
   i = msgno(arg);
   if (i == -1) return;
   m[i].flagdeleted = 1;
@@ -275,8 +360,10 @@ void dolisting(arg,flaguidl) char *arg; int flaguidl;
   flush();
 }
 
-void pop3_uidl(arg) char *arg; { dolisting(arg,1); }
-void pop3_list(arg) char *arg; { dolisting(arg,0); }
+void pop3_uidl(arg) char *arg; { 
+  log(4, "comm: uidl: "); logf(4, arg); dolisting(arg,1); }
+void pop3_list(arg) char *arg; {
+  log(4, "comm: list: "); logf(4, arg); dolisting(arg,0); }
 
 substdio ssmsg; char ssmsgbuf[1024];
 
@@ -286,9 +373,10 @@ void pop3_top(arg) char *arg;
   unsigned long limit;
   int fd;
 #ifdef MAKE_NETSCAPE_WORK /* Based on a patch by sven@megabit.net */
-  char foo[40];  /* should be enough to hold 2^128 - 1 in decimal, plus \0 */
+  char foo[FMT_ULONG];
 #endif
  
+  log(4, "comm: top: "); logf(4, arg);
   i = msgno(arg);
   if (i == -1) return;
  
@@ -388,6 +476,7 @@ char **argv;
 #endif
 /* qmail-ldap stuff */
 
+  log_init();
   getlist();
 
   okay();
