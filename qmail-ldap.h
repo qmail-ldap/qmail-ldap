@@ -117,6 +117,9 @@
 #define LDAP_GROUPMEMBERDN	"dnmember"
 #define LDAP_GROUPMEMBER822	"rfc822member"
 #define LDAP_GROUPMEMBERFILTER	"filtermember"
+#define LDAP_GROUPSENDERDN	"dnsender"
+#define LDAP_GROUPSENDER822	"rfc822sender"
+#define LDAP_GROUPSENDERFILTER	"filtersender"
 
 
 /*********************************************************************
