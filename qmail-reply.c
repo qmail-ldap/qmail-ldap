@@ -489,8 +489,11 @@ void sendmail(void)
 	do {
 		for(i = 0;;) {
 			i += byte_chr(s + i, len - i, '\n');
-			if (++i >= len)
-				strerr_die2x(100, FATAL, "parser error");
+			if (++i >= len) {
+				/* last line ends without a newline. */
+				i = len;
+				break;
+			}
 			if (s[i] == ' ' || s[i] == '\t')
 				continue;
 			break;
@@ -581,7 +584,9 @@ void sendmail(void)
 next:
 		s += i;
 		len -= i;
-	} while (header == 1);
+		if (len == 0 && header != 0)
+			strerr_die2sys(100, FATAL, "parser error");
+	} while (header != 0);
 
 	if (resubject.s == (char *)0) {
 		if (!stralloc_copys(&resubject, "[Auto-Reply] "))
@@ -618,10 +623,14 @@ next:
 		qmail_puts(&qqt, REPLY_CTE);
 	/* '\n' already written */
 	/* X-Mailer: qmail-reply */
-	qmail_puts(&qqt, "X-Mailer: qmail-reply\n\n");
+	qmail_puts(&qqt, "X-Mailer: qmail-reply\n");
+	/* end of header marker */
+	qmail_puts(&qqt, "\n");
 
 	/* body */
 	qmail_put(&qqt, s, len);
+	/* add a empty newline */
+	qmail_puts(&qqt, "\n");
 	qmail_from(&qqt, from.s);
 	qmail_to(&qqt, to.s);
 	qqx = qmail_close(&qqt);
