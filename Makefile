@@ -8,9 +8,9 @@ LDAPLIBS=-L/usr/local/lib -lldap -llber
 # and change the location of the include files here
 LDAPINCLUDES=-I/usr/local/include
 # for example on my Linux box I use:
-#LDAPLIBS=-L/opt/ldap/lib -lpthread -lldapssl30
+#LDAPLIBS=-L/opt/OpenLDAP/lib -lpthread -lldap -llber -lresolv
 # if you need a special include-directory for ldap headers enable this
-#LDAPINCLUDES=-I/opt/ldap/include
+#LDAPINCLUDES=-I/opt/OpenLDAP/include
 
 # comment out the next line if you don't need local passwd lookups
 PWOPTS=-DLOOK_UP_PASSWD
@@ -1654,13 +1654,13 @@ load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o \
 timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
 date822fmt.o now.o qmail.o cdb.a fd.a wait.a datetime.a getln.a \
 open.a sig.a case.a env.a stralloc.a alloc.a substdio.a error.a str.a \
-fs.a auto_qmail.o socket.lib
+fs.a auto_qmail.o dns.lib socket.lib
 	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o \
 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
 	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a auto_qmail.o dns.o `cat \
-	socket.lib`
+	alloc.a substdio.a error.a str.a fs.a auto_qmail.o dns.o \
+	`cat dns.lib` `cat socket.lib`
 
 qmail-smtpd.0: \
 qmail-smtpd.8

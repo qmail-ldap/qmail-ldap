@@ -5,11 +5,8 @@
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
-#ifndef u_int32_t
- #include <sys/types.h>
-#else
- #include "compatibility.h"
-#endif
+#include <sys/types.h>
+#include "compatibility.h"
 #include "digest_md4.h"
 #include "digest_md5.h"
 #include "digest_rmd160.h"
