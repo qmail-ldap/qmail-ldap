@@ -281,7 +281,7 @@ datetime_sec timeout;
 #ifndef REPLY_TIMEOUT
 #define REPLY_TIMEOUT 1209600 /* 2 weeks */
 #endif
-#define MAX_SIZE (32 * 1024) /* 32kB */
+#define MAX_SIZE (128 * 1024) /* 128kB space for recent sender db */
 
 int checkstamp(char *, unsigned int);
 
@@ -777,7 +777,8 @@ void sendmail(void)
 	qmail_put(&qqt, replytext.s + offset, replytext.len - offset);
 	/* add a empty newline, just to be sure */
 	qmail_puts(&qqt, "\n");
-	qmail_from(&qqt, from.s);
+	/* use <> as envelope sender as we are not interested in bounces */
+	qmail_from(&qqt, "");
 	qmail_to(&qqt, to.s);
 	qqx = qmail_close(&qqt);
 	if (!*qqx) return;
@@ -828,12 +829,13 @@ int main(int argc, char **argv)
 
 	/* check if a reply is needed */
 	if (junksender(to.s, to.len)) _exit(0);
-	if (maildir && (*maildir == '.' || *maildir == '/') &&
-	    maildir[str_len(maildir)-1] == '/')
-		if (recent(to.s, to.len, maildir)) _exit(0);
 	/* parse header, exit if a precedence or mailinglist field
 	   has been found or the mail is not directly sent to us. */
 	if (parseheader()) _exit(0);
+	/* already sent a message recently? */
+	if (maildir && (*maildir == '.' || *maildir == '/') &&
+	    maildir[str_len(maildir)-1] == '/')
+		if (recent(to.s, to.len, maildir)) _exit(0);
 
 	sendmail();
 	return 0;

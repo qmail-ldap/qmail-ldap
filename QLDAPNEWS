@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/11/17 13:20:23 $ ($Revision: 1.206 $)
+RELEASE: $Date: 2004/11/29 14:11:25 $ ($Revision: 1.207 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,13 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ qmail-reply sends mail with empty envelope sender as it does not make sense
+ to get bounces for automatic replies. Prodded by Andre who had over 1000
+ failure notices after his vacation.
+
+ Only update the qmail-reply recent sent db if we would send a mail to this
+ user. Before every sender was added to the db and caused massive trashing.
 
  Bugfix in qmail-group to make filtermember/filtersender work when
  membersonly is turned on. Previously users specified via a filter where
