@@ -70,6 +70,7 @@ stralloc ufline = {0};
 stralloc rpline = {0};
 stralloc envrecip = {0};
 stralloc dtline = {0};
+stralloc ftline = {0};
 stralloc qme = {0};
 stralloc ueo = {0};
 stralloc cmds = {0};
@@ -443,7 +444,12 @@ char **recips;
 
  if (qmail_open(&qqt) == -1) temp_fork();
  mailforward_qp = qmail_qp(&qqt);
+
  qmail_put(&qqt,dtline.s,dtline.len);
+
+ if (*recips[1])
+   qmail_put(&qqt,"Precedence: bulk\n",17);
+
  do
   {
    if (getln(&ss,&messline,&match,'\n') != 0) { qmail_fail(&qqt); break; }
