@@ -53,6 +53,10 @@ NEWS:
  Added automatic homedir and maildir maker to qmail-local.
  This can be enabled with ~control/dirmaker
 
+ qmail-smtpd does logging now. This can be set by an environment variable
+ in tcpserver: LOGLEVEL="X". "0" or not present = no logging, "1" = fatal
+ errors, "2" = connection setup and warnings, "3" = verbose.
+
 OLDER NEWS:
 
  checkpassword compiled with QLDAPDEBUG now does complete LDAP debugging.
