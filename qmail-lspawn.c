@@ -889,8 +889,13 @@ char *s; char *r; int at;
             struct passwd *pw;
             char num[FMT_ULONG];
 
+            WARNING("local delivery not enabled, trying to find alias user in passwd db\n",0,0,0);
+
             pw = getpwnam(auto_usera);
-            if (!pw) _exit(QLX_NOALIAS);
+            if (!pw) {
+              WARNING("getpwnam failed, your qmail configuration is probaly screwed\n",0,0,0);
+              _exit(QLX_NOALIAS);
+            }
             
             if (!stralloc_copys(&nughde, pw->pw_name)) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
@@ -904,7 +909,6 @@ char *s; char *r; int at;
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
             if (!stralloc_cats(&nughde,r)) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-            free(pw);
             WARNING("... trying alias\n",0,0,0);
          }
       break;
