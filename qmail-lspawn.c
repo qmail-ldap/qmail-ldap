@@ -31,6 +31,10 @@
 #include "str.h"
 #include <pwd.h>
 #include <sys/types.h>
+#ifdef QLDAP_CLUSTER
+#include "seek.h"
+#include "getln.h"
+#endif
 
 char *aliasempty;
 
@@ -281,8 +285,8 @@ int len;
          substdio_puts(ss, "ZConfiguration file ~control/ldapmessagestore does not end with an / or is empty. (LDAP-ERR #237)\n");
       REPORT_RETURN;
       
-   case 238: /* XXX */
-         substdio_puts(ss, "ZAACK: qmail-qmqpc (as mail forwarder) crashed (LDAP-ERR #238)\n");
+   case 238:
+         substdio_puts(ss, "Zqmail-qmqpc (as mail forwarder) crashed (LDAP-ERR #238)\n");
       REPORT_RETURN;
 
 #ifdef QLDAP_CLUSTER
@@ -292,6 +296,10 @@ int len;
       
    case 240:
          substdio_puts(ss, "DPermanet error in qmail-qmqpc (as mail forwarder) (LDAP-ERR #240)\n");
+      REPORT_RETURN;
+      
+   case 241:
+         substdio_puts(ss, "DThis message is looping: it already has my Delivered-To line. (LDAP-ERR #241 CLUSTERLOOP)\n");
       REPORT_RETURN;
 #endif /* QLDAP_CLUSTER */
 /* end -- report LDAP errors */
@@ -845,13 +853,44 @@ char *s; char *r; int at;
 
 
 #ifdef QLDAP_CLUSTER
+stralloc dtline = {0};
+
+void bouncexf()
+{
+ char buf[1024];
+ int match;
+ substdio ss;
+
+ if (seek_begin(0) == -1) _exit(QLX_SYS);
+ substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
+ for (;;)
+  {
+   if (getln(&ss,&foo,&match,'\n') != 0) _exit(QLX_SYS);
+   if (!match) break;
+   if (foo.len <= 1)
+     break;
+   if (foo.len == dtline.len)
+     if (!str_diffn(foo.s,dtline.s,dtline.len))
+       _exit(241);
+  }
+}
+
 void forward_mail(char *host, stralloc *to, char* from, int fdmess)
 {
    char *(args[3]);
    int pi[2];
    int wstat;
    int child;
+   int i;
+   
+   if (!stralloc_copys(&dtline, "Delivered-To: CLUSTERHOST ")) _exit(QLX_NOMEM);
+   if (!stralloc_cat(&dtline, &qldap_me)) _exit(QLX_NOMEM);
+   for (i = 0;i < dtline.len;++i) if (dtline.s[i] == '\n') dtline.s[i] = '_';
+   if (!stralloc_cats(&dtline,"\n")) _exit(QLX_NOMEM);
 
+   bouncexf();
+   
+   if (seek_begin(0) == -1) _exit(QLX_SYS);
    if (pipe(pi) == -1) _exit(QLX_SYS);
 
    switch( child = fork() ) {
@@ -876,6 +915,9 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
    allwrite(write, pi[1], "T",1);
    allwrite(write, pi[1], to->s, to->len);
    allwrite(write, pi[1], "", 1);
+   allwrite(write, pi[1], "", 1);
+   allwrite(write, pi[1], "H",1);
+   allwrite(write, pi[1], qldap_me.s, qldap_me.len);
    allwrite(write, pi[1], "", 1);
    close(pi[1]);
    wait_pid(&wstat,child);
