@@ -24,6 +24,9 @@
 #include "strerr.h"
 #include "subfd.h"
 #include "substdio.h"
+#ifdef AUTOHOMEDIRMAKE
+#include "dirmaker.h"
+#endif
 
 #define FATAL "qmail-ldaplookup: fatal: "
 #define WARN "qmail-ldaplookup: warning: "
@@ -58,7 +61,8 @@ void unescape(char *, stralloc *);
 
 
 ctrlfunc ctrls[] = {
-  qldap_controls,
+  qldap_ctrl_trylogin,
+  qldap_ctrl_generic,
   localdelivery_init,
 #ifdef QLDAP_CLUSTER
   cluster_init,

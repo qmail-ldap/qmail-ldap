@@ -37,7 +37,8 @@ stralloc	loginstr = {0};
 stralloc	authdatastr = {0};
 
 ctrlfunc	ctrls[] = {
-		qldap_controls,
+		qldap_ctrl_login,
+		qldap_ctrl_generic,
 		localdelivery_init,
 #ifdef QLDAP_CLUSTER
 		cluster_init,

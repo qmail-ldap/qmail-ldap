@@ -124,7 +124,8 @@ stralloc	loginstr = {0};
 stralloc	authdatastr = {0};
 
 ctrlfunc	ctrls[] = {
-		qldap_controls,
+		qldap_ctrl_trylogin,
+		qldap_ctrl_generic,
 		0 };
 
 int

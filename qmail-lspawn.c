@@ -76,7 +76,8 @@ void check_home(const char *home, const char *maildir)
 #endif
 
 ctrlfunc ctrls[] = {
-  qldap_controls,
+  qldap_ctrl_login,
+  qldap_ctrl_generic,
   localdelivery_init,
 #ifdef QLDAP_CLUSTER
   cluster_init,

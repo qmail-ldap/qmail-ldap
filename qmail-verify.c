@@ -71,7 +71,8 @@ substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
 stralloc line = {0};
 ctrlfunc	ctrls[] = {
-		qldap_controls,
+		qldap_ctrl_trylogin,
+		qldap_ctrl_generic,
 		0 };
 
 int

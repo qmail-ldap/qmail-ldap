@@ -68,7 +68,47 @@ static int check_next_state(qldap *, int);
 
 
 int
-qldap_controls(void)
+qldap_ctrl_login(void)
+{
+	if (control_rldef(&ldap_login, "control/ldaplogin", 0, "") == -1)
+		return -1;
+	if (!stralloc_0(&ldap_login)) return -1;
+	logit(64, "init_ldap: control/ldaplogin: %s\n", ldap_login.s);
+
+	if (control_rldef(&ldap_password, "control/ldappassword", 0, "") == -1)
+		return -1;
+	if (!stralloc_0(&ldap_password)) return -1;
+	logit(64, "init_ldap: control/ldappassword: %s\n", ldap_password.s);
+
+	return 0;
+}
+
+int
+qldap_ctrl_trylogin(void)
+{
+	if (control_rldef(&ldap_password, "control/ldappassword", 0, "") ==
+	    -1) {
+		if (!stralloc_catb(&ldap_password, "", 1)) return -1;
+		if (!stralloc_catb(&ldap_login, "", 1)) return -1;
+		return 0;
+	}
+	if (!stralloc_0(&ldap_password)) return -1;
+
+	if (control_rldef(&ldap_login, "control/ldaplogin", 0, "") == -1) {
+		if (!stralloc_catb(&ldap_password, "", 1)) return -1;
+		if (!stralloc_catb(&ldap_login, "", 1)) return -1;
+		return 0;
+	}
+	if (!stralloc_0(&ldap_login)) return -1;
+
+	logit(64, "init_ldap: control/ldaplogin: %s\n", ldap_login.s);
+	logit(64, "init_ldap: control/ldappassword: %s\n", ldap_password.s);
+
+	return 0;
+}
+
+int
+qldap_ctrl_generic(void)
 {
 	/* set defaults, so that a reread works */
 	ldap_timeout = QLDAP_TIMEOUT;	/* default timeout is 30 secs */
@@ -92,16 +132,6 @@ qldap_controls(void)
 	if (control_rldef(&objectclass, "control/ldapobjectclass", 0, "") == -1)
 		return -1;
 	logit(64, "init_ldap: control/ldapobjectclass: %S\n", &objectclass);
-
-	if (control_rldef(&ldap_login, "control/ldaplogin", 0, "") == -1)
-		return -1;
-	if (!stralloc_0(&ldap_login)) return -1;
-	logit(64, "init_ldap: control/ldaplogin: %s\n", ldap_login.s);
-
-	if (control_rldef(&ldap_password, "control/ldappassword", 0, "") == -1)
-		return -1;
-	if (!stralloc_0(&ldap_password)) return -1;
-	logit(64, "init_ldap: control/ldappassword: %s\n", ldap_password.s);
 
 	if (control_readint(&ldap_timeout, "control/ldaptimeout") == -1)
 		return -1;
