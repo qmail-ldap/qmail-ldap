@@ -190,7 +190,8 @@ auth_close(struct call *cc, stralloc *user, const char *pre)
 	
 	if (!cc->flagerr && !cc->flagabort) {
 		if (call_getc(cc, &c) == -1) {
-			s = "501 authentication exchange failed\r\n";
+			s = "454 authentication process read failure. "
+			    "(#4.3.0)\r\n";
 		} else
 		switch (c) {
 		case 'K':
