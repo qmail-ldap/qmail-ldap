@@ -1,4 +1,4 @@
-Betacode 19990428 by Andre Oppermann <opi@nrg4u.com>,
+Betacode 19990501 by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998,1999 Internet Business Solutions Ltd.
 
@@ -59,6 +59,11 @@ NEWS:
  Integrated Lindsay Haisley update to Rask Lambertsen's excellent
  antispam patch for qmail v1.01, based on Lionel Widdifield's patch.
  Please read ANTISPAM for more information.
+
+ checkpassword now supports the password format used by Netscape
+ Mailserver pre-3.0 and Software.com's Post.Office (NS-MTA-MD5).
+ That string is hex encoded, the first 32 Octets are the MD5 hashed
+ password and the second 32 Octets are the salt to the MD5 function.
 
  Added automatic maildirmaker to qmail-local. This can be enabled with
  ~control/automaildirmake
@@ -336,7 +341,7 @@ deliveryMode
 mailReplyText
 
  A reply text for every incoming message (multiline)
- Example: Sorry, but I'm not working today
+ Example: I'm on vacation until next monday
  Note: works only if deliveryMode is set to reply
 
 qmailDotMode
@@ -357,7 +362,8 @@ userPassword
 
  The password for POP3 delivery
  Example: testit
- Note: Can be encrypted with SHA-1, MD5, DES, crypt
+ Note: Can be encrypted with {SHA}, {MD4}, {MD5}, {NS-MTA-MD5}, crypt, 
+ cleartext
 
 
 EXAMPLE QLDAP LDIF FILE:
@@ -392,7 +398,7 @@ schemacheck     on
 #######################################################################
 
 database        ldbm
-suffix          ""
+suffix          "o=Internet Pipeline, c=CH"
 directory       /var/qmail/users
 rootdn          "cn=root, o=Internet Pipeline, c=CH"
 rootpw          secret
