@@ -128,7 +128,7 @@ int rblcheck(char *remoteip, char** rblname)
   if(!rbl_start(remoteip)) return 0;
 
   for (i=0; i < numrbl; i++) {
-    logpid(2); logstring(2,"RBL check with '"); logstring(2,rbl[i].baseaddr); logstring(2,"':");
+    logpid(2); logstring(2,"RBL check with '"); logstring(2,rbl[i].baseaddr); logstring(2,"': ");
 
     r = rbl_lookup(rbl[i].baseaddr, rbl[i].matchon);
     if (r == 2) {
@@ -186,7 +186,8 @@ int rblinit(void)
   rbl = (struct rbl*)alloc(numrbl*sizeof(struct rbl));
   if (!rbl) return -1;
 
-  /* line format is "basedomain action matchon message" message may have spaces */
+  /* line format is "basedomain action matchon message"
+     message may have spaces */
   x = (char **)&rbl[0];
   for (i=0, j=0, k=0, n=0; i < rbldata.len; ++i) {
     while (1) {
@@ -203,9 +204,8 @@ int rblinit(void)
       /* message */
       x[n] = rbldata.s + j;
       n = 0;
-      x = (char **)&rbl[k];
+      x = (char **)&rbl[++k];
       while (rbldata.s[i] != '\0') i++;
-      i++;
     } else {
       while (1) {
         /* hop over argument */
@@ -216,7 +216,7 @@ int rblinit(void)
         }
         i++;
       }
-      rbldata.s[i++] = '\0';
+      rbldata.s[i] = '\0';
       x[n++] = rbldata.s + j;
     }
   }
