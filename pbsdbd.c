@@ -212,7 +212,7 @@ int checkaddr(const unsigned char *key,unsigned int keylen,unsigned long timenow
       if (byte_equal(key,keylen,cache + pos + 9)) {
         u = get4(pos + 4);
 	if (u < timenow) {
-	  strerr_warn2(info, "cache hit but timed out", 0);
+//	  strerr_warn2(info, "cache hit but timed out", 0);
 	  return 0;
         }
 	return 1;
@@ -227,7 +227,7 @@ int checkaddr(const unsigned char *key,unsigned int keylen,unsigned long timenow
     }
   }
 
-  strerr_warn2(info, "not in cache", 0);
+//  strerr_warn2(info, "not in cache", 0);
   return 0;
 }
 
@@ -247,7 +247,7 @@ static int doit(void)
   
   switch(buf[0]) {
     case 'Q':
-      strerr_warn2(info, "query packet", 0);
+//      strerr_warn2(info, "query packet", 0);
       if ( checkaddr(&buf[2], buf[1], timenow) ) {
 	*(buf + 2 + buf[1]) = 'R';
       } else {
@@ -256,7 +256,7 @@ static int doit(void)
       buf[0] = 'R';
       return 1;
     case 'A':
-      strerr_warn2(info, "add packet", 0);
+//      strerr_warn2(info, "add packet", 0);
       sec_len = *(buf + 2 + buf[1]);
       sec = buf + 2 + buf[1] + 1;
       if ( buf + len < sec + sec_len ) {
