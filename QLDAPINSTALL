@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/11/26 22:02:03 $)
+RELEASE: current ($Date: 2003/12/01 10:01:43 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -459,6 +459,26 @@ CONFIG FILES:
        The %SUBJECT% magic of qmail-reply is not useful for a quotawarning and
        therefor disabled.
 
+~control/dirmaker
+
+ Absolute path to your program/script that creates missing homedirs
+ Default: none (off)
+ Example: /var/qmail/bin/create_homedir
+ Note: the script is executeded after the setuid/gid, it isn't running
+       under root for security reasons.
+       The command is executed with execve not system 
+       (so mkdir --mode=700 -p does not work!) use a shell script. 
+       $1 is the homedir-path and $2 is aliasempty.
+       If you use $2 have a look at the first and last char to ensure that
+       it is a path to the maildir and not a pipe or mailbox delivery.
+       Possible very simple shell script:
+
+       -cut-
+       #!/bin/sh
+       mkdir -m 700 -p $1
+       #EOF
+       -cut-
+
 ~control/relaymailfrom
 
  This file contains envelope sender addresses that are allowed to relay through
@@ -549,6 +569,12 @@ CONFIG FILES:
        abort the delivery attempt, bounce the message and report a smtp
        loop error.
 
+~control/cert.pem
+
+ Certificate for qmail-smtp tls option. This file can be generated via "make
+ cert" or "make cert-req". The file needs to be readable for qmail-smtpd -- in
+ other words it needs to be readable for user qmaild.
+
 ~control/outgoingip
 
  This file contains the IP qmail-remote should bind to.
@@ -560,26 +586,6 @@ CONFIG FILES:
  This file contains the IP qmail-qmqpc should bind to.
  Default: 0.0.0.0
  Example: 192.168.12.88
-
-~control/dirmaker
-
- Absolute path to your program/script that creates missing homedirs
- Default: none (off)
- Example: /var/qmail/bin/create_homedir
- Note: the script is executeded after the setuid/gid, it isn't running
-       under root for security reasons.
-       The command is executed with execve not system 
-       (so mkdir --mode=700 -p does not work!) use a shell script. 
-       $1 is the homedir-path and $2 is aliasempty.
-       If you use $2 have a look at the first and last char to ensure that
-       it is a path to the maildir and not a pipe or mailbox delivery.
-       Possible very simple shell script:
-
-       -cut-
-       #!/bin/sh
-       mkdir -m 700 -p $1
-       #EOF
-       -cut-
 
 ~control/bigbrother
 
