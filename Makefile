@@ -4,13 +4,13 @@
 LDAPON=-DQLDAP
 
 # Perhaps you have different ldap libraries, change them here
-#LDAPLIBS=-L/usr/local/lib -lldap -llber
+LDAPLIBS=-L/usr/local/lib -lldap -llber
 # and change the location of the include files here
-#LDAPINCLUDES=-I/usr/local/include
+LDAPINCLUDES=-I/usr/local/include
 # for example on my Linux box I use:
-LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
+#LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
 # if you need a special include-directory for ldap headers enable this
-LDAPINCLUDES=-I/opt/OpenLDAP/include
+#LDAPINCLUDES=-I/opt/OpenLDAP/include
 
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
@@ -20,7 +20,7 @@ MNW=-DMAKE_NETSCAPE_WORK
 #MDIRMAKE=-DAUTOMAILDIRMAKE
 
 # to enable the auto-homedir-make feature uncomment the next line
-HDIRMAKE=-DAUTOHOMEDIRMAKE
+#HDIRMAKE=-DAUTOHOMEDIRMAKE
 
 # to have pop3 passwords checked by binding to the ldap-server
 # uncomment the next line
@@ -31,11 +31,11 @@ PWOPTS=-DLOOK_UP_PASSWD
 
 # To use shadow passwords under Linux, uncomment the next two lines.
 #SHADOWLIBS=-lshadow
-SHADOWOPTS=-DPW_SHADOW
+#SHADOWOPTS=-DPW_SHADOW
 # To use shadow passwords under Solaris, uncomment the SHADOWOPTS line.
 
 # checkpassword compiled with DEBUG endabled does now complete LDAP debugging
-DEBUG=-DQLDAPDEBUG
+#DEBUG=-DQLDAPDEBUG
 # WARNING: you need a NONE DEBUG checkpassword to run with qmail-pop3d
 
 # STOP editing HERE !!!
