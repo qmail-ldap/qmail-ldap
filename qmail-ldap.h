@@ -23,7 +23,7 @@
 #define ISACTIVE_NOPOP "nopop"
 #define ISACTIVE_ACTIVE "active"
 
-#define LDAP_CATCH_ALL "\\*"  /* this is the "catch all" string *
+#define LDAP_CATCH_ALL "\*"  /* this is the "catch all" string *
  * ATTN: escape the string correctly, remember             *
  * '(', ')', '\', '*' and '\0' have to be escaped with '\' */
 
