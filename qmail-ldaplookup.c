@@ -55,7 +55,6 @@ usage(void)
 
 void fail(qldap *, const char *, int);
 void unescape(char *, stralloc *);
-static char *uidfilter(char *);
 
 
 ctrlfunc ctrls[] = {

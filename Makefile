@@ -525,9 +525,9 @@ open.a sig.a lock.a auto_qmail.o
 	fs.a mailmaker.o open.a sig.a lock.a auto_qmail.o
 
 condwrite.o: \
-compile condwrite.c auto_qmail.h env.h error.h fmt.h maildir++.h now.h \
-qmail-ldap.h seek.h sig.h str.h stralloc.h strerr.h subfd.h substdio.h \
-wait.h mailmaker.h qldap-errno.h
+compile condwrite.c auto_qmail.h byte.h env.h error.h fmt.h getln.h gfrom.h \
+lock.h maildir++.h now.h open.h qmail-ldap.h seek.h sig.h str.h stralloc.h \
+strerr.h subfd.h substdio.h wait.h mailmaker.h qldap-errno.h
 	./compile $(MDIRMAKE) condwrite.c
 
 config: \
@@ -1582,10 +1582,12 @@ qmail-log.5
 	nroff -man qmail-log.5 > qmail-log.0
 
 qmail-ldaplookup: \
-load qmail-ldaplookup.o qldap.a passwd.o base64.o constmap.o localdelivery.o \
+load qmail-ldaplookup.o qldap.a passwd.o digest_md4.o digest_md5.o \
+digest_rmd160.o digest_sha1.o base64.o constmap.o localdelivery.o \
 read-ctrl.o control.o env.a getopt.a getln.a stralloc.a alloc.a strerr.a \
 error.a substdio.a open.a fs.a str.a case.a auto_usera.o auto_qmail.o
-	./load qmail-ldaplookup qldap.a passwd.o base64.o constmap.o \
+	./load qmail-ldaplookup qldap.a passwd.o digest_md4.o \
+	digest_md5.o digest_rmd160.o digest_sha1.o base64.o constmap.o \
 	localdelivery.o read-ctrl.o control.o env.a getopt.a getln.a \
 	stralloc.a alloc.a strerr.a error.a substdio.a open.a fs.a str.a \
 	case.a auto_usera.o auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS)

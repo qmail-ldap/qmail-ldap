@@ -2,11 +2,16 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "auto_qmail.h"
+#include "byte.h"
 #include "env.h"
 #include "error.h"
 #include "fmt.h"
+#include "getln.h"
+#include "gfrom.h"
+#include "lock.h"
 #include "maildir++.h"
 #include "now.h"
+#include "open.h"
 #include "qmail-ldap.h"
 #include "seek.h"
 #include "sig.h"
@@ -278,7 +283,7 @@ maildir_write(char *fn)
 		temp_childcrashed();
 	switch(wait_exitcode(wstat))
 	{
-	case 0: break;
+	case 0: _exit(99);
 	case 2: strerr_die1x(111,"Unable to chdir to maildir. (#4.2.1)");
 	case 3: strerr_die1x(111,"Timeout on maildir delivery. (#4.3.0)");
 	case 4: strerr_die1x(111,"Unable to read message. (#4.3.0)");
@@ -367,7 +372,7 @@ mailfile(char *fn)
 	if (substdio_flush(&ssout)) goto writeerrs;
 	if (fsync(fd) == -1) goto writeerrs;
 	close(fd);
-	exit(99);
+	_exit(99);
 
 writeerrs:
 	strerr_warn5("Unable to write ",fn,": ",
@@ -377,7 +382,7 @@ writeerrs:
 	_exit(111);
 }
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	char *s;
 	int pid, wstat;
@@ -387,17 +392,17 @@ void main(int argc, char **argv)
 		strerr_die1x(100,"condwrite: usage: "
 		    "condwrite {maildir/|mailfile} program [ arg ... ]");
 
-	if ( s = env_get("RPLINE") ) { 
+	if ((s = env_get("RPLINE"))) { 
 		if (!stralloc_copys(&rpline, s)) temp_nomem();
 	} else
 		strerr_die2x(100, FATAL, "RPLINE not present.");
 
-	if ( s = env_get("DTLINE") ) {
+	if ((s = env_get("DTLINE"))) {
 		if (!stralloc_copys(&dtline, s)) temp_nomem();
 	} else
 		strerr_die2x(100, FATAL, "DTLINE not present.");
 
-	if ( s = env_get("UFLINE") ) {
+	if ((s = env_get("UFLINE"))) {
 		if (!stralloc_copys(&ufline, s)) temp_nomem();
 	} else
 		strerr_die2x(100, FATAL, "UFLINE not present.");
@@ -432,5 +437,5 @@ void main(int argc, char **argv)
 		maildir_write(argv[1]);
 	else
 		mailfile(argv[1]);
-	_exit(100);
+	return 100;
 }
