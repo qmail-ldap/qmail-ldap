@@ -11,7 +11,7 @@
 # -DEXTERNAL_TODO to use the external high-performance todo processing (this
 # avoids the silly qmail syndrome with high injection rates)
 #LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO
-#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT
+LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
@@ -47,7 +47,7 @@ MNW=-DMAKE_NETSCAPE_WORK
 #HDIRMAKE=-DAUTOHOMEDIRMAKE
 
 # on most systems we need this to make checkpassword
-SHADOWLIBS=-lcrypt
+#SHADOWLIBS=-lcrypt
 # OpenBSD Systems seems to have no libcrypt, so comment the line out if you
 # get linking problems
 # To use shadow passwords under some Linux OS, uncomment the next two lines.
@@ -1744,18 +1744,18 @@ tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
 	./compile ${TLSON} ${TLSINCLUDES} qmail-remote.c
 
 qmail-reply: \
-load qmail-reply.o case.a control.o constmap.o getln.a sig.a now.o open.a \
-seek.a env.a qmail.o getopt.a fd.a wait.a stralloc.a alloc.a strerr.a \
-substdio.a error.a str.a fs.a auto_qmail.o
+load qmail-reply.o case.a control.o constmap.o getln.a sig.a newfield.o \
+now.o date822fmt.o datetime.a open.a seek.a env.a qmail.o getopt.a fd.a \
+wait.a stralloc.a alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o
 	./load qmail-reply case.a control.o constmap.o getln.a sig.a \
-	now.o open.a seek.a env.a qmail.o getopt.a fd.a \
-	wait.a stralloc.a alloc.a strerr.a substdio.a error.a \
-	str.a fs.a auto_qmail.o
+	newfield.o now.o date822fmt.o datetime.a open.a seek.a env.a \
+	qmail.o getopt.a fd.a wait.a stralloc.a alloc.a strerr.a \
+	substdio.a error.a str.a fs.a auto_qmail.o
 
 qmail-reply.o: \
-compile qmail-reply.c case.h env.h error.h exit.h getln.h qlx.h \
-readwrite.h seek.h sig.h str.h strerr.h stralloc.h substdio.h \
-wait.h auto_qmail.h qmail-ldap.h
+compile qmail-reply.c byte.h case.h control.h constmap.h env.h error.h exit.h \
+getln.h newfield.h now.h open.h qmail.h qmail-ldap.h readwrite.h seek.h sgetopt.h \
+strerr.h stralloc.h substdio.h
 	./compile $(LDAPFLAGS) qmail-reply.c
 
 qmail-rspawn: \

@@ -4,7 +4,9 @@
 #include "constmap.h"
 #include "env.h"
 #include "error.h"
+#include "exit.h"
 #include "getln.h"
+#include "newfield.h"
 #include "now.h"
 #include "open.h"
 #include "qmail.h"
@@ -42,15 +44,38 @@ void envmail(void)
 		strerr_die3x(100, FATAL, ENV_REPLYTEXT,
 		    " not present.");
 	}
-}	
+}
+
+char buf[1024];
+stralloc line = {0};
 
 void readmail(char *file)
 {
-	strerr_die2x(100, FATAL, "option not yet implemented.");
+	substdio ss;
+	int fd;
+	int match;
+
+	if (!stralloc_copys(&replytext, "")) temp_nomem();
+
+	fd = open_read(file);
+	if (fd == -1)
+		strerr_die4sys(100, FATAL, "unable to open '", file, "': ");
+ 
+	substdio_fdbuf(&ss,read,fd,buf,sizeof(buf));
+	for (;;) {
+		if (getln(&ss,&line,&match,'\n') == -1)
+			strerr_die4sys(100, FATAL, "unable to read '", file, "': ");
+		if (!match) {
+			close(fd);
+			return;
+		}
+		if (!stralloc_cat(&replytext, &line)) temp_nomem();
+	}
 }
 
 stralloc to={0};
 stralloc from={0};
+stralloc host={0};
 stralloc dtline={0};
 
 void get_env(void)
@@ -59,21 +84,24 @@ void get_env(void)
 	int i;
 
 	if ((s = env_get("DTLINE")) == (char *)0)
-		strerr_die2x(100, FATAL, "DTLINE not present.");
+		strerr_die2x(100, FATAL, "Environment DTLINE not present.");
 	if (!stralloc_copys(&dtline,s)) temp_nomem();
 
 	if ((s = env_get("SENDER")) == (char *)0)
-		strerr_die2x(100, FATAL, "SENDER not present.");
+		strerr_die2x(100, FATAL, "Environment SENDER not present.");
 	if (!stralloc_copys(&to,s)) temp_nomem();
 
 	if ((s = env_get("RECIPIENT")) == (char *)0)
-		strerr_die2x(100, FATAL, "RECIPIENT not present.");
+		strerr_die2x(100, FATAL, "Environment RECIPIENT not present.");
 	if (!stralloc_copys(&from,s)) temp_nomem();
 
 	i = byte_chr(from.s, from.len, '@');
 	if ( i == 0 || i >= from.len )
 	  strerr_die2x(100, FATAL, "Bad RECIPIENT address.");
 
+	if (! (s = env_get("HOST") ) )
+		strerr_die2x(100, FATAL, "Environment HOST not present.");
+	if (!stralloc_copys(&host,s)) temp_nomem();
 }
 
 stralloc junkfrom={0};
@@ -88,7 +116,7 @@ void junkread(char *path)
 
 int junksender(char *buf, int len)
 {
-	int	at, dash, i, j;
+	int	at, dash, i;
 	static char *(junkignore[]) = {
 		/* don't reply to bots */
 		"-request",
@@ -113,7 +141,7 @@ int junksender(char *buf, int len)
 		strerr_die2sys(111, FATAL, "constmap_init: ");
 	
 	at = byte_rchr(buf, len, '@');
-	if (j >= len)
+	if (at >= len)
 		strerr_die2x(111, FATAL, "Bad SENDER address.");
 
 	/*
@@ -297,19 +325,19 @@ int getfield(char *s, int len)
 
 	l = len;
 	for(;;) {
-		if (l <= 0) break; if (*s == ':') break; l--; s++;
-		if (l <= 0) break; if (*s == ':') break; l--; s++;
-		if (l <= 0) break; if (*s == ':') break; l--; s++;
-		if (l <= 0) break; if (*s == ':') break; l--; s++;
+		if (l-- <= 0) break; if (*s++ == ':') break;
+		if (l-- <= 0) break; if (*s++ == ':') break;
+		if (l-- <= 0) break; if (*s++ == ':') break;
+		if (l-- <= 0) break; if (*s++ == ':') break;
 	}
 	for(;;) {
-		if (l <= 0) break; if (*s == ' ' || *s == '\t') break;
+		if (l <= 0) break; if (*s != ' ' && *s != '\t') break;
 		l--; s++;
-		if (l <= 0) break; if (*s == ' ' || *s == '\t') break;
+		if (l <= 0) break; if (*s != ' ' && *s != '\t') break;
 		l--; s++;
-		if (l <= 0) break; if (*s == ' ' || *s == '\t') break;
+		if (l <= 0) break; if (*s != ' ' && *s != '\t') break;
 		l--; s++;
-		if (l <= 0) break; if (*s == ' ' || *s == '\t') break;
+		if (l <= 0) break; if (*s != ' ' && *s != '\t') break;
 		l--; s++;
 	}
 	return len - l;
@@ -320,8 +348,6 @@ int getfield(char *s, int len)
 #endif
 
 stralloc subject = {0};
-stralloc line = {0};
-char buf[1024];
 
 int parseheader(/* XXX names for to/cc checking */ void)
 {
@@ -340,7 +366,6 @@ int parseheader(/* XXX names for to/cc checking */ void)
 		}
 		if (line.len == 0) /* something is wrong, bad message */
 			break;
-
 		s = line.s; len = line.len;
 		switch(*s) {
 		case '\n': /* end of header */
@@ -350,30 +375,29 @@ int parseheader(/* XXX names for to/cc checking */ void)
 			return 0;
 		case 'M':
 		case 'm': /* Mailing-List: */
-			if (case_diffb(s, "Mailing-List:",
-				    sizeof("Mailing-List:") - 1) == 0) {
+			if (case_diffb("Mailing-List:",
+				    sizeof("Mailing-List:") - 1, s) == 0) {
 				return 1;
 				/* don't reply to mailing-lists */
 			}
 			break;
 		case 'P':
 		case 'p': /* Precedence: */
-			if (case_diffb(s, "Precedence:",
-				    sizeof("Precedence:") - 1) == 0) {
+			if (case_diffb("Precedence:",
+				    sizeof("Precedence:") - 1, s) == 0) {
 				i = getfield(s, len);
 				if (i >= len) break;
 				s += i; len -= i;
-
-				if (case_diffb(s, "junk", 4) == 0 ||
-				    case_diffb(s, "bulk", 4) == 0 ||
-				    case_diffb(s, "list", 4) == 0)
+				if (case_diffb(s, 4, "junk") == 0 ||
+				    case_diffb(s, 4, "bulk") == 0 ||
+				    case_diffb(s, 4, "list") == 0)
 					return 1;
 			}
 			break;
 		case 'S':
 		case 's': /* Subject: */
-			if (case_diffb(s, "Subject:",
-				    sizeof("Subject:") - 1) == 0) {
+			if (case_diffb("Subject:",
+				    sizeof("Subject:") - 1, s) == 0) {
 				i = getfield(s, len);
 				if (i >= len) break;
 				s += i; len -= i;
@@ -382,7 +406,7 @@ int parseheader(/* XXX names for to/cc checking */ void)
 					/* subject has to be more than
 					   1 char (normaly a \n)
 					 */
-					if (!stralloc_copyb(&subject, s, len))
+					if (!stralloc_copyb(&subject, s, len-1))
 						temp_nomem();
 					subj_set=1;
 				}
@@ -394,10 +418,10 @@ int parseheader(/* XXX names for to/cc checking */ void)
 		case 't': /* To: */
 			/* to be implemented */
 #if 0
-			if (case_diffb(s, "To:"
-				    sizeof("To:") - 1) == 0 ||
-			    case_diffb(s, "Cc:"
-				    sizeof("Cc:") - 1) == 0) {
+			if (case_diffb("To:"
+				    sizeof("To:") - 1, s) == 0 ||
+			    case_diffb("Cc:"
+				    sizeof("Cc:") - 1, s) == 0) {
 				i = getfield(s, len);
 				if (i >= len) break;
 				s += i; len -= i;
@@ -425,6 +449,7 @@ void sendmail(void)
 {
 	struct qmail qqt;
 	char *qqx, *s;
+	datetime_sec starttime;
 	unsigned long qp;
 	int header, len, i, j;
 	
@@ -433,53 +458,64 @@ void sendmail(void)
 	
 	qmail_put(&qqt,dtline.s,dtline.len);
 	qmail_puts(&qqt, "Precedence: junk\n");
-	
+	/* message-id and date line */
+	starttime = now();
+	if (!newfield_datemake(starttime)) goto fail_nomem;
+	if (!newfield_msgidmake(host.s,host.len,starttime)) goto fail_nomem;
+	qmail_put(&qqt, newfield_msgid.s, newfield_msgid.len);
+	qmail_put(&qqt, newfield_date.s, newfield_date.len);
+		
 	header = 0;
 	s = replytext.s; len = replytext.len;
 	do {
-		i = byte_chr(s, len, '\n');
-		if (i >= len)
-			strerr_die2x(100, FATAL, "parser error");
-		
-		if (case_diffb(s, "%HEADER%", sizeof("%HEADER%") - 1) == 0) {
+		for(i = 0;;) {
+			i += byte_chr(s + i, len - i, '\n');
+			if (++i >= len)
+				strerr_die2x(100, FATAL, "parser error");
+			if (s[i] == ' ' || s[i] == '\t')
+				continue;
+			break;
+		}
+		if (case_diffb("%HEADER%", sizeof("%HEADER%") - 1, s) == 0) {
 			header = 1;
 			goto next;
 		}
-		if (*s == '\n' || header == 0) {
-			header = 0;
-			goto next;
-		}
+		if (header == 0)
+			break;
 		
 		switch (*s) {
+		case '\n': /* end of header */
+			header = 0;
+			break;
 		case 'C':
 		case 'c': /* Content-Type: ||
 			     Content-Transfer-Encoding: ||
 			     Cc: */
-			if (case_diffb(s, "Cc:", sizeof("Cc:") - 1) == 0)
+			if (case_diffb("Cc:", sizeof("Cc:") - 1, s) == 0)
 				break;
-			if (case_diffb(s, "Content-Type:",
-				    sizeof("Content-Type:") - 1) == 0) {
+			if (case_diffb("Content-Type:",
+				    sizeof("Content-Type:") - 1, s) == 0) {
 				j = getfield(s, i);
 				if (j >= i) break;
 				if (!stralloc_copyb(&ct, s+j, i-j))
-					temp_nomem();
+					goto fail_nomem;
 				break;
 			}
-			if (case_diffb(s, "Content-Transfer-Encoding:",
-				    sizeof("Content-Transfer-Encoding:") - 1
-				    ) == 0) {
+			if (case_diffb("Content-Transfer-Encoding:",
+				    sizeof("Content-Transfer-Encoding:") - 1,
+				    s) == 0) {
 				j = getfield(s, i);
 				if (j >= i) break;
 				if (!stralloc_copyb(&cte, s+j, i-j))
-					temp_nomem();
+					goto fail_nomem;
 				break;
 			}
 			qmail_put(&qqt, s, i);
 			break;
 		case 'S':
 		case 's': /* Subject: */
-			if (case_diffb(s, "Subject:",
-				    sizeof("Subject:") - 1) != 0) {
+			if (case_diffb("Subject:",
+				    sizeof("Subject:") - 1, s) != 0) {
 				qmail_put(&qqt, s, i);
 				break;
 			}
@@ -488,29 +524,28 @@ void sendmail(void)
 			
 			if (!stralloc_ready(&resubject,
 				    i + subject.len))
-				temp_nomem();
+				goto fail_nomem;
 			while (j < i) {
 				if (s[j] == '%' && 
-				    case_diffb(s + j,
-					    "%SUBJECT%", 
-					    sizeof("%SUBJECT%") - 1) == 0) {
+				    case_diffb("%SUBJECT%", 
+					    sizeof("%SUBJECT%") - 1, s + j) == 0) {
 					if (!stralloc_cat(&resubject, &subject))
-						temp_nomem();
-					while (s[++j] != '%') ;
+						goto fail_nomem;
+					j += sizeof("%SUBJECT%") - 1;
 				} else {
 					if (!stralloc_append(&resubject, s+j))
-						temp_nomem();
+						goto fail_nomem;
+					++j;
 				}
-				++j;
 			}
-			if (stralloc_0(&resubject)) temp_nomem();
+			if (!stralloc_0(&resubject)) goto fail_nomem;
 			break;
 		case 'F':
 		case 'f': /* From: */
 		case 'T':
 		case 't': /* To: */
-			if (case_diffb(s, "From:", sizeof("From:") - 1) == 0 ||
-			    case_diffb(s, "To:", sizeof("From:") - 1) == 0)
+			if (case_diffb("From:", sizeof("From:") - 1, s) == 0 ||
+			    case_diffb("To:", sizeof("To:") - 1, s) == 0)
 				break;
 			/* FALLTHROUGH */
 		default:			
@@ -523,39 +558,39 @@ next:
 	} while (header == 1);
 
 	if (resubject.s == (char *)0) {
-		if (!stralloc_copys(&resubject, "[Auto-Reply] ")) temp_nomem();
-		if (!stralloc_cat(&resubject, &subject)) temp_nomem();
-		if (stralloc_0(&resubject)) temp_nomem();
+		if (!stralloc_copys(&resubject, "[Auto-Reply] ")) goto fail_nomem;
+		if (!stralloc_cat(&resubject, &subject)) goto fail_nomem;
+		if (!stralloc_cats(&resubject, "\n")) goto fail_nomem;
+		if (!stralloc_0(&resubject)) goto fail_nomem;
 	}
-	if (!stralloc_0(&from)) temp_nomem();
-	if (!stralloc_0(&to)) temp_nomem();
+	if (!stralloc_0(&from)) goto fail_nomem;
+	if (!stralloc_0(&to)) goto fail_nomem;
 	
 	/* From: */
 	qmail_puts(&qqt, "From: ");
-	qmail_put(&qqt, from.s);
+	qmail_puts(&qqt, from.s);
 	qmail_puts(&qqt, "\n");
 	/* To: */
 	qmail_puts(&qqt, "To: ");
-	qmail_put(&qqt, to.s);
+	qmail_puts(&qqt, to.s);
 	qmail_puts(&qqt, "\n");
 	/* Subject: */
 	qmail_puts(&qqt, "Subject: ");
-	qmail_put(&qqt, resubject.s);
-	qmail_puts(&qqt, "\n");
+	qmail_puts(&qqt, resubject.s); /* resubject allready has a '\n' at the end */
 	/* XXX Date: qmail uses GMT based dates which is sometimes confusing */
 	/* Content-* */
 	qmail_puts(&qqt, "Content-type: ");
 	if (ct.s != (char *)0 && ct.len > 0)
 		qmail_put(&qqt, ct.s, ct.len);
 	else
-		qmail_puts(&qqt, "text/plain; charset=\"iso-8859-1\"");
-	qmail_puts(&qqt, "\n");
+		qmail_puts(&qqt, "text/plain; charset=\"iso-8859-1\"\n");
+	/* '\n' already written */
 	qmail_puts(&qqt, "Content-Transfer-Encoding: ");
 	if (cte.s != (char *)0 && cte.len > 0)
 		qmail_put(&qqt, cte.s, cte.len);
 	else
-		qmail_puts(&qqt, "8bit");
-	qmail_puts(&qqt, "\n");
+		qmail_puts(&qqt, "8bit\n");
+	/* '\n' already written */
 	/* X-Mailer: qmail-reply */
 	qmail_puts(&qqt, "X-Mailer: qmail-reply\n\n");
 
@@ -567,6 +602,10 @@ next:
 	if (!*qqx) return;
 	strerr_die3x(*qqx == 'D' ? 100 : 111,
 	    "Unable to send reply message: ", qqx + 1, ".");
+	    
+fail_nomem:
+	qmail_fail(&qqt);
+	temp_nomem();
 }
 
 int main(int argc, char **argv)
