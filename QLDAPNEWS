@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/08/31 15:31:00 $ ($Revision: 1.111 $)
+RELEASE: $Date: 2003/08/31 21:07:00 $ ($Revision: 1.112 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -28,11 +28,11 @@ NEWS for current stuff:
  Changed deliveryMode significantly. Before the setting of a forwarding
  would have disabled local delivery. This is no longer the case. Each of
  the modes has to be explicitly disabled (local, forward, program) or
- enabled (reply, echo). There are no longer contradicting modes which
- makes it much more logical.
+ enabled (reply). There are no longer contradicting modes which makes it
+ much more logical.
  This change probably has a great impact on many administrative frontends!
 
- Quota definitions are new format only. ~control/defaultquota, mailQuota
+ Quota definitions are new format only. ~control/ldapdefaultquota, mailQuota
  serve no meaning anymore. Also the string quota format (10000S,100C) is no
  longer supported. Use ~control/defaultquota[size|count] and mailQuotaSize
  and mailQuotaCount instead.

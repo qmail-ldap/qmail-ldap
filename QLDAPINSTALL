@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/08/31 15:31:00 $)
+RELEASE: current ($Date: 2003/08/31 21:07:00 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -490,13 +490,10 @@ CONFIG FILES:
 ~control/tarpitdelay
 ~control/maxrcptcount
 ~control/rblonlyheader
+~control/ldapdefaultquota
 ~control/ldapusername
- NO LONGER USED, PLEASE REMOVE THE FILES
-
 ~control/ldappasswdappend
- NO LONGER USED, PLEASE REMOVE THE FILE
- The auth modules now extract the Maildir out of the .qmail file, but only
- on local (/etc/passwd) lookups.
+ NO LONGER USED, PLEASE REMOVE THESE FILES
 
 ================================================================================
 
@@ -809,8 +806,7 @@ LDAP_MODE (default: "deliveryMode")
  - nolocal: do not put message into maildir/mbox (ignores also .qmail)
  - noprogram: do not do program deliveries (ignores deliveryprogrampath, .qmail)
  - reply: send an auto_reply mail with text from mailReplyText
- - echo: something very strange, just echo the message (nothing else)
- Default: no QMAILMODE is equal to QMAILMODE=normal
+ Default: no QMAILMODE
  Example: noforward
           noprogram
  Note: The behaviour changed compared with previous qmail-ldap versions
@@ -829,8 +825,8 @@ LDAP_MODE (default: "deliveryMode")
        off if you don't need them, instead of removing their attributes.
 
        If no mode to the contrary set, forwards, program deliveries, local
-       deliveries are all done if existent. Reply and echo are not automatic
-       and have to enabled explicitly.
+       deliveries are all done if existent. Reply is not automatic and has
+       to be enabled explicitly.
 
 
 LDAP_REPLYTEXT (default: "mailReplyText")
