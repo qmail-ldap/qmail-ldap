@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/09/30 13:33:24 $)
+RELEASE: current ($Date: 2003/09/30 16:49:27 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -984,10 +984,10 @@ LDAP_MAILHOST (default: "mailHost")
 LDAP_ISACTIVE (default: "accountStatus")
 
  The status of a user account.
- Values: active (no restrictions), 
-         nopop (only mail delivery but no pop access), 
+ Values: active (no restrictions),
+         noaccess (only mail delivery but no pop/imap access),
          disabled (bounce incoming messages)
-         deleted (bounce incoming messages and mark for deletion, 
+         deleted (bounce incoming messages and mark for deletion,
                   see LDAP_PURGE)
  Default: no accountStatus is equal to active.
 

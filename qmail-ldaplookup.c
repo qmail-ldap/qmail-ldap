@@ -250,9 +250,9 @@ int main(int argc, char **argv)
 			output(subfdout, "%s: %s\n",
 			    LDAP_ISACTIVE, ISACTIVE_BOUNCE);
 			break;
-		case STATUS_NOPOP:
+		case STATUS_NOACCESS:
 			output(subfdout, "%s: %s\n",
-			    LDAP_ISACTIVE, ISACTIVE_NOPOP);
+			    LDAP_ISACTIVE, ISACTIVE_NOACCESS);
 			break;
 		case STATUS_OK:
 			output(subfdout, "%s: %s\n",

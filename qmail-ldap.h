@@ -101,7 +101,7 @@
 
 #define ISACTIVE_BOUNCE		"disabled"
 #define ISACTIVE_DELETE		"deleted"
-#define ISACTIVE_NOPOP		"nopop"
+#define ISACTIVE_NOACCESS	"noaccess"
 #define ISACTIVE_ACTIVE		"active"
 
 /*********************************************************************
@@ -124,7 +124,7 @@
 /* the same values as ints */
 #define STATUS_DELETE		3
 #define STATUS_BOUNCE		2
-#define STATUS_NOPOP		1
+#define STATUS_NOACCESS		1
 #define STATUS_OK 		0
 #define STATUS_UNDEF 		-1
 

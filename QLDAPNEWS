@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/30 13:46:55 $ ($Revision: 1.129 $)
+RELEASE: $Date: 2003/09/30 16:49:27 $ ($Revision: 1.130 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,16 +18,20 @@ TODO:
 
 NEWS for current stuff:
 
- announce the ehlo starttls option only if we have a chance to do tls
- encryption. In other word if the file control/cert.pem exists.
+ Change nopop in accountStatus to noaccess as it is not just disabling
+ pop access but also imap and possibly others.
 
- control/ldapserver is now read with control_readfile. Multiple servers
- are now specified one per line. Using # for comments is allowed and empty
- lines are removed.
+ Announce the EHLO STARTTLS option only if tls is compiled, enabled and
+ we have found a valid certificate in ~control/cert.pem for encryption.
+
+ ~control/ldapserver is now read with control_readfile. Multiple servers
+ now have to be specified at one per line. Using # for comments is allowed
+ and empty lines are removed.
 
  Fix bug in qmail-smtp addrparse function. If "mail from" or "rcpt to" did
- neither contain a '<' nor a ':' the function returned a nullsender instead
- of a syntax error. This bug is also present in stock qmail-1.03.
+ neither contain a '<' nor a ':' the function returned a nullsender (bounce)
+ or recipient instead of a syntax error. This bug is also present in stock
+ qmail-1.03.
 
  The copyloop used to forward pop3 and imap session can be simplified.
  Neither pop3 nor imap are protocols which support half close so dump this

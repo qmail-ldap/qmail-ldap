@@ -749,17 +749,17 @@ char *s; char *r; int at;
      if (!stralloc_copys(&nughde,"")) _exit(QLX_NOMEM);
      if (localdelivery()) {
        /*
-	*  Do the local address lookup.
+	* Do the local address lookup.
         * This is the standart qmail lookup funktion.
 	*/
-       log(4, "LDAP lookup failed using local db\n");
+       log(4, "LDAP lookup failed, using local db\n");
        nughde_get(r);
      } else {
        /* the alias-user handling for LDAP only mode */
        struct passwd *pw;
        char num[FMT_ULONG];
 
-       log(4, "LDAP lookup failed using alias (no local db)\n");
+       log(4, "LDAP lookup failed, using alias (no local db)\n");
        pw = getpwnam(auto_usera);
        if (!pw) _exit(QLX_NOALIAS);
 
