@@ -16,7 +16,7 @@
 /* timeout for one delivery per sender */
 #define REPLY_TIMEOUT 1209600 /* 1 Week */
 /* default content type (don't forget the '\n' at the end) */
-#define REPLY_CT "text/plain; charset=\"utf-8\"\n"
+#define REPLY_CT "text/plain; charset=utf-8\n"
 /* default content transfer encoding (don't forget the '\n' at the end) */
 #define REPLY_CTE "8bit\n"
 
@@ -37,10 +37,10 @@
 
 /* ALIASDEVNULL replacement for the std. aliasempty for user with
  * neither homeDirectory nor mailMessageStore defined */
-#define ALIASDEVNULL "|sh -c \"cat > /dev/null\""
-/* just pipe everything to /dev/null, you could also use a program/script
- * to make a notify the postmaster if something like this happens.
- * It's up to the reader to write such a simple script */
+#define ALIASDEVNULL "|echo \"Unable to deliver mail: account incorrectly configured. (#5.3.5)\"; exit 100"
+/* just echo a warning to notify the user and exit 100.
+ * It's up to the reader to write a simple script with
+ * postmaster notification. */
 
 /* Default ldap search timeout. In seconds */
 #define	QLDAP_TIMEOUT		30
@@ -96,7 +96,7 @@
 /* the same values as ints */
 #define STATUS_BOUNCE		2
 #define STATUS_NOPOP		1
-#define STATUS_OK 			0
+#define STATUS_OK 		0
 #define STATUS_UNDEF 		-1
 
 /* environment variables used between qmail-lspan and qmail-local

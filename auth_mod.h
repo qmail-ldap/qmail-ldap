@@ -1,28 +1,44 @@
-/* auth_mod.h, jeker@n-r-g.com, best viewed with tabsize = 4 */
+/* auth_mod.h, jeker@n-r-g.com */
 #ifndef __AUTH_MOD_H__
 #define __AUTH_MOD_H__
 
 #include "stralloc.h"
 
-extern unsigned int auth_port;
+extern const unsigned int auth_port;
 
-void auth_init(int argc, char **argv, stralloc *login, stralloc *authdata);
-/* this function should return the 0-terminated string login and authdata
- * argc and argv are the arguments of the next auth_module. */
+/* 
+ * auth_init must return the 0-terminated strings login and authdata.
+ * possible arguments should be parsed and the argument for auth_success
+ * need to be stored if later needed.
+ */
+void auth_init(int, char **, stralloc *, stralloc *);
 
-void auth_fail(int argc, char **argv, char *login);
-/* Checks if it was a hard fail (bad password) or just a soft error 
- * (user not found) argc and argv are the arguments of the next auth_module. */
+/*
+ * Checks if it was a hard fail (bad password) or just a soft error 
+ * (user not found). May start an other auth_module. MAY NOT return.
+ */
+void auth_fail(const char *, int);
 
-void auth_success(int argc, char **argv, char *login, int uid, int gid,
-	   			  char* home, char *homemaker, char *md);
 /* starts the next auth_module, or what ever (argv ... ) */
+void auth_success(void);
 
-void auth_error(void);
-/* error handler, for this module, does not return */
+/*
+ * Error handler, for this module, MAY NOT return.
+ * auth_error MAY be called befor auth_init so it is not possible to
+ * use the argument passed to auth_init in this function.
+ */
+void auth_error(int);
 
+/*
+ * for connection forwarding, makes the login part and returns after 
+ * sending the latest command immidiatly
+ */
 void auth_forward(int fd, char *login, char *passwd);
-/* for connection forwarding, makes the login part and returns after sending the
- * latest command immidiatly */
+
+/*
+ * returns the default maildir if it is not defined, this is normally
+ * the last argument of the execution chain.
+ */
+char *auth_aliasempty(void);
 
 #endif

@@ -48,6 +48,7 @@
 
 #include <sys/types.h>
 #include "str.h"
+#include "stralloc.h"
 
 #define Assert(Cond) if (!(Cond)) abort()
 
@@ -119,11 +120,8 @@ static const char Pad64 = '=';
    */
 
 int
-b64_ntop(src, srclength, target, targsize)
-	unsigned char const *src;
-	size_t srclength;
-	char *target;
-	size_t targsize;
+b64_ntop(unsigned char const *src, size_t srclength, 
+    char *target, size_t targsize)
 {
 	size_t datalength = 0;
 	unsigned char input[3];
@@ -152,14 +150,14 @@ b64_ntop(src, srclength, target, targsize)
 		target[datalength++] = Base64[output[2]];
 		target[datalength++] = Base64[output[3]];
 	}
-    
+
 	/* Now we worry about padding. */
 	if (0 != srclength) {
 		/* Get what's left. */
 		input[0] = input[1] = input[2] = '\0';
 		for (i = 0; i < srclength; i++)
 			input[i] = *src++;
-	
+
 		output[0] = input[0] >> 2;
 		output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
 		output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
@@ -198,10 +196,7 @@ b64_ntop(src, srclength, target, targsize)
  */
 
 int
-b64_pton(src, target, targsize)
-	char const *src;
-	unsigned char *target;
-	size_t targsize;
+b64_pton(char const *src, unsigned char *target, size_t targsize)
 {
 	int tarindex, state, ch;
 	unsigned int pos;
@@ -315,4 +310,219 @@ b64_pton(src, target, targsize)
 	}
 
 	return (tarindex);
+}
+
+int
+b64_ntops(unsigned char const *src, size_t srclength, stralloc *dest)
+{
+	unsigned char input[3];
+	unsigned char output[4];
+	int i;
+
+	if (!stralloc_copys(dest, "")) return -1;
+	while (2 < srclength) {
+		input[0] = *src++;
+		input[1] = *src++;
+		input[2] = *src++;
+		srclength -= 3;
+
+		output[0] = input[0] >> 2;
+		output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
+		output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
+		output[3] = input[2] & 0x3f;
+		Assert(output[0] < 64);
+		Assert(output[1] < 64);
+		Assert(output[2] < 64);
+		Assert(output[3] < 64);
+		output[0] = Base64[output[0]];
+		output[1] = Base64[output[1]];
+		output[2] = Base64[output[2]];
+		output[3] = Base64[output[3]];
+		
+		if (!stralloc_catb(dest, output, 4)) return -1;
+	}
+
+	/* Now we worry about padding. */
+	if (0 != srclength) {
+		/* Get what's left. */
+		input[0] = input[1] = input[2] = '\0';
+		for (i = 0; i < srclength; i++)
+			input[i] = *src++;
+
+		output[0] = input[0] >> 2;
+		output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
+		output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
+		Assert(output[0] < 64);
+		Assert(output[1] < 64);
+		Assert(output[2] < 64);
+
+		if (!stralloc_append(dest, &Base64[output[0]])) return -1;
+		if (!stralloc_append(dest, &Base64[output[1]])) return -1;
+		if (srclength == 1) {
+			if (!stralloc_append(dest, &Pad64)) return -1;
+		} else {
+			if (!stralloc_append(dest, &Base64[output[2]]))
+				return -1;
+		}
+		if (!stralloc_append(dest, &Pad64)) return -1;
+	}
+	return 0;
+}
+
+int
+b64_ptons(char const *src, stralloc *dest)
+{
+	unsigned char out[3];
+	int state, ch;
+	unsigned int pos;
+
+	state = 0;
+
+	if (!stralloc_copys(dest, "")) return -1;
+	while ((ch = *src++) != '\0') {
+		if (ISSPACE(ch))	/* Skip whitespace anywhere. */
+			continue;
+
+		if (ch == Pad64)
+			break;
+
+		pos = str_chr(Base64, ch);
+		if (pos > 63) 		/* A non-base64 character. */
+			return (-1);
+
+		switch (state) {
+		case 0:
+			out[0] = pos << 2;
+			state = 1;
+			break;
+		case 1:
+			out[0] |=  pos >> 4;
+			out[1] = (pos & 0x0f) << 4;
+			state = 2;
+			break;
+		case 2:
+			out[1] |=  pos >> 2;
+			out[2] = (pos & 0x03) << 6;
+			state = 3;
+			break;
+		case 3:
+			out[2] |= pos;
+			if (!stralloc_catb(dest, out, 3)) return -1;
+			state = 0;
+			break;
+		default:
+			abort();
+		}
+	}
+
+	/*
+	 * We are done decoding Base-64 chars.  Let's see if we ended
+	 * on a byte boundary, and/or with erroneous trailing characters.
+	 */
+
+	if (ch == Pad64) {		/* We got a pad char. */
+		ch = *src++;		/* Skip it, get next. */
+		switch (state) {
+		case 0:		/* Invalid = in first position */
+		case 1:		/* Invalid = in second position */
+			return (-1);
+
+		case 2:		/* Valid, means one byte of info */
+			/* Skip any number of spaces. */
+			for (; ch != '\0'; ch = *src++)
+				if (!ISSPACE(ch))
+					break;
+			/* Make sure there is another trailing = sign. */
+			if (ch != Pad64)
+				return (-1);
+			ch = *src++;		/* Skip the = */
+			/* Fall through to "single trailing =" case. */
+			/* FALLTHROUGH */
+
+		case 3:		/* Valid, means two bytes of info */
+			/*
+			 * We know this char is an =.  Is there anything but
+			 * whitespace after it?
+			 */
+			for (; ch != '\0'; ch = *src++)
+				if (!ISSPACE(ch))
+					return (-1);
+
+			/*
+			 * Now we need to write the one or two bytes of
+			 * info to the stralloc.
+			 */
+			if (state == 2) { /* one byte */
+				if (!stralloc_catb(dest, out, 1)) return -1;
+			} else { /* two bytes */
+				if (!stralloc_catb(dest, out, 2)) return -1;
+			}
+		}
+	} else {
+		/*
+		 * We ended by seeing the end of the string.  Make sure we
+		 * have no partial bytes lying around.
+		 */
+		if (state != 0)
+			return (-1);
+	}
+
+	return 0;
+}
+
+/* function for decoding and encoding hex strings */
+static const char Hex[] = "0123456789abcdef";
+static const char HexBig[] = "0123456789ABCDEF";
+
+int
+hex_ntops(unsigned char const *src, size_t srclength, stralloc *dest)
+{
+	int	i;
+	
+	if (!stralloc_copys(dest, "")) return -1;
+	for (i=0; i<srclength; i++) {
+		if (!stralloc_append(dest, &Hex[src[i] >> 4])) return -1;
+		if (!stralloc_append(dest, &Hex[src[i] & 0x0f])) return -1;
+	}
+	return 0;
+}
+
+int
+hex_ptons(char const *src, stralloc *dest)
+{
+	int		state;
+	unsigned char	ch, out;
+
+	state = 0;
+	if (!stralloc_copys(dest, "")) return -1;
+	while ((ch = *src++) != '\0') {
+		if (ISSPACE(ch))	/* Skip whitespace anywhere. */
+			continue;
+		
+		if (ch >= '0' && ch <= '9')
+			ch -= '0';
+		else if (ch >= 'a')
+			ch -= ('a' - 10);
+		else 
+			ch -= ('A' - 10);
+		if (ch > 15) 		/* A non-Hex character. */
+			return (-1);
+
+		switch (state) {
+		case 0:
+			out = ch << 4;
+			state = 1;
+			break;
+		case 1:
+			out |= ch;
+			if (!stralloc_append(dest, &out)) return -1;
+			state = 0;
+			break;
+		default:
+			abort();
+		}
+	}
+	if (state != 0)
+		return -1;
+	return 0;
 }

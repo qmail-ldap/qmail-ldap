@@ -108,6 +108,8 @@ void hier()
   c(auto_qmail,"doc","QLDAPNEWS",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","QLDAPTODO",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","QLDAPPICTURE",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"doc","EXTTODO",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"doc","POPBEFORESMTP",auto_uido,auto_gidq,0644);
 
   c(auto_qmail,"bin","qmail-queue",auto_uidq,auto_gidq,04711);
   c(auto_qmail,"bin","qmail-lspawn",auto_uido,auto_gidq,0700);
@@ -165,6 +167,8 @@ void hier()
   c(auto_qmail,"bin","pbsadd",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","pbscheck",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","pbsdbd",auto_uido,auto_gidq,0755);
+  c(auto_qmail,"bin","qmail-forward",auto_uido,auto_gidq,0755);
+  c(auto_qmail,"bin","qmail-secretary",auto_uido,auto_gidq,0755);
   
   c(auto_qmail,"man/man5","addresses.5",auto_uido,auto_gidq,0644);
   c(auto_qmail,"man/cat5","addresses.0",auto_uido,auto_gidq,0644);

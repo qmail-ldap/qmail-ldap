@@ -2,7 +2,7 @@
 #define COMMANDS_H
 
 struct commands {
-  char *text;
+  const char *text;
   void (*fun)();
   void (*flush)();
 } ;

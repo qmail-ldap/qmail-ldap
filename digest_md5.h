@@ -38,15 +38,10 @@ typedef struct MD5Context {
     unsigned char buffer[64];   /* input buffer */
 } MD5_CTX;
 
-void   MD5Init ();
-void   MD5Update ();
-void   MD5Final ();
-char  *MD5End ();
-char  *MD5Data ();
+#define MD5_LEN 16
 
-char  *MD5DataBase64 ();
-
-int    ns_mta_hash_alg();
-int    ns_mta_md5_cmp_pw();
+void   MD5Init(MD5_CTX *);
+void   MD5Update(MD5_CTX *, const unsigned char *, size_t);
+void   MD5Final(unsigned char [MD5_LEN], MD5_CTX *);
 
 #endif /* _MD5_H_ */

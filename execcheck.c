@@ -141,7 +141,8 @@ execcheck_put(struct qmail *qqt, char *ch)
 					break;
 				}
 			} else {
-				if (!case_diffb(line.s, 13, "content-type:")) {
+				if (!case_startb(line.s, line.len,
+					    "content-type:")) {
 					if (!stralloc_copyb(&content,
 						    line.s+13, line.len-14))
 						die_nomem();

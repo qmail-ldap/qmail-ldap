@@ -30,7 +30,6 @@
 #include "uint32.h"
 #include "byte.h"
 #include "digest_md4.h"
-#include "base64.h"
 
 /* some systems don't have NULL defined */
 #ifndef NULL
@@ -55,14 +54,14 @@ typedef unsigned char *POINTER;
 #define S33 11
 #define S34 15
 
-static void MD4Transform ();
+static void MD4Transform(uint32 [4], const unsigned char [64]);
 
 #ifdef __LITTLE_ENDIAN__
 #define Encode byte_copy
 #define Decode byte_copy
 #else  /* __BIG_ENDIAN__ */
-static void Encode ();
-static void Decode ();
+static void Encode(void *, size_t, const void *);
+static void Decode(void *, size_t, const void *);
 #endif /* __LITTLE_ENDIAN__ */
 
 static unsigned char PADDING[64] = {
@@ -100,10 +99,8 @@ static unsigned char PADDING[64] = {
 /* Encodes input (uint32) into output (unsigned char). Assumes len is
      a multiple of 4.
  */
-static void Encode (out, len, in)
-void *out;
-size_t len;
-const void *in;
+static void
+Encode(void *out, size_t len, const void *in)
 {
   const uint32 *input = in;
   unsigned char *output = out;
@@ -120,10 +117,8 @@ const void *in;
 /* Decodes input (unsigned char) into output (uint32). Assumes len is
      a multiple of 4.
  */
-static void Decode (out, len, in)
-void *out;
-size_t len;
-const void *in;
+static void
+Decode(void *out, size_t len, const void *in)
 {
   uint32 *output = out;
   const unsigned char *input = in;
@@ -137,8 +132,8 @@ const void *in;
 
 /* MD4 initialization. Begins an MD4 operation, writing a new context.
  */
-void MD4Init (context)
-MD4_CTX *context;                                        /* context */
+void
+MD4Init(MD4_CTX *context)
 {
   context->count[0] = 0;
   context->count[1] = 0;
@@ -155,10 +150,8 @@ MD4_CTX *context;                                        /* context */
      operation, processing another message block, and updating the
      context.
  */
-void MD4Update (context, input, inputLen)
-MD4_CTX *context;                               /* context */
-const unsigned char *input;                     /* input block */
-size_t inputLen;                                /* length of input block */
+void
+MD4Update(MD4_CTX *context, const unsigned char *input, size_t inputLen)
 {
   unsigned int i, index, partLen;
 
@@ -176,11 +169,11 @@ size_t inputLen;                                /* length of input block */
   /* Transform as many times as possible.  */
   if (inputLen >= partLen) {
     byte_copy
-      ((POINTER)&context->buffer[index], partLen, (POINTER)input);
-    MD4Transform (context->state, context->buffer);
+      ((POINTER)&context->buffer[index], partLen, input);
+    MD4Transform(context->state, context->buffer);
 
     for (i = partLen; i + 63 < inputLen; i += 64)
-      MD4Transform (context->state, &input[i]);
+      MD4Transform(context->state, &input[i]);
 
     index = 0;
   }
@@ -189,15 +182,14 @@ size_t inputLen;                                /* length of input block */
 
   /* Buffer remaining input */
   byte_copy
-    ((POINTER)&context->buffer[index], inputLen-i, (POINTER)&input[i]);
+    ((POINTER)&context->buffer[index], inputLen-i, &input[i]);
 }
 
 /* MD4 finalization. Ends an MD4 message-digest operation, writing the
      the message digest and zeroizing the context.
  */
-void MD4Final (digest, context)
-unsigned char digest[16];                         /* message digest */
-MD4_CTX *context;                                        /* context */
+void
+MD4Final(unsigned char digest[MD4_LEN], MD4_CTX *context)
 {
   unsigned char bits[8];
   unsigned int index, padLen;
@@ -230,9 +222,8 @@ MD4_CTX *context;                                        /* context */
 
 /* MD4 basic transformation. Transforms state based on block.
  */
-static void MD4Transform (state, block)
-uint32 state[4];
-const unsigned char block[64];
+static void
+MD4Transform(uint32 state[4], const unsigned char block[64])
 {
   uint32 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
@@ -300,68 +291,5 @@ const unsigned char block[64];
   /* Zeroize sensitive information.
    */
   byte_zero((POINTER) x, sizeof (x));
-}
-
-/* mdXhl.c
- * ----------------------------------------------------------------------------
- * "THE BEER-WARE LICENSE" (Revision 42):
- * <phk@login.dkuug.dk> wrote this file.  As long as you retain this notice you
- * can do whatever you want with this stuff. If we meet some day, and you think
- * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
- * ----------------------------------------------------------------------------
- */
-
-/* ARGSUSED */
-char *
-MD4End(ctx, buf)
-    MD4_CTX *ctx;
-    char *buf; /* buf needs to be 33 bytes big */
-{
-    int i;
-    char *p = buf;
-    unsigned char digest[16];
-    static const char hex[]="0123456789abcdef";
-
-    if (!p)
-        return 0;
-    MD4Final(digest,ctx);
-    for (i=0;i<16;i++) {
-        p[i+i] = hex[digest[i] >> 4];
-        p[i+i+1] = hex[digest[i] & 0x0f];
-    }
-    p[i+i] = '\0';
-    return p;
-}
-
-char *
-MD4Data (data, len, buf)
-    const unsigned char *data;
-    size_t len;
-    char *buf; /* buf needs to be 33 bytes big */
-{
-    MD4_CTX ctx;
-
-    MD4Init(&ctx);
-    MD4Update(&ctx,data,len);
-    return MD4End(&ctx, buf);
-}
-
-/* Base 64 */
-
-char *
-MD4DataBase64 (data, len, buf, buflen)
-    const unsigned char *data;
-    size_t len;
-    char *buf; /* buf needs to be 25 bytes big */
-    size_t buflen;
-{
-    MD4_CTX ctx;
-    unsigned char buffer[16];
-
-    MD4Init(&ctx);
-    MD4Update(&ctx, data, len);
-    MD4Final(buffer,&ctx);
-    b64_ntop(buffer,sizeof(buffer),buf,buflen);
-    return(buf);
 }
 

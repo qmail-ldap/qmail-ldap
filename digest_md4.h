@@ -36,12 +36,10 @@ typedef struct MD4Context {
     unsigned char buffer[64];   /* input buffer */
 } MD4_CTX;
 
-void   MD4Init ();
-void   MD4Update ();
-void   MD4Final ();
-char  *MD4End ();
-char  *MD4Data ();
+#define MD4_LEN 16
 
-char  *MD4DataBase64 ();
+void   MD4Init(MD4_CTX *);
+void   MD4Update(MD4_CTX *, const unsigned char *, size_t);
+void   MD4Final(unsigned char [MD4_LEN], MD4_CTX *);
 
 #endif /* _MD4_H_ */

@@ -31,9 +31,6 @@ documentation and/or software.
 #include "uint32.h"
 #include "byte.h"
 #include "digest_md5.h"
-#include "base64.h"
-#include "stralloc.h"
-#include "str.h"
 
 /* some systems don't have NULL defined */
 #ifndef NULL
@@ -62,14 +59,14 @@ typedef unsigned char *POINTER;
 #define S43 15
 #define S44 21
 
-static void MD5Transform ();
+static void MD5Transform (uint32 [4], const unsigned char [64]);
 
 #ifdef __LITTLE_ENDIAN__
 #define Encode byte_copy
 #define Decode byte_copy
 #else  /* __BIG_ENDIAN__ */
-static void Encode ();
-static void Decode ();
+static void Encode(void *, size_t, const void *);
+static void Decode(void *, size_t, const void *);
 #endif /* __LITTLE_ENDIAN__ */
 
 static unsigned char PADDING[64] = {
@@ -117,10 +114,8 @@ Rotation is separate from addition to prevent recomputation.
 /* Encodes input (uint32) into output (unsigned char). Assumes len is
   a multiple of 4.
  */
-static void Encode (out, len, in)
-void *out;
-size_t len;
-const void *in;
+static void
+Encode(void *, size_t, const void *);
 {
   unsigned char *output = out;
   size_t i, j;
@@ -137,10 +132,8 @@ const void *in;
 /* Decodes input (unsigned char) into output (uint32). Assumes len is
   a multiple of 4.
  */
-static void Decode (out, len, in)
-void *out;
-size_t len;
-const void *in;
+static void
+Decode(void *, size_t, const void *);
 {
   uint32 *output = out;
   const unsigned char *input = in;
@@ -154,8 +147,8 @@ const void *in;
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context.
  */
-void MD5Init (context)
-MD5_CTX *context;                                        /* context */
+void
+MD5Init(MD5_CTX *context)
 {
   context->count[0] = 0;
   context->count[1] = 0;
@@ -171,10 +164,8 @@ MD5_CTX *context;                                        /* context */
   operation, processing another message block, and updating the
   context.
  */
-void MD5Update (context, input, inputLen)
-MD5_CTX *context;                                       /* context */
-const unsigned char *input;                             /* input block */
-size_t inputLen;                     /* length of input block */
+void
+MD5Update(MD5_CTX *context, const unsigned char *input, size_t inputLen)
 {
   unsigned int i, index, partLen;
 
@@ -192,7 +183,7 @@ size_t inputLen;                     /* length of input block */
 
   /* Transform as many times as possible. */
   if (inputLen >= partLen) {
-    byte_copy ((POINTER)&context->buffer[index], partLen, (POINTER)input);
+    byte_copy ((POINTER)&context->buffer[index], partLen, input);
     MD5Transform (context->state, context->buffer);
 
     for (i = partLen; i + 63 < inputLen; i += 64)
@@ -204,15 +195,14 @@ size_t inputLen;                     /* length of input block */
     i = 0;
 
   /* Buffer remaining input */
-  byte_copy ((POINTER)&context->buffer[index], inputLen-i, (POINTER)&input[i]);
+  byte_copy ((POINTER)&context->buffer[index], inputLen-i, &input[i]);
 }
 
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
   the message digest and zeroizing the context.
  */
-void MD5Final (digest, context)
-unsigned char digest[16];                         /* message digest */
-MD5_CTX *context;                                       /* context */
+void
+MD5Final(unsigned char digest[MD5_LEN], MD5_CTX *context)
 {
   unsigned char bits[8];
   unsigned int index;
@@ -244,9 +234,8 @@ MD5_CTX *context;                                       /* context */
 
 /* MD5 basic transformation. Transforms state based on block.
  */
-static void MD5Transform (state, block)
-uint32 state[4];
-const unsigned char block[64];
+static void
+MD5Transform(uint32 state[4], const unsigned char block[64])
 {
   uint32 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
@@ -331,141 +320,5 @@ const unsigned char block[64];
 
   /* Zeroize sensitive information. */
   byte_zero ((POINTER)x, sizeof (x));
-}
-
-/* mdXhl.c
- * ----------------------------------------------------------------------------
- * "THE BEER-WARE LICENSE" (Revision 42):
- * <phk@login.dkuug.dk> wrote this file.  As long as you retain this notice you
- * can do whatever you want with this stuff. If we meet some day, and you think
- * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
- * ----------------------------------------------------------------------------
- */
-
-/* ARGSUSED */
-char *
-MD5End(ctx, buf)
-    MD5_CTX *ctx;
-    char *buf;
-{
-    int i;
-    char *p = buf;
-    unsigned char digest[16];
-    static const char hex[]="0123456789abcdef";
-
-    if (!p)
-        return 0;
-    MD5Final(digest,ctx);
-    for (i=0;i<16;i++) {
-        p[i+i] = hex[digest[i] >> 4];
-        p[i+i+1] = hex[digest[i] & 0x0f];
-    }
-    p[i+i] = '\0';
-    return p;
-}
-
-char *
-MD5Data (data, len, buf)
-    const unsigned char *data;
-    size_t len;
-    char *buf; /* XXX buf needs to be at least 33 Bytes big. */
-{
-    MD5_CTX ctx;
-
-    MD5Init(&ctx);
-    MD5Update(&ctx,data,len);
-    return MD5End(&ctx, buf);
-}
-
-/* Base 64 */
-
-char *
-MD5DataBase64 (data, len, buf, buflen)
-    const unsigned char *data;
-    size_t len;
-    char *buf; /* needs to be 25 Bytes big */
-    size_t buflen;
-{
-    MD5_CTX ctx;
-    unsigned char buffer[16];
-
-    MD5Init(&ctx);
-    MD5Update(&ctx, data, len);
-    MD5Final(buffer,&ctx);
-    b64_ntop(buffer,sizeof(buffer),buf,buflen);
-    return(buf);
-}
-
-/* Netscape MTA MD5 as found in Netscape MailServer < 2.02 and Software.com's
-   Post.Office */
-
-/* XXX this Netscape MTA MD5 implementation is absolutly ugly. I fixed the 
-   possible buffer overflows, but this does not mean it is perfect
-                                      Claudio Jeker jeker@n-r-g.com */
-
-static char * ns_mta_hextab = "0123456789abcdef";
-
-static void
-ns_mta_hexify(char *buffer, char *str, int len)
-/* normaly we should also tell the size of the buffer, this is implicitly done
-   buffer is enough great to hold the 32 hexchars (sizeof(buffer) == 65) */
-{
-  char *pch = str;
-  char ch;
-  int i;
-
-  for(i = 0;i < len; i ++) {
-    ch = pch[i];
-    buffer[2*i] = ns_mta_hextab[(ch>>4)&0xF];
-    buffer[2*i+1] = ns_mta_hextab[ch&0xF];
-  }
-
-  return;
-}
-
-int
-ns_mta_hash_alg(char *buffer, char *salt, char *passwd)
-{
-  MD5_CTX context;
-  stralloc saltstr = {0};
-  unsigned char digest[16], c;
-
-  if (!stralloc_copys(&saltstr, salt) ) return -1; /* errno set by stralloc */
-  c = 89;
-  if (!stralloc_append(&saltstr, &c) ) return -1;
-  if (!stralloc_cats(&saltstr, passwd) ) return -1;
-  c = 247;
-  if (!stralloc_append(&saltstr, &c) ) return -1;
-  if (!stralloc_cats(&saltstr, salt) ) return -1;
-  /* the stralloc is not freed so we loose some memory (until exit) but
-     this is better than the possible root exploit that was in the code before
-   */
-  
-  MD5Init(&context);
-  MD5Update(&context,(unsigned char *)saltstr.s,saltstr.len);
-  MD5Final(digest,&context);
-  ns_mta_hexify(buffer,(char*)digest,16);
-  buffer[32] = '\0';
-  return 0;
-}
-
-int
-ns_mta_md5_cmp_pw(char * clear, char *mangled)
-{
-  char mta_hash[33];
-  char mta_salt[33];
-  char buffer[65];
-  int  match;
-
-  if ( str_len(mangled) != 64 ) return -1; /* XXX is this correct ??? */
-  
-  byte_copy(mta_hash,32,mangled);
-  byte_copy(mta_salt,32,&mangled[32]);
-
-  mta_hash[32] = mta_salt[32] = 0;
-  if ( ns_mta_hash_alg(buffer,mta_salt,clear) ) return -1;
-  match = str_diffn(mta_hash,buffer, 32);
-
-  return(match);
 }
 

@@ -18,8 +18,7 @@
 #include "control.h"
 #include "fmt.h"
 
-#ifndef PORT_QMQP /* this is for testing purposes, so you can overwrite 
-		     this port via a simple -D argument */
+#ifndef PORT_QMQP /* this is for testing purposes */
 #define PORT_QMQP 628
 #endif
 
@@ -59,8 +58,6 @@ substdio envelope = SUBSTDIO_FDBUF(read,1,buf,sizeof buf);
 /* WARNING: can use only one of these at a time! */
 
 stralloc beforemessage = {0};
-stralloc toline = {0};
-stralloc dtline = {0};
 stralloc message = {0};
 stralloc aftermessage = {0};
 
@@ -70,7 +67,6 @@ stralloc line = {0};
 void getmess()
 {
   int match;
-  int i;
 
   if (slurpclose(0,&message,1024) == -1) die_read();
 
@@ -101,29 +97,7 @@ void getmess()
     if (!stralloc_cats(&aftermessage,":")) nomem();
     if (!stralloc_catb(&aftermessage,line.s + 1,line.len - 2)) nomem();
     if (!stralloc_cats(&aftermessage,",")) nomem();
-    /* only use the last (and only) TO address */
-    if (!stralloc_copyb(&toline,line.s + 1,line.len - 2)) nomem();
   }
-  /* extension to qmail-qmqpc for clustering mode, add Delivered-To: CLUSTERHOST $HOST *
-   * at the top of the mail */
-  if (getln(&envelope,&line,&match,'\0') == -1) die_read();
-  if (!match) {
-    dtline.len = 0; /* just set the lenght to 0 */
-    dtline.s = 0; /* just to be sure */
-    return;
-  }
-  if (line.len < 2) die_format();
-  if (line.s[0] != 'H') die_format();
-  if (!stralloc_copys(&dtline, "Delivered-To: CLUSTERHOST ")) nomem();
-  if (!stralloc_catb(&dtline, line.s + 1,line.len - 2 )) nomem();
-  if (!stralloc_cats(&dtline, " ")) nomem();
-  if (!stralloc_cat(&dtline, &toline)) nomem();
-  for (i = 0;i < dtline.len;++i) if (dtline.s[i] == '\n') dtline.s[i] = '_';
-  if (!stralloc_cats(&dtline,"\n")) nomem();
-  strnum[fmt_ulong(strnum,(unsigned long) message.len+dtline.len)] = 0;
-  if (!stralloc_copys(&beforemessage,strnum)) nomem();
-  if (!stralloc_cats(&beforemessage,":")) nomem();
-
 }
 
 struct ip_address outip;
@@ -147,11 +121,10 @@ char *server;
   }
 
   strnum[fmt_ulong(strnum, (unsigned long) 
-         (beforemessage.len + dtline.len + message.len + aftermessage.len))] = 0;
+         (beforemessage.len + message.len + aftermessage.len))] = 0;
   substdio_puts(&to,strnum);
   substdio_puts(&to,":");
   substdio_put(&to,beforemessage.s,beforemessage.len);
-  substdio_put(&to,dtline.s,dtline.len);
   substdio_put(&to,message.s,message.len);
   substdio_put(&to,aftermessage.s,aftermessage.len);
   substdio_puts(&to,",");

@@ -5,8 +5,8 @@ unsigned int byte_repl(char *s, unsigned int len, int f, int r)
 {
    register char *t;
    int count = 0;
-	 char fc;
-	 char rc;
+   char fc;
+   char rc;
 
    t = s; fc = f; rc = r;
    for(;;) {

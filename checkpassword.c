@@ -1,480 +1,341 @@
-/* checkpasswd.c, jeker@n-r-g.com, best viewed with tabsize = 4 */
-#include "qmail-ldap.h"
-#include "stralloc.h"
-#include "auth_mod.h"
-#include "qldap-ldaplib.h"
-#include "qldap-errno.h"
-#include "readwrite.h"
-#include "error.h"
-#include "str.h"
-#include "open.h"
-#include "substdio.h"
-#include "getln.h"
 #include <sys/types.h>
-#include <sys/socket.h>
-#include "digest_md4.h"
-#include "digest_md5.h"
-#include "digest_rmd160.h"
-#include "digest_sha1.h"
-#include "select.h"
-#include "ipalloc.h"
-#include "dns.h"
-#include "timeoutconn.h"
+#include <unistd.h>
+#include "auth_mod.h"
+#include "auto_uids.h"
 #include "byte.h"
-#include "scan.h"
-#include "fmt.h"
-#include "alloc.h"
 #include "check.h"
+#include "env.h"
+#include "error.h"
+#include "fmt.h"
+#include "locallookup.h"
+#include "passwd.h"
+#include "pbsexec.h"
+#include "prot.h"
+#include "qldap.h"
 #include "qldap-debug.h"
-#include "output.h"
-#ifdef QLDAP_CLUSTER
-#include "constmap.h"
-#endif
-
-/* Edit the first lines in the Makefile to enable local passwd lookups 
- * and debug options.
- * To use shadow passwords under Solaris, uncomment the 'SHADOWOPTS' line 
- * in the Makefile.
- * To use shadow passwords under Linux, uncomment the 'SHADOWOPTS' line and
- * the 'SHADOWLIBS=-lshadow' line in the Makefile.
- */
-#include <pwd.h>
-#ifdef PW_SHADOW
-#include <shadow.h>
-#endif
-#ifdef AIX
-#include <userpw.h>
-#endif
-
-extern stralloc qldap_me;
-extern stralloc qldap_objectclass;
-
-int rebind; 
-int cluster;
-
-static int check_ldap(stralloc *, stralloc *, unsigned long *, unsigned long *,
-		      stralloc *, stralloc *);
-
-static int check_passwd(stralloc *, stralloc *, unsigned long *, unsigned long *,
-			stralloc *, stralloc *);
-
-static int cmp_passwd(unsigned char *, char *);
-
-static int get_local_maildir(stralloc *, stralloc *);
+#include "qldap-errno.h"
+#include "qmail-ldap.h"
+#include "scan.h"
+#include "str.h"
+#include "stralloc.h"
 
 #ifdef QLDAP_CLUSTER
-extern struct constmap qldap_mailhosts;
-
-static void copyloop(int, int, int);
-static void forward_session(char *, char *, char *);
+#include <sys/socket.h>
+#include "dns.h"
+#include "ipalloc.h"
+#include "ipme.h"
+#include "ndelay.h"
+#include "qldap-cluster.h"
+#include "readwrite.h"
+#include "select.h"
+#include "timeoutconn.h"
+#endif
+#ifdef AUTOHOMEDIRMAKE
+#include "dirmaker.h"
+#endif
+#ifdef AUTOMAILDIRMAKE
+#include "mailmaker.h"
 #endif
 
-static int make_filter(stralloc *, stralloc *);
-static void free_stralloc(stralloc *);
+#include "checkpassword.h"
 
-void main(int argc, char **argv)
+static char *searchfilter(char *);
+
+int (*checkfunc[])(stralloc *, stralloc *, struct credentials *, int) = {
+	check_ldap,
+	check_passwd,
+	NULL
+};
+
+int
+check(stralloc *login, stralloc *authdata, struct credentials *c, int fast)
 {
-	int locald;
-	stralloc login = {0};
-	stralloc authdata = {0};
-	stralloc home = {0};
-	stralloc homemaker = {0};
-	stralloc maildir = {0};
-	unsigned long uid;
-	unsigned long gid;
+	int	i, r;
 
-	log_init(STDERR, 255, 0); /* XXX limited to 64 so it is not possible to get
-				   * XXX passwords via debug on normal systems */
-
-	auth_init(argc, argv, &login, &authdata);
-	log(256, "auth_init: login=%s, authdata=%s\n", login.s, authdata.s);
-
-	if (authdata.len <= 1) {
-		log(1, "alert: null password.\n");
-		qldap_errno = AUTH_NEEDED;
-		auth_fail(argc, argv, login.s);
-	}
-	
-	if (init_ldap(&locald, &cluster, &rebind, &homemaker, 0, 0, 0) == -1) {
-		log(1, "alert: init_ldap failed.\n");
-		_exit(1);
-	}
-	log(64, "init_ldap: ld=%i, cluster=%i, rebind=%i, hdm=%s\n", 
-			locald, cluster, rebind, homemaker.s);
-	
-	if (check_ldap(&login, &authdata, &uid, &gid, &home, &maildir)) {
-		log(16, "authentication with ldap was not successful\n");
-		if (locald == 1 && 
-		    (qldap_errno == LDAP_NOSUCH || qldap_errno == LDAP_SEARCH) ) {
-			log(16, "trying to authenticate with the local passwd db\n");
-			if (check_passwd(&login, &authdata, &uid, &gid, &home, &maildir)) {
-				auth_fail(argc, argv, login.s);
-			}
-		} else {
-			auth_fail(argc, argv, login.s);
-		}
-	}
-	
-	auth_success(argc, argv, login.s, uid, gid, home.s, homemaker.s, maildir.s);
-	_exit(1); /* should never get here */
-}
-
-int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid, 
-			   unsigned long *gid, stralloc *home, stralloc *maildir)
-{
-	userinfo	info;
-	extrainfo	extra[2];
-	searchinfo	search;
-	stralloc filter = {0};
-	int	ret;
-	char	*attrs[] = {LDAP_UID, /* the first 6 attrs are default */
-				    LDAP_QMAILUID,
-				    LDAP_QMAILGID,
-				    LDAP_ISACTIVE,
-				    LDAP_MAILHOST,
-				    LDAP_MAILSTORE,
-				    LDAP_HOMEDIR,
-				    LDAP_PASSWD, 0 }; /* passwd is extra */
-
-	/* initalize the different info objects */
-	if (rebind) {
-		extra[0].what = 0;	/* under rebind mode no additional info is needed */
-		search.bindpw = authdata->s;
-		attrs[7] = 0;
-		/* rebind on, check passwd via ldap rebind */ 
-	} else {
-		extra[0].what = LDAP_PASSWD; /* need to get the crypted password */
-		search.bindpw = 0; 	/* rebind off */
-	}
-	extra[1].what = 0;		/* end marker for extra info */
-	
-	if (!make_filter(login, &filter)) { 
-		/* create search filter */
-		log(4, "warning: check_ldap: could not make a filter\n");
-		/* qldap_errno set by make_filter */
-		return -1;
-	}
-	search.filter = filter.s;
-	
-	if ((ret = qldap_open()) != -1) {
-		ret = qldap_lookup(&search, attrs, &info, extra);
-		qldap_close();
-	}
-	free_stralloc(&filter);	/* free the old filter */
-	if (ret != 0) {
-		log(4, "warning: check_ldap: qldap_lookup not successful!\n");
-		/* qldap_errno set by qldap_lookup */
-		return -1;
-	}
-	/* check the status of the account !!! */
-	if (info.status == STATUS_BOUNCE || info.status == STATUS_NOPOP) {
-		qldap_errno = ACC_DISABLED;
-		return -1;
-	}
-	
-#ifdef QLDAP_CLUSTER
-	/* for cluster check if I'm on the right host */
-	if (cluster && info.host &&
-	    str_diff(qldap_me.s, info.host) &&
-	    !constmap(&qldap_mailhosts, info.host, str_len(info.host))) {
-
-		/* hostname is different, so I reconnect */
-		log(8, "check_ldap: forwarding session to %s\n", info.host);
-		forward_session(info.host, login->s, authdata->s);
-		/* that's it. Function does not return */ 
-	}
-#endif
-
-	scan_ulong(info.uid, uid);	/* get uid, gid and home */
-	scan_ulong(info.gid, gid);	/* the values are checked later */
-	if (info.mms == 0 && info.homedir == 0) {
-		qldap_errno = AUTH_FAILED;
-		return -1; /* user authentification failed no homedir defined */
-	}
-	if (info.homedir) {
-		if (!stralloc_copys(home, info.homedir)) {
-			qldap_errno = ERRNO;
-			return -1;
-		}
-		if (info.mms) {
-			if (!stralloc_copys(maildir, info.mms)) {
-				qldap_errno = ERRNO;
-				return -1;
-			}
-			/* XXX have a look at check.c and qmail-ldap.h for chck_pathb */
-			if (!chck_pathb(maildir->s,maildir->len)) {
-				log(2, "warning: check_ldap: path contains illegal chars!\n");
-				qldap_errno = ILL_PATH;
-				return -1;
-			}
-		}
-		
-	} else {
-		if (!stralloc_copys(home, info.mms)) {
-			qldap_errno = ERRNO;
-			return -1;
-		}
-	}
-	/* XXX have a look at check.c and qmail-ldap.h for chck_pathb */
-	if (!chck_pathb(home->s,home->len)) {
-		log(2, "warning: check_ldap: path contains illegal chars!\n");
-		qldap_errno = ILL_PATH;
-		return -1;
-	}
-	if (!stralloc_0(home)) {
-		qldap_errno = ERRNO;
-		return -1;
-	}
-	if (!stralloc_0(maildir)) {
-		qldap_errno = ERRNO;
-		return -1;
-	}
-	/* free a part of the info struct */
-	alloc_free(info.user);
-	alloc_free(info.uid);
-	alloc_free(info.gid);
-	if (info.homedir) alloc_free(info.homedir);
-	if (info.mms) alloc_free(info.mms);
-	
-	if (rebind && search.bind_ok) {
-		log(32, 
-			"check_ldap: qldap_lookup sucessfully authenticated with rebind\n");
-		return 0; 
-		/* if we got till here under rebind mode, the user is authenticated */
-	} else if (rebind) {
-		log(32, 
-			"check_ldap: qldap_lookup authentication failed with rebind\n");
-		qldap_errno = AUTH_FAILED;
-		return -1; /* user authentification failed */
-	}
-	
-	if (!extra[0].vals) {
-		log(2, "warning: check_ldap: password is missing for uid %s\n", 
-				login);
-		qldap_errno = AUTH_NEEDED;
-		return -1; 
-	}
-	
-	ret = cmp_passwd((unsigned char*) authdata->s, extra[0].vals[0]); 
-	log(32, "check_ldap: password compare was %s\n", 
-			ret==0?"successful":"not successful");
-	ldap_value_free(extra[0].vals);
-	return ret;
-}
-
-static int check_passwd(stralloc *login, stralloc *authdata, unsigned long *uid,
-				 unsigned long *gid, stralloc *home, stralloc *md)
-{
-	int ret;
-	struct passwd *pw;
-#ifdef PW_SHADOW
-	struct spwd *spw;
-#endif
-#ifdef AIX
-	struct userpw *spw;
-#endif
-	
-	pw = getpwnam(login->s);
-	if (!pw) {
-		/* XXX: unfortunately getpwnam() hides temporary errors */
-		log(32, "check_passwd: user %s not found in passwd db\n", login->s);
-		qldap_errno = AUTH_NOSUCH;
-		return -1;
-	}
-	*gid = pw->pw_gid;
-	*uid = pw->pw_uid;
-
-	/* here we don't check the home and maildir path, if a user has a faked 
-	 * passwd entry, then you have a bigger problem on your system than just 
-	 * a guy how can read the mail of other users/customers */
-	if (!stralloc_copys(home, pw->pw_dir)) {
-		qldap_errno = ERRNO;
-		return -1;
-	}
-	
-	if (get_local_maildir(home, md) == -1) {
-		/* function sets qldap_errno */
-		return -1;
-	}
-	log(32, "get_local_maildir: maildir=%s\n", md->s);
-	
-	if (!stralloc_0(home)) {
-		qldap_errno = ERRNO;
-		auth_error();
-	}
-	
-#ifdef PW_SHADOW
-	spw = getspnam(login->s);
-	if (!spw) {
-		/* XXX: again, temp hidden */
-		qldap_errno = AUTH_ERROR;
-		return -1;
-	}
-	ret = cmp_passwd((unsigned char*) authdata->s, spw->sp_pwdp);
-#else /* no PW_SHADOW */
-#ifdef AIX
-	spw = getuserpw(login->s);
-	if (!spw) {
-		/* XXX: and again */
-		qldap_errno = AUTH_ERROR;
-		return -1;
-	}
-	ret = cmp_passwd((unsigned char*) authdata->s, spw->upw_passwd);
-#else /* no AIX */
-	ret = cmp_passwd((unsigned char*) authdata->s, pw->pw_passwd);
-#endif /* END AIX */
-#endif /* END PW_SHADOW */
-	log(32, "check_pw: password compare was %s\n", 
-			ret==0?"successful":"not successful");
-	return ret;
-	
-}
-
-static int cmp_passwd(unsigned char *clear, char *encrypted)
-{
-#define HASH_LEN 100	/* XXX is this enough, I think yes */
-						/* What do you think ? */
-	char hashed[HASH_LEN]; /* these to buffers can not be used for exploits */
-	char salt[33];
-	int  shift;
-	
-	if (encrypted[0] == '{') { /* hashed */
-		if (!str_diffn("{crypt}", encrypted, 7)) {
-			/* CRYPT */
-			shift = 7;
-			str_copy(hashed, crypt(clear, encrypted+shift) );
-		} else if (!str_diffn("{MD4}", encrypted, 5)) {
-			/* MD4 */
-			shift = 5;
-			MD4DataBase64(clear, str_len(clear), hashed, sizeof(hashed));
-		} else if (!str_diffn("{MD5}", encrypted, 5)) {
-			/* MD5 */
-			shift = 5;
-			MD5DataBase64(clear, str_len(clear), hashed, sizeof(hashed));
-		} else if (!str_diffn("{NS-MTA-MD5}", encrypted, 12)) {
-			/* NS-MTA-MD5 */
-			shift = 12;
-			if (!str_len(encrypted) == 76) {
-				qldap_errno = ILL_AUTH;
-				return -1;
-			} /* boom */
-			byte_copy(salt, 32, &encrypted[44]);
-			salt[32] = 0;
-			if (ns_mta_hash_alg(hashed, salt, (char *) clear) == -1) {
-				qldap_errno = ERRNO;
-				return -1;
-			}
-			byte_copy(&hashed[32], 33, salt);
-		} else if (!str_diffn("{SHA}", encrypted, 5)) {
-			/* SHA */
-			shift = 5;
-			SHA1DataBase64(clear, str_len(clear), hashed, sizeof(hashed));
-		} else  if (!str_diffn("{RMD160}", encrypted, 8)) {
-			/* RMD160 */
-			shift = 8;
-			RMD160DataBase64(clear, str_len(clear), hashed, sizeof(hashed));
-		} else {
-			/* unknown hash function detected */ 
-			shift = 0;
-			qldap_errno = ILL_AUTH;
-			return -1;
-		}
-		/* End getting correct hash-func hashed */
-		log(256, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
-				hashed, encrypted);
-		if (!*encrypted || str_diff(hashed,encrypted+shift)) {
-			qldap_errno = AUTH_FAILED;
-			return -1;
-		}
-		/* hashed passwds are equal */
-	} else { /* crypt or clear text */
-		log(256, "cpm_passwd: comparing standart passwd (%s == %s)\n", 
-				crypt(clear,encrypted), encrypted);
-		if (!*encrypted || str_diff(encrypted, crypt(clear,encrypted))) {
-			/* CLEARTEXTPASSWD ARE NOT GOOD */
-			/* so they are disabled by default */
-#ifdef CLEARTEXTPASSWD
-#warning ___CLEARTEXT_PASSWORD_SUPPORT_IS_ON___
-			if (!*encrypted || str_diff(encrypted, clear)) {
-#endif
-			qldap_errno = AUTH_FAILED;
-			return -1;
-#ifdef CLEARTEXTPASSWD
-			}
-#endif
-			/* crypted or cleartext passwd ok */
-		}
-	} /* end -- hashed or crypt/clear text */
-
-	return 0;
-
-}
-
-static int get_local_maildir(stralloc *home, stralloc *maildir)
-{
-	substdio ss;
-	stralloc dotqmail = {0};
-	char buf[512];
-	int match;
-	int fd;
-	
-	if (!stralloc_copy(&dotqmail, home)) {
-		qldap_errno = ERRNO;
-		return -1;
-	}
-	if (!stralloc_cats(&dotqmail, "/.qmail")) {
-		qldap_errno = ERRNO;
-		return -1;
-	}
-	if (!stralloc_0(&dotqmail)) {
-		qldap_errno = ERRNO;
-		return -1;
-	}
-	
-	if ((fd = open_read(dotqmail.s)) == -1) {
-		if (errno == error_noent) return 0;
-		qldap_errno = ERRNO;
-		return -1;
-	}
-
-	substdio_fdbuf(&ss,read,fd,buf,sizeof(buf));
-	while (1) {
-		if (getln(&ss,&dotqmail,&match,'\n') != 0) goto tryclose;
-		if (!match && !dotqmail.len) break;
-		if ((dotqmail.s[0] == '.' || dotqmail.s[0] == '/') && 
-			  dotqmail.s[dotqmail.len-2] == '/') { /* is a maildir line ? */
-			if (!stralloc_copy(maildir, &dotqmail)) goto tryclose;
-			maildir->s[maildir->len-1] = '\0';
+	for (i = 0; checkfunc[i] != NULL; i++)
+		switch (r = checkfunc[i](login, authdata, c, fast)) {
+		case OK:
+		case FORWARD:
+			return r;
+		case NOSUCH:
+			/* lets try an other backend */
 			break;
-		}		
+		case BADPASS:
+			/* NOTE: users defined in two dbs are not allowed */
+			return BADPASS;
+		default:
+			return r;
+		}
+	
+	return NOSUCH;
+}
+
+int
+check_ldap(stralloc *login, stralloc *authdata,
+    struct credentials *c, int fast)
+{
+	static	stralloc ld = {0};
+	qldap	*q;
+	char	*filter = {0};
+	int	r, status, pwok;
+	const	char	*attrs[] = {
+				LDAP_UID, /* the first 6 attrs are default */
+				LDAP_QMAILUID,
+				LDAP_QMAILGID,
+				LDAP_ISACTIVE,
+				LDAP_MAILHOST,
+				LDAP_MAILSTORE,
+				LDAP_HOMEDIR,
+				LDAP_PASSWD, 0 }; /* passwd is extra */
+
+	/* TODO more debug output is needed */
+	q = qldap_new();
+	if (q == 0)
+		return ERRNO;
+	
+	r = qldap_open(q);
+	if (r != OK) goto fail;
+	r = qldap_bind(q, 0, 0);
+	if (r != OK) goto fail;
+	
+	if (fast) {
+		/* just comapre passwords and account status */
+		attrs[0] = LDAP_ISACTIVE;
+		if (qldap_need_rebind() == 0) {
+			attrs[1] = LDAP_PASSWD;
+			attrs[2] = 0;
+		} else
+			attrs[1] = 0;
+	} else {
+		if (qldap_need_rebind() != 0)
+			attrs[7] = 0;
+	}
+
+	filter = searchfilter(login->s);
+	if (filter == 0) { r = ERRNO; goto fail; }
+
+	r = qldap_lookup(q, filter, attrs);
+	if (r != OK) goto fail;
+
+	r = qldap_get_status(q, &status);
+	if (r != OK) goto fail;
+	if (status == STATUS_BOUNCE || status == STATUS_NOPOP) {
+		qldap_free(q);
+		return ACC_DISABLED;
 	}
 	
-	close(fd);
-	for (match = 0; match<512; buf[match++]=0) ; /* trust nobody */
-	free_stralloc(&dotqmail);
-	return 0;
+	if (!fast) {
+#ifdef QLDAP_CLUSTER
+		r = qldap_get_attr(q, LDAP_MAILHOST, &c->forwarder,
+		    SINGLE_VALUE);
+		if (r != OK && r != NOSUCH) goto fail;
+		if (r == OK && cluster(c->forwarder.s) == 1) {
+			/* hostname is different, so I reconnect */
+			log(8, "check_ldap: forwarding session to %s\n",
+			    c->forwarder.s);
+			pwok = FORWARD;
+		}
+#endif
 
-tryclose:
-	for (match = 0; match<512; buf[match++]=0) ; /* trust nobody */
-	match = errno; /* preserve errno */
-	close(fd);
-	free_stralloc(&dotqmail);
-	errno = match;
-	qldap_errno = ERRNO;
-	return -1;
+		r = qldap_get_uid(q, &c->uid);
+		if (r != OK) goto fail;
+		r = qldap_get_gid(q, &c->gid);
+		if (r != OK) goto fail;
+		r = qldap_get_mailstore(q, &c->home, &c->maildir);
+		if (r != OK) goto fail;
+	}
+	
+	if (qldap_need_rebind() == 0) {
+		r = qldap_get_attr(q, LDAP_PASSWD, &ld, SINGLE_VALUE);
+		if (r != OK) goto fail;
+		pwok = cmp_passwd(authdata->s, ld.s);
+	} else {
+		r = qldap_get_dn(q, &ld);
+		if (r != OK) goto fail;
+		r = qldap_rebind(q, ld.s, authdata->s);
+		switch (r) {
+		case OK:
+			pwok = OK;
+			break;
+		case LDAP_BIND_AUTH:
+			pwok = BADPASS;
+			break;
+		default:
+			pwok = r;
+			break;
+		}
+	}
 
+	log(32, "check_ldap: password compare was %s\n", 
+	    pwok == OK || pwok == FORWARD ?
+	    "successful":"not successful");
+	qldap_free(q);
+	return pwok;
+fail:
+	qldap_free(q);
+	return r;
+	
+}
+
+void
+change_uid(int uid, int gid)
+{
+	int	id;
+	
+	id = geteuid();
+	if (id != 0 && (id == uid || id == -1)) {
+		/* not running as root so return */
+		log(32, "change_uid: already running non root\n");
+		return;
+	}
+	if (uid == -1 && gid == -1) {
+		/* run as non-privileged user qmaild group nofiles */
+		uid = auto_uidd;
+		gid = auto_gidn;
+	}
+	/* first set the group id */
+	if (prot_gid(gid) == -1)
+		auth_error(ERRNO);
+	log(32, "setgid succeeded (%i)\n", gid);
+	
+	/* ... then the user id */
+	if (prot_uid(uid) == -1)
+		auth_error(ERRNO);
+	log(32, "setuid succeeded (%i)\n", uid);
+	
+	/* ... now check that we are realy not running as root */
+	if (!getuid())
+		auth_error(FAILED);
+}
+
+void
+setup_env(char *user, struct credentials *c)
+{
+	/* set up the environment for the execution of the subprogram */
+	if (!env_put2("USER", user))
+		auth_error(ERRNO);
+	
+	/* only courier-imap needs this but we set it anyway */
+	if (!env_put2("AUTHENTICATED", user))
+		auth_error(ERRNO);
+	
+	if (!env_put2("HOME", c->home.s))
+		auth_error(ERRNO);
+	
+	if (c->maildir.s != 0 && c->maildir.len > 0) {
+		if (!env_put2("MAILDIR", c->maildir.s))
+			auth_error(ERRNO);
+	} else {
+		if (!env_unset("MAILDIR"))
+			auth_error(ERRNO);
+	}
+	log(32, "environment successfully set: "
+	    "USER %s, HOME %s, MAILDIR %s\n",
+	    user, c->home.s,
+	    c->maildir.s != 0 && c->maildir.len > 0?
+	    c->maildir.s:"unset, using aliasempty"); 
+}
+
+void
+chdir_or_make(char *home, char *maildir)
+{
+	char	*md;
+
+	if (maildir == NULL)
+		md = auth_aliasempty();
+	else
+		md = maildir;
+
+	/* ... go to home dir and create it if needed */
+	if (chdir(home) == -1) {
+#ifdef AUTOHOMEDIRMAKE
+		log(8, "makeing homedir for %s %s\n", home, md);
+			
+		switch (dirmaker_make(home, md)) {
+		case OK:
+			break;
+		case MAILDIR_CRASHED:
+			log(2, "warning: dirmaker failed: program crashed\n");
+			auth_error(MAILDIR_FAILED);
+		case MAILDIR_FAILED:
+			log(2, "warning: dirmaker failed: bad exit status\n");
+			auth_error(MAILDIR_FAILED);
+		case MAILDIR_UNCONF:
+			log(2, "warning: dirmaker failed: not configured\n");
+			auth_error(MAILDIR_NONEXIST);
+		case MAILDIR_HARD:
+			log(2, "warning: dirmaker failed: hard error\n");
+		case ERRNO:
+		default:
+			log(2, "warning: dirmaker failed (%s)\n",
+			    error_str(errno));
+			auth_error(MAILDIR_FAILED);
+		}
+		if (chdir(home) == -1) {
+			log(2, "warning: 2nd chdir failed: %s\n",
+			    error_str(errno));
+			auth_error(MAILDIR_FAILED);
+		}
+		log(32, "homedir successfully made\n");
+#else
+		log(2, "warning: chdir failed: %s\n", error_str(errno));
+		auth_error(MAILDIR_NONEXIST);
+#endif
+	}
+#ifdef AUTOMAILDIRMAKE
+	switch (maildir_make(md)) {
+	case OK:
+		break;
+	case MAILDIR_CORRUPT:
+		log(2, "warning: maildir_make failed (%s)\n",
+		    "maildir seems to be corrupt");
+		auth_error(MAILDIR_CORRUPT);
+	case ERRNO:
+	default:
+		log(2, "warning: maildir_make failed (%s)\n",
+		    error_str(errno));
+		auth_error(MAILDIR_FAILED);
+	}
+#endif
+}
+
+stralloc filter = {0};
+
+static char *
+searchfilter(char *uid)
+{
+	char	*escaped;
+	
+	if (uid == (char *)0) return 0;
+	
+	escaped = ldap_escape(uid);
+	if (escaped == (char *)0) return 0;
+	
+	if (!stralloc_copys(&filter,"(") ||
+	    !stralloc_cats(&filter, LDAP_UID) ||
+	    !stralloc_cats(&filter, "=") ||
+	    !stralloc_cats(&filter, escaped) ||
+	    !stralloc_cats(&filter, ")") ||
+	    !stralloc_0(&filter))
+		return (char *)0;
+	return ldap_ocfilter(filter.s);
 }
 
 #ifdef QLDAP_CLUSTER
-static int allwrite(int (*op)(),int fd, char *buf,int len)
+static int allwrite(int (*)(),int, char *,int);
+static void copyloop(int, int, int);
+static char copybuf[4096];
+
+static int
+allwrite(int (*op)(),int fd, char *buf,int len)
 {
-	int w;
+	int	w;
 
 	while (len) {
 		w = op(fd,buf,len);
 		if (w == -1) {
 			if (errno == error_intr) continue;
-			return -1; /* note that some data may have been written */
+			return -1;
 		}
 		if (w == 0) ; /* luser's fault */
 		buf += w;
@@ -483,19 +344,17 @@ static int allwrite(int (*op)(),int fd, char *buf,int len)
 	return 0;
 }
 
-static char copybuf[4096];	/* very big buffer ethernet pkgs are normaly
-				   around 1500 bytes long */
-
-static void copyloop(int infd, int outfd, int timeout)
+static void
+copyloop(int infd, int outfd, int timeout)
 {
-	fd_set iofds;
-	struct timeval tv;
-	int maxfd;	/* Maximum numbered fd used */
-	int bytes, ret, in, out;
+	fd_set	iofds;
+	struct	timeval tv;
+	int	maxfd;	/* Maximum numbered fd used */
+	int	bytes, ret, in, out;
 
 	in = 1; out = 1;
 	ndelay_off(infd); ndelay_off(outfd);
-	while(in || out) {
+	while (in || out) {
 		/* file descriptor bits */
 		FD_ZERO(&iofds);
 		maxfd = -1;
@@ -515,166 +374,108 @@ static void copyloop(int infd, int outfd, int timeout)
 
 		ret = select(maxfd + 1, &iofds, (fd_set *)0, (fd_set *)0, &tv);
 		if (ret == -1) {
-			log(1, "copyloop: select failed %s\n", error_str(errno));
+			log(1, "copyloop: select failed %s\n",
+			    error_str(errno));
 			break;
 		} else if (ret == 0) {
 			log(32, "copyloop: select timeout\n");
 			break;
 		}
 		if(in && FD_ISSET(infd, &iofds)) {
-			if((bytes = read(infd, copybuf, sizeof(copybuf))) < 0) {
-				log(1, "copyloop: read failed: %s\n", error_str(errno));
+			if((bytes = read(infd, copybuf,
+					    sizeof(copybuf))) < 0) {
+				log(1, "copyloop: read failed: %s\n",
+				    error_str(errno));
 				break;
 			}
-			log(32, "copyloop: read out %i bytes read\n", bytes);
 			if (bytes == 0) {
-				shutdown(infd, 0); /* close recv end on in and ... */
-				shutdown(outfd, 1); /* close send 'end' on out */
-				in = 0; /* do not select on infd */
+				/* close recv end on in and ...
+				   close send 'end' on out */
+				shutdown(infd, 0);
+				shutdown(outfd, 1);
+				in = 0; /* do no longer select on infd */
 			} else if(allwrite(write, outfd, copybuf, bytes) != 0) {
-				log(1, "copyloop: write out failed: %s\n", error_str(errno));
+				log(1, "copyloop: write out failed: %s\n",
+				    error_str(errno));
 				break;
 			}
 		}
 		if(out && FD_ISSET(outfd, &iofds)) {
-			if((bytes = read(outfd, copybuf, sizeof(copybuf))) < 0) {
-				log(1, "copyloop: read failed: %s\n", error_str(errno));
+			if((bytes = read(outfd, copybuf,
+					    sizeof(copybuf))) < 0) {
+				log(1, "copyloop: read failed: %s\n",
+				    error_str(errno));
 				break;
 			}
 			log(32, "copyloop: read in %i bytes read\n", bytes);
 			if (bytes == 0) {
-				shutdown(outfd, 0); /* close recv end on out and ... */
-				shutdown(infd, 1); /* close send 'end' on in */
-				out = 0; /* do not select on outfd */
+				/* close recv end on out and ...
+				   close send 'end' on in */
+				shutdown(outfd, 0);
+				shutdown(infd, 1);
+				out = 0; /* do no longer select on outfd */
 			} else if(allwrite(write, infd, copybuf, bytes) != 0) {
-				log(1, "copyloop: write in failed: %s\n", error_str(errno));
+				log(1, "copyloop: write in failed: %s\n",
+				    error_str(errno));
 				break;
 			}
 		}
 	}
-
 	close(infd);
 	close(outfd);
 	return;
 }
 
-static void forward_session(char *host, char *name, char *passwd)
+void
+forward(char *name, char *passwd, struct credentials *c)
 {
-	struct ip_address outip;
-	ipalloc ip = {0};
-	stralloc host_stralloc = {0};
-	int ffd;
-	int timeout = 31*60; /* ~30 min timeout RFC1730 */
-	int ctimeout = 20;
+	struct	ip_address outip;
+	ipalloc	ip = {0};
+	int	ffd;
+	int	timeout = 31*60; /* ~30 min timeout RFC1730 */
+	int	ctimeout = 30;
 	
-	if (!ip_scan("0.0.0.0", &outip)) {
-		qldap_errno = ERRNO;
-		auth_error();
-	}
+	/* pop befor smtp */
+	pbsexec();
 
-	if (!stralloc_copys(&host_stralloc, host)) {
-		qldap_errno = ERRNO;
-		auth_error();
-	}
+	if (!ip_scan("0.0.0.0", &outip))
+		auth_error(ERRNO);
 
 	dns_init(0);
-	switch (dns_ip(&ip,&host_stralloc)) {
+	switch (dns_ip(&ip,&c->forwarder)) {
 		case DNS_MEM:
-			qldap_errno = ERRNO;
-			auth_error();
+			auth_error(ERRNO);
 		case DNS_SOFT:
-			qldap_errno = BADCLUSTER;
-			auth_error();
 		case DNS_HARD:
-			qldap_errno = BADCLUSTER;
-			auth_error();
+			auth_error(BADCLUSTER);
 		case 1:
-			if (ip.len <= 0) {
-				qldap_errno = BADCLUSTER;
-				auth_error();
-			}
+			if (ip.len <= 0)
+				auth_error(BADCLUSTER);
 	}
-	/*	
-	if (ip.len != 1) {
-		qldap_errno = BADCLUSTER;
-		auth_error();
-	} */ /* 20010523 do not check if only one IP is returned, so it is
-		possible to have a cluster node consisting of multiple machines 
-		XXX if your mailhost is bad (bad entries in ldap) you will get
-		bad loops.
-	  */
+	/* 
+	   20010523 Don't check if only one IP is returned, so it is
+	   possible to have a cluster node consisting of multiple machines. 
+	   XXX If your mailhost is bad (bad entries in ldap) you will get
+	   bad loops, the only limit is the tcpserver concurrency limit.
+	   20030627 Could we use the ipme stuff of qmail-remote, to make
+	   single hop loops impossible? Let's try it.
+	 */
+	if (ipme_is(&ip.ix[0].ip) == 1)
+		auth_error(BADCLUSTER);
+
+	ffd = socket(AF_INET, SOCK_STREAM, 0);
+	if (ffd == -1)
+		auth_error(ERRNO);
 	
-	ffd = socket(AF_INET,SOCK_STREAM,0);
-	if (ffd == -1) {
-		qldap_errno = ERRNO;
-		auth_error();
-	}
-	
-	if (timeoutconn(ffd, &ip.ix[0].ip, &outip, auth_port, ctimeout) != 0) {
-		qldap_errno = ERRNO;
-		auth_error();
-	}
+	if (timeoutconn(ffd, &ip.ix[0].ip, &outip, auth_port, ctimeout) != 0)
+		auth_error(ERRNO);
 	
 	/* We have a connection, first send user and pass */
 	auth_forward(ffd, name, passwd);
 	copyloop(0, ffd, timeout);
 
 	_exit(0); /* all went ok, exit normaly */
-
 }
+
 #endif /* QLDAP_CLUSTER */
-
-static int make_filter(stralloc *value, stralloc *filter)
-/* create a searchfilter, "(uid=VALUE)" */
-{
-	stralloc tmp = {0};
-	
-	
-	if (!stralloc_copy(&tmp, value)) {
-		qldap_errno = ERRNO;
-		return 0;
-	}
-	if (!escape_forldap(&tmp)) {
-		qldap_errno = ERRNO;
-		return 0;
-	}
-	if (!stralloc_copys(filter,"(")) {
-		qldap_errno = ERRNO;
-		return 0;
-	}	
-	if (qldap_objectclass.len && (
-	    !stralloc_cats(filter,"&(") || 
-	    !stralloc_cats(filter,LDAP_OBJECTCLASS) ||
-	    !stralloc_cats(filter,"=") ||
-	    !stralloc_cat(filter,&qldap_objectclass) ||
-	    !stralloc_cats(filter,")("))) {
-		qldap_errno = ERRNO;
-		return 0;
-	}
-	if (!stralloc_cats(filter, LDAP_UID) ||
-	    !stralloc_cats(filter, "=") ||
-	    !stralloc_cat(filter, &tmp) ||
-	    !stralloc_cats(filter, ")")) {
-		qldap_errno = ERRNO;
-		return 0;
-	}
-	if (qldap_objectclass.len && 
-	    !stralloc_cats(filter,")")) {
-		qldap_errno = ERRNO;
-		return 0;
-	}
-	if (!stralloc_0(filter)) {
-		qldap_errno = ERRNO;
-		return 0;
-	}
-	free_stralloc(&tmp);
-	return 1;
-}
-
-static void free_stralloc(stralloc* sa)
-{
-	alloc_free(sa->s);
-	sa->s = 0;
-	return;
-}
 

@@ -162,7 +162,7 @@ unsigned char testvektor[128] = {
 	/* 44	','			*/	ALLOW_PROG,
 	/* 45	'-'			*/	ALLOW_ALL|NOT_FIRST, /*XXX*/
 	/* 46	'.'			*/	ALLOW_ALL,
-	/* 47	'/'			*/	ALLOW_ALL&DENY_USER, /*XXX user*/
+	/* 47	'/'			*/	ALLOW_ALL&DENY_USER,
 	/* 48	'0'			*/	ALLOW_ALL,
 	/* 49	'1'			*/	ALLOW_ALL,
 	/* 50	'2'			*/	ALLOW_ALL,
@@ -207,7 +207,7 @@ unsigned char testvektor[128] = {
 	/* 89	'Y'			*/	ALLOW_ALL,
 	/* 90	'Z'			*/	ALLOW_ALL,
 	/* 91	'['			*/	ALLOW_PROG&PARANOIA,
-	/* 92	'\'			*/	ALLOW_PROG,
+	/* 92	'\\'			*/	ALLOW_PROG,
 	/* 93	']'			*/	ALLOW_PROG&PARANOIA,
 	/* 94	'^'			*/	ALLOW_PROG&PARANOIA,
 	/* 95	'_'			*/	ALLOW_ALL,

@@ -19,6 +19,7 @@
 #include "readsubdir.h"
 #include "scan.h"
 #include "select.h"
+#include "sig.h"
 #include "str.h"
 #include "stralloc.h"
 #include "substdio.h"
@@ -44,12 +45,12 @@ char strnum[FMT_ULONG];
 
 /* XXX not good, if qmail-send.c changes this has to be updated */
 #define CHANNELS 2
-char *chanaddr[CHANNELS] = { "local/", "remote/" };
+const char *chanaddr[CHANNELS] = { "local/", "remote/" };
 
 datetime_sec recent;
 
-void log1(char *x);
-void log3(char* x, char* y, char* z);
+void log1(const char *);
+void log3(const char *, const char *, const char *);
 
 int flagstopasap = 0;
 void sigterm(void)
@@ -62,11 +63,11 @@ void sigterm(void)
 int flagreadasap = 0; void sighup(void) { flagreadasap = 1; }
 int flagsendalive = 1; void senddied(void) { flagsendalive = 0; }
 
-void nomem() { log1("alert: out of memory, sleeping...\n"); sleep(10); }
-void pausedir(dir) char *dir;
+void nomem(void) { log1("alert: out of memory, sleeping...\n"); sleep(10); }
+void pausedir(const char *dir)
 { log3("alert: unable to opendir ",dir,", sleeping...\n"); sleep(10); }
 
-void cleandied()
+void cleandied(void)
 { 
   log1("alert: qmail-todo: oh no! lost qmail-clean connection! dying...\n");
   flagstopasap = 1;
@@ -134,7 +135,7 @@ int rewrite(char *recip)
 
   for (i = 0;i <= addr.len;++i)
     if (!i || (i == at + 1) || (i == addr.len) || ((i > at) && (addr.s[i] == '.')))
-      if (x = constmap(&mapvdoms,addr.s + i,addr.len - i)) {
+      if ((x = constmap(&mapvdoms,addr.s + i,addr.len - i))) {
         if (!*x) break;
         if (!stralloc_cats(&rwline,x)) return 0;
         if (!stralloc_cats(&rwline,"-")) return 0;
@@ -180,7 +181,7 @@ int comm_canwrite(void)
  return 0;
 }
 
-void log1(char* x)
+void log1(const char* x)
 {
   int pos;
   
@@ -195,7 +196,7 @@ fail:
   comm_buf.len = pos;
 }
 
-void log3(char* x, char *y, char *z)
+void log3(const char *x, const char *y, const char *z)
 {
   int pos;
   
@@ -215,11 +216,11 @@ fail:
 void comm_write(unsigned long id, int local, int remote)
 {
   int pos;
-  char *s;
+  const char *s;
   
-  if(local && remote) s="B";
-  else if(local) s="L";
-  else if(remote) s="R";
+  if (local && remote) s="B";
+  else if (local) s="L";
+  else if (remote) s="R";
   else s="X";
   
   pos = comm_buf.len;
@@ -281,8 +282,6 @@ fail:
 
 void comm_exit(void)
 {
-  int w;
-  
   /* if it fails exit, we have already stoped */
   if (!stralloc_cats(&comm_buf,"X")) _exit(1);
   if (!stralloc_0(&comm_buf)) _exit(1);
@@ -682,7 +681,7 @@ void main()
    r = read(fdin, &c, 1);
    if ((r == -1) && (errno != error_intr))
      _exit(100); /* read failed probably qmail-send died */
- } while (r =! 1); /* we assume it is a 'S' */
+ } while (r != 1); /* we assume it is a 'S' */
  
  for (;;)
   {
@@ -692,7 +691,10 @@ void main()
    if (!flagsendalive) {
      /* qmail-send finaly exited, so do the same. */
      if (flagstopasap) _exit(0);
-     /* qmail-send died. We can not log and we can not work therefor _exit(1). */
+     /*
+      * qmail-send died.
+      * We can not log and we can not work therefor _exit(1).
+      */
      _exit(1);
    }
 

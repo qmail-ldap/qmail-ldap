@@ -766,7 +766,7 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
      while ((r = substdio_get(&ssread,buf,bytestoget)) > 0) {
        qmail_put(&qqt,buf,r);
        bytestogo -= r;
-       if ( bouncemaxbytes != 0 && bytestogo <= 0 ) {
+       if (bouncemaxbytes != 0 && bytestogo <= 0) {
 	 qmail_puts(&qqt,"\n\n--- End of message stripped.\n");
 	 break;
        }
@@ -1665,8 +1665,7 @@ int getcontrols() { if (control_init() == -1) return 0;
  if (!stralloc_cat(&doublebounceto,&doublebouncehost)) return 0;
  if (!stralloc_0(&doublebounceto)) return 0;
  if (control_readint(&bouncemaxbytes,"control/bouncemaxbytes") == -1) return 0;
- if (control_readfile(&custombouncetext,"control/custombouncetext",0) == -1) return 0;
- byte_repl(custombouncetext.s, custombouncetext.len, '\0', '\n');
+ if (control_readrawfile(&custombouncetext,"control/custombouncetext",0) == -1) return 0;
  if (!stralloc_0(&custombouncetext) ) return 0;
  if (control_readfile(&locals,"control/locals",1) != 1) return 0;
  if (!constmap_init(&maplocals,locals.s,locals.len,0)) return 0;
@@ -1779,7 +1778,8 @@ void main()
      r = read(chanfdin[c],&ch,1);
    while ((r == -1) && (errno == error_intr));
    if (r < 1)
-    { log1("alert: cannot start qmail-lspawn or it had an error! Check if ~control/ldapserver exists.\n"); _exit(111); }
+    { log1("alert: cannot start qmail-lspawn or it had an error! "
+	"Check if ~control/ldapserver exists.\n"); _exit(111); }
    do
      r = read(chanfdin[c],&ch1,1);
    while ((r == -1) && (errno == error_intr));

@@ -1,14 +1,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "byte.h"
 #include "case.h"
 #include "control.h"
 #include "constmap.h"
+#include "direntry.h"
 #include "env.h"
 #include "error.h"
 #include "exit.h"
 #include "fmt.h"
 #include "getln.h"
+#include "mailmagic.h"
 #include "newfield.h"
 #include "now.h"
 #include "open.h"
@@ -26,14 +29,27 @@
 #define FATAL "qmail-reply: fatal: "
 #define WARN  "qmail-reply: warn: "
 
-void temp_nomem() { strerr_die2x(111, FATAL, "Out of memory."); }
-void temp_rewind() { strerr_die2x(111, FATAL, "Unable to rewind message."); }
-void temp_fork() { strerr_die2sys(111, FATAL, "Unable to fork: "); }
+void
+temp_nomem(void)
+{
+	strerr_die2x(111, FATAL, "Out of memory.");
+}
+void
+temp_rewind(void)
+{
+	strerr_die2x(111, FATAL, "Unable to rewind message.");
+}
+void
+temp_fork(void)
+{
+	strerr_die2sys(111, FATAL, "Unable to fork: ");
+}
 
 void usage(void)
 {
 	strerr_die1x(100,
-	    "qmail-reply: usage: qmail-reply [-f mailfile] [-j junkfile]");
+	    "qmail-reply: usage: qmail-reply [-f mailfile] [-j junkfile] "
+	    "[maildir]");
 }
 
 stralloc replytext = {0};
@@ -50,7 +66,7 @@ void envmail(void)
 	}
 }
 
-char buf[1024];
+char buffer[1024];
 stralloc line = {0};
 
 void readmail(char *file)
@@ -63,12 +79,12 @@ void readmail(char *file)
 
 	fd = open_read(file);
 	if (fd == -1)
-		strerr_die4sys(100, FATAL, "unable to open '", file, "': ");
+		strerr_die4sys(100, FATAL, "Unable to open '", file, "': ");
  
-	substdio_fdbuf(&ss, read, fd, buf, sizeof(buf));
+	substdio_fdbuf(&ss, read, fd, buffer, sizeof(buffer));
 	for (;;) {
 		if (getln(&ss, &line, &match, '\n') == -1)
-			strerr_die4sys(100, FATAL, "unable to read '",
+			strerr_die4sys(100, FATAL, "Unable to read '",
 			    file, "': ");
 		if (!match) {
 			close(fd);
@@ -115,14 +131,13 @@ struct constmap mapjunk;
 void junkread(char *path)
 {
 	if (control_readfile(&junkfrom, path, 0) != 1)
-		strerr_die4sys(100, FATAL, "unable to read '", path, "': ");
+		strerr_die4sys(100, FATAL, "Unable to read '", path, "': ");
 }
 
-
-int junksender(char *buf, int len)
+int junksender(char *addr, int len)
 {
 	int	at, dash, i;
-	static char *(junkignore[]) = {
+	static const char *(junkignore[]) = {
 		/* don't reply to bots */
 		"-request",
 		"daemon",
@@ -136,6 +151,7 @@ int junksender(char *buf, int len)
 		/* from vacation(1) */
 		"-relay",
 		0 } ;
+		/* TODO support for -return- dash extensions */
 	
 	for (i = 0; junkignore[i] != 0; i++) {
 		if (!stralloc_cats(&junkfrom, junkignore[i])) temp_nomem();
@@ -143,9 +159,9 @@ int junksender(char *buf, int len)
 	}
 
 	if (!constmap_init(&mapjunk, junkfrom.s, junkfrom.len, 0))
-		strerr_die2sys(111, FATAL, "constmap_init: ");
+		strerr_die2sys(111, FATAL, "Constmap_init: ");
 	
-	at = byte_rchr(buf, len, '@');
+	at = byte_rchr(addr, len, '@');
 	if (at >= len)
 		strerr_die2x(111, FATAL, "Bad SENDER address.");
 
@@ -155,23 +171,23 @@ int junksender(char *buf, int len)
 	   3. @host
 	   4. -part
 	 */
-	if (constmap(&mapjunk,buf,len)) return 1;
-	if (constmap(&mapjunk,buf,at)) return 1;
-	if (constmap(&mapjunk,buf+at,len-at)) return 1;
+	if (constmap(&mapjunk, addr, len)) return 1;
+	if (constmap(&mapjunk, addr, at)) return 1;
+	if (constmap(&mapjunk, addr+at, len-at)) return 1;
 	
 	for (dash = 0; dash < at; dash++) {
-		dash += byte_chr(buf+dash,at-dash, '-');
-		if (constmap(&mapjunk,buf+dash,at-dash)) return 1;
+		dash += byte_chr(addr+dash, at-dash, '-');
+		if (constmap(&mapjunk, addr+dash, at-dash)) return 1;
 	}
 	return 0;
 }	
 
 #ifdef NOTYET
 
-datetime_sec get_stamp(char *hex)
+datetime_sec get_stamp(char const *hex)
 {
-	long t;
-	char c;
+	unsigned long t;
+	unsigned char c;
 
 	t = 0;
 	while((c = *hex++)) {
@@ -181,7 +197,7 @@ datetime_sec get_stamp(char *hex)
 			c -= ('a' - 10);
 		else 
 			c -= ('A' - 10);
-		if (c >= 16)
+		if (c > 15)
 			break;
 		t = (t<<4) + c;
 	}
@@ -189,15 +205,16 @@ datetime_sec get_stamp(char *hex)
 	return (datetime_sec) t;	
 }
 
-char* stamp(datetime_sec time)
+char* stamp(datetime_sec tm)
 {
-	static char stampbuf[9];
-	static char* digit = "0123456789abcdef";
+	static char stampbuf[10];
+	static const char* digit = "0123456789abcdef";
 	char *s;
-	long t;
+	unsigned long t;
 
-	t = (long) time;
+	t = (unsigned long) tm;
 	s = stampbuf;
+	*s++ = ':';
 	*s++ = digit[(t >> 28) & 0x0f];
 	*s++ = digit[(t >> 24) & 0x0f];
 	*s++ = digit[(t >> 20) & 0x0f];
@@ -215,22 +232,22 @@ datetime_sec timeout;
 #ifndef REPLY_TIMEOUT
 #define REPLY_TIMEOUT 1209600 /* 2 weeks */
 #endif
-#define MAX_SIZE 10240 /* 10kB */
+#define MAX_SIZE (32 * 1024) /* 32kB */
 
-int recent(char *buf, int len)
+int recent_lookup(char *buf, int len)
 {
 	char *s;
 	datetime_sec last;
 	int i, slen;
 	
-	switch (control_readfile(&rs,".qmail-reply.db",1)) {
+	switch (control_readfile(&rs,"qmail-reply.db",1)) {
 		case 1:
 			break;
 		case 0:
 			return 0;
 		default:
 			strerr_die2sys(111, FATAL,
-			    "read db file .qmail-reply.db: ");
+			    "Read database file failed: ");
 	}
 
 	slen = rs.len; s = rs.s;
@@ -238,9 +255,13 @@ int recent(char *buf, int len)
 		if (case_diffb(buf, len, s+i) == 0) {
 			/* match found, look at timeval */
 			i += len;
-			if (s[i++] != ':')
-				strerr_die2x(100, FATAL,
-				    "db file .qmail-reply.db corrupted");
+			if (s[i++] != ':') {
+				strerr_warn(WARN,
+				    "Database file corrupted", 0);
+				unlink("qmail-reply.db");
+				stralloc_copys(&rs, "");
+				return 0;
+			}
 			last = get_stamp(s+i);
 			if (last + timeout < now()) return 0;
 			else return 1;
@@ -250,14 +271,105 @@ int recent(char *buf, int len)
 	return 0;
 }
 
-char rsoutbuf[SUBSTDIO_OUTSIZE];
-char fntmptph[32 + FMT_ULONG];
+int trylock(void)
+{
+	struct stat st;
+	int fd;
+	
+retry:
+	if ((fd = open_excl("qmail-reply.lock")) == -1) {
+		if (errno == error_exist) {
+			if (stat("qmail-reply.lock", &st) == -1) {
+				strerr_warn2(WARN, "Unable to stat lock: ",
+				    &strerr_sys);
+				return -1;
+			}
+			/* ... should never get to this point */
+			if (st.st_mtime + 900 < now()) {
+				/* stale lock file */
+				if (unlink("qmail-reply.lock") == -1) {
+					strerr_warn2(WARN,
+					    "Unable to unlink lock: ",
+					    &strerr_sys);
+					return -1;
+				}
+				goto retry;
+			}
+			return 0;
+		}
+		strerr_warn2(WARN, "Unable to get lock: ", &strerr_sys);
+		return -1;
+	}
+	close(fd);
+	return 1;
+}
 
-void tryunlinktmp(void) { unlink(fntmptph); }
+void unlock(void)
+{
+	if (unlink("qmail-reply.lock") == -1)
+		strerr_warn2(WARN, "Unable to unlock: ", &strerr_sys);
+}
+
+stralloc sfs = {0};
+
+void addstamps(void)
+{
+	DIR *dir;
+	direntry *d;
+	struct stat st;
+
+	if (!stralloc_copys(&sfs, "")) {
+		strerr_warn2(WARN, "Out of memory.", 0);
+		return;
+	}
+	dir = opendir("tmp");
+	if (!dir) {
+		strerr_warn2(WARN, "Unable to opendir ./tmp: ", &strerr_sys);
+		return;
+	}
+	while ((d = readdir(dir))) {
+		if (d->d_name[0] != '@') continue;
+		/* this is a possible stamp file */
+		if (d->d_name[str_chr(d->d_name+1, '@')] != '@') {
+			strerr_warn3(WARN, "Strange stamp file: ",
+			    d->d_name, 0);
+			continue;
+		}
+		if (stat(d->d_name,&st) == -1) {
+			strerr_warn4(WARN, "Can't stat stamp file: ",
+			    d->d_name, ": ", &strerr_sys);
+			continue;
+		}
+		if (!stralloc_cats(&sfs, "tmp/") ||
+		    !stralloc_cats(&sfs, d->d_name) ||
+		    !stralloc_0(&sfs)) break;
+		if (!stralloc_cats(&rs, d->d_name+1) ||
+		    !stralloc_cats(&rs, stamp(st.st_mtime)) ||
+		    !stralloc_0(&rs)) break;
+	}
+	closedir(dir);
+	if (d) strerr_warn2(WARN, "Out of memory.", 0);
+}
+
+void deletestamps(void)
+{
+	unsigned int i;
+	char *s;
+
+	s = sfs.s;
+	for(i = 0; sfs.len; i += str_len(s+i) + 1) {
+		unlink(s + i);
+	}
+}
+
+char rsoutbuf[SUBSTDIO_OUTSIZE];
+char fntmptph[32 + 2*FMT_ULONG];
+
 void sigalrm(void)
 {
-	tryunlinktmp();
-	strerr_die2x(111, FATAL, "timeout while writing db file");
+	unlink(fntmptph);
+	unlock();
+	strerr_die2x(111, FATAL, "Timeout while writing db file");
 }
 
 void recent_update(char *buf, int len)
@@ -265,79 +377,125 @@ void recent_update(char *buf, int len)
 	struct stat st;
 	substdio ss;
 	char *s, *t;
-	datetime_sec time, last;
+	datetime_sec tm, last;
 	unsigned long pid;
 	unsigned int slen, i, n;
 	int fd, loop;
 
+	addstamps();
+
+	/* first limit database length to MAX_SIZE */
 	s = rs.s; slen = rs.len;
-	n = slen + len + 10;
-	for(; n > MAX_SIZE; ) {
+	for(; slen > MAX_SIZE; ) {
 		i = str_len(s) + 1;
-		n -= i;
 		slen -= i;
 		s += i;
 	}
 
+	/* optain a temp file */
 	pid = getpid();
-	time = now();
-	t = fntmptph;
-	t += fmt_str(t, ".qmail-reply.tmp.");
-	t += fmt_ulong(t, pid);
-	*t++ = 0;
-	
 	for (loop = 0;;++loop) {
-		if (stat(fntmptph, &st) == -1) if (errno == error_noent)
-			break;
-		/* really should never get to this point */
-		if (st.st_mtime + 900 < time) {
-			/* stale tmp file */
-			tryunlinktmp();
+		tm = now();
+		t = fntmptph;
+		t += fmt_str(t, "tmp/qmail-reply.");
+		t += fmt_ulong(t, pid); *t++ = '.';
+		t += fmt_ulong(t, tm); *t++ = 0;
+
+		if (stat(fntmptph, &st) == -1) if (errno == error_noent) break;
+		/* ... should never get to this point */
+		if (loop == 2) {
+			strerr_warn2(WARN, "Could not stat tmp file:",
+			    &strerr_sys);
+			return;
 		}
-		if (loop == 2)
-			strerr_die2x(111, FATAL,
-			    "could not open tmp file.");
 		sleep(2);
 	}
 
 	sig_alarmcatch(sigalrm);
 	alarm(600); /* give up after 10 min */
 	fd = open_excl(fntmptph);
-	if (fd == -1)
-		strerr_die2sys(111, FATAL, "unable to open tmp file: ");
-
+	if (fd == -1) {
+		strerr_warn2(WARN, "Unable to open tmp file: ", &strerr_sys);
+		return;
+	}
+	
 	substdio_fdbuf(&ss, write, fd, rsoutbuf, sizeof(rsoutbuf));
 
+	/* dump database */
 	for (i = 0; i < slen; i += str_len(s+i) + 1) {
 		n = byte_chr(s+i, slen, ':');
-		if (n++ != slen) {
+		if (n++ < slen) {
 			last = get_stamp(s + i + n);
-			if (last + timeout < time) continue;
-		} /* else file corrupted */
+			if (last + timeout < tm) continue;
+		} else goto fail; /* database corrupted */
 		if (substdio_puts(&ss, s+i) == -1) goto fail;
 		if (substdio_put(&ss, "\n", 1) == -1) goto fail;
 	}
-	if (substdio_put(&ss, buf, len) == -1) goto fail;
-	if (substdio_put(&ss, ":", 1) == -1) goto fail;
-	if (substdio_puts(&ss, stamp(now())) == -1) goto fail;
-	if (substdio_put(&ss, "\n", 1) == -1) goto fail;
 	if (substdio_flush(&ss) == -1) goto fail;
 	if (fsync(fd) == -1) goto fail;
 	if (close(fd) == -1) goto fail; /* NFS dorks */
 
-	if (unlink(".qmail-reply.db") == -1 && errno != error_noent) goto fail;
-	if (link(fntmptph, ".qmail-reply.db") == -1) goto fail;
+	if (unlink("qmail-reply.db") == -1 && errno != error_noent) goto fail;
+	if (link(fntmptph, "qmail-reply.db") == -1) goto fail;
 	/* if it was error_exist, almost certainly successful; i hate NFS */
 
-	tryunlinktmp();
+	unlink(fntmptph);
+	deletestamps();
+	sig_alarmdefault();
 	return;
 
 fail:
-	strerr_warn2(WARN, "db update failed: ", &strerr_sys);
-	tryunlinktmp(); /* failed somewhere, giving up */
+	strerr_warn2(WARN, "Database update failed: ", &strerr_sys);
+	unlink(fntmptph);
+	sig_alarmdefault();
 	return;
 }
 
+void touchstamp(char *buf, int len)
+{
+	int fd;
+
+	if (!stralloc_copys(&sfs, "tmp/@")) temp_nomem();
+	if (!stralloc_copyb(&sfs, buf, len)) temp_nomem();
+	if (!stralloc_0(&sfs)) temp_nomem();
+
+	if ((fd = open_trunc(sfs.s)) == -1)
+		strerr_warn4(WARN, "Unable to create stamp ",
+		    sfs.s, ": ", &strerr_sys);
+	close(fd);
+}
+
+int recent(char *buf, int len, char *dir)
+{
+	if (dir == 0) return 0;
+
+	if (chdir(dir) == -1) {
+		strerr_warn4(WARN, "Unable to switch to ", dir, ": ",
+		    &strerr_sys);
+		return 0;
+	}
+
+	switch (trylock()) {
+	case 0:
+		if (recent_lookup(buf, len) == 1)
+			return 1;
+		/* touch stamp file */
+		touchstamp(buf, len);
+		return 0;
+	case 1:
+		if (recent_lookup(buf, len) == 1) {
+			unlock();
+			return 1;
+		}
+		touchstamp(buf, len);
+		recent_update(buf, len);
+		unlock();
+		return 0;
+	default:
+		/* warning print in trylock() */
+		return 0;
+	}
+}
 #endif
 
 int getfield(char *s, int len)
@@ -378,10 +536,10 @@ int parseheader(/* TODO names for to/cc checking */ void)
 
 	subj_set = 0;
 	if (seek_begin(0) == -1) temp_rewind();
-	substdio_fdbuf(&ss, read, 0, buf, sizeof(buf) );
+	substdio_fdbuf(&ss, read, 0, buffer, sizeof(buffer) );
 	do {
 		if(getln(&ss, &line, &match, '\n') != 0) {
-			strerr_warn3(WARN, "unable to read message: ",
+			strerr_warn3(WARN, "Unable to read message: ",
 			    error_str(errno), 0);
 			break; /* something bad happend, but we ignore it */
 		}
@@ -437,7 +595,7 @@ int parseheader(/* TODO names for to/cc checking */ void)
 		case 'c': /* Cc: */
 		case 'T':
 		case 't': /* To: */
-			/*  TODO check if address is listed in To ot Cc field */
+			/*  TODO check if address is listed in To or Cc field */
 #if 0
 			if (case_diffb("To:"
 				    sizeof("To:") - 1, s) == 0 ||
@@ -457,206 +615,90 @@ int parseheader(/* TODO names for to/cc checking */ void)
 		}
 	} while (match);
 	strerr_warn2(WARN,
-	    "premature end of header. The message has no body.", 0);
+	    "Premature end of header. The message has no body.", 0);
 	if ( subj_set == 0 )
 		if (!stralloc_copys(&subject, REPLY_SUBJ)) temp_nomem();
 
 	return 0;
 }
 
-stralloc ct = {0};
-stralloc cte = {0};
-stralloc resubject = {0};
+stralloc header = {0};
 
 #ifndef REPLY_CT
-#define REPLY_CT "text/plain; charset=\"iso-8859-1\"\n"
+#define REPLY_CT "text/plain; charset=iso-8859-1\n"
 #endif
 #ifndef REPLY_CTE
 #define REPLY_CTE "8bit\n"
 #endif
 
+struct mheader mheader[] = {
+	{ "From:", 0, ALLOW, 0 }, /* envelope sender is fixed */
+	{ "To:", 0, FORCE, 0 },
+	{ "Subject:", "[Auto-Reply] %SUBJECT%\n", SUBJECT, 0 },
+	{ "MIME-Version:", "1.0", FORCE, 0 },
+	{ "Content-Type:", REPLY_CT, ALLOW, 0 },
+	{ "Content-Transfer-Encoding:", REPLY_CTE, ALLOW, 0 },
+	{ "X-Mailer:", "qmail-reply (by qmail-ldap)", FORCE, 0 },
+	{ "Precedence:", "junk", FORCE, 0 },
+	{ "X-", 0, ALLOW, 0 },
+	{ DEFAULT, 0, DENY, 0 },
+	{ 0, 0, 0, 0 }
+};
+
 void sendmail(void)
 {
 	struct qmail qqt;
-	char *qqx, *s;
+	char *qqx;
 	datetime_sec starttime;
 	unsigned long qp;
-	int header, len, i, j;
+	int offset;
+	
+	if (!stralloc_0(&from)) temp_nomem();
+	if (!stralloc_0(&to)) temp_nomem();
+
+	mheader[0].v = from.s;
+	mheader[1].v = to.s;
+	offset = headermagic(&replytext, &header, &subject, mheader);
+	if (offset == -1)
+		strerr_die2sys(111, FATAL, "Header magic failed: ");
 	
 	if (qmail_open(&qqt) == -1) temp_fork();
 	qp = qmail_qp(&qqt);
-	
 	qmail_put(&qqt,dtline.s,dtline.len);
-	qmail_puts(&qqt, "Precedence: junk\n");
+	
 	/* XXX Date: qmail uses GMT based dates which is sometimes confusing */
 	/* message-id and date line */
 	starttime = now();
 	if (!newfield_datemake(starttime)) goto fail_nomem;
-	if (!newfield_msgidmake(host.s,host.len,starttime)) goto fail_nomem;
+	if (!newfield_msgidmake(host.s, host.len, starttime)) goto fail_nomem;
 	qmail_put(&qqt, newfield_msgid.s, newfield_msgid.len);
 	qmail_put(&qqt, newfield_date.s, newfield_date.len);
-		
-	header = 0;
-	s = replytext.s; len = replytext.len;
-	do {
-		for(i = 0;;) {
-			i += byte_chr(s + i, len - i, '\n');
-			if (++i >= len) {
-				/* last line ends without a newline. */
-				i = len;
-				break;
-			}
-			if (s[i] == ' ' || s[i] == '\t')
-				continue;
-			break;
-		}
-		if (case_diffb("%HEADER%", sizeof("%HEADER%") - 1, s) == 0) {
-			header = 1;
-			goto next;
-		}
-		if (header == 0)
-			break;
-		
-		switch (*s) {
-		case '\n': /* end of header */
-			header = 0;
-			break;
-		case 'C':
-		case 'c': /* Content-Type: ||
-			     Content-Transfer-Encoding: ||
-			     Cc: */
-			if (case_diffb("Cc:", sizeof("Cc:") - 1, s) == 0)
-				break;
-			if (case_diffb("Content-Type:",
-				    sizeof("Content-Type:") - 1, s) == 0) {
-				j = getfield(s, i);
-				if (j >= i) break;
-				if (!stralloc_copyb(&ct, s+j, i-j))
-					goto fail_nomem;
-				break;
-			}
-			if (case_diffb("Content-Transfer-Encoding:",
-				    sizeof("Content-Transfer-Encoding:") - 1,
-				    s) == 0) {
-				j = getfield(s, i);
-				if (j >= i) break;
-				if (!stralloc_copyb(&cte, s+j, i-j))
-					goto fail_nomem;
-				break;
-			}
-			qmail_put(&qqt, s, i);
-			break;
-		case 'S':
-		case 's': /* Subject: */
-			if (case_diffb("Subject:",
-				    sizeof("Subject:") - 1, s) != 0) {
-				qmail_put(&qqt, s, i);
-				break;
-			}
-			j = getfield(s, i);
-			if (j >= i) break;
-			
-			if (!stralloc_ready(&resubject,
-				    i + subject.len))
-				goto fail_nomem;
-			while (j < i) {
-				if (s[j] == '%' && 
-				    case_diffb("%SUBJECT%", 
-					    sizeof("%SUBJECT%") - 1, s + j) == 0) {
-					if (!stralloc_cat(&resubject, &subject))
-						goto fail_nomem;
-					j += sizeof("%SUBJECT%") - 1;
-				} else {
-					if (!stralloc_append(&resubject, s+j))
-						goto fail_nomem;
-					++j;
-				}
-			}
-			if (!stralloc_0(&resubject)) goto fail_nomem;
-			break;
-		case 'F':
-		case 'f': /* From: */
-		case 'T':
-		case 't': /* To: */
-		case 'D':
-		case 'd': /* Date: */
-		case 'P':
-		case 'p': /* Precedence: */
-			if (case_diffb("From:", sizeof("From:") - 1, s) == 0 ||
-			    case_diffb("To:", sizeof("To:") - 1, s) == 0 ||
-			    case_diffb("Date:", sizeof("Date:") - 1, s) == 0 ||
-			    case_diffb("Precedence:", 
-				sizeof("Precedence:") - 1, s) == 0)
-				break;
-			/* FALLTHROUGH */
-		default:			
-			qmail_put(&qqt, s, i);
-			break;
-		}
-next:
-		s += i;
-		len -= i;
-		if (len == 0 && header != 0)
-			strerr_die2x(100, FATAL, "parser error: no body found");
-	} while (header != 0);
 
-	if (resubject.s == (char *)0) {
-		if (!stralloc_copys(&resubject, "[Auto-Reply] "))
-			goto fail_nomem;
-		if (!stralloc_cat(&resubject, &subject)) goto fail_nomem;
-		if (!stralloc_cats(&resubject, "\n")) goto fail_nomem;
-		if (!stralloc_0(&resubject)) goto fail_nomem;
-	}
-	if (!stralloc_0(&from)) goto fail_nomem;
-	if (!stralloc_0(&to)) goto fail_nomem;
-	
-	/* From: */
-	qmail_puts(&qqt, "From: ");
-	qmail_puts(&qqt, from.s);
-	qmail_puts(&qqt, "\n");
-	/* To: */
-	qmail_puts(&qqt, "To: ");
-	qmail_puts(&qqt, to.s);
-	qmail_puts(&qqt, "\n");
-	/* Subject: */
-	qmail_puts(&qqt, "Subject: ");
-	qmail_puts(&qqt, resubject.s); /* resubject already ends with a '\n'*/
-	/* Content-* */
-	qmail_puts(&qqt, "Content-type: ");
-	if (ct.s != (char *)0 && ct.len > 0)
-		qmail_put(&qqt, ct.s, ct.len);
-	else
-		qmail_puts(&qqt, REPLY_CT);
-	/* '\n' already written */
-	qmail_puts(&qqt, "Content-Transfer-Encoding: ");
-	if (cte.s != (char *)0 && cte.len > 0)
-		qmail_put(&qqt, cte.s, cte.len);
-	else
-		qmail_puts(&qqt, REPLY_CTE);
-	/* '\n' already written */
-	/* X-Mailer: qmail-reply */
-	qmail_puts(&qqt, "X-Mailer: qmail-reply\n");
+	/* write parsed header */
+	qmail_put(&qqt, header.s, header.len);
 	/* end of header marker */
 	qmail_puts(&qqt, "\n");
 
 	/* body */
-	qmail_put(&qqt, s, len);
-	/* add a empty newline */
+	qmail_put(&qqt, replytext.s + offset, replytext.len - offset);
+	/* add a empty newline, just to be sure */
 	qmail_puts(&qqt, "\n");
 	qmail_from(&qqt, from.s);
 	qmail_to(&qqt, to.s);
 	qqx = qmail_close(&qqt);
 	if (!*qqx) return;
-	strerr_die3x(*qqx == 'D' ? 100 : 111,
+	strerr_die4x(*qqx == 'D' ? 100 : 111, FATAL,
 	    "Unable to send reply message: ", qqx + 1, ".");
-	    
+
 fail_nomem:
 	qmail_fail(&qqt);
+	qmail_close(&qqt);
 	temp_nomem();
 }
 
 int main(int argc, char **argv)
 {
+	char *maildir;
 	int flagenv;
 	int opt;
 
@@ -669,24 +711,25 @@ int main(int argc, char **argv)
 
 	while((opt = getopt(argc,argv,"f:j:")) != opteof)
 		switch(opt) {
-			case 'f':
-				readmail(optarg);
-				flagenv = 0;
-				break;
-			case 'j':
-				junkread(optarg);
-				break;
-			default:
-				usage();
-				/* NOTREACHED */
+		case 'f':
+			readmail(optarg);
+			flagenv = 0;
+			break;
+		case 'j':
+			junkread(optarg);
+			break;
+		default:
+			usage();
+			/* NOTREACHED */
 		}
 	
 	/* if more arguments are used */
-	/* argc -= optind; argv += optind; */
+	argc -= optind;
+	argv += optind;
+	maildir = *argv;
 	
-	if (flagenv == 1) {
+	if (flagenv == 1)
 		envmail();
-	}
 
 	/* get environment RECIPIENT, SENDER and DTLINE */
 	get_env();
@@ -694,15 +737,13 @@ int main(int argc, char **argv)
 	/* check if a reply is needed */
 	if (junksender(to.s, to.len)) _exit(0);
 #ifdef NOTYET
-	if (recent(to.s, to.len)) _exit(0);
+	if (maildir)
+		if (recent(to.s, to.len, maildir)) _exit(0);
 #endif
 	/* parse header, exit if a precedence or mailinglist field
 	   has been found or the mail is not directly sent to us. */
 	if (parseheader()) _exit(0);
 
-#ifdef NOTYET
-	recent_update(to.s, to.len);
-#endif
 	sendmail();
 	return 0;
 }

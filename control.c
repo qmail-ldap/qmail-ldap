@@ -128,3 +128,33 @@ int flagme;
  close(fd);
  return -1;
 }
+
+int control_readrawfile(sa,fn)
+stralloc *sa;
+char *fn;
+{
+ substdio ss;
+ int fd;
+ int match;
+
+ if (!stralloc_copys(sa,"")) return -1;
+
+ fd = open_read(fn);
+ if (fd == -1) 
+  {
+   if (errno == error_noent) return 0;
+   return -1;
+  }
+
+ substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
+
+ for (;;)
+  {
+   if (getln(&ss,&line,&match,'\n') == -1) break;
+   if (!match && !line.len) { close(fd); return 1; }
+   if (!stralloc_cat(sa,&line)) break;
+   if (!match) { close(fd); return 1; }
+  }
+ close(fd);
+ return -1;
+}

@@ -61,6 +61,43 @@ struct qmail *qq;
   return 0;
 }
 
+int qmail_remote(qq, host)
+struct qmail *qq;
+char *host;
+{
+  int pim[2];
+  int pie[2];
+  char *(args[3]);
+
+  args[0] = "bin/qmail-qmqpc";
+  args[1] = host;
+  args[2] = 0;
+
+  if (pipe(pim) == -1) return -1;
+  if (pipe(pie) == -1) { close(pim[0]); close(pim[1]); return -1; }
+ 
+  switch(qq->pid = vfork()) {
+    case -1:
+      close(pim[0]); close(pim[1]);
+      close(pie[0]); close(pie[1]);
+      return -1;
+    case 0:
+      close(pim[1]);
+      close(pie[1]);
+      if (fd_move(0,pim[0]) == -1) _exit(120);
+      if (fd_move(1,pie[0]) == -1) _exit(120);
+      if (chdir(auto_qmail) == -1) _exit(61);
+      execv(*binqqargs,binqqargs);
+      _exit(120);
+  }
+
+  qq->fdm = pim[1]; close(pim[0]);
+  qq->fde = pie[1]; close(pie[0]);
+  substdio_fdbuf(&qq->ss,write,qq->fdm,qq->buf,sizeof(qq->buf));
+  qq->flagerr = 0;
+  return 0;
+}
+
 unsigned long qmail_qp(qq) struct qmail *qq;
 {
   return qq->pid;

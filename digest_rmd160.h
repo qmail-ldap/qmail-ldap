@@ -38,15 +38,12 @@ typedef struct {
 
 /********************************************************************/
 
+#define RMD160_LEN 20
+
 /* function prototypes */
 
-void RMD160Init ();
-void RMD160Transform ();
-void RMD160Update ();
-void RMD160Final ();
-char *RMD160End ();
-char *RMD160Data ();
-
-char *RMD160DataBase64 ();
+void RMD160Init(RMD160_CTX *);
+void RMD160Update(RMD160_CTX *, const unsigned char *, size_t);
+void RMD160Final(unsigned char [RMD160_LEN], RMD160_CTX *);
 
 #endif  /* _RMD160_H */

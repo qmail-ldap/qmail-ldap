@@ -18,15 +18,9 @@
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 
-/* qmail-ldap stuff */
-#ifdef AUTOMAILDIRMAKE
-#include "error.h"
-#endif
-
 #include "maildir++.h"
 #include "env.h"
 int qfd;
-/* end qmail-ldap stuff */
  
 /* level 0 = no logging
          1 = fatal errors
@@ -38,8 +32,8 @@ int loglevel = 0;
 stralloc logs_pidhostinfo = {0};
 unsigned long log_bytes = 0;
 
-void log(int l, char *s) { if(l <= loglevel) substdio_puts(subfderr,s);}
-void logf(int l, char *s) {
+void log(int l, const char *s) { if(l <= loglevel) substdio_puts(subfderr,s);}
+void logf(int l, const char *s) {
 	if(l > loglevel) return;
 	substdio_puts(subfderr,s);
 	substdio_putsflush(subfderr,"\n");
@@ -104,10 +98,6 @@ void die_nomem() { err("out of memory");
 	logf(1, "panic: out of memory"); die(); }
 void die_nomaildir() { err("this user has no $HOME/Maildir");
 	logf(1, "panic: this user has no $HOME/Maildir"); die(); }
-#ifdef AUTOMAILDIRMAKE
-void die_maildir() { err("this user has a defective Maildir"); 
-	logf(1, "panic: this user has a defective Maildir"); die(); }
-#endif
 void die_scan() { err("unable to scan $HOME/Maildir");
 	logf(1, "unable to scan $HOME/Maildir"); die(); }
 
@@ -130,10 +120,10 @@ void printfn(fn) char *fn;
 void log_init()
 {
   char strnum[FMT_ULONG];
-  char *remotehost;
-  char *remoteip;
-  char *remoteinfo;
-  char *user;
+  const char *remotehost;
+  const char *remoteip;
+  const char *remoteinfo;
+  const char *user;
   char *l;
   unsigned long v;
   
@@ -428,48 +418,8 @@ char **argv;
 
   if (!argv[1]) die_nomaildir();
   if (chdir(argv[1]) == -1) {
-#ifdef AUTOMAILDIRMAKE
-   if (errno == error_noent) {
-    umask(077);
-    if (mkdir(argv[1],0700) == -1) die_nomaildir();
-    if (chdir(argv[1]) == -1) die_nomaildir();
-    if (mkdir("tmp",0700) == -1) die_maildir();
-    if (mkdir("new",0700) == -1) die_maildir();
-    if (mkdir("cur",0700) == -1) die_maildir();
-   } else
-#endif
     die_nomaildir();
   } 
-#ifdef AUTOMAILDIRMAKE
-  if ( !str_diff(argv[1], "./") ) {
-   struct stat st;
-
-   umask(077);
-   if (stat("new", &st) == -1) {
-     if (errno == error_noent) {
-       if (mkdir("new",0700) == -1) die_maildir();
-     } else {
-       die_maildir();
-     }
-   } else if (! S_ISDIR(st.st_mode) ) die_maildir();
-	
-   if (stat("cur", &st) == -1) {
-     if (errno == error_noent) {
-       if (mkdir("cur",0700) == -1) die_maildir();
-     } else { 
-       die_maildir();
-     }
-   } else if (! S_ISDIR(st.st_mode) ) die_maildir();
-
-   if (stat("tmp", &st) == -1) {
-     if (errno == error_noent) {
-       if (mkdir("tmp",0700) == -1) die_maildir();
-     } else { 
-       die_maildir();
-     }
-   } else if (! S_ISDIR(st.st_mode) ) die_maildir();
-  }
-#endif
 /* qmail-ldap stuff */
 
   log_init();

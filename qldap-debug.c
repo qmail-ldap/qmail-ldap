@@ -33,7 +33,9 @@ static int addLOG;
 static unsigned long loglevel;
 substdio sslog;
 char logbuffer[LOGLEN];
-void log_init(int fd, unsigned long mask, int via_spawn)
+
+void
+log_init(int fd, unsigned long mask, int via_spawn)
 /* 
  * Known LOGLEVELs: 
  */
@@ -54,7 +56,8 @@ void log_init(int fd, unsigned long mask, int via_spawn)
  */
 }
 
-void log(unsigned long level, char *fmt, ...)
+void
+log(unsigned long level, const char *fmt, ...)
 /* see va_output (output.c) */
 {
 	va_list ap;
@@ -74,7 +77,8 @@ void log(unsigned long level, char *fmt, ...)
 /* use logstart, logadd and logend with care, if there is no corresponding
    start or end starnge messages will be loged or some important messages 
    will be lost */
-void logstart(unsigned long level, char *fmt, ...)
+void
+logstart(unsigned long level, const char *fmt, ...)
 {
 	va_list ap;
 	char ch;
@@ -87,7 +91,8 @@ void logstart(unsigned long level, char *fmt, ...)
 	va_end(ap);
 }
 
-void logadd(unsigned long level, char *fmt, ...)
+void
+logadd(unsigned long level, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -97,7 +102,8 @@ void logadd(unsigned long level, char *fmt, ...)
 	va_end(ap);
 }
 
-void logend(unsigned long level, char *fmt, ...)
+void
+logend(unsigned long level, const char *fmt, ...)
 {
 	va_list ap;
 	char ch;
@@ -111,7 +117,8 @@ void logend(unsigned long level, char *fmt, ...)
 	if ( substdio_flush(&sslog) == -1 ) return;
 }
 
-void profile(char *s)
+void
+profile(const char *s)
 {
 #ifdef ENABLE_PROFILE
 	char buf[TAIA_PACK];
@@ -122,5 +129,11 @@ void profile(char *s)
 	log(LOG_PROFILE, "PROFILE: %s @%s\n", s, buf); 
 #endif
 }
+#else /* DEBUG */
+void log_init(int fd, unsigned long mask, int via_spawn) {}
+void log(unsigned long level, const char *fmt, ...) {}
+void logstart(unsigned long level, const char *fmt, ...) {}
+void logadd(unsigned long level, const char *fmt, ...) {}
+void logend(unsigned long level, const char *fmt, ...) {}
+void profile(const char *s) {}
 #endif
-

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2003/07/31 09:27:42 $)
+RELEASE: current ($Date: 2003/08/19 13:37:12 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -300,7 +300,7 @@ CONFIG FILES:
  ldapclusterhosts contains a number of hostnames (FQDM) to check togehter
  with ~control/me when clustering is on. This file is useful if you want to
  run multiple instances of qmail-ldap on one machine.
- Default: none
+ Default: none, in other words just check with ~control/me
  Example: customersmtp.nrg4u.com
  Note: multiline
 
@@ -497,6 +497,8 @@ CONFIG FILES:
        The command is executed with execve not system 
        (so mkdir --mode=700 -p does not work!) use a shell script. 
        $1 is the homedir-path and $2 is aliasempty.
+       If you use $2 have a look at the first and last char to ensure that
+       it is a path to the maildir and not a pipe or mailbox delivery.
        Possible very simple shell script:
 
        -cut-

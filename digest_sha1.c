@@ -26,7 +26,6 @@
 #include "uint32.h"
 #include "byte.h"
 #include "digest_sha1.h"
-#include "base64.h"
 
 /* some systems don't have NULL defined */
 #ifndef NULL
@@ -60,7 +59,7 @@
 
 typedef union {
     unsigned char c[64];
-    unsigned int l[16];
+    uint32 l[16];
 } CHAR64LONG16;
 
 #ifdef __sparc_v9__
@@ -119,7 +118,7 @@ do_R4(uint32 *a, uint32 *b, uint32 *c, uint32 *d, uint32 *e, CHAR64LONG16 *block
 /*
  * Hash a single 512-bit block. This is the core of the algorithm.
  */
-void
+static void
 SHA1Transform(uint32 state[5], const unsigned char buffer[64])
 {
     uint32 a, b, c, d, e;
@@ -201,7 +200,7 @@ SHA1Init(SHA1_CTX *context)
  * Run your data through this.
  */
 void
-SHA1Update(SHA1_CTX *context, const unsigned char *data, unsigned int len)
+SHA1Update(SHA1_CTX *context, const unsigned char *data, size_t len)
 {
     unsigned int i, j;
 
@@ -226,7 +225,7 @@ SHA1Update(SHA1_CTX *context, const unsigned char *data, unsigned int len)
  * Add padding and return the message digest.
  */
 void
-SHA1Final(unsigned char digest[20], SHA1_CTX *context)
+SHA1Final(unsigned char digest[SHA1_LEN], SHA1_CTX *context)
 {
     unsigned int i;
     unsigned char finalcount[8];
@@ -235,9 +234,9 @@ SHA1Final(unsigned char digest[20], SHA1_CTX *context)
         finalcount[i] = (unsigned char)((context->count[(i >= 4 ? 0 : 1)]
          >> ((3-(i & 3)) * 8) ) & 255);  /* Endian independent */
     }
-    SHA1Update(context, (unsigned char *)"\200", 1);
+    SHA1Update(context, (const unsigned char *)"\200", 1);
     while ((context->count[0] & 504) != 448)
-        SHA1Update(context, (unsigned char *)"\0", 1);
+        SHA1Update(context, (const unsigned char *)"\0", 1);
     SHA1Update(context, finalcount, 8);  /* Should cause a SHA1Transform() */
 
     if (digest) {
@@ -249,70 +248,5 @@ SHA1Final(unsigned char digest[20], SHA1_CTX *context)
         byte_zero(context, sizeof (*context));
 	}
 	
-}
-
-
-/* sha1hl.c
- * ----------------------------------------------------------------------------
- * "THE BEER-WARE LICENSE" (Revision 42):
- * <phk@login.dkuug.dk> wrote this file.  As long as you retain this notice you
- * can do whatever you want with this stuff. If we meet some day, and you think
- * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
- * ----------------------------------------------------------------------------
- */
-
-/* ARGSUSED */
-char *
-SHA1End(ctx, buf)
-    SHA1_CTX *ctx;
-    char *buf; /* needs to be 41 bytes big */
-{
-    int i;
-    char *p = buf;
-    unsigned char digest[20];
-    static const char hex[]="0123456789abcdef";
-
-    if (p == NULL )
-        return 0;
-
-    SHA1Final(digest,ctx);
-    for (i = 0; i < 20; i++) {
-        p[i + i] = hex[digest[i] >> 4];
-        p[i + i + 1] = hex[digest[i] & 0x0f];
-    }
-    p[i + i] = '\0';
-    return(p);
-}
-
-char *
-SHA1Data (data, len, buf)
-    const unsigned char *data;
-    size_t len;
-    char *buf; /* needs to be 41 bytes big */
-{
-    SHA1_CTX ctx;
-
-    SHA1Init(&ctx);
-    SHA1Update(&ctx, data, len);
-    return(SHA1End(&ctx, buf));
-}
-
-/* Base 64 */
-
-char *
-SHA1DataBase64 (data, len, buf, buflen)
-    const unsigned char *data;
-    size_t len;
-    char *buf; /* needs to be 29 bytes big */
-    size_t buflen;
-{
-    SHA1_CTX ctx;
-    unsigned char buffer[20];
-
-    SHA1Init(&ctx);
-    SHA1Update(&ctx, data, len);
-    SHA1Final(buffer,&ctx);
-    b64_ntop(buffer,sizeof(buffer),buf,buflen);
-    return(buf);
 }
 

@@ -34,8 +34,8 @@
 #include "auto_qmail.h"
 #include "scan.h"
 #include "maildir++.h"
-#ifdef AUTOHOMEDIRMAKE
-#include "qldap-mdm.h"
+#ifdef AUTOMAILDIRMAKE
+#include "mailmaker.h"
 #endif
 
 void usage() { strerr_die1x(100,"qmail-local: usage: qmail-local [ -nN ] user homedir local dash ext domain sender aliasempty"); }
@@ -102,43 +102,8 @@ char *dir;
 
  sig_alarmcatch(sigalrm);
  if (chdir(dir) == -1) {
-#ifdef AUTOMAILDIRMAKE
-   /* this one handles the case where the aliasempty is not "./" */
-   if (errno == error_noent) {
-     umask(077);
-     if (mkdir(dir,0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
-     if (chdir(dir) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
-     if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
-     if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
-     if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
-   } else
-#endif
    if (error_temp(errno)) _exit(1); else _exit(2);
  }
-
-/* this one handles the case where the aliasempty is "./" */
-#ifdef AUTOMAILDIRMAKE 
- if (!str_diff(dir, "./")) {
-   umask(077);
-   if (stat("new", &st) == -1) {
-     if (errno == error_noent) {
-       if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
-     } else if (error_temp(errno)) _exit(5); else _exit(6);
-   } else if (!S_ISDIR(st.st_mode)) _exit(7);
-	
-   if (stat("cur", &st) == -1) {
-     if (errno == error_noent) {
-       if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
-     } else if (error_temp(errno)) _exit(5); else _exit(6);
-   } else if (!S_ISDIR(st.st_mode)) _exit(7);
-	
-   if (stat("tmp", &st) == -1) {      
-     if (errno == error_noent) {        
-       if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
-     } else if (error_temp(errno)) _exit(5); else _exit(6);
-   } else if (!S_ISDIR(st.st_mode)) _exit(7);
- }
-#endif
 
  pid = getpid();
  host[0] = 0;
@@ -202,7 +167,11 @@ char *dir;
 /* end child process */
 
 /* quota handling warning and bounce */
-void quota_bounce(char *type) { strerr_die3x(100, "The users ", type, " is over the allowed quota (size)."); }
+void quota_bounce(const char *type)
+{
+	strerr_die3x(100, "The users ", type,
+	    " is over the allowed quota (size). (#5.2.2)");
+}
 
 void quota_warning(char *fn)
 {
@@ -210,7 +179,6 @@ void quota_warning(char *fn)
  char *(args[3]);
  int wstat;
 
- if (!env_get(ENV_QUOTAWARNING) ) return;
  if (!stralloc_copys(&qwapp, auto_qmail)) temp_nomem();
  if (!stralloc_cats(&qwapp, "/bin/qmail-quotawarn")) temp_nomem();
  if (!stralloc_0(&qwapp)) temp_nomem();
@@ -225,7 +193,7 @@ void quota_warning(char *fn)
      args[0] = qwapp.s; args[1] = fn; args[2] = 0;
      sig_pipedefault();
      execv(*args,args);
-     strerr_die5x(111,"Unable to run quotawarn program: ", foo.s, ": ",error_str(errno),". (LDAP-ERR #2.3.0)");
+     strerr_die5x(111,"Unable to run quotawarn program: ", foo.s, ": ",error_str(errno),". (#4.2.2)");
   }
 
  wait_pid(&wstat,child);
@@ -253,16 +221,28 @@ char *fn;
  quota_t q;
  unsigned long mailsize;
 
+#ifdef AUTOMAILDIRMAKE
+ switch (maildir_make(fn)) {
+ case OK:
+   break;
+ case MAILDIR_CORRUPT:
+   strerr_die3x(111,"The maildir '", fn, "' seems to be corrupted. (#4.2.1)");
+ case ERRNO:
+ default:
+   strerr_die3x(111,"Unable to create maildir '", fn, "' (#4.3.0)");
+ }
+#endif
+
  if (quotastring && *quotastring) {
    if (fstat(0, &mailst) != 0)
-       strerr_die3x(111,"Can not stat mail for quota: ",error_str(errno),". (LDAP-ERR #2.4.1)");
+       strerr_die3x(111,"Can not stat mail for quota: ",error_str(errno),". (#4.3.0)");
    mailsize = mailst.st_size;
    quota_get(&q, quotastring);
    if (quota_calc(fn, &msfd, &q) == -1) {
      /* second chance */
      sleep(3);
      if (quota_calc(fn, &msfd, &q) == -1) {
-       strerr_die1x(111,"Temporary race condition while calculating quota. (LDAP-ERR #2.4.2)");
+       strerr_die1x(111,"Temporary race condition while calculating quota. (#4.3.0)");
      }
    }
    /* fd can be -1 when retval = 0 quota_add/rm take care of that */
@@ -272,7 +252,7 @@ char *fn;
        /* second chance */
        sleep(3);
        if (quota_recalc(fn, &msfd, &q) == -1)
-	 strerr_die1x(111,"Temporary race condition while recalculating quota. (LDAP-ERR #2.4.2)");
+	 strerr_die1x(111,"Temporary race condition while recalculating quota. (#4.3.0)");
      }
      if (quota_check(&q, mailsize, 1, &perc) != 0)
        quota_bounce("mailfolder");
@@ -308,11 +288,6 @@ char *fn;
    case 2: strerr_die1x(111,"Unable to chdir to maildir. (#4.2.1)");
    case 3: strerr_die1x(111,"Timeout on maildir delivery. (#4.3.0)");
    case 4: strerr_die1x(111,"Unable to read message. (#4.3.0)");
-#ifdef AUTOMAILDIRMAKE
-   case 5: strerr_die1x(111,"Temporary error on maildir creation. (LDAP-ERR #2.5.1)");
-   case 6: strerr_die3x(111,"Unable to create maildir '", fn, "' (LDAP-ERR #2.5.2)");
-   case 7: strerr_die3x(111,"The maildir '", fn, "' seems to be corrupted. (LDAP-ERR #2.5.3)");
-#endif
    default: strerr_die1x(111,"Temporary error on maildir delivery. (#4.3.0)");
   }
 }
@@ -337,11 +312,11 @@ char *fn;
    if (stat(fn, &filest) == -1) {
      filest.st_size = 0;        /* size of nonexisting mailfile */
      if ( errno != error_noent) { /* FALSE if file doesn't exist */
-       strerr_die5x(111,"Unable to quota ", fn, ": ",error_str(errno), ". (LDAP-ERR #2.4.5)");
+       strerr_die5x(111,"Unable to quota ", fn, ": ",error_str(errno), ". (#4.3.0)");
      }
    }
    if (fstat(0, &mailst) != 0)
-     strerr_die3x(111,"Unable to quota mail: ",error_str(errno), ". (LDAP-ERR #2.4.6)");
+     strerr_die3x(111,"Unable to quota mail: ",error_str(errno), ". (#4.3.0)");
    
    totalsize = (long) filest.st_size + (long) mailst.st_size;
    if ( totalsize > q.quota_size ) {
@@ -627,6 +602,19 @@ int len;
  substdio_putsflush(subfdoutsmall,"\n");
 }
 
+void unescape(char *s)
+{
+  if (!stralloc_copys(&foo, "")) temp_nomem();
+  do {
+    if (s[0] == '\\' && s[1] == ':') s++;
+    else if (s[0] == ':') {
+      if (!stralloc_0(&foo)) temp_nomem();
+      continue;
+    }
+    if (!stralloc_append(&foo, s)) temp_nomem();
+  } while (*s++);
+}
+
 void main(argc,argv)
 int argc;
 char **argv;
@@ -681,34 +669,8 @@ char **argv;
  if (*argv) usage();
 
  if (homedir[0] != '/') usage();
- if (chdir(homedir) == -1) {
-#ifdef AUTOHOMEDIRMAKE
-   s = env_get(ENV_HOMEDIRMAKE);
-   if ( errno == error_noent && s && *s ) {
-      /* do the auto homedir creation */
-      if ( make_homedir(homedir, aliasempty, s ) != 0 ) {
-         if ( qldap_errno == ERRNO ) {
-            strerr_die5x(111,"Error while running automatic dirmaker:",s,": ",
-                         error_str(errno),". (LDAP-ERR #2.2.1)");
-         } else {
-            strerr_die3x(111,s,qldap_errno == MAILDIR_CRASHED?
-                         ": is crashed" : ": exited non zero",
-                         ". (LDAP-ERR #2.2.2)");
-         }
-      }
-      if (chdir(homedir) == -1) {
-         strerr_die5x(111,"Unable to switch to ",homedir,
-                      " even after running dirmaker: ",error_str(errno),
-                      ". (LDAP-ERR #2.2.3)");
-      }
-   } else {
-      strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),
-                   ". (LDAP_ERR #2.2.4)");
-   }
-#else
+ if (chdir(homedir) == -1)
    strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
-#endif
- }
  checkhome();
 
  if (!env_put2("HOST",host)) temp_nomem();
@@ -813,23 +775,23 @@ char **argv;
    if (!flagdoit) sayit("unlimited quota",quotastring,0 );
  }
    
- if (s = env_get(ENV_DOTMODE)) {
-   case_lowers(s);
-   if (!str_diff(DOTMODE_LDAPONLY, s)) {
+ qmode = DO_DOT;  /* default is to use standard .qmail */
+ if ((s = env_get(ENV_DOTMODE))) {
+   if (!case_diffs(DOTMODE_LDAPONLY, s)) {
      if (!flagdoit) sayit("DOTMODE_LDAPONLY ",s,0);
      qmode = DO_LDAP;
-   } else if (!str_diff(DOTMODE_LDAPWITHPROG, s)) {
+   } else if (!case_diffs(DOTMODE_LDAPWITHPROG, s)) {
      if (!flagdoit) sayit("DOTMODE_LDAPWITHPROG ",s,0);
      qmode = DO_LDAP;
      ldapprogdelivery = 1;
-   } else if (!str_diff(DOTMODE_DOTONLY, s)) {
+   } else if (!case_diffs(DOTMODE_DOTONLY, s)) {
      if (!flagdoit) sayit("DOTMODE_DOTONLY ",s,0);
      qmode = DO_DOT;
-   } else if (!str_diff(DOTMODE_BOTH, s)) {
+   } else if (!case_diffs(DOTMODE_BOTH, s)) {
      if (!flagdoit) sayit("DOTMODE_BOTH ",s,0);
      qmode = DO_BOTH;
      ldapprogdelivery = 1;
-   } else if (!str_diff(DOTMODE_NONE, s)) {
+   } else if (!case_diffs(DOTMODE_NONE, s)) {
      ++count_file;
      if (!stralloc_copys(&cmds,aliasempty)) temp_nomem();
      if (!stralloc_0(&cmds)) temp_nomem();
@@ -844,7 +806,7 @@ char **argv;
    } else {
      strerr_die3x(100,"Error: Non valid dot-mode found: ",s,". (LDAP-ERR #2.0.2)");
    }
- } else qmode = DO_DOT;  /* no qmailmode, so I use standard .qmail */
+ }
 	   
  /* prepare the cmds string to hold all the commands from the 
   * ldap server and the .qmail file */
@@ -858,22 +820,18 @@ char **argv;
    if (!stralloc_0(&ueo)) temp_nomem();
    if (!env_put2("NEWSENDER",ueo.s)) temp_nomem();
 
-   if (s = env_get(ENV_MODE)) {
-     case_lowers(s);
-     if (!stralloc_copys(&foo, s)) temp_nomem();
-     if (!stralloc_0(&foo)) temp_nomem();
-
-     i = byte_repl(foo.s, foo.len, ',', '\0') + 1;
+   if ((s = env_get(ENV_MODE))) {
+     unescape(s);
      s = foo.s;
      slen = foo.len-1;
-     for( ; i > 0; i--) {
+     for(;;) {
        if (!str_diff(MODE_FORWARD, s)) {
          if (!flagdoit) sayit("forwardonly ",s,0);
          flagforwardonly2 = 1;
        } else if (!str_diff(MODE_REPLY, s)) {
-         if( *sender ) {
+         if(*sender) {
            ++count_forward;
-           if (rt = env_get(ENV_REPLYTEXT)) {
+           if ((rt = env_get(ENV_REPLYTEXT))) {
              if (flagdoit) {
                mailprogram("qmail-reply");
              } else {
@@ -881,7 +839,8 @@ char **argv;
                sayit("replytext ",rt,str_len(rt));
              }
            } else {
-             strerr_warn1("Error: Reply mode is on but there is no reply text (ignored). (LDAP-ERR #2.1.1)", 0);
+             strerr_warn1("Warning(ignored): "
+	       "Reply mode is on but there is no reply text.", 0);
            }
          }
        } else if (!str_diff(MODE_ECHO, s)) {
@@ -911,16 +870,13 @@ char **argv;
        } else if (!str_diff(MODE_LDELIVERY, s)) {
          if (!flagdoit) sayit("force local delivery ",s,0);
          localdelivery = 1;
-       } else strerr_warn5("Error: undefined mail delivery mode: ",
-                     LDAP_MODE,"=",s," (ignored). (LDAP-ERR #2.1.2)", 0);
-       
+       } else strerr_warn3("Warning: undefined mail delivery mode: ",
+                     s," (ignored).", 0);
        j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
    }
    if (ldapprogdelivery && (s = env_get(ENV_PROGRAM))) {
-     if (!stralloc_copys(&foo, s)) temp_nomem();
-     if (!stralloc_0(&foo)) temp_nomem();
-     byte_repl(foo.s, foo.len, ',', '\0');
+     unescape(s);
      s = foo.s;
      slen = foo.len-1;
      for (;;) {
@@ -930,10 +886,8 @@ char **argv;
        j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
    }
-   if (s = env_get(ENV_FORWARDS)) {
-     if (!stralloc_copys(&foo, s)) temp_nomem();
-     if (!stralloc_0(&foo)) temp_nomem();
-     byte_repl(foo.s, foo.len, ',', '\0');
+   if ((s = env_get(ENV_FORWARDS))) {
+     unescape(s);
      s = foo.s;
      slen = foo.len-1;
      for (;;) {
@@ -944,10 +898,9 @@ char **argv;
      }
    }
    if (localdelivery) {
-         if (!stralloc_cats(&cmds,aliasempty)) temp_nomem();
-         if (!stralloc_cats(&cmds, "\n")) temp_nomem();
+     if (!stralloc_cats(&cmds,aliasempty)) temp_nomem();
+     if (!stralloc_cats(&cmds, "\n")) temp_nomem();
    }    
-
  } 
  if (qmode & DO_DOT) { /* start dotqmail */
    qmesearch(&fd,&flagforwardonly);
@@ -1051,9 +1004,10 @@ char **argv;
          ++i;
        default:
 	 ++count_forward;
-	 if (flagnoforward)
+	 if (flagnoforward) {
 	   if (flagdoit) break;
 	   else { sayit("disabled forward ", cmds.s + i, k - i); break; }
+	 }
          if (flagdoit) recips[numforward++] = cmds.s + i;
          else sayit("forward ",cmds.s + i,k - i);
          break;

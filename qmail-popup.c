@@ -70,6 +70,8 @@ void die_badauth() { err("authorization failed"); }
  * 4 = account disabled
  * 5 = mailhost is unreachable
  * 6 = mailbox is corrupted
+ * 61= mailbox creation failed
+ * 62= the users mailbox does not exist
  * 7 = unable to start subprogram
  * 8 = out of memory
  */
@@ -81,6 +83,8 @@ void die_3() { err("authorization failed"); die(); }
 void die_4() { err("account disabled"); die(); }
 void die_5() { err("mailhost is unreachable"); die(); }
 void die_6() { err("mailbox is corrupted"); die(); }
+void die_61() { err("mailbox could not be created"); die(); }
+void die_62() { err("the users mailbox does not exist"); die(); }
 void die_7() { err("unable to start subprogram"); die(); }
 void die_unknown() { err("temporary error"); die(); }
 
@@ -148,6 +152,8 @@ char *pass;
     case 4: die_4();
     case 5: die_5();
     case 6: die_6();
+    case 61: die_61();
+    case 62: die_62();
     case 7: die_7();
     case 8: die_nomem();
     default: die_unknown();

@@ -28,7 +28,6 @@
 #include "uint32.h"
 #include "byte.h"
 #include "digest_rmd160.h"
-#include "base64.h"
 
 /* some systems don't have NULL defined */
 #ifndef NULL
@@ -107,8 +106,8 @@
       (c) = ROL((c), 10);                               \
 }
 
-void RMD160Init(context)
-        RMD160_CTX *context;
+void
+RMD160Init(RMD160_CTX *context)
 {
 
         /* ripemd-160 initialization constants */
@@ -121,9 +120,8 @@ void RMD160Init(context)
         context->buflen = 0;
 }
 
-void RMD160Transform(state, block)
-        uint32 state[5];
-        const uint32 block[16];
+static void
+RMD160Transform(uint32 state[5], const uint32 block[16])
 {
         uint32 aa = state[0],  bb = state[1],  cc = state[2],
             dd = state[3],  ee = state[4];
@@ -319,10 +317,8 @@ void RMD160Transform(state, block)
         state[0] = ddd;
 }
 
-void RMD160Update(context, data, nbytes)
-        RMD160_CTX *context;
-        const unsigned char *data;
-        uint32 nbytes;
+void
+RMD160Update(RMD160_CTX *context, const unsigned char *data, size_t nbytes)
 {
         uint32 X[16];
         uint32 ofs = 0;
@@ -376,9 +372,8 @@ void RMD160Update(context, data, nbytes)
         }
 }
 
-void RMD160Final(digest, context)
-        unsigned char digest[20];
-        RMD160_CTX *context;
+void
+RMD160Final(unsigned char digest[RMD160_LEN], RMD160_CTX *context)
 {
         uint32 i;
         uint32 X[16];
@@ -418,70 +413,5 @@ void RMD160Final(digest, context)
                         digest[i + 3] = (context->state[i>>2] >> 24);
                 }
         }
-}
-
-
-/* rmd160hl.c
- * ----------------------------------------------------------------------------
- * "THE BEER-WARE LICENSE" (Revision 42):
- * <phk@login.dkuug.dk> wrote this file.  As long as you retain this notice you
- * can do whatever you want with this stuff. If we meet some day, and you think
- * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
- * ----------------------------------------------------------------------------
- */
-
-/* ARGSUSED */
-char *
-RMD160End(ctx, buf)
-    RMD160_CTX *ctx;
-    char *buf; /* buf needs to be 41 bytes big */
-{
-    int i;
-    char *p = buf;
-    unsigned char digest[20];
-    static const char hex[]="0123456789abcdef";
-
-    if (p == NULL)
-        return 0;
-
-    RMD160Final(digest,ctx);
-    for (i = 0; i < 20; i++) {
-        p[i + i] = hex[digest[i] >> 4];
-        p[i + i + 1] = hex[digest[i] & 0x0f];
-    }
-    p[i + i] = '\0';
-    return(p);
-}
-
-char *
-RMD160Data (data, len, buf)
-    const unsigned char *data;
-    size_t len;
-    char *buf; /* buf needs to be 41 bytes big */
-{
-    RMD160_CTX ctx;
-
-    RMD160Init(&ctx);
-    RMD160Update(&ctx, data, len);
-    return(RMD160End(&ctx, buf));
-}
-
-/* Base 64 */
-
-char *
-RMD160DataBase64 (data, len, buf, buflen)
-    const unsigned char *data;
-    size_t len;
-    char *buf; /* buf needs to be 29 bytes big */
-    size_t buflen;
-{
-    RMD160_CTX ctx;
-    unsigned char buffer[20];
-
-    RMD160Init(&ctx);
-    RMD160Update(&ctx, data, len);
-    RMD160Final(buffer,&ctx);
-    b64_ntop(buffer,sizeof(buffer),buf,buflen);
-    return(buf);
 }
 

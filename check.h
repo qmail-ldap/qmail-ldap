@@ -13,21 +13,19 @@
 #define NOT_FIRST	0x80
 
 
-extern int sanitycheckb(register char *s, register unsigned int len,
-						register unsigned char mask);
-extern int sanitychecks(register char *s, register unsigned char mask);
+extern int sanitycheckb(char *, unsigned int, unsigned char);
+extern int sanitychecks(char *, unsigned char);
 
-extern int sanitypathcheckb(register char *s, register unsigned int len,
-						register unsigned char mask);
-extern int sanitypathchecks(register char *s, register unsigned char mask);
+extern int sanitypathcheckb(char *, unsigned int , unsigned char);
+extern int sanitypathchecks(char *, unsigned char);
 
-#define chck_userb(str, len)	sanitycheckb(str, len, ALLOW_USER)
-#define chck_users(str)			sanitychecks(str, ALLOW_USER)
+#define check_userb(str, len)	sanitycheckb((str), (len), ALLOW_USER)
+#define check_users(str)	sanitychecks((str), ALLOW_USER)
 
-#define chck_pathb(str, len)	sanitypathcheckb(str, len, ALLOW_PATH)
-#define chck_paths(str)			sanitypathchecks(str, ALLOW_PATH)
+#define check_pathb(str, len)	sanitypathcheckb((str), (len), ALLOW_PATH)
+#define check_paths(str)	sanitypathchecks((str), ALLOW_PATH)
 
-#define chck_progb(str, len)	sanitycheckb(str, len, ALLOW_PROG)
-#define chck_progs(str)			sanitychecks(str, ALLOW_PROG)
+#define check_progb(str, len)	sanitycheckb((str), (len), ALLOW_PROG)
+#define check_progs(str)	sanitychecks((str), ALLOW_PROG)
 
 #endif

@@ -8,11 +8,11 @@ typedef struct {
 	long count;
 } quota_t;
 
-void quota_add(int fd, unsigned long size, unsigned long count);
-void quota_rm(int fd, unsigned long size, unsigned long count);
-int quota_calc(char *dir, int *fd, quota_t *q);
-int quota_recalc(char *dir, int *fd, quota_t *q);
-int quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc);
-void quota_get(quota_t *q, char *quota);
+void quota_add(int , unsigned long , unsigned long);
+void quota_rm(int , unsigned long , unsigned long);
+int quota_calc(const char *, int *fd, quota_t *);
+int quota_recalc(const char *, int *fd, quota_t *);
+int quota_check(quota_t *, unsigned long , unsigned long , int *);
+void quota_get(quota_t *, char const *);
 
 #endif

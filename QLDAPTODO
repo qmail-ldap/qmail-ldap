@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/02/03 22:13:16 $ ($Revision: 1.28 $)
+RELEASE: $Date: 2003/08/19 13:37:12 $ ($Revision: 1.29 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -27,31 +27,25 @@ planned - make it possible to have locals and rcpthosts in ldap
 PS: planned means we see the use of the idea but there are a lot more
     important things that need to be done first.
 
-ALSO ON THE LIST: (priority list ???)
-- improve the RBL handling (tagging, types, etc) (done)
-- add smtp-after-pop functionality (done)
-- add logging to pop3 (similiar to smtpd) (done)
-- check the enhanced debug code (one bug fix, done)
+ALSO ON THE LIST: (priority list)
+- update qmail-ldaplookup (currently it is crippled down to nothing useful)
+- update qmail-showctl (I bet some control files are missing)
+- add mailGroup handling via qmail-group
+- add support for crypt generation in digest tool
+- cleanup the debug code, unify the debug levels
+- SMTP_AUTH (low priority because of POP before SMTP, Hennings patch and the
+  f*#&ing SASL stuff)
+- use pbstools for enhanced tarpit idea
+- docu cleanup
 
-- add mailGroup handling
-- benchmarking the code
-- make the current code rock solid (even if it is not perfect)
-- better TLS support (better written??) (tls for pop???)
+older stuff still on the list:
 - add more and clearer documentation.
-- ldap handling rewrite, with more flexible filter and attribute generation.
-  The lookup code should be more modular and probably a special ldap daemon
-  should be used.
+- benchmarking the code
+- better TLS support (better written??) (tls for pop???)
 - 64bit counters for quota handling code.
 
 status unclear:
 - force to alias if only mail and mailforwardingaddress is set (no uid). (done)
 - test what happens if only uid and mail is defiend in ldap or similar uncommon
   cases (seems to be no problem, or?)
-
-low priority:
-- SMTP_AUTH (low priority because of POP before SMTP, Hennings patch and the
-  f*#&ing SASL stuff)
-- use connectionless ldap for lookups (done some work but it seems that the
-  udp support of slapd is just unusable, have to wait). Other possibility is
-  ldap over a local/unix socket...
 
