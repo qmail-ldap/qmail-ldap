@@ -59,7 +59,8 @@ static int check_next_state(qldap *, int);
 #define CHECK(x, y)							\
 	do {								\
 		if (check_next_state((x), (y)) == 0) {			\
-			log(128, "qldap: bad state transition");	\
+			log(128, "qldap: bad state transition %i -> %i",\
+			    (x)->state, y);				\
 			(x)->state = ERROR;				\
 			return FAILED;					\
 		}							\
@@ -186,15 +187,16 @@ qldap_open(qldap *q)
 
 	CHECK(q, OPEN);
 	
-	log(128, "qldap_open: ");
 	/* allocate the connection */
 	if ((q->ld = ldap_init(ldap_server.s,LDAP_PORT)) == 0) {
-		log(128, "init failed\n");
+		log(128, "qldap_open: init failed\n");
 		return ERRNO;
 	}
-	log(128, "init successful\n");
+	log(128, "qldap_open: init successful\n");
 
 	rc = qldap_set_option(q, 0);
+	if (rc != OK)
+		log(128, "qldap_open: qldap_set_option failed\n");
 	q->state = rc==OK?OPEN:ERROR;
 	return rc;
 }
@@ -224,32 +226,35 @@ retry:
 	   *LDAP_INVALID_CREDENTIALS*,
 	   LDAP_AUTH_UNKNOWN
 	 */
-	log(128, "qldap_bind: ");
 	switch (rc) {
 	case LDAP_SUCCESS:
-		log(128, "successful\n");
+		log(128, "qldap_bind: successful\n");
 		q->state = BIND;
 		return OK;
 	case LDAP_TIMELIMIT_EXCEEDED:
 	case LDAP_SERVER_DOWN:
-		log(128, "failed (%s)\n", ldap_err2string(rc) );
+		log(128, "qldap_bind: failed (%s)\n", ldap_err2string(rc));
 		q->state = ERROR;
 		return LDAP_BIND_UNREACH;
 	case LDAP_INVALID_CREDENTIALS:
-		log(128, "failed (%s)\n", ldap_err2string(rc) );
+		log(128, "qldap_bind: failed (%s)\n", ldap_err2string(rc));
 		q->state = ERROR;
 		return LDAP_BIND_AUTH;
 	case LDAP_PROTOCOL_ERROR:
-		log(128, "failed (%s)\n", ldap_err2string(rc) );
+		log(128, "qldap_bind: failed wrong protocol (%s)\n",
+		    ldap_err2string(rc));
 		/* bind failed try Version 2 */
 		if (try > 1) break;
+		log(128, "qldap_bind: retrying bind with Version 1\n");
 		qldap_close(q);
 		rc = qldap_open(q);
+		log(128, "qldap_bind: opened conection for Version 1\n");
 		qldap_set_option(q, 1);
+		log(128, "qldap_bind: set options for Version 1\n");
 		if (rc != OK) break;
 		goto retry;
 	default:
-		log(128, "failed (%s)\n", ldap_err2string(rc) );
+		log(128, "qldap_bind: failed (%s)\n", ldap_err2string(rc));
 		break;
 	}
 	q->state = ERROR;
@@ -882,10 +887,10 @@ qldap_set_option(qldap *q, int forceV2)
 		rc = ldap_set_option(q->ld,
 		    LDAP_OPT_PROTOCOL_VERSION, &version);
 		if (rc == LDAP_OPT_SUCCESS) {
-			log(128, "qldap_set_option LDAPv2 successful\n");
+			log(128, "qldap_set_option: LDAPv2 successful\n");
 			return OK;
 		} else {
-			log(128, "qldap_set_option LDAPv2 failed (%s)\n",
+			log(128, "qldap_set_option: LDAPv2 failed (%s)\n",
 			    ldap_err2string(rc));
 			return FAILED;
 		}
@@ -894,7 +899,7 @@ qldap_set_option(qldap *q, int forceV2)
 		rc = ldap_set_option(q->ld,
 		    LDAP_OPT_PROTOCOL_VERSION, &version);
 		if (rc != LDAP_OPT_SUCCESS) {
-			log(128, "qldap_set_option failed (%s)\n",
+			log(128, "qldap_set_option: failed (%s)\n",
 			    ldap_err2string(rc));
 			return qldap_set_option(q, 1);
 		}
@@ -936,8 +941,8 @@ check_next_state(qldap *q, int next)
 		/* NEW is a invalid next state */
 		return 0;
 	case OPEN:
-		/* current state is either NEW or CLOSE */
-		if (STATEIN(q, NEW) || STATEIN(q, CLOSE))
+		/* current state is either NEW, OPEN or CLOSE */
+		if (STATEIN(q, NEW) || STATEIN(q, OPEN) || STATEIN(q, CLOSE))
 			return 1;
 		else
 			return 0;

@@ -87,7 +87,7 @@ char *host;
       if (fd_move(0,pim[0]) == -1) _exit(120);
       if (fd_move(1,pie[0]) == -1) _exit(120);
       if (chdir(auto_qmail) == -1) _exit(61);
-      execv(*binqqargs,binqqargs);
+      execv(*args,args);
       _exit(120);
   }
 
