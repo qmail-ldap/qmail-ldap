@@ -7,6 +7,8 @@
 #     from a specified account to another (swiss bigbrother law)
 # -DBIGTODO to enable the big todo patch (this can be used together with 
 #     EXTERNAL_TODO). Useful for servers with very many non-preprocessed mails
+# -DBIND_8_COMPAT need if your compile fails building dns.c because of
+#     undeclared defines. This is necessary on MacOS X 10.3.
 # -DCLEARTEXTPASSWD to use cleartext passwords (bad idea on production systems)
 # -DDASH_EXT to enable the dash_ext patch for extended mail addresses
 # -DDATA_COMPRESS to use the smtp on the fly DATA compression 

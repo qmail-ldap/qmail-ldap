@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/12/01 10:01:43 $)
+RELEASE: current ($Date: 2004/02/17 12:52:02 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -82,6 +82,8 @@ INSTALL:
                 section about the ~control/bigbrother control file)
                -DBIGTODO (to enable the big todo patch, can be used together
                 with EXTERNAL_TODO)
+               -DBIND_8_COMPAT needed on system with new incompatible
+                bind9 header files. Currently this is necessary on MacOS X 10.3.
                -DCLEARTEXTPASSWD (for cleartext passwords in ldap, bad idea)
                -DDASH_EXT (turn on dash_ext support see 5.3)
                -DDATA_COMPRESS (to enable smtp on the fly data compression.
