@@ -140,6 +140,8 @@ void logflush(int level)
 
 void cleanup(void);
 
+const char *remoteip;
+
 void die_read(void) { logline(1,"read error or connection closed"); cleanup(); _exit(1); }
 void die_write(void) { logline(1,"write error, connection closed"); cleanup(); _exit(1); }
 void die_alarm(void) { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); cleanup(); _exit(1); }
@@ -224,7 +226,6 @@ void err_quit(void)
   _exit(0);
 }
 
-const char *remoteip;
 const char *remotehost;
 const char *remoteinfo;
 const char *local;
