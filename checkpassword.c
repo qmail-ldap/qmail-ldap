@@ -85,7 +85,7 @@ void main(int argc, char **argv)
 	unsigned long uid;
 	unsigned long gid;
 
-	init_debug(STDERR, 64); /* XXX limited to 64 so it is not possible to get
+	init_debug(STDERR, 255); /* XXX limited to 64 so it is not possible to get
 							 * XXX passwords via debug on normal systems */
 
 	auth_init(argc, argv, &login, &authdata);
@@ -520,6 +520,7 @@ static void forward_session(char *host, char *name, char *passwd)
 		auth_error();
 	}
 
+	dns_init(0);
 	switch (dns_ip(&ip,&host_stralloc)) {
 		case DNS_MEM:
 			qldap_errno = ERRNO;
