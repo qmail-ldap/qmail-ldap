@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/30 09:29:50 $ ($Revision: 1.124 $)
+RELEASE: $Date: 2003/09/30 12:59:19 $ ($Revision: 1.125 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -61,7 +61,10 @@ NEWS for current stuff:
  of accepting the email and bouncing it later. Only addresses whose domain
  part is listed in ~control/locals are checked (because only there we know
  the definite answer). Relaying and rcpthosts works as before, recipient is
- not checked for those. Enabled with RCPTCHECK env var.
+ not checked for those. Addresses listed in new ~control/goodmailaddr will
+ be accepted in any case. This is very useful for important or special
+ (like postmaster or mail admin) addresses which must work under any
+ circumstances. Enabled with RCPTCHECK env var.
 
  smtp sender verify. This qmail-smtpd feature will look up every MAIL FROM
  address in ldap with qmail-verify to check the senders existence. If it
@@ -72,7 +75,10 @@ NEWS for current stuff:
  sender with its domain listed in ~control/rcpthosts. In STRICT mode it
  will allow only ldap verified senders. With this you can for example
  enforce that users within your network must use a valid sender which
- exists in ldap. Enabled with SENDERCHECK env var.
+ exists in ldap. Addresses listed in new ~control/goodmailaddr will be
+ accepted in any case. This is very useful for important or special (like
+ postmaster or mail admin) addresses which must work under any circumstances.
+ Enabled with SENDERCHECK env var.
 
  550greeting to reject smtp connections right away in the smtp
  greeting message. Use this to permanently reject all messages coming
