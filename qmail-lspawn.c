@@ -722,8 +722,6 @@ char *s; char *r; unsigned int at;
    int gid;
    int rv;
    
-   if (env_get("GDBDEBUG")) sleep(10);
-   
    log_init(fdout, -1, 1);
 
    sig_hangupdefault(); /* clear the hup sig handler for the child */
