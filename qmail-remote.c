@@ -110,6 +110,9 @@ void perm_ambigmx() { out("D\
 Sorry. Although I'm listed as a best-preference MX or A for that host,\n\
 it isn't in my control/locals file, so I don't treat it as local. (#5.4.6)\n");
 zerodie(); }
+void perm_looping() { out("D\
+Sorry. Message is looping within cluster, giving up. (#5.4.6)\n");
+zerodie(); }
 
 void outhost()
 {
@@ -131,6 +134,7 @@ void dropped() {
 int timeoutconnect = 60;
 int smtpfd;
 int timeout = 1200;
+stralloc cookie = {0};
 
 #ifdef TLS_REMOTE
 int flagtimedout = 0;
@@ -453,6 +457,12 @@ void smtp()
   if (code >= 500) quit("DConnected to "," but greeting failed");
   if (code >= 400) return;
   if (code != 220) quit("ZConnected to "," but greeting failed");
+
+  if (smtptext.len > cookie.len+2)
+  {
+    if (case_diffb(cookie.s, cookie.len, smtptext.s+smtptext.len-cookie.len-2))
+      perm_looping();
+  }
  
   flagsize = 0;
   substdio_puts(&smtpto,"EHLO ");
@@ -771,6 +781,9 @@ int flagcname;
 void getcontrols()
 {
   if (control_init() == -1) temp_control();
+  if (control_readline(&cookie,"control/smtpclustercookie") == -1)
+    die_control();
+  if (cookie.len > 32) cookie.len = 32;
   if (control_readint(&timeout,"control/timeoutremote") == -1) temp_control();
   if (control_readint(&timeoutconnect,"control/timeoutconnect") == -1)
     temp_control();

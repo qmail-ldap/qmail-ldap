@@ -163,11 +163,23 @@ void err_badrcptto() { out("553 sorry, mail to that recipient is not accepted (#
 void err_554msg(arg) char *arg; { out("554 sorry, "); out(arg); out("\r\n"); logstring(3,"message denied because: "); logstring(3,arg); logflush(3); }
 
 
+stralloc me = {0};
 stralloc greeting = {0};
+stralloc cookie = {0};
 
 void smtp_greet(code) char *code;
 {
   substdio_puts(&ssout,code);
+  substdio_puts(&ssout,me.s);
+  substdio_puts(&ssout," ESMTP ");
+  substdio_put(&ssout,greeting.s,greeting.len);
+  substdio_put(&ssout,cookie.s,cookie.len);
+  out("\r\n");
+}
+void smtp_line(code) char *code;
+{
+  substdio_puts(&ssout,code);
+  substdio_puts(&ssout,me.s);
   substdio_put(&ssout,greeting.s,greeting.len);
 }
 void smtp_help()
@@ -178,7 +190,7 @@ void smtp_help()
 }
 void smtp_quit()
 {
-  smtp_greet("221 "); out("\r\n");
+  smtp_line("221 "); out("\r\n");
   logline(3,"quit, closing connection");
   flush(); _exit(0);
 }
@@ -206,8 +218,6 @@ void dohelo(arg) char *arg; {
   fakehelo = case_diffs(remotehost,helohost.s) ? helohost.s : 0;
 }
 
-int meok = 0;
-stralloc me = {0};
 int liphostok = 0;
 stralloc liphost = {0};
 int bmfok = 0;
@@ -252,12 +262,16 @@ void setup()
 
   if (control_init() == -1) die_control();
 
-  if (control_rldef(&me,"control/me",1,(char *) 0) != 1)
+  if (control_readline(&me,"control/me") != 1)
     die_control();
   if (stralloc_0(&me)) die_nomem();
 
   if (control_rldef(&greeting,"control/smtpgreeting",1,(char *) 0) != 1)
     die_control();
+
+  if (control_readline(&cookie,"control/smtpclustercookie") == -1)
+    die_control();
+  if (cookie.len > 32) cookie.len = 32;
 
   liphostok = control_rldef(&liphost,"control/localiphost",1,(char *) 0);
   if (liphostok == -1) die_control();
@@ -657,7 +671,7 @@ int relayprobe() /* relay probes trying stupid old sendwhale bugs */
 
 void smtp_helo(arg) char *arg;
 {
-  smtp_greet("250 "); out("\r\n");
+  smtp_line("250 "); out("\r\n");
   seenmail = 0; dohelo(arg);
   logpid(3); logstring(3,"remote helo: "); logstring(3,arg); logflush(3);
 }
@@ -665,7 +679,7 @@ void smtp_helo(arg) char *arg;
 char smtpsize[FMT_ULONG];
 void smtp_ehlo(arg) char *arg;
 {
-  smtp_greet("250-"); out("\r\n");
+  smtp_line("250-"); out("\r\n");
   out("250-PIPELINING\r\n");
   smtpsize[fmt_ulong(smtpsize,(unsigned long) databytes)] = 0;
   out("250-SIZE "); out(smtpsize); out("\r\n");
@@ -856,7 +870,7 @@ void smtp_mail(arg) char *arg;
             if (errdisconnect) err_quit();
             return;
           case -1:
-          case default: /* other error, treat as soft 4xx */
+          default: /* other error, treat as soft 4xx */
             if (ldapsoftok)
               break;
             err_ldapsoft();
@@ -984,7 +998,7 @@ void smtp_rcpt(arg) char *arg; {
             if (errdisconnect) err_quit();
             return;
           case -1:
-          case default: /* other error, treat as soft 4xx */
+          default: /* other error, treat as soft 4xx */
             if (ldapsoftok)
               break;
             err_ldapsoft();
@@ -1424,7 +1438,6 @@ void main()
   setup();
   if (ipme_init() != 1) die_ipme();
   smtp_greet("220 ");
-  out(" ESMTP\r\n");
   if (commands(&ssin,&smtpcommands) == 0) die_read();
   die_nomem();
 }
