@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/09/22 16:12:46 $ ($Revision: 1.19 $)
+RELEASE: $Date: 2002/03/30 17:55:07 $ ($Revision: 1.20 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -26,6 +26,9 @@ planned - make it possible to have locals and rcpthosts in ldap
 
 
 ALSO ON THE LIST: (priority list ???)
+- improve the RBL handling (tagging, types, etc)
+- add smtp-after-pop functionality
+
 - force to alias if only mail and mailforwardingaddress is set (no uid).
 - enhancement to debug code (almost done)
 - benchmarking the code
