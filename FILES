@@ -473,3 +473,5 @@ dirmaker
 popfetch.pl
 qldap-profile.c
 qldap-profile.h
+output.h
+output.c

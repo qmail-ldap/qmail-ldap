@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/05/04 09:55:44 $ ($Revision: 1.40 $)
+RELEASE: $Date: 2001/09/03 22:11:09 $ ($Revision: 1.41 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,17 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ new debug/log handling. In qmail-lspawn the debug output is no 
+ longer added to bounce mails.
+
+ bug fix in the cleaned up NS-MTA code.
+
+ bugfix in catchall search string generation. Hopefully the last one.
+
+ bugfix in qmail-ldaplookup (ldap_value_free). Thanks to Sascha Gresk.
+
+NEWS for 20010501 stuff:
 
  bugfix in qmail-local.c by Mark Belnap. Problems with deliverymode reply.
 

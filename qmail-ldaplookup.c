@@ -7,6 +7,7 @@
 #include "error.h"
 #include "strerr.h"
 #include "str.h"
+#include "output.h"
 #include "qldap-debug.h"
 #include "check.h"
 #include "substdio.h"
@@ -58,16 +59,15 @@ stralloc home = {0};
 stralloc md = {0};
 
 substdio ssout;
-#define LEN 1024
+#define LEN 256
 char buffer[LEN];
 
-void output(char *fmt, ...);
 static int cmp_passwd(unsigned char *clear, char *encrypted);
 static void local_lookup(char *username, char *passwd);
 
 void usage() 
 {
-	output( "qmail-ldaplookup: usage qmail-ldaplookup {-u uid | -m mail}\n");
+	output(&ssout, "qmail-ldaplookup: usage qmail-ldaplookup {-u uid | -m mail}\n");
 	_exit(1);
 }
 
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 							 LDAP_PASSWD, 0 }; /* passwd is extra */
 
 	
-	init_debug(STDERR, -1);
+	log_init(STDERR, -1, 0);
 	substdio_fdbuf(&ssout, write, STDOUT, buffer, sizeof(buffer) );
 	
 	if (!argv[1] || !argv[2]) {
@@ -118,15 +118,15 @@ int main(int argc, char **argv)
 		strerr_die2x(1, "ERROR: init_ldap failed: ", qldap_err_str(qldap_errno));
 	}
 	
-	output( "init_ldap:\tpasswords are %scompared via rebind\n",
+	output(&ssout, "init_ldap:\tpasswords are %scompared via rebind\n",
 			rebind?"":"not ");
-	output( "\t\tlocaldelivery:\t %s\n\t\tclustering:\t %s\n",
+	output(&ssout, "\t\tlocaldelivery:\t %s\n\t\tclustering:\t %s\n",
 			locald?"on":"off", cluster?"on":"off");
-	output( "\t\tldapobjectclass: %S\n", &qldap_objectclass);
-	output( "\t\thomedirmaker:\t %s\n", homemaker.len?homemaker.s:"undefined");
-	output( "\t\tdefaultDotMode:\t %s\n", defdot.s);
-	output( "\t\tdefaultQuota:\t %s\n", defquota.len?defquota.s:"undedined");
-	output( "\t\tQuotaWarning:\n------\n%s\n------\n", 
+	output(&ssout, "\t\tldapobjectclass: %S\n", &qldap_objectclass);
+	output(&ssout, "\t\thomedirmaker:\t %s\n", homemaker.len?homemaker.s:"undefined");
+	output(&ssout, "\t\tdefaultDotMode:\t %s\n", defdot.s);
+	output(&ssout, "\t\tdefaultQuota:\t %s\n", defquota.len?defquota.s:"undedined");
+	output(&ssout, "\t\tQuotaWarning:\n------\n%s\n------\n", 
 			quotawarning.len?quotawarning.s:"undefined");
 
 	/* initalize the different objects */
@@ -221,56 +221,56 @@ int main(int argc, char **argv)
 		}
 	}
 	search.filter = filter.s;
-	output( "ldap_lookup:\tsearching with %s\n", filter.s);
+	output(&ssout, "ldap_lookup:\tsearching with %s\n", filter.s);
 	ret = ldap_lookup(&search, attrs, &info, extra);
 	if ( ret != 0 ) {
-		output("ERROR: ldap_lookup not successful: ", 
+		output(&ssout, "ERROR: ldap_lookup not successful: ", 
 				qldap_err_str(qldap_errno));
 		if ( mode == uid && locald ) {
-			output("Will try a local password lookup\n");
+			output(&ssout, "Will try a local password lookup\n");
 			local_lookup(argv[2], argv[3]);
 		} else {
-			output("%s\n", mode!=uid?"only uid lookups can be local":
+			output(&ssout, "%s\n", mode!=uid?"only uid lookups can be local":
 									"localdelivery of so no local lookup");
 			exit(111);
 		}
 	}
-	output( "ldap_lookup:\tsucceeded, found:\n");
-	output( "\t\t%s: %s\n", LDAP_UID, info.user);
+	output(&ssout, "ldap_lookup:\tsucceeded, found:\n");
+	output(&ssout, "\t\t%s: %s\n", LDAP_UID, info.user);
 	if (!chck_users(info.user) ) {
-		output( "\tWARNING %s contains illegal chars!\n", LDAP_UID);
+		output(&ssout, "\tWARNING %s contains illegal chars!\n", LDAP_UID);
 	}
-	output( "\t\t%s: %s\n\t\t%s: %s\n",
+	output(&ssout, "\t\t%s: %s\n\t\t%s: %s\n",
 			LDAP_QMAILUID, info.uid, LDAP_QMAILGID, info.gid);
 	scan_ulong(info.uid, &tid);
 	if (UID_MIN > tid || tid > UID_MAX ) {
-		output( "\tWARNING %s is out of range (%i...%i)\n", 
+		output(&ssout, "\tWARNING %s is out of range (%i...%i)\n", 
 				LDAP_QMAILUID, UID_MIN, UID_MAX);
 	}
 	scan_ulong(info.gid, &tid);
 	if (GID_MIN > tid || tid > GID_MAX ) {
-		output( "\tWARNING %s is out of range (%i...%i)\n", 
+		output(&ssout, "\tWARNING %s is out of range (%i...%i)\n", 
 				LDAP_QMAILGID, GID_MIN, GID_MAX);
 	}
-	output( "\t\t%s: %s\n", LDAP_ISACTIVE, 
+	output(&ssout, "\t\t%s: %s\n", LDAP_ISACTIVE, 
 			info.status==STATUS_BOUNCE?ISACTIVE_BOUNCE:
 			info.status==STATUS_BOUNCE?ISACTIVE_DELETE:
 			info.status==STATUS_NOPOP?ISACTIVE_NOPOP:
 			info.status==STATUS_OK?ISACTIVE_ACTIVE:"undefined");
 
-	output( "\t\t%s: %s\n", LDAP_MAILSTORE, info.mms);
+	output(&ssout, "\t\t%s: %s\n", LDAP_MAILSTORE, info.mms);
 	if (info.mms) if ( !chck_paths(info.mms) ) {
-		output( "\tWARNING %s contains illegal chars!\n", LDAP_MAILSTORE);
+		output(&ssout, "\tWARNING %s contains illegal chars!\n", LDAP_MAILSTORE);
 	}
-	output( "\t\t%s: %s\n", LDAP_HOMEDIR, info.homedir);
+	output(&ssout, "\t\t%s: %s\n", LDAP_HOMEDIR, info.homedir);
 	if (info.homedir) if ( !chck_paths(info.homedir) ) {
-		output( "\tWARNING %s contains illegal chars!\n", LDAP_HOMEDIR);
+		output(&ssout, "\tWARNING %s contains illegal chars!\n", LDAP_HOMEDIR);
 	}
 
-	output( "\t\t%s: %s\n", LDAP_MAILHOST, info.host);
+	output(&ssout, "\t\t%s: %s\n", LDAP_MAILHOST, info.host);
 	if ( cluster && info.host && str_diff(qldap_me.s, info.host) ) {
 		/* hostname is different, so I would reconnect */
-		output( "\tINFO    would reconnect to host %s\n", info.host);
+		output(&ssout, "\tINFO    would reconnect to host %s\n", info.host);
 	}
 
 	/* free a part of the info struct */
@@ -283,114 +283,29 @@ int main(int argc, char **argv)
 	
 	for ( i = 0; extra[i].what != 0; i++ ) {
 		if ( extra[i].vals != 0 ) {
-			output( "\t\t%s: %s\n", extra[i].what, extra[i].vals[0]);
+			output(&ssout, "\t\t%s: %s\n", extra[i].what, extra[i].vals[0]);
 			for ( j = 1; extra[i].vals[j] != 0; j++ ) {
-				output( "\t\t\t\t %s\n", extra[i].vals[j]);
+				output(&ssout, "\t\t\t\t %s\n", extra[i].vals[j]);
 				if ( i == 4 && !chck_progs(extra[i].vals[j]) ) { 
-					output( "\tWARNING %s contains illegal chars!\n", 
+					output(&ssout, "\tWARNING %s contains illegal chars!\n", 
 							LDAP_PROGRAM);
 				}
 			}
-			ldap_value_free(extra[i].vals);
 		} else {
-			output( "\t\t%s: no entry in the database\n", extra[i].what);
+			output(&ssout, "\t\t%s: no entry in the database\n", extra[i].what);
 		}
 	}
 	
 	if ( mode == uid && argv[3] && !rebind ) {
 		ret = cmp_passwd((unsigned char *) argv[3], extra[8].vals[0] );
-		output( "ldap_lookup:\tpassword compare was %s\n", 
+		output(&ssout, "ldap_lookup:\tpassword compare was %s\n", 
 				ret==0?"successful":"not successful");
 	}
+	/* now it's save to free the entries, thanks to Sascha Gresk for the indication */
+	for ( i = 0; extra[i].what != 0; i++ )
+		ldap_value_free(extra[i].vals);
+
 	return 0;
-}
-
-char num[FMT_ULONG];
-static const char nullString[] = "(null pointer)";
-
-void output(char *fmt, ...)
-/* works like printf has the format options %i, ...
- * all flags (#, 0, -, ' ', +, ' ... ) are not supported if not special noted
- * Also not supported are all options for foating-point numbers 
- * (not needed in qmail)
- * Supported conversion specifiers: diouxcsSp%
- * diux are for integer (long) conversions
- * c is a single unsigned char
- * s is a zero terminated string
- * S is a stralloc object (should not be zero terminated (else the zero 
- *   will be printed))
- * % is the % sign */
-{
-	va_list args;
-	unsigned long ul;
-	long l;
-	char *s;
-	char *start;
-	char *cur;
-	unsigned char c;
-	stralloc *sa;
-	va_start(args,fmt);
-
-	start = fmt;
-	cur = fmt;
-	while (*cur) {
-		if (*cur == '%') {
-			if ( substdio_put(&ssout, start, cur-start) == -1 ) return;
-			cur++;
-			switch (*cur) {
-				case 'd':
-				case 'i':
-					l = va_arg(args, long);
-					if ( l < 0 ) { /* negativ number, d and i are signed */
-						l *= -1;
-						if ( substdio_put(&ssout, "-", 1) == -1 ) return;
-					}
-					ul = (unsigned long) l;
-					if ( substdio_put(&ssout, num, fmt_ulong(num, ul) ) ) 
-						return;
-					break;
-				case 'u':
-					ul = va_arg(args, unsigned long);
-					if ( substdio_put(&ssout, num, fmt_ulong(num, ul) ) ) 
-						return;
-					break;
-				case 's':
-					s = va_arg(args, char *);
-					if ( !s ) {
-						 if ( substdio_put(&ssout, nullString, 
-									 		str_len(nullString) ) ) 
-							 return;
-						 break;
-					}
-					if ( substdio_put(&ssout, s, str_len(s) ) ) return;
-					break;
-				case 'S':
-					sa = va_arg(args, stralloc *);
-					if ( !sa ) {
-						if ( substdio_put(&ssout, nullString, 
-											str_len(nullString) ) )
-							return;
-						break;
-					}
-					if ( substdio_put(&ssout, sa->s, sa->len ) ) return;
-					break;
-				case '%':
-					if ( substdio_put(&ssout, "%", 1) == -1 ) return;
-					break;
-				case 'c':
-					c = (unsigned char) va_arg(args, unsigned int);
-					substdio_BPUTC(&ssout, c);
-					break;
-			}
-			start = ++cur; 
-		} else {
-			++cur;
-		}
-	}
-	if ( substdio_put(&ssout, start, cur-start) == -1 ) return;
-	if ( substdio_flush(&ssout) == -1 ) return;
-	va_end(args);
-	
 }
 
 static int get_local_maildir(stralloc *home, stralloc *maildir);
@@ -409,26 +324,26 @@ static void local_lookup(char *username, char *passwd)
 	pw = getpwnam(username);
 	if (!pw) {
 		/* XXX: unfortunately getpwnam() hides temporary errors */
-		output("local_lookup:\tuser %s not found in passwd db\n", username);
+		output(&ssout, "local_lookup:\tuser %s not found in passwd db\n", username);
 		_exit(0);
 	}
-	output( "local_lookup:\tsucceeded\n\t\tuser %s found in passwd database\n", 
+	output(&ssout, "local_lookup:\tsucceeded\n\t\tuser %s found in passwd database\n", 
 			username);
-	output( "\t\tuid: %u\n\t\tgid: %u\n",
+	output(&ssout, "\t\tuid: %u\n\t\tgid: %u\n",
 			pw->pw_uid, pw->pw_gid);
 	if (UID_MIN > pw->pw_uid || pw->pw_uid > UID_MAX ) {
-		output( "\tWARNING uid is out of range (%i...%i)\n", 
+		output(&ssout, "\tWARNING uid is out of range (%i...%i)\n", 
 				UID_MIN, UID_MAX);
 	}
 	if (GID_MIN > pw->pw_gid || pw->pw_gid > GID_MAX ) {
-		output( "\tWARNING gid is out of range (%i...%i)\n", 
+		output(&ssout, "\tWARNING gid is out of range (%i...%i)\n", 
 				GID_MIN, GID_MAX);
 	}
 
 	/* here we don't check the home and maildir path, if a user has a faked 
 	 * passwd entry, then you have a bigger problem on your system than just 
 	 * a guy how can read the mail of other users/customers */
-	output( "\t\thome: %s\n", pw->pw_dir );
+	output(&ssout, "\t\thome: %s\n", pw->pw_dir );
 	if (!stralloc_copys(&home, pw->pw_dir) ) {
 		strerr_die2x(1, "ERROR: local_lookup: ", 
 				error_str(errno));
@@ -438,10 +353,10 @@ static void local_lookup(char *username, char *passwd)
 		strerr_die2x(1, "ERROR: local_lookup: ", 
 				qldap_err_str(qldap_errno));
 	}
-	output( "\t\tmaildir: %s (from ~/.qmail)\n", md.s);
+	output(&ssout, "\t\tmaildir: %s (from ~/.qmail)\n", md.s);
 	
 	if ( !passwd ) {
-		output( "No more information available\n");
+		output(&ssout, "No more information available\n");
 		_exit(0);
 	}
 #ifdef PW_SHADOW
@@ -452,7 +367,7 @@ static void local_lookup(char *username, char *passwd)
 		strerr_die2x(1, "ERROR: local_lookup: ", 
 				qldap_err_str(qldap_errno));
 	}
-	output( "\t\tcrypted passwd: %s\n", spw->sp_pwdp);
+	output(&ssout, "\t\tcrypted passwd: %s\n", spw->sp_pwdp);
 	ret = cmp_passwd((unsigned char *) passwd, spw->sp_pwdp);
 #else /* no PW_SHADOW */
 #ifdef AIX
@@ -463,14 +378,14 @@ static void local_lookup(char *username, char *passwd)
 		strerr_die2x(1, "ERROR: local_lookup: ", 
 				qldap_err_str(qldap_errno));
 	}
-	output( "\t\tcrypted passwd: %s\n", spw->upw_passwd);
+	output(&ssout, "\t\tcrypted passwd: %s\n", spw->upw_passwd);
 	ret = cmp_passwd((unsigned char *) passwd, spw->upw_passwd);
 #else /* no AIX */
-	output( "\t\tcrypted passwd: %s\n", pw->pw_passwd);
+	output(&ssout, "\t\tcrypted passwd: %s\n", pw->pw_passwd);
 	ret = cmp_passwd((unsigned char *) passwd, pw->pw_passwd);
 #endif /* END AIX */
 #endif /* END PW_SHADOW */
-	output( "local_lookup:\tpassword compare was %s\n", 
+	output(&ssout, "local_lookup:\tpassword compare was %s\n", 
 			ret==0?"successful":"not successful");
 	_exit(0);
 }
@@ -525,7 +440,7 @@ static int cmp_passwd(unsigned char *clear, char *encrypted)
 			return -1;
 		}
 		/* End getting correct hash-func hashed */
-		debug(256, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
+		log(256, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
 				hashed, encrypted+shift);
 		if (!*encrypted || str_diff(hashed,encrypted+shift) ) {
 			qldap_errno = AUTH_FAILED;
@@ -533,7 +448,7 @@ static int cmp_passwd(unsigned char *clear, char *encrypted)
 		}
 		/* hashed passwds are equal */
 	} else { /* crypt or clear text */
-		debug(256, "cpm_passwd: comparing standart passwd (%s == %s)\n", 
+		log(256, "cpm_passwd: comparing standart passwd (%s == %s)\n", 
 				crypt(clear,encrypted), encrypted);
 		if (!*encrypted || str_diff(encrypted, crypt(clear,encrypted) ) ) {
 			/* CLEARTEXTPASSWD ARE NOT GOOD */

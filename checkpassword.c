@@ -26,6 +26,7 @@
 #include "alloc.h"
 #include "check.h"
 #include "qldap-debug.h"
+#include "output.h"
 
 /* Edit the first lines in the Makefile to enable local passwd lookups 
  * and debug options.
@@ -85,30 +86,30 @@ void main(int argc, char **argv)
 	unsigned long uid;
 	unsigned long gid;
 
-	init_debug(STDERR, 255); /* XXX limited to 64 so it is not possible to get
-							 * XXX passwords via debug on normal systems */
+	log_init(STDERR, 255, 0); /* XXX limited to 64 so it is not possible to get
+							   * XXX passwords via debug on normal systems */
 
 	auth_init(argc, argv, &login, &authdata);
-	debug(256, "auth_init: login=%s, authdata=%s\n", login.s, authdata.s);
+	log(256, "auth_init: login=%s, authdata=%s\n", login.s, authdata.s);
 
 	if ( authdata.len <= 1 ) {
-		debug(1, "alert: null password.\n");
+		log(1, "alert: null password.\n");
 		qldap_errno = AUTH_NEEDED;
 		auth_fail(argc, argv, login.s);
 	}
 	
 	if ( init_ldap(&locald, &cluster, &rebind, &homemaker, 0, 0, 0) == -1 ) {
-		debug(1, "alert: init_ldap failed.\n");
+		log(1, "alert: init_ldap failed.\n");
 		_exit(1);
 	}
-	debug(64, "init_ldap: ld=%i, cluster=%i, rebind=%i, hdm=%s\n", 
+	log(64, "init_ldap: ld=%i, cluster=%i, rebind=%i, hdm=%s\n", 
 			locald, cluster, rebind, homemaker.s);
 	
 	if ( check_ldap(&login, &authdata, &uid, &gid, &home, &maildir) ) {
-		debug(16, "authentication with ldap was not successful\n");
+		log(16, "authentication with ldap was not successful\n");
 		if ( locald == 1 && 
 				(qldap_errno == LDAP_NOSUCH || qldap_errno == LDAP_SEARCH) ) {
-			debug(16, "trying to authenticate with the local passwd db\n");
+			log(16, "trying to authenticate with the local passwd db\n");
 			if ( check_passwd(&login, &authdata, &uid, &gid, &home, &maildir) ) {
 				auth_fail(argc, argv, login.s);
 			}
@@ -152,7 +153,7 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	
 	if ( !make_filter(login, &filter ) ) { 
 		/* create search filter */
-		debug(4, "warning: check_ldap: could not make a filter\n");
+		log(4, "warning: check_ldap: could not make a filter\n");
 		/* qldap_errno set by make_filter */
 		return -1;
 	}
@@ -161,7 +162,7 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	ret = ldap_lookup(&search, attrs, &info, extra);
 	free_stralloc(&filter);	/* free the old filter */
 	if ( ret != 0 ) {
-		debug(4, "warning: check_ldap: ldap_lookup not successful!\n");
+		log(4, "warning: check_ldap: ldap_lookup not successful!\n");
 		/* qldap_errno set by ldap_lookup */
 		return -1;
 	}
@@ -175,7 +176,7 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	/* for cluster check if I'm on the right host */
 	if ( cluster && info.host && str_diff(qldap_me.s, info.host) ) {
 		/* hostname is different, so I reconnect */
-		debug(8, "check_ldap: forwarding session to %s\n", info.host);
+		log(8, "check_ldap: forwarding session to %s\n", info.host);
 		forward_session(info.host, login->s, authdata->s);
 		/* that's it. Function does not return */ 
 	}
@@ -199,7 +200,7 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 			}
 			/* XXX have a look at check.c and qmail-ldap.h for chck_pathb */
 			if ( !chck_pathb(maildir->s,maildir->len) ) {
-				debug(2, "warning: check_ldap: path contains illegal chars!\n");
+				log(2, "warning: check_ldap: path contains illegal chars!\n");
 				qldap_errno = ILL_PATH;
 				return -1;
 			}
@@ -213,7 +214,7 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	}
 	/* XXX have a look at check.c and qmail-ldap.h for chck_pathb */
 	if ( !chck_pathb(home->s,home->len) ) {
-		debug(2, "warning: check_ldap: path contains illegal chars!\n");
+		log(2, "warning: check_ldap: path contains illegal chars!\n");
 		qldap_errno = ILL_PATH;
 		return -1;
 	}
@@ -233,26 +234,26 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	if (info.mms) alloc_free(info.mms);
 	
 	if ( rebind && search.bind_ok ) {
-		debug(32, 
+		log(32, 
 			"check_ldap: ldap_lookup sucessfully authenticated with rebind\n");
 		return 0; 
 		/* if we got till here under rebind mode, the user is authenticated */
 	} else if ( rebind ) {
-		debug(32, 
+		log(32, 
 			"check_ldap: ldap_lookup authentication failed with rebind\n");
 		qldap_errno = AUTH_FAILED;
 		return -1; /* user authentification failed */
 	}
 	
 	if ( ! extra[0].vals ) {
-		debug(2, "warning: check_ldap: password is missing for uid %s\n", 
+		log(2, "warning: check_ldap: password is missing for uid %s\n", 
 				login);
 		qldap_errno = AUTH_NEEDED;
 		return -1; 
 	}
 	
 	ret = cmp_passwd((unsigned char*) authdata->s, extra[0].vals[0]); 
-	debug(32, "check_ldap: password compare was %s\n", 
+	log(32, "check_ldap: password compare was %s\n", 
 			ret==0?"successful":"not successful");
 	ldap_value_free(extra[0].vals);
 	return ret;
@@ -273,7 +274,7 @@ static int check_passwd(stralloc *login, stralloc *authdata, unsigned long *uid,
 	pw = getpwnam(login->s);
 	if (!pw) {
 		/* XXX: unfortunately getpwnam() hides temporary errors */
-		debug(32, "check_passwd: user %s not found in passwd db\n", login->s);
+		log(32, "check_passwd: user %s not found in passwd db\n", login->s);
 		qldap_errno = AUTH_NOSUCH;
 		return -1;
 	}
@@ -292,7 +293,7 @@ static int check_passwd(stralloc *login, stralloc *authdata, unsigned long *uid,
 		/* function sets qldap_errno */
 		return -1;
 	}
-	debug(32, "get_local_maildir: maildir=%s\n", md->s);
+	log(32, "get_local_maildir: maildir=%s\n", md->s);
 	
 	if (!stralloc_0(home) ) {
 		qldap_errno = ERRNO;
@@ -320,7 +321,7 @@ static int check_passwd(stralloc *login, stralloc *authdata, unsigned long *uid,
 	ret = cmp_passwd((unsigned char*) authdata->s, pw->pw_passwd);
 #endif /* END AIX */
 #endif /* END PW_SHADOW */
-	debug(32, "check_pw: password compare was %s\n", 
+	log(32, "check_pw: password compare was %s\n", 
 			ret==0?"successful":"not successful");
 	return ret;
 	
@@ -376,7 +377,7 @@ static int cmp_passwd(unsigned char *clear, char *encrypted)
 			return -1;
 		}
 		/* End getting correct hash-func hashed */
-		debug(256, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
+		log(256, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
 				hashed, encrypted);
 		if (!*encrypted || str_diff(hashed,encrypted+shift) ) {
 			qldap_errno = AUTH_FAILED;
@@ -384,7 +385,7 @@ static int cmp_passwd(unsigned char *clear, char *encrypted)
 		}
 		/* hashed passwds are equal */
 	} else { /* crypt or clear text */
-		debug(256, "cpm_passwd: comparing standart passwd (%s == %s)\n", 
+		log(256, "cpm_passwd: comparing standart passwd (%s == %s)\n", 
 				crypt(clear,encrypted), encrypted);
 		if (!*encrypted || str_diff(encrypted, crypt(clear,encrypted) ) ) {
 			/* CLEARTEXTPASSWD ARE NOT GOOD */
@@ -546,10 +547,14 @@ static void forward_session(char *host, char *name, char *passwd)
 				auth_error();
 			}
 	}
-	if ( ip.len != 1 ) {
+/*	if ( ip.len != 1 ) {
 		qldap_errno = BADCLUSTER;
 		auth_error();
-	}
+	} */ /* 20010523 do not check if only one IP is returned, so it is
+			possible to have a cluster node consisting of multiple machines 
+			XXX if your mailhost is bad (bad entries in ldap) you will get
+			bad loops.
+		  */
 	
 	ffd = socket(AF_INET,SOCK_STREAM,0);
 	if (ffd == -1) {

@@ -383,7 +383,7 @@ char *
 MD5DataBase64 (data, len, buf, buflen)
     const unsigned char *data;
     size_t len;
-    char *buf; /* nedds to be 25 Bytes big */
+    char *buf; /* needs to be 25 Bytes big */
     size_t buflen;
 {
     MD5_CTX ctx;
@@ -431,12 +431,12 @@ ns_mta_hash_alg(char *buffer, char *salt, char *passwd)
   unsigned char digest[16], c;
 
   if (!stralloc_copys(&saltstr, salt) ) return -1; /* errno set by stralloc */
-  c = 86;
+  c = 89;
   if (!stralloc_append(&saltstr, &c) ) return -1;
   if (!stralloc_cats(&saltstr, passwd) ) return -1;
   c = 247;
+  if (!stralloc_append(&saltstr, &c) ) return -1;
   if (!stralloc_cats(&saltstr, salt) ) return -1;
-  if (!stralloc_0(&saltstr) ) return -1;
   /* the stralloc is not freed so we loose some memory (until exit) but
      this is better than the possible root exploit that was in the code before
    */

@@ -1,26 +1,23 @@
-/* qldap-debug.h, jeker@n-r-g.com, best viewed with tabsize = 4 */
 #ifndef __QLDAP_DEBUG_H__
 #define __QLDAP_DEBUG_H__
 
-#define STDERR 2
-#define STDOUT 1
+#ifdef DEBUG
+void log_init(int fd, unsigned long mask, int via_spawn);
+void log(unsigned long level, char *fmt, ...);
+void logstart(unsigned long level, char *fmt, ...);
+void logadd(unsigned long level, char *fmt, ...);
+void logend(unsigned long level, char *fmt, ...);
+void profile(char *s);
 
-void debug(int level, char *fmt, ...);
-/* works like printf has the format options %i, ...
- * all flags (#, 0, -, ' ', +, ' ... ) are not supported
- * Also not supported are all options for foating-point numbers 
- * (not needed in qmail)
- * Supported conversion specifiers: diuxcsSp%
- * diux are for integer (long) conversions (di are signed all other unsigned)
- * c is a single unsigned char
- * s is a zero terminated string
- * S is a stralloc object (should not be zero terminated (else the zero 
- *   will be printed))
- * p is the hex address of a generic pointer (void *)
- * % is the % sign */
+#define PROFILE(s) profile(s)
+#else
+static void log_init() {};
+static void log() {};
+static void logstart() {};
+static void logadd() {};
+static void logend() {};
 
-void init_debug(int fd, unsigned long levelmask);
-/* reads the DEBUGLEVEL env var and sets the corresponding debuglevel */
-
+#define PROFILE(s)
 #endif
 
+#endif

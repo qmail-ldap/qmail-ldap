@@ -413,3 +413,4 @@ qldap-errno.o
 qmail-ldaplookup.o
 qmail-ldaplookup
 qldap-profile.o
+output.o

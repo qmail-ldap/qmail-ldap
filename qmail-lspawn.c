@@ -53,27 +53,6 @@ stralloc    foo = {0};
 /* init done */
 
 #ifdef QLDAP_CLUSTER
-static int allwrite(op,fd,buf,len)
-register int (*op)();
-register int fd;
-register char *buf;
-register int len;
-{
-  register int w;
-
-  while (len) {
-    w = op(fd,buf,len);
-    if (w == -1) {
-      if (errno == error_intr) continue;
-      return -1; /* note that some data may have been written */
-    }
-    if (w == 0) ; /* luser's fault */
-    buf += w;
-    len -= w;
-  }
-  return 0;
-}
-
 /* declaration of the mail forwarder function */
 void forward_mail(char *host, stralloc *to, char *from, int fdmess);
 #endif
@@ -384,7 +363,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    } 
    if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
    
-   debug(16, "ldapfilter: '%s'\n", filter.s);
+   log(16, "ldapfilter: '%s'\n", filter.s);
    search.filter = filter.s;
    search.bindpw = 0;    /* rebind off */
 
@@ -406,7 +385,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       r = mail->s;
       i = mail->len;
       for (at = i - 1; r[at] != '@' && at >= 0 ; at--) ; 
-	     /* handels also mailwith 2 @ */
+	     /* handels also mail with 2 @ */
       /* build the search string for the email address */
       if (!stralloc_copys(&filter,"(" ) ) _exit(QLX_NOMEM);
       /* optional objectclass */
@@ -428,12 +407,12 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       if (!stralloc_cats(&filter,LDAP_CATCH_ALL)) _exit(QLX_NOMEM);
       if (!stralloc_catb(&filter,r+at, i-at)) _exit(QLX_NOMEM);
       if (!stralloc_cats(&filter,"))")) _exit(QLX_NOMEM);
-      if ( qldap_objectclass.len ) {
+      if ( qldap_objectclass.len ) { 
         if (!stralloc_cats(&filter,")")) _exit(QLX_NOMEM);
-      }
+      } 
       if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
       
-      debug(16, "retry with filter '%s'\n", filter.s);
+      log(16, "retry with filter '%s'\n", filter.s);
       /* do the search for the catchall address */
       ret = ldap_lookup(&search, attrs, &info, extra);
    }
@@ -462,13 +441,13 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
 
    /* go through the attributes and set the proper args for qmail-local  *
     * this can probably done with some sort of loop, but hey, how cares? */
-   debug(32, "found: user='%s' uid=%s gid=%s homedir='%s' mms='%s' host='%s' status=%i\n", 
+   log(32, "found: user='%s' uid=%s gid=%s homedir='%s' mms='%s' host='%s' status=%i\n", 
 		   info.user, info.uid, info.gid, info.homedir, 
 		   info.mms, info.host, info.status);
 
    /* check if the ldap entry is active */
    if ( info.status == STATUS_BOUNCE ) {
-      debug(2, "warning: %s's accountsatus is bounce\n", info.user);
+      log(2, "warning: %s's accountsatus is bounce\n", info.user);
       _exit(225); 
    }
 
@@ -537,14 +516,14 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
 
    /* get the quota for the user of that maildir mbox */
    if ( extra[0].vals != 0 ) {
-      debug(32, "%s: %s\n", ENV_QUOTA, extra[0].vals[0]);
+      log(32, "%s: %s\n", ENV_QUOTA, extra[0].vals[0]);
       if ( !env_put2(ENV_QUOTA, extra[0].vals[0] ) ) _exit(QLX_NOMEM);
    } else {
       if ( qldap_defaultquota.s ) {
-         debug(32, "%s: %s\n", ENV_QUOTA, qldap_defaultquota.s);
+         log(32, "%s: %s\n", ENV_QUOTA, qldap_defaultquota.s);
          if ( !env_put2(ENV_QUOTA, qldap_defaultquota.s )) _exit(QLX_NOMEM);
       } else {
-         debug(32, "no quota set\n");
+         log(32, "no quota set\n");
          if ( !env_unset(ENV_QUOTA) ) _exit(QLX_NOMEM);
       }
    }
@@ -560,7 +539,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
       if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
-      debug(32, "%s: %s\n", ENV_FORWARDS, foo.s );
+      log(32, "%s: %s\n", ENV_FORWARDS, foo.s );
       if ( !env_put2(ENV_FORWARDS, foo.s) ) _exit(QLX_NOMEM);
    } else {
       /* default */
@@ -580,7 +559,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
       if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
-      debug(32, "%s: %s\n", ENV_PROGRAM, foo.s );
+      log(32, "%s: %s\n", ENV_PROGRAM, foo.s );
       if ( !env_put2(ENV_PROGRAM, foo.s) ) _exit(QLX_NOMEM);
    } else {
       /* default */
@@ -602,7 +581,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
       if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
-      debug(32, "%s: %s\n", ENV_MODE, foo.s );
+      log(32, "%s: %s\n", ENV_MODE, foo.s );
       if ( !env_put2(ENV_MODE, foo.s) ) _exit(QLX_NOMEM);
    } else {
       /* default */
@@ -613,7 +592,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    
    if ( reply ) {
       if ( extra[4].vals != 0 ) {
-         debug(32, "%s: %s\n", ENV_REPLYTEXT, extra[4].vals[0] );
+         log(32, "%s: %s\n", ENV_REPLYTEXT, extra[4].vals[0] );
          if ( !env_put2(ENV_REPLYTEXT, extra[4].vals[0]) ) _exit(QLX_NOMEM);
       }
       ldap_value_free(extra[4].vals);
@@ -639,7 +618,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       /* default */
       if ( !env_put2(ENV_DOTMODE, qldap_defdotmode.s) ) _exit(QLX_NOMEM);
    }
-   debug(32, "%s: %s\n", ENV_DOTMODE, env_get(ENV_DOTMODE) );
+   log(32, "%s: %s\n", ENV_DOTMODE, env_get(ENV_DOTMODE) );
    ldap_value_free(extra[5].vals);
 
    if ( force_forward ) {
@@ -758,17 +737,13 @@ char *s; char *r; int at;
    stralloc ra = {0};
    int      rv;
    
-     /* XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX 
-	  * DEBUG should be handled better, so that it will not be included
-	  * in maildelivery-failures mails */
-   init_debug(fdout, -1); /* here are no critical data handled 
-                           * so debuglevel is free */
-   
+   log_init(fdout, -1, 1);
+
    sig_hangupdefault(); /* clear the hup sig handler for the child */
 
    /* copy the whole email address before the @ gets destroyed */
    if (!stralloc_copys(&ra,r)) _exit(QLX_NOMEM);
-   debug(16, "mailaddr: %S\n", &ra);
+   log(16, "mailaddr: %S\n", &ra);
    /* end -- save the @ */
 
    r[at] = 0;
@@ -780,7 +755,7 @@ char *s; char *r; int at;
    rv = qldap_get(&ra, s, fdmess);
    switch( rv ) {
       case 0:
-		  debug(16, "LDAP lookup succeeded\n");
+		  log(16, "LDAP lookup succeeded\n");
       break;
 
       case 1:
@@ -788,7 +763,7 @@ char *s; char *r; int at;
          if ( qldap_localdelivery == 1 ) {
          /* do the address lookup local */
          /* this is the standart qmail lookup funktion */
-         	debug(4, "LDAP lookup failed using local db\n");
+         	log(4, "LDAP lookup failed using local db\n");
             nughde_get(r);
 
          /* the alias-user handling for LDAP only mode */
@@ -796,7 +771,7 @@ char *s; char *r; int at;
             struct passwd *pw;
             char num[FMT_ULONG];
 
-            debug(4, "LDAP lookup failed using alias (no local db)\n");
+            log(4, "LDAP lookup failed using alias (no local db)\n");
             pw = getpwnam(auto_usera);
             if (!pw) {
                _exit(QLX_NOALIAS);
@@ -821,12 +796,11 @@ char *s; char *r; int at;
       break;
 
       default:
-         debug(2, "warning: ldap lookup failed with %i\n", rv);
+         log(2, "warning: ldap lookup failed (%i)\n", rv);
          _exit(190 + rv);
       break;
    } /* end switch */
 
-   /* debug(16, "nughde: %S\n", &nughde); */
    x = nughde.s;
    xlen = nughde.len;
 
@@ -864,7 +838,7 @@ char *s; char *r; int at;
    args[9] = aliasempty;
    args[10] = 0;
 
-   debug(8, "executing 'qmail-local -- %s %s %s %s %s %s %s %s' under uid=%i, gid=%i\n",
+   log(8, "executing 'qmail-local -- %s %s %s %s %s %s %s %s' under uid=%i, gid=%i\n",
             args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9],
             uid, gid);
 
@@ -888,8 +862,8 @@ stralloc dtline = {0};
 
 void bouncexf(int fdmess)
 {
- char buf[1024];
  int match;
+ char buf[1024];
  substdio ss;
 
  if (seek_begin(fdmess) == -1) _exit(QLX_SYS);
@@ -913,6 +887,8 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
    int wstat;
    int child;
    int i;
+   char buf[256];
+   substdio ss;
    
    if (!stralloc_copys(&dtline, "Delivered-To: CLUSTERHOST ")) _exit(QLX_NOMEM);
    if (!stralloc_catb(&dtline, qldap_me.s, qldap_me.len - 1 )) _exit(QLX_NOMEM);
@@ -940,18 +916,20 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
 		  _exit(QLX_EXECHARD);
    }
    
-   debug(8, "Forwarding to %S at host %s from %s ", to, host, from);
+   log(8, "Forwarding to %S at host %s from %s ", to, host, from);
    close(pi[0]);
-   allwrite(write, pi[1], "F", 1);
-   allwrite(write, pi[1], from, str_len(from));
-   allwrite(write, pi[1], "",1);
-   allwrite(write, pi[1], "T",1);
-   allwrite(write, pi[1], to->s, to->len);
-   allwrite(write, pi[1], "", 1);
-   allwrite(write, pi[1], "", 1);
-   allwrite(write, pi[1], "H",1);
-   allwrite(write, pi[1], qldap_me.s, qldap_me.len);
-   allwrite(write, pi[1], "", 1);
+   substdio_fdbuf(&ss,write,pi[1],buf,sizeof(buf));
+   substdio_put(&ss, "F",1);
+   substdio_put(&ss, from, str_len(from));
+   substdio_put(&ss, "",1);
+   substdio_put(&ss, "T",1);
+   substdio_put(&ss, to->s, to->len);
+   substdio_put(&ss, "", 1);
+   substdio_put(&ss, "", 1);
+   substdio_put(&ss, "H",1);
+   substdio_put(&ss, qldap_me.s, qldap_me.len);
+   substdio_put(&ss, "", 1);
+   substdio_flush(&ss);
    close(pi[1]);
    wait_pid(&wstat,child);
    if (wait_crashed(wstat)) {
@@ -960,13 +938,13 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
       
    switch(i=wait_exitcode(wstat)) {
       case 0: 
-          debug(8, "was successful\n");
+          log(8, "was successful\n");
 		  _exit(0);
       case 31: case 61: 
-         debug(8, "failed (hard error %i)/n", i); 
+         log(8, "failed (hard error %i)/n", i); 
          _exit(240);
       default:
-		 debug(8, "failed (soft error %i)/n", i);
+		 log(8, "failed (soft error %i)/n", i);
          _exit(239);
    }
 }

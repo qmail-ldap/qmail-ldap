@@ -6,14 +6,14 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/04/20 20:35:02 $)
+RELEASE: current ($Date: 2001/09/03 22:11:09 $)
 
 TOC:
- INSTALL             how to install the patch
- CONFIG FILES        all about the extra config file
- DEFAULT LDAP FIELDS all about the fields in ldap
- EXAMPLES            example ldif and slapd.conf
- BUGS & PROBLEMS     How to help us helping you
+ INSTALL                        how to install the patch
+ CONFIG FILES                   all about the extra config file
+ DEFAULT LDAP FIELDS            all about the fields in ldap
+ EXAMPLES                       example ldif and slapd.conf
+ MAILINGLIST, BUGS & PROBLEMS   How to help us helping you
 
 TODO:
 
@@ -25,9 +25,7 @@ NEWS:
 
 IMPORTANT NEWS:
 
- new check algorithm (see QLDAPNEWS)
-
- new mailMessageStore/homedirectory handling (see QLDAPNEWS)
+ new logging facilities for qmail-lspawn and auth_*
 
 ================================================================================
 
@@ -175,9 +173,10 @@ CONFIG FILES:
 
 ~control/ldapserver
 
- Space separated list of Hostnames or IP addresses of LDAP servers
+ Space separated list of Hostnames or IP addresses of LDAP servers.
+ An additional port can be supplied with the host:port notation.
  Required
- Example: ldap.nrg4u.com ldap2.nrg4u.com
+ Example: ldap.nrg4u.com ldap2.nrg4u.com ldap3.nrg4u.com:1234
 
 ~control/ldapbasedn
 
@@ -718,10 +717,14 @@ to your slapd.conf:
 
 ================================================================================
 
-BUGS & PROBLEMS
+MAILINGLIST, BUGS & PROBLEMS
 
 There is a qmail-ldap specific mailinglist at qmail-ldap@argus.pipeline.ch.
 To subscribe just write a mail to qmail-ldap-subscribe@argus.pipeline.ch.
+
+The qmail-ldap mailinglist archive can be found at
+http://www.suares.com/qmail-ldap/archive
+
 
 If you have a problem with the patch or there seems to be a bug in the code
 please add some output of qmail-ldap with DEBUGLEVEL set to something higher

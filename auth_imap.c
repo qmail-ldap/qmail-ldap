@@ -19,6 +19,7 @@
 #include "auth_mod.h"
 #include "qmail-ldap.h"
 #include "qldap-debug.h"
+#include "substdio.h"
 #ifdef AUTOHOMEDIRMAKE
 #include "qldap-mdm.h"
 #endif
@@ -47,7 +48,7 @@ void auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	}
 
 	if (a && *a) {  /* Already a good guy */
-		debug(8, "auth_init: allready authenticated\n");
+		log(8, "auth_init: allready authenticated\n");
 		execvp( argv[1],argv + 1);
 		qldap_errno = AUTH_EXEC;
 		auth_error();
@@ -156,9 +157,9 @@ void auth_fail(int argc, char **argv, char *login)
 	char *t;
 	t = up;
 	
-	debug(2, "warning: auth_fail: user %s failed\n", login);
+	log(2, "warning: auth_fail: user %s failed\n", login);
 	if ( qldap_errno == AUTH_NOSUCH ) {
-		debug(4, "warning: auth_fail: user %s not found\n", login);
+		log(4, "warning: auth_fail: user %s not found\n", login);
 		if ( !env_unset("AUTHENTICATED") ) {
 			qldap_errno = ERRNO;
 			auth_error();
@@ -204,21 +205,21 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 	   			  char* home, char* homedirmake, char *md)
 /* starts the next auth_module, or what ever (argv ... ) */
 {
-	debug(16, "auth_success: login=%s, uid=%u, ",
+	log(16, "auth_success: login=%s, uid=%u, ",
 			login, uid);
-	debug(16, "gid=%u, home=%s, maildir=%s, aliasempty=%s, hdm=%s\n",
+	log(16, "gid=%u, home=%s, maildir=%s, aliasempty=%s, hdm=%s\n",
 			gid, home, md, argv[2], homedirmake );
 	
 	/* check the uid and the gid */
 	if ( UID_MIN > uid || uid > UID_MAX ) {
-		debug(2, "warning: auth_success: uid (%u) is to big or small (%u < uid < %u)\n",
+		log(2, "warning: auth_success: uid (%u) is to big or small (%u < uid < %u)\n",
 				uid, UID_MIN, UID_MAX);
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
 	
 	if ( GID_MIN > gid || gid > GID_MAX ) {
-		debug(2, "warning: auth_success: gid (%u) is to big or small (%u < gid < %u)\n",
+		log(2, "warning: auth_success: gid (%u) is to big or small (%u < gid < %u)\n",
 				gid, GID_MIN, GID_MAX);
 		qldap_errno = AUTH_ERROR;
 		auth_error();
@@ -229,13 +230,13 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
-	debug(32, "auth_success: setgid succeeded (%i)\n", gid);
+	log(32, "auth_success: setgid succeeded (%i)\n", gid);
 	/* ... then the user id */
 	if (prot_uid(uid) == -1) {
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
-	debug(32, "auth_success: setuid succeeded (%i)\n", uid);
+	log(32, "auth_success: setuid succeeded (%i)\n", uid);
 	
 	/* ... go to home dir and create it if needed */
 	if (chdir(home) == -1) {
@@ -247,7 +248,7 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 		if ( errno == error_noent && homedirmake && *homedirmake ) {
 			int ret;
 			
-			debug(8, "auth_success: makeing homedir with %s %s %s\n",
+			log(8, "auth_success: makeing homedir with %s %s %s\n",
 					homedirmake, home, (md && *md)? md: argv[2] );
 			if (md && *md) {
 				ret = make_homedir(home, md, homedirmake );
@@ -256,10 +257,10 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 			}
 			if (ret != 0 ) {
 				if ( qldap_errno == ERRNO ) {
-					debug(2, "warning: auth_success: dirmaker failed (%s)\n",
+					log(2, "warning: auth_success: dirmaker failed (%s)\n",
 							error_str(errno));
 				} else {
-					debug(2, "warning: auth_success: dirmaker failed (%s)\n",
+					log(2, "warning: auth_success: dirmaker failed (%s)\n",
 							qldap_errno == MAILDIR_CRASHED?	"program crashed":
 															"bad exit status");
 				}
@@ -267,12 +268,12 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 				auth_error();
 			}
 			if (chdir(home) == -1) {
-				debug(2, "warning: auth_success: chdir failed after dirmaker (%s)\n",
+				log(2, "warning: auth_success: chdir failed after dirmaker (%s)\n",
 						error_str(errno));
 				qldap_errno = MAILDIR_CORRUPT;
 				auth_error();
 			}
-			debug(32, "auth_success: homedir successfully made\n");
+			log(32, "auth_success: homedir successfully made\n");
 		} else {
 #endif
 		qldap_errno = MAILDIR_CORRUPT;
@@ -307,7 +308,7 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 		}
 	}
 	
-	debug(32, "auth_success: environment successfully set: USER=%s, HOME=%s, MAILDIR=%s\n",
+	log(32, "auth_success: environment successfully set: USER=%s, HOME=%s, MAILDIR=%s\n",
 			login, home, (md && *md)? md:"unset using aliasempty" ); 
 	
 	/* ... now check that we are realy not running as root */
@@ -336,7 +337,7 @@ void auth_error(void)
 	/* XXX under courier-imap it is not simple to give the correct failure back
 	 * XXX to the user, perhaps somebody has a good idea */
 
-	debug(2, "warning: auth_error: authorization failed (%s)\n",
+	log(2, "warning: auth_error: authorization failed (%s)\n",
 		   qldap_err_str(qldap_errno) );
 	if (! (env = env_get("ARGC") ) ) {
 		_exit(111);
@@ -400,33 +401,14 @@ static void get_ok(int fd, char *tag)
 	auth_error();
 }
 
-static int allwrite(op,fd,buf,len)
-/* copied from substdo.c */
-register int (*op)();
-register int fd;
-register char *buf;
-register int len;
-{
-	register int w;
-
-	while (len) {
-		w = op(fd,buf,len);
-		if (w == -1) {
-			if (errno == error_intr) continue;
-			return -1; /* note that some data may have been written */
-		}
-		if (w == 0) ; /* luser's fault */
-		buf += w;
-		len -= w;
-	}
-	return 0;
-}
-
 void auth_forward(int fd, char *login, char *passwd)
 /* for connection forwarding, makes the login part and returns after sending the
  * latest command immidiatly */
 {
 	char *tag = env_get("IMAPLOGINTAG");
+	substdio ss;
+	char buf[512];
+	
 	
 	if ( !( tag && *tag ) ) {
 		/* UH OH, no imap tag, how could that be ? */
@@ -435,12 +417,14 @@ void auth_forward(int fd, char *login, char *passwd)
 	}
 	
 	get_ok(fd, "*");
-	allwrite(write, fd, tag, str_len(tag) );
-	allwrite(write, fd, " login ", 7); 
-	allwrite(write, fd, login, str_len(login) ); 
-	allwrite(write, fd, " ", 1);
-	allwrite(write, fd, passwd, str_len(passwd) ); 
-	allwrite(write, fd, "\n\r",1);
+	substdio_fdbuf(&ss,write,fd,buf,sizeof(buf));
+	substdio_put(&ss, tag, str_len(tag) );
+	substdio_put(&ss, " login ", 7); 
+	substdio_put(&ss, login, str_len(login) ); 
+	substdio_put(&ss, " ", 1);
+	substdio_put(&ss, passwd, str_len(passwd) ); 
+	substdio_put(&ss, "\n\r",1);
+	substdio_flush(&ss);
 
 }
 

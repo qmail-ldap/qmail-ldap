@@ -970,6 +970,12 @@ int c;
 	   markdone(c,jo[d[c][delnum].j].id,d[c][delnum].mpos);
 	   --jo[d[c][delnum].j].numtodo;
 	   break;
+	 case 'L':
+	   log3("delivery ",strnum3,": log: ");
+	   logsafe(dline[c].s + 3);
+	   log1("\n");
+	   dline[c].len = 0;
+	   return;
 	 default:
 	   log3("delivery ",strnum3,": report mangled, will defer\n");
 	}

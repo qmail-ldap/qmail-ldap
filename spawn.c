@@ -28,6 +28,9 @@ struct delivery
   int wstat; /* if !pid: status of child */
   int fdout; /* pipe output, -1 if !pid; delays eof until after death */
   stralloc output;
+#ifdef DEBUG
+  stralloc log;
+#endif
  }
 ;
 
@@ -241,14 +244,78 @@ char **argv;
 	   continue; /* read error on a readable pipe? be serious */
 	 if (r == 0)
 	  {
-           char ch; ch = i; substdio_put(&ssout,&ch,1);
-           ch = i >> 8; substdio_put(&ssout,&ch,1);
+	   char ch; ch = i; substdio_put(&ssout,&ch,1);
+	   ch = i >> 8; substdio_put(&ssout,&ch,1);
 	   report(&ssout,d[i].wstat,d[i].output.s,d[i].output.len);
 	   substdio_put(&ssout,"",1);
 	   substdio_flush(&ssout);
 	   close(d[i].fdin); d[i].used = 0;
 	   continue;
 	  }
+#ifdef DEBUG
+#	 define IS_LOG(x) ( d[(x)].used & 0x8 )
+#	 define LOGON(x)  ( d[(x)].used |= 0x8 )
+#	 define LOGOFF(x) ( d[(x)].used = 1 )
+	 {
+	  int j;
+	  int b;
+	  int t;
+	  for ( j=0, b=0; j<r; j++ )
+	   {
+	    if ( inbuf[j] == 15 )
+	     {
+	      while (!stralloc_readyplus(&d[i].output,j-b)) sleep(10); /*XXX*/
+	      byte_copy(d[i].output.s + d[i].output.len,j-b,inbuf+b);
+	      d[i].output.len += j-b;
+	      LOGON(i);
+	      b = j+1;
+	     }
+	    else if ( inbuf[j] == 16 )
+	     {
+	      while (!stralloc_readyplus(&d[i].log,j-b)) sleep(10); /*XXX*/
+	      byte_copy(d[i].log.s + d[i].log.len,j-b,inbuf+b);
+	      d[i].log.len += j-b;
+	      b = j+1;
+	      LOGOFF(i);
+	      if (truncreport > 100)
+		if (d[i].log.len > truncreport)
+		 {
+		  char *truncmess = "\nError report too long, sorry.\n";
+		  d[i].log.len = truncreport - str_len(truncmess) - 3;
+		  stralloc_cats(&d[i].log,truncmess);
+		 }
+	      ch = i; substdio_put(&ssout,&ch,1);
+	      ch = i >> 8; substdio_put(&ssout,&ch,1);
+	      ch = 'L'; substdio_put(&ssout,&ch,1);
+	      for (t = 0;t < d[i].log.len; ++t) if (!d[i].log.s[t]) break;
+	      substdio_put(&ssout,d[i].log.s,t);
+	      substdio_put(&ssout,"",1);
+	      substdio_flush(&ssout);
+	      d[i].log.len = 0;
+	     }
+	   }
+	  if (b == r) continue;
+	  if ( IS_LOG(i) )
+	   {
+	    while (!stralloc_readyplus(&d[i].log,r-b)) sleep(10); /*XXX*/
+	    byte_copy(d[i].log.s + d[i].log.len,r-b,inbuf+b);
+	    d[i].log.len += r-b;
+	   }
+	  else
+	   {
+	    while (!stralloc_readyplus(&d[i].output,r-b)) sleep(10); /*XXX*/
+	    byte_copy(d[i].output.s + d[i].output.len,r-b,inbuf+b);
+	    d[i].output.len += r-b;
+	    if (truncreport > 100)
+	      if (d[i].output.len > truncreport)
+	       {
+		char *truncmess = "\nError report too long, sorry.\n";
+		d[i].output.len = truncreport - str_len(truncmess) - 3;
+		stralloc_cats(&d[i].output,truncmess);
+	       }
+	   }
+	 }
+#else
 	 while (!stralloc_readyplus(&d[i].output,r)) sleep(10); /*XXX*/
 	 byte_copy(d[i].output.s + d[i].output.len,r,inbuf);
 	 d[i].output.len += r;
@@ -259,6 +326,7 @@ char **argv;
 	     d[i].output.len = truncreport - str_len(truncmess) - 3;
 	     stralloc_cats(&d[i].output,truncmess);
 	    }
+#endif
 	}
     }
   }

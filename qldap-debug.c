@@ -1,149 +1,20 @@
 /* qldap-debug.c, jeker@n-r-g.com, best viewed with tabsize = 4 */
-#include "stralloc.h"
-#include "substdio.h"
-#include "fmt.h"
-#include "str.h"
+#include "output.h"
+#include "qldap-debug.h"
 #include "env.h"
 #include "scan.h"
 #include "readwrite.h"
 
 #include <stdarg.h>
 
-#ifdef DEBUG
-
-#define DEBUGLEN 1024
-char debugbuffer[DEBUGLEN];
-char num[FMT_ULONG];
-int  debfd;
-unsigned int dlevel = 0 ;
-substdio ssdeb;
-
-static const char nullString[] = "(null pointer)";
-static const char ioHexArray[16] =  {'0','1','2','3','4','5','6','7',
-                                     '8','9','a','b','c','d','e','f'};
-									 
-static int fmt_hexulong(char *s, unsigned long x) 
-/* s has to be allready allocated, use at least FMT_ULONG chars 
- * 40 chars should be enough for a 20 byte unsigned long (2^160) 
- * so djb's fmt_ulong would first fail ;-) */
-{
-	unsigned int i;
-	
-	for (i = 0; i < sizeof(unsigned long) * 2; i++) {
-		*s++ = (ioHexArray[(x >> (sizeof(unsigned long)*8 - 4)) & 0xf]);
-		x = x << 4;
-	}
-	return ( sizeof(unsigned long) * 2 );
-}
+#ifdef ENABLE_PROFILE
+#include <taia.h>
 #endif
 
-void debug(int level, char *fmt, ...)
-/* works like printf has the format options %i, ...
- * all flags (#, 0, -, ' ', +, ' ... ) are not supported if not special noted
- * Also not supported are all options for foating-point numbers 
- * (not needed in qmail)
- * Supported conversion specifiers: diouxcsSp%
- * diux are for integer (long) conversions
- * c is a single unsigned char
- * s is a zero terminated string
- * S is a stralloc object (should not be zero terminated (else the zero 
- *   will be printed))
- * p is the hex address of a generic pointer (void *)
- * % is the % sign */
-{
 #ifdef DEBUG
-	va_list args;
-	unsigned long ul;
-	long l;
-	char *s;
-	char *start;
-	char *cur;
-	void *p;
-	unsigned char c;
-	stralloc *sa;
 
-	if ( ! ( dlevel & (unsigned int) level ) ) return;
-	va_start(args,fmt);
-
-	start = fmt;
-	cur = fmt;
-	while (*cur) {
-		if (*cur == '%') {
-			if ( substdio_put(&ssdeb, start, cur-start) == -1 ) return;
-			cur++;
-			switch (*cur) {
-				case 'd':
-				case 'i':
-					l = va_arg(args, long);
-					if ( l < 0 ) { /* negativ number, d and i are signed */
-						l *= -1;
-						if ( substdio_put(&ssdeb, "-", 1) == -1 ) return;
-					}
-					ul = (unsigned long) l;
-					if ( substdio_put(&ssdeb, num, fmt_ulong(num, ul) ) ) 
-						return;
-					break;
-				case 'u':
-					ul = va_arg(args, unsigned long);
-					if ( substdio_put(&ssdeb, num, fmt_ulong(num, ul) ) ) 
-						return;
-					break;
-				case 's':
-					s = va_arg(args, char *);
-					if ( !s ) {
-						 if ( substdio_put(&ssdeb, nullString, 
-									 		str_len(nullString) ) ) 
-							 return;
-						 break;
-					}
-					if ( substdio_put(&ssdeb, s, str_len(s) ) ) return;
-					break;
-				case 'S':
-					sa = va_arg(args, stralloc *);
-					if ( !sa ) {
-						if ( substdio_put(&ssdeb, nullString, 
-											str_len(nullString) ) )
-							return;
-						break;
-					}
-					if ( substdio_put(&ssdeb, sa->s, sa->len ) ) return;
-					break;
-				case '%':
-					if ( substdio_put(&ssdeb, "%", 1) == -1 ) return;
-					break;
-				case 'p':
-					p = va_arg(args, void *);
-					ul = (unsigned long) p;
-					if ( substdio_put(&ssdeb, "0x", 2) ) return;
-					if ( substdio_put(&ssdeb, num, fmt_hexulong(num, ul) ) ) 
-						return;
-					break;
-				case 'x':
-					ul = va_arg(args, unsigned long);
-					if ( substdio_put(&ssdeb, "0x", 2) ) return;
-					if ( substdio_put(&ssdeb, num, fmt_hexulong(num, ul) ) ) 
-						return;
-					break;
-				case 'c':
-					c = (unsigned char) va_arg(args, unsigned int);
-					substdio_BPUTC(&ssdeb, c);
-					break;
-			}
-			start = ++cur; 
-		} else {
-			++cur;
-		}
-	}
-	if ( substdio_put(&ssdeb, start, cur-start) == -1 ) return;
-	if ( substdio_flush(&ssdeb) == -1 ) return;
-	va_end(args);
-	
-#endif /* DEBUG */
-}
-
-void init_debug(int fd, unsigned long levelmask)
 /* 
- * Known DEBUGLEVELs: 
+ * Known LOGLEVELs: 
  *  1 = Error, only errors are reported (not verbose)
  *  2 = Warning, errors and warnings are reported (normaly not verbose)
  *  4 = Info, print some information (login name and success or fail)
@@ -156,18 +27,99 @@ void init_debug(int fd, unsigned long levelmask)
  *      so use it with care 
  *1024= profiling output (if compiled with profile support)
  */
+
+#define LOGLEN 256
+static int addLOG;
+static unsigned long loglevel;
+substdio sslog;
+char logbuffer[LOGLEN];
+void log_init(int fd, unsigned long mask, int via_spawn)
+/* 
+ * Known LOGLEVELs: 
+ */
 {
-#ifdef DEBUG
-	char *a = env_get("DEBUGLEVEL");
+	char *a = env_get("LOGLEVEL");
 	
-	dlevel = 0;
+	loglevel = 0;
+	addLOG = via_spawn;
 	if ( a && *a ) {
-		scan_ulong(a, &dlevel);
+		scan_ulong(a, &loglevel);
+	} else if ((a = env_get("DEBUGLEVEL")) && *a ) {
+		scan_ulong(a, &loglevel);
 	}
-	dlevel &= levelmask;
-	
-	substdio_fdbuf(&ssdeb, write, fd, debugbuffer, sizeof(debugbuffer) );
-	
-#endif /* DEBUG */
+	loglevel &= mask;
+
+	substdio_fdbuf(&sslog, write, fd, logbuffer, sizeof(logbuffer) );
+	log(1, "LOGLEVEL set to %i\n", loglevel);
 }
+
+void log(unsigned long level, char *fmt, ...)
+/* see va_output (output.c) */
+{
+	va_list ap;
+	char ch;
+
+	va_start(ap, fmt);
+	if ( ! ( loglevel & level ) ) return;
+	ch = 15;
+	if ( addLOG ) if ( substdio_put(&sslog, &ch, 1) ) return;
+	va_output(&sslog, fmt, ap);
+	va_end(ap);
+	ch = 16;
+	if ( addLOG ) if ( substdio_put(&sslog, &ch, 1) ) return;
+	if ( substdio_flush(&sslog) == -1 ) return;
+}
+
+/* use logstart, logadd and logend with care, if there is no corresponding
+   start or end starnge messages will be loged or some important messages 
+   will be lost */
+void logstart(unsigned long level, char *fmt, ...)
+{
+	va_list ap;
+	char ch;
+
+	va_start(ap, fmt);
+	if ( ! ( loglevel & level ) ) return;
+	ch = 15;
+	if ( addLOG ) if ( substdio_put(&sslog, &ch, 1) ) return;
+	va_output(&sslog, fmt, ap);
+	va_end(ap);
+}
+
+void logadd(unsigned long level, char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	if ( ! ( loglevel & level ) ) return;
+	va_output(&sslog, fmt, ap);
+	va_end(ap);
+}
+
+void logend(unsigned long level, char *fmt, ...)
+{
+	va_list ap;
+	char ch;
+
+	va_start(ap, fmt);
+	if ( ! ( loglevel & level ) ) return;
+	va_output(&sslog, fmt, ap);
+	va_end(ap);
+	ch = 16;
+	if ( addLOG ) if ( substdio_put(&sslog, &ch, 1) ) return;
+	if ( substdio_flush(&sslog) == -1 ) return;
+}
+
+void profile(char *s)
+{
+#ifdef ENABLE_PROFILE
+	char buf[TAIA_PACK];
+	struct taia t;
+
+	taia_now(&t);
+	taia_pack(buf,&t);
+	log(LOG_PROFILE, "PROFILE: %s @%s\n", s, buf); 
+#endif
+}
+#endif
 
