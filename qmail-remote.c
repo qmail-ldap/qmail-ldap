@@ -390,7 +390,7 @@ char *append;
   out(append);
   out(".\n");
 #ifdef DATA_COMPRESS
-  if (wantcomp == 1) {
+  if (wantcomp == 2) {
 	  r = 100 - (int)(100.0*stream.total_out/stream.total_in);
 	  if (r < 0) {
 	    num[0] = '-'; r*= -1;
@@ -626,8 +626,10 @@ void smtp()
  
   blast();
 #ifdef DATA_COMPRESS
-  if (wantcomp == 1)
+  if (wantcomp == 1) {
     compression_done();
+    wantcomp = 2;
+  }
 #endif
   code = smtpcode();
   flagcritical = 0;
