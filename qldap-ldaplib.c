@@ -42,7 +42,7 @@ static stralloc qldap_password = {0};		/* the ldap login password */
 static stralloc qldap_uid = {0};		/* UID if not specified in db */
 static stralloc qldap_gid = {0};		/* UID if not specified in db */
 static stralloc qldap_messagestore = {0}; 	/* prefix for maildirpaths */
-static long	qldap_timeout = LDAP_TIMEOUT;	/* default timeout is 30 secs */
+static long	qldap_timeout = QLDAP_TIMEOUT;	/* default timeout is 30 secs */
 
 /* char replacement */
 static unsigned int replace(char *s, register unsigned int len, char f, char r)

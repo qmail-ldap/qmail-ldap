@@ -34,7 +34,7 @@
  * It's up to the reader to write such a simple script */
 
 /* Default ldap search timeout. In seconds */
-#define	LDAP_TIMEOUT		30
+#define	QLDAP_TIMEOUT		30
 
 /*********************************************************************
         ldap variables used in qmail-lspawn and checkpassword
