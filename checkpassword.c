@@ -90,6 +90,12 @@ void main(int argc, char **argv)
 
 	auth_init(argc, argv, &login, &authdata);
 	debug(256, "auth_init: login=%s, authdata=%s\n", login.s, authdata.s);
+
+	if ( authdata.len <= 1 ) {
+		debug(1, "alert: null password.\n");
+		qldap_errno = AUTH_NEEDED;
+		auth_fail(argc, argv, login.s);
+	}
 	
 	if ( init_ldap(&locald, &cluster, &rebind, &homemaker, 0, 0, 0) == -1 ) {
 		debug(1, "alert: init_ldap failed.\n");
