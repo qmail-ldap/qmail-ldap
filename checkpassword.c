@@ -129,8 +129,9 @@ check_ldap(stralloc *login, stralloc *authdata,
 				auth_error(ERRNO);
 		}
 		if (size != 0 || count != 0) {
+			if (!stralloc_copys(&ld, "")) auth_error(ERRNO);
 			if (size != 0) {
-				if (!stralloc_copyb(&ld, num,
+				if (!stralloc_catb(&ld, num,
 					    fmt_ulong(num, size)))
 					auth_error(ERRNO);
 				if (!stralloc_append(&ld, "S"))
@@ -140,7 +141,7 @@ check_ldap(stralloc *login, stralloc *authdata,
 				if (size != 0)
 					if (!stralloc_append(&ld, ","))
 						auth_error(ERRNO);
-				if (!stralloc_copyb(&ld, num,
+				if (!stralloc_catb(&ld, num,
 					    fmt_ulong(num, count)))
 					auth_error(ERRNO);
 				if (!stralloc_append(&ld, "C"))
