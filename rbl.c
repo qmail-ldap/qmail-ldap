@@ -163,20 +163,20 @@ int rblinit(void)
       rbldata.s[i] = '\0';
       x[++j] = rbldata.s + i + 1;
     } else if (rbldata.s[i] == '\0')
-      if (j == 3) {
-	if (++k >= numrbl) break;
-	x = (char**)&rbl[k];
-	x[0] = rbldata.s + i + 1;
-	j = 0;
-      } else {
-	logline(2,"parse error in rbllist");
-	return -1;
-      }
-    }
-    if (k != numrbl) {
+    if (j == 3) {
+      if (++k >= numrbl) break;
+      x = (char**)&rbl[k];
+      x[0] = rbldata.s + i + 1;
+      j = 0;
+    } else {
       logline(2,"parse error in rbllist");
       return -1;
     }
+  }
+  if (k != numrbl) {
+    logline(2,"parse error in rbllist");
+    return -1;
+  }
 
   on = control_readint(&rblonlyheader,"control/rblonlyheader",0);
   if (on == -1) return on;
