@@ -374,6 +374,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 		if ( vals[0][0] != '/' ) {
 			/* local path, use ldapmessagestore as prefix or return a error */
 			if ( !qldap_messagestore.s || qldap_messagestore.s[0] != '/' ) {
+				debug(64, "non absolute path but no ctrl/ldapmessagestore!\n");
 				qldap_errno = LDAP_NEEDED;
 				return -1;
 			}
@@ -384,17 +385,18 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 				s = 0;
 			}
 			i = qldap_messagestore.len + s;
-			i += strlen( vals[0] ); /* don't have to add 1 because qldap_mms 
+			i += str_len( vals[0] ); /* don't have to add 1 because qldap_mms 
 									 * is 0-terminated (so 1 to long) */
 			if ( (info->mms = alloc( i ) ) == 0 ) {
 				qldap_errno = LDAP_ERRNO;
 				return -1;
 			}
 			str_copy( info->mms, qldap_messagestore.s );
-			if ( s ) str_copy( info->mms, "/" );
-			str_copy( info->mms, vals[0] );
+			if ( s ) str_copy( info->mms + str_len(info->mms), "/" );
+			/* str_cat done with str_copy because djb has no str_cat :-( */
+			str_copy( info->mms + str_len(info->mms), vals[0] );
 		} else {
-			i = strlen( vals[0] ) + 1;
+			i = str_len( vals[0] ) + 1;
 			if ( (info->mms = alloc( i ) ) == 0 ) {
 				qldap_errno = LDAP_ERRNO;
 				return -1;

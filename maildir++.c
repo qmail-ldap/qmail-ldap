@@ -544,9 +544,9 @@ void get_quota(char *quota, long int *size, int *count)
 			case 'C':
 				*count = i;
 				break;
-			default: /* perhaps we should ignore the rest ... */
-				strerr_die1x(100, 
-					"The quota specification has the wrong format. (QUOTA #)");
+			default: /* defaults to size */
+				*size = i;
+				break;
 		}
 	}
 }

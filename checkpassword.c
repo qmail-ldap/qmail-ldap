@@ -309,15 +309,15 @@ static int cmp_passwd(char *clear, char *encrypted)
 		} else if (!str_diffn("{MD4}", encrypted, 5) ) {
 			/* MD4 */
 			shift = 5;
-			MD4DataBase64(clear, strlen(clear), hashed, sizeof(hashed));
+			MD4DataBase64(clear, str_len(clear), hashed, sizeof(hashed));
 		} else if (!str_diffn("{MD5}", encrypted, 5) ) {
 			/* MD5 */
 			shift = 5;
-			MD5DataBase64(clear, strlen(clear), hashed, sizeof(hashed));
+			MD5DataBase64(clear, str_len(clear), hashed, sizeof(hashed));
 		} else if (!str_diffn("{NS-MTA-MD5}", encrypted, 12) ) {
 			/* NS-MTA-MD5 */
 			shift = 12;
-			if (!strlen(encrypted) == 76) {
+			if (!str_len(encrypted) == 76) {
 				qldap_errno = ILL_AUTH;
 				return -1;
 			} /* boom */
@@ -328,11 +328,11 @@ static int cmp_passwd(char *clear, char *encrypted)
 		} else if (!str_diffn("{SHA}", encrypted, 5) ) {
 			/* SHA */
 			shift = 5;
-			SHA1DataBase64(clear, strlen(clear), hashed, sizeof(hashed));
+			SHA1DataBase64(clear, str_len(clear), hashed, sizeof(hashed));
 		} else  if (!str_diffn("{RMD160}", encrypted, 8) ) {
 			/* RMD160 */
 			shift = 8;
-			RMD160DataBase64(clear, strlen(clear), hashed, sizeof(hashed));
+			RMD160DataBase64(clear, str_len(clear), hashed, sizeof(hashed));
 		} else {
 			/* unknown hash function detected */ 
 			shift = 0;
