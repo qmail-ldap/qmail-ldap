@@ -51,7 +51,7 @@ int flagcolon;
  
   cm->num = 0;
   for (j = 0;j < len;++j) if (!s[j]) ++cm->num;
-  if (cm->num <= 0) return 0;
+  if (cm->num < 0) return 0;
  
   h = 64;
   while (h && (h < cm->num)) h += h;
