@@ -1,4 +1,4 @@
-QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
+/MAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998,1999,2000,2001,2002 Internet Business Solutions Ltd.
 
@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/10/30 10:13:45 $)
+RELEASE: current ($Date: 2003/01/04 16:57:17 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -443,6 +443,14 @@ CONFIG FILES:
        nonexistant user from an invalid address as otherwise postmaster
        will get lots of double bounces.
 
+~control/badmailfrom-unknown
+
+ This file contains blocked addresses for server without a PTR RR.
+ This is useful to stop some spammer that use fake hotmail or yahoo
+ addresses but mail from home-pc without a PTR RR dns record.
+ Example: @hotmail.com
+ Note: Syntax as in ~control/badmailfrom.
+
 ~control/bouncemaxbytes
 
  This file contains the maximal number of bytes to be included in a bounce
@@ -548,17 +556,36 @@ BLOCKRELAYPROBE
 
 LOGLEVEL
 
- Level of log verbosity in qmail-smtpd
+ Level of log verbosity in qmail-smtpd.
  Default: 0 (NULL)
  Affects: qmail-smtpd
  Example: 3
- Note: integer value from 0-3, everything will be logged through tcpserver
+ Levels:
+     0 = no logging
+     1 = fatal errors
+     2 = connection setup and warnings
+     3 = verbose
+ Note: integer value, everything will be logged through tcpserver
+
+POP3_LOGLEVEL
+
+ Level of log verbosity in qmail-pop3d.
+ Default: 0 (NULL)
+ Affects: qmail-pop3d
+ Example: 3
+ Levels:
+     0 = no logging
+     1 = fatal errors
+     2 = login/logout accounting
+     3 = session errors
+     4 = verbose
+ Note: integer value, everything will be logged through tcpserver
 
 LOGLEVEL or DEBUGLEVEL
 
  Level of log verbosity in qmail-lspawn, auth_*
  Default: 0 (NULL)
- LEVELS:
+ Levels:
     LOGLEVEL=1   -> Errors
     LOGLEVEL=2   -> Warnings
     LOGLEVEL=4   -> Info
@@ -745,6 +772,12 @@ LDAP_REPLYTEXT (default: "mailReplyText")
        To use multiline text in ldap it has to be base64 in ldif.
        GUI tools like GQ are doing this correct, ldapadd can handle base64
        inputs or a path to a file containing the reply text (man ldapadd).
+ Note2: It is now possible to add a header section to the reply.
+       If the replytext starts with a %HEADER% line all lines following until
+       the next empty line (\n\n) are treated as header. The fields From: To:
+       Date: and Precedence: are ignored and set by qmail-reply. If %SUBJECT%
+       is used in the Subject field it is expanded with the Subject of the sent
+       mail.
 
 
 LDAP_DOTMODE (default: "qmailDotMode")
