@@ -12,6 +12,7 @@
 # This schema depends on:
 #	- core.schema
 #	- cosine.schema
+#	- nis.schema
 #
 
 # Attribute Type Definitions
