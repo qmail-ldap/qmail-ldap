@@ -24,8 +24,8 @@ int flagdtline = 1; char *dtline;
 
 char outbuf[SUBSTDIO_OUTSIZE];
 char inbuf[SUBSTDIO_INSIZE];
-substdio ssout = SUBSTDIO_FDBUF(write,1,outbuf,sizeof outbuf);
-substdio ssin = SUBSTDIO_FDBUF(read,0,inbuf,sizeof inbuf);
+substdio ssout = SUBSTDIO_FDBUF(subwrite,1,outbuf,sizeof outbuf);
+substdio ssin = SUBSTDIO_FDBUF(subread,0,inbuf,sizeof inbuf);
 
 int main(argc,argv)
 int argc;

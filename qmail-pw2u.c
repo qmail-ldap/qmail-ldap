@@ -282,7 +282,7 @@ char **argv;
     if (errno != error_noent) die_control();
   }
   else {
-    substdio_fdbuf(&ss,read,fd,ssbuf,sizeof(ssbuf));
+    substdio_fdbuf(&ss,subread,fd,ssbuf,sizeof(ssbuf));
 
     if (!constmap_init(&mapuser,allusers.s,allusers.len,1)) die_nomem();
 
@@ -300,7 +300,7 @@ char **argv;
     if (errno != error_noent) die_control();
   }
   else {
-    substdio_fdbuf(&ss,read,fd,ssbuf,sizeof(ssbuf));
+    substdio_fdbuf(&ss,subread,fd,ssbuf,sizeof(ssbuf));
     for (;;) {
       if (getln(&ss,&line,&match,'\n') == -1) die_read();
       if (substdio_put(subfdout,line.s,line.len) == -1) die_write();

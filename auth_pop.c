@@ -50,7 +50,8 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	
 	for (uplen = 0;;) {
 		do {
-			i = read(3, auth_up + uplen, sizeof(auth_up) - uplen);
+			i = subread(3, auth_up + uplen,
+			    sizeof(auth_up) - uplen);
 		} while (i == -1 && errno == EINTR);
 		if (i == -1)
 			auth_error(ERRNO);
@@ -184,7 +185,7 @@ void auth_forward(int fd, char *login, char *passwd)
 	char buf[512];
 	substdio ss;
 
-	substdio_fdbuf(&ss,write,fd,buf,sizeof(buf));
+	substdio_fdbuf(&ss,subwrite,fd,buf,sizeof(buf));
 	get_ok(fd);
 	substdio_puts(&ss, "user "); 
 	substdio_puts(&ss, login);

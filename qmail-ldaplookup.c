@@ -180,6 +180,7 @@ int main(int argc, char **argv)
 	if (passwd == 0 || mode != uid || qldap_need_rebind() != 0)
 		attrs[sizeof(attrs)/4 - 2] = 0; /* password */
 	done = 0;
+	f = 0;
 	do {
 		switch (mode) {
 		case mail:

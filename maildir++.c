@@ -59,7 +59,7 @@ quota_add(int fd, unsigned long size, unsigned long count)
 	seek_end(fd);
 	pos = seek_cur(fd); /* again savety */
 
-	substdio_fdbuf(&ss,write,fd,writebuf,sizeof(writebuf));
+	substdio_fdbuf(&ss,subwrite,fd,writebuf,sizeof(writebuf));
 
 	/* create string of the form '1234 12\n' and add it to the quota */
 	if (substdio_bput(&ss, num, fmt_ulong(num, size) ) == -1)
@@ -98,7 +98,7 @@ quota_rm(int fd, unsigned long size, unsigned long count)
 	seek_end(fd);
 	pos = seek_cur(fd); /* again savety */
 
-	substdio_fdbuf(&ss,write,fd,writebuf,sizeof(writebuf));
+	substdio_fdbuf(&ss,subwrite,fd,writebuf,sizeof(writebuf));
 
 	/* create string of the form '-1232 -12\n' and add it to the quota */
 	if (substdio_bput(&ss, "-", 1) == -1)
@@ -461,7 +461,7 @@ quota_writesize(quota_t *q, int *fd, time_t maxtime)
 		goto fail;
 	}
 
-	substdio_fdbuf(&ss,write,*fd,writebuf,sizeof(writebuf));
+	substdio_fdbuf(&ss,subwrite,*fd,writebuf,sizeof(writebuf));
 	
 	if (q->quota_size != 0) {
 		if (substdio_bput(&ss, num, fmt_ulong(num, q->quota_size))

@@ -7,6 +7,7 @@
 #include "passwd.h"
 #include "qldap-debug.h"
 #include "qldap-errno.h"
+#include "readwrite.h"
 #include "substdio.h"
 
 #include "checkpassword.h"
@@ -110,7 +111,7 @@ get_local_maildir(stralloc *home, stralloc *maildir)
 		return ERRNO;
 	}
 
-	substdio_fdbuf(&ss, read, fd, buf, sizeof(buf));
+	substdio_fdbuf(&ss, subread, fd, buf, sizeof(buf));
 	while (1) {
 		if (getln(&ss, maildir, &match, '\n') != 0) goto tryclose;
 		if (!match && !maildir->len) break;

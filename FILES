@@ -513,5 +513,6 @@ rbl.c
 rbl.h
 read-ctrl.c
 read-ctrl.h
+readwrite.c
 smtpcall.c
 smtpcall.h

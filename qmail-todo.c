@@ -161,8 +161,8 @@ int fdin = -1;
 
 void comm_init(void)
 {
- substdio_fdbuf(&sstoqc,write,2,sstoqcbuf,sizeof(sstoqcbuf));
- substdio_fdbuf(&ssfromqc,read,3,ssfromqcbuf,sizeof(ssfromqcbuf));
+ substdio_fdbuf(&sstoqc,subwrite,2,sstoqcbuf,sizeof(sstoqcbuf));
+ substdio_fdbuf(&ssfromqc,subread,3,ssfromqcbuf,sizeof(ssfromqcbuf));
 
  fdout = 1; /* stdout */
  fdin = 0;  /* stdin */
@@ -487,8 +487,8 @@ void todo_do(fd_set *rfds)
 
  for (c = 0;c < CHANNELS;++c) flagchan[c] = 0;
 
- substdio_fdbuf(&ss,read,fd,todobuf,sizeof(todobuf));
- substdio_fdbuf(&ssinfo,write,fdinfo,todobufinfo,sizeof(todobufinfo));
+ substdio_fdbuf(&ss,subread,fd,todobuf,sizeof(todobuf));
+ substdio_fdbuf(&ssinfo,subwrite,fdinfo,todobufinfo,sizeof(todobufinfo));
 
  uid = 0;
  pid = 0;
@@ -532,8 +532,8 @@ void todo_do(fd_set *rfds)
 	 fdchan[c] = open_excl(fn.s);
 	 if (fdchan[c] == -1)
           { log3("warning: qmail-todo: unable to create ",fn.s,"\n"); goto fail; }
-	 substdio_fdbuf(&sschan[c]
-	   ,write,fdchan[c],todobufchan[c],sizeof(todobufchan[c]));
+	 substdio_fdbuf(&sschan[c],
+	     subwrite,fdchan[c],todobufchan[c],sizeof(todobufchan[c]));
 	 flagchan[c] = 1;
 	}
        if (substdio_bput(&sschan[c],rwline.s,rwline.len) == -1)

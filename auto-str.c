@@ -1,9 +1,9 @@
-#include "substdio.h"
 #include "readwrite.h"
+#include "substdio.h"
 #include "exit.h"
 
 char buf1[256];
-substdio ss1 = SUBSTDIO_FDBUF(write,1,buf1,sizeof(buf1));
+substdio ss1 = SUBSTDIO_FDBUF(subwrite,1,buf1,sizeof(buf1));
 
 void puts(s)
 char *s;

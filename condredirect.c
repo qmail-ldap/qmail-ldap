@@ -24,7 +24,7 @@ int mywrite(fd,buf,len) int fd; char *buf; int len;
 
 char inbuf[SUBSTDIO_INSIZE];
 char outbuf[1];
-substdio ssin = SUBSTDIO_FDBUF(read,0,inbuf,sizeof inbuf);
+substdio ssin = SUBSTDIO_FDBUF(subread,0,inbuf,sizeof inbuf);
 substdio ssout = SUBSTDIO_FDBUF(mywrite,-1,outbuf,sizeof outbuf);
 
 char num[FMT_ULONG];

@@ -131,7 +131,7 @@ char *pass;
       _exit(1);
   }
   close(pi[0]);
-  substdio_fdbuf(&ssup,write,pi[1],upbuf,sizeof upbuf);
+  substdio_fdbuf(&ssup,subwrite,pi[1],upbuf,sizeof upbuf);
   if (substdio_put(&ssup,user,userlen) == -1) die_write();
   if (substdio_put(&ssup,pass,str_len(pass) + 1) == -1) die_write();
   if (substdio_puts(&ssup,"<") == -1) die_write();

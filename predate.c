@@ -57,7 +57,7 @@ char **argv;
       strerr_die4sys(111,FATAL,"unable to run ",argv[1],": ");
   }
   close(pi[0]);
-  substdio_fdbuf(&ss,write,pi[1],outbuf,sizeof(outbuf));
+  substdio_fdbuf(&ss,subwrite,pi[1],outbuf,sizeof(outbuf));
 
   time(&now);
 

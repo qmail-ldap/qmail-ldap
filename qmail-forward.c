@@ -6,6 +6,7 @@
 #include "getln.h"
 #include "now.h"
 #include "qmail.h"
+#include "readwrite.h"
 #include "seek.h"
 #include "str.h"
 #include "stralloc.h"
@@ -58,7 +59,7 @@ void bouncexf(void)
 	int match;
 
 	if (seek_begin(0) == -1) temp_rewind();
-	substdio_fdbuf(&ss, read, 0, buf, sizeof(buf));
+	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
 	for (;;)
 	{
 		if (getln(&ss, &messline, &match, '\n') != 0) temp_read();
@@ -115,7 +116,7 @@ main (int argc, char **argv)
 	bouncexf();
 	
 	if (seek_begin(0) == -1) temp_rewind();
-	substdio_fdbuf(&ss, read, 0, buf, sizeof(buf));
+	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
 
 	if (qmail_remote(&qqt, remote) == -1) temp_fork();
 	qp = qmail_qp(&qqt);

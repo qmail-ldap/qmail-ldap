@@ -84,7 +84,7 @@ int main()
   fd = open_read("users/assign");
   if (fd == -1) die_opena();
 
-  substdio_fdbuf(&ssin,read,fd,inbuf,sizeof(inbuf));
+  substdio_fdbuf(&ssin,subread,fd,inbuf,sizeof(inbuf));
 
   fdtemp = open_trunc("users/cdb.tmp");
   if (fdtemp == -1) die_opent();

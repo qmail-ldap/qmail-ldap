@@ -191,7 +191,7 @@ bouncefx(void)
 	int		match;
 	
 	if (seek_begin(0) == -1) temp_rewind();
-	substdio_fdbuf(&ss, read, 0, buf, sizeof(buf));
+	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
 	for (;;)
 	{
 		if (getln(&ss, &line, &match, '\n') != 0) temp_read();
@@ -222,7 +222,7 @@ blast(void)
 	int match;
 
 	if (seek_begin(0) == -1) temp_rewind();
-	substdio_fdbuf(&ss, read, 0, buf, sizeof(buf));
+	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
 	
 	if (qmail_open(&qqt) == -1) temp_fork();
 	qp = qmail_qp(&qqt);

@@ -20,6 +20,7 @@
 #include "now.h"
 #include "open.h"
 #include "qmail-ldap.h"
+#include "readwrite.h"
 #include "seek.h"
 #include "sig.h"
 #include "str.h"
@@ -289,7 +290,7 @@ write_maildir(void)
 	if (fd == -1)
 		strerr_die2sys(111, FATAL, "Unable to open tmp file: ");
 
-	substdio_fdbuf(&ssout, write, fd, buf, sizeof(buf));
+	substdio_fdbuf(&ssout, subwrite, fd, buf, sizeof(buf));
 	if (writemail(&ssout, starttime) == 0) goto fail;
 	if (substdio_flush(&ssout) == -1) goto fail;
 
@@ -328,7 +329,7 @@ check_mailfile(char* fn)
 	fd = open_read(fn);
 	if (seek_begin(fd) == -1) temp_rewind();
 
-	substdio_fdbuf(&ss, read, fd, buf, sizeof(buf));
+	substdio_fdbuf(&ss, subread, fd, buf, sizeof(buf));
 	do {
 		if(getln(&ss, &temp, &match, '\n') != 0) {
 			strerr_warn2(WARN, "Unable to read message: ",
@@ -370,7 +371,7 @@ write_mailfile(char* fn)
 	seek_end(fd);
 	pos = seek_cur(fd);
 
-	substdio_fdbuf(&ssout, write, fd, buf, sizeof(buf));
+	substdio_fdbuf(&ssout, subwrite, fd, buf, sizeof(buf));
 	if (substdio_puts(&ssout, "From MAILER-DAEMON ")) goto writeerrs;
 	if (substdio_puts(&ssout, myctime(starttime))) goto writeerrs;
 	if (writemail(&ssout, starttime) == 0) goto writeerrs;

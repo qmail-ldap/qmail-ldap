@@ -61,7 +61,7 @@ const char *fn;
  fd = open_read(fn);
  if (fd == -1) { if (errno == error_noent) return 0; return -1; }
  
- substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ss,subread,fd,inbuf,sizeof(inbuf));
 
  if (getln(&ss,sa,&match,'\n') == -1) { close(fd); return -1; }
 
@@ -129,7 +129,7 @@ int flagme;
    return -1;
   }
 
- substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ss,subread,fd,inbuf,sizeof(inbuf));
 
  for (;;)
   {
@@ -163,7 +163,7 @@ const char *fn;
    return -1;
   }
 
- substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ss,subread,fd,inbuf,sizeof(inbuf));
 
  for (;;)
   {

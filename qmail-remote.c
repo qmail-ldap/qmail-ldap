@@ -295,7 +295,7 @@ int safewrite(fd,buf,len) int fd; char *buf; int len;
 }
 
 char inbuf[1500];
-substdio ssin = SUBSTDIO_FDBUF(read,0,inbuf,sizeof inbuf);
+substdio ssin = SUBSTDIO_FDBUF(subread,0,inbuf,sizeof inbuf);
 char smtptobuf[1500];
 substdio smtpto = SUBSTDIO_FDBUF(safewrite,-1,smtptobuf,sizeof smtptobuf);
 char smtpfrombuf[128];

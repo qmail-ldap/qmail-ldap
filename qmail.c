@@ -57,7 +57,7 @@ struct qmail *qq;
 
   qq->fdm = pim[1]; close(pim[0]);
   qq->fde = pie[1]; close(pie[0]);
-  substdio_fdbuf(&qq->ss,write,qq->fdm,qq->buf,sizeof(qq->buf));
+  substdio_fdbuf(&qq->ss,subwrite,qq->fdm,qq->buf,sizeof(qq->buf));
   qq->flagerr = 0;
   return 0;
 }
@@ -94,7 +94,7 @@ char *host;
 
   qq->fdm = pim[1]; close(pim[0]);
   qq->fde = pie[1]; close(pie[0]);
-  substdio_fdbuf(&qq->ss,write,qq->fdm,qq->buf,sizeof(qq->buf));
+  substdio_fdbuf(&qq->ss,subwrite,qq->fdm,qq->buf,sizeof(qq->buf));
   qq->flagerr = 0;
   return 0;
 }
@@ -123,7 +123,7 @@ void qmail_from(qq,s) struct qmail *qq; const char *s;
 {
   if (substdio_flush(&qq->ss) == -1) qq->flagerr = 1;
   close(qq->fdm);
-  substdio_fdbuf(&qq->ss,write,qq->fde,qq->buf,sizeof(qq->buf));
+  substdio_fdbuf(&qq->ss,subwrite,qq->fde,qq->buf,sizeof(qq->buf));
   qmail_put(qq,"F",1);
   qmail_puts(qq,s);
   qmail_put(qq,"",1);

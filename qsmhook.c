@@ -123,8 +123,8 @@ char **argv;
   }
  close(pi[0]);
 
- substdio_fdbuf(&ssout,write,pi[1],outbuf,sizeof(outbuf));
- substdio_fdbuf(&ssin,read,0,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ssout,subwrite,pi[1],outbuf,sizeof(outbuf));
+ substdio_fdbuf(&ssin,subread,0,inbuf,sizeof(inbuf));
  if (flagufline) substdio_bputs(&ssout,ufline);
  if (flagrpline) substdio_bputs(&ssout,rpline);
  if (flagdtline) substdio_bputs(&ssout,dtline);

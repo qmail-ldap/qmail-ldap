@@ -82,7 +82,7 @@ int main()
 
      fd = open_read(filenames.s + pe.id);
      if (fd == -1) continue;
-     substdio_fdbuf(&ssin,read,fd,inbuf,sizeof(inbuf));
+     substdio_fdbuf(&ssin,subread,fd,inbuf,sizeof(inbuf));
 
      if (!stralloc_copys(&sender,"?")) die_nomem();
      if (!stralloc_copys(&recipient,"?")) die_nomem();

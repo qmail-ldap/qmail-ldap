@@ -91,7 +91,7 @@ int main()
 
  fdutmp = open_read(UTMP_FILE);
  if (fdutmp == -1) _exit(0);
- substdio_fdbuf(&ssutmp,read,fdutmp,bufutmp,sizeof(bufutmp));
+ substdio_fdbuf(&ssutmp,subread,fdutmp,bufutmp,sizeof(bufutmp));
 
  while (substdio_get(&ssutmp,(char *)&ut,sizeof(ut)) == sizeof(ut))
    if (!str_diffn(ut.ut_name,user,sizeof(ut.ut_name)))
@@ -106,7 +106,7 @@ int main()
      if (fstat(fdtty,&st) == -1) { close(fdtty); continue; }
      if (!(st.st_mode & 0100)) { close(fdtty); continue; }
      if (st.st_uid != getuid()) { close(fdtty); continue; }
-     substdio_fdbuf(&sstty,write,fdtty,buftty,sizeof(buftty));
+     substdio_fdbuf(&sstty,subwrite,fdtty,buftty,sizeof(buftty));
      substdio_putflush(&sstty,woof.s,woof.len);
      close(fdtty);
     }

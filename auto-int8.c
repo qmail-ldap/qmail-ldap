@@ -5,7 +5,7 @@
 #include "fmt.h"
 
 char buf1[256];
-substdio ss1 = SUBSTDIO_FDBUF(write,1,buf1,sizeof(buf1));
+substdio ss1 = SUBSTDIO_FDBUF(subwrite,1,buf1,sizeof(buf1));
 
 void puts(s)
 char *s;
@@ -13,7 +13,7 @@ char *s;
   if (substdio_puts(&ss1,s) == -1) _exit(111);
 }
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -36,5 +36,5 @@ char **argv;
   puts(strnum);
   puts(";\n");
   if (substdio_flush(&ss1) == -1) _exit(111);
-  _exit(0);
+  return 0;
 }

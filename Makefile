@@ -2183,6 +2183,10 @@ compile readsubdir.c readsubdir.h direntry.h fmt.h scan.h str.h \
 auto_split.h
 	./compile readsubdir.c
 
+readwrite.o: \
+compile readwrite.c readwrite.h
+	./compile readwrite.c
+
 read-ctrl.o: \
 compile read-ctrl.c auto_qmail.h error.h open.h read-ctrl.h
 	./compile read-ctrl.c
@@ -2542,10 +2546,10 @@ compile substdi.c substdio.h byte.h error.h
 
 substdio.a: \
 makelib substdio.o substdi.o substdo.o subfderr.o subfdout.o \
-subfdouts.o subfdin.o subfdins.o substdio_copy.o
+subfdouts.o subfdin.o subfdins.o substdio_copy.o readwrite.o
 	./makelib substdio.a substdio.o substdi.o substdo.o \
 	subfderr.o subfdout.o subfdouts.o subfdin.o subfdins.o \
-	substdio_copy.o
+	substdio_copy.o readwrite.o
 
 substdio.o: \
 compile substdio.c substdio.h

@@ -12,6 +12,7 @@
 #include "fmt.h"
 #include "ip.h"
 #include "open.h"
+#include "readwrite.h"
 #include "str.h"
 #include "stralloc.h"
 #include "substdio.h"
@@ -37,7 +38,7 @@ int sendrequest(int, char *, int, struct ip_address *);
 int addenv(char *, int);
 
 char sserrbuf[128];
-substdio sserr = SUBSTDIO_FDBUF(write,2,sserrbuf,sizeof sserrbuf);
+substdio sserr = SUBSTDIO_FDBUF(subwrite,2,sserrbuf,sizeof sserrbuf);
 
 char **childargs;
 

@@ -218,7 +218,7 @@ unsigned long id;
  fdinfo = open_read(fn.s);
  if (fdinfo == -1) return 0;
  if (fstat(fdinfo,&st) == -1) { close(fdinfo); return 0; }
- substdio_fdbuf(&ss,read,fdinfo,buf,sizeof(buf));
+ substdio_fdbuf(&ss,subread,fdinfo,buf,sizeof(buf));
  if (getln(&ss,&line,&match,'\0') == -1) { close(fdinfo); return 0; }
  close(fdinfo);
  if (!match) return 0;
@@ -241,8 +241,8 @@ int comm_pos[CHANNELS];
 void comm_init()
 {
  int c;
- substdio_fdbuf(&sstoqc,write,5,sstoqcbuf,sizeof(sstoqcbuf));
- substdio_fdbuf(&ssfromqc,read,6,ssfromqcbuf,sizeof(ssfromqcbuf));
+ substdio_fdbuf(&sstoqc,subwrite,5,sstoqcbuf,sizeof(sstoqcbuf));
+ substdio_fdbuf(&ssfromqc,subread,6,ssfromqcbuf,sizeof(ssfromqcbuf));
  for (c = 0;c < CHANNELS;++c)
    if (ndelay_on(chanfdout[c]) == -1)
    /* this is so stupid: NDELAY semantics should be default on write */
@@ -740,7 +740,7 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
      qmail_fail(&qqt);
    else
     {
-     substdio_fdbuf(&ssread,read,fd,inbuf,sizeof(inbuf));
+     substdio_fdbuf(&ssread,subread,fd,inbuf,sizeof(inbuf));
      while ((r = substdio_get(&ssread,buf,sizeof(buf))) > 0)
        qmail_put(&qqt,buf,r);
      close(fd);
@@ -763,7 +763,7 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
      int bytestoget;
      bytestogo = bouncemaxbytes;
      bytestoget = (bytestogo < sizeof(buf) && bouncemaxbytes != 0) ? bytestogo : sizeof(buf);
-     substdio_fdbuf(&ssread,read,fd,inbuf,sizeof(inbuf));
+     substdio_fdbuf(&ssread,subread,fd,inbuf,sizeof(inbuf));
      while ((r = substdio_get(&ssread,buf,bytestoget)) > 0) {
        qmail_put(&qqt,buf,r);
        bytestogo -= r;
@@ -1115,7 +1115,7 @@ int c;
    if (pass[c].fd == -1) goto trouble;
    if (!getinfo(&line,&birth,pe.id)) { close(pass[c].fd); goto trouble; }
    pass[c].id = pe.id;
-   substdio_fdbuf(&pass[c].ss,read,pass[c].fd,pass[c].buf,sizeof(pass[c].buf));
+   substdio_fdbuf(&pass[c].ss,subread,pass[c].fd,pass[c].buf,sizeof(pass[c].buf));
    pass[c].j = job_open(pe.id,c);
    jo[pass[c].j].retry = nextretry(birth,c);
    jo[pass[c].j].flagdying = (recent > birth + lifetime);

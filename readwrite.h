@@ -1,7 +1,7 @@
 #ifndef READWRITE_H
 #define READWRITE_H
 
-#include <sys/types.h>
-#include <unistd.h>
+int subread(int, void *, int);
+int subwrite(int, void *, int);
 
 #endif

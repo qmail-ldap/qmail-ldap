@@ -392,7 +392,7 @@ void pop3_top(arg) char *arg;
   okay();
 #endif
 
-  substdio_fdbuf(&ssmsg,read,fd,ssmsgbuf,sizeof(ssmsgbuf));
+  substdio_fdbuf(&ssmsg,subread,fd,ssmsgbuf,sizeof(ssmsgbuf));
   blast(&ssmsg,limit);
   close(fd);
 }

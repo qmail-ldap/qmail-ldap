@@ -17,6 +17,7 @@
 #include "open.h"
 #include "qmail.h"
 #include "qmail-ldap.h"
+#include "readwrite.h"
 #include "seek.h"
 #include "sgetopt.h"
 #include "sig.h"
@@ -80,7 +81,7 @@ void readmail(char *file)
 	if (fd == -1)
 		strerr_die4sys(100, FATAL, "Unable to open '", file, "': ");
  
-	substdio_fdbuf(&ss, read, fd, buffer, sizeof(buffer));
+	substdio_fdbuf(&ss, subread, fd, buffer, sizeof(buffer));
 	for (;;) {
 		if (getln(&ss, &line, &match, '\n') == -1)
 			strerr_die4sys(100, FATAL, "Unable to read '",
@@ -418,7 +419,7 @@ void recent_update(char *buf, int len)
 		return;
 	}
 	
-	substdio_fdbuf(&ss, write, fd, rsoutbuf, sizeof(rsoutbuf));
+	substdio_fdbuf(&ss, subwrite, fd, rsoutbuf, sizeof(rsoutbuf));
 
 	/* dump database */
 	for (i = 0; i < slen; i += str_len(s+i) + 1) {
@@ -534,7 +535,7 @@ int parseheader(/* TODO names for to/cc checking */ void)
 
 	subj_set = 0;
 	if (seek_begin(0) == -1) temp_rewind();
-	substdio_fdbuf(&ss, read, 0, buffer, sizeof(buffer) );
+	substdio_fdbuf(&ss, subread, 0, buffer, sizeof(buffer) );
 	do {
 		if(getln(&ss, &line, &match, '\n') != 0) {
 			strerr_warn3(WARN, "Unable to read message: ",

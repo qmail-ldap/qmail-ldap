@@ -134,7 +134,7 @@ int main()
 
      fd = open_read(fninfo);
      if (fd == -1) { err(id); continue; }
-     substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
+     substdio_fdbuf(&ss,subread,fd,inbuf,sizeof(inbuf));
      if (getln(&ss,&sender,&match,0) == -1) die_nomem();
      if (fstat(fd,&st) == -1) { close(fd); err(id); continue; }
      close(fd);

@@ -448,4 +448,5 @@ qmail-verify
 qmail-verify.o
 rbl.o
 read-ctrl.o
+readwrite.o
 smtpcall.o

@@ -13,6 +13,7 @@
 #include "now.h"
 #include "open.h"
 #include "qmail-ldap.h"
+#include "readwrite.h"
 #include "seek.h"
 #include "sig.h"
 #include "str.h"
@@ -109,8 +110,8 @@ maildir_child(char *dir)
 	fd = open_excl(fntmptph);
 	if (fd == -1) _exit(1);
 
-	substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
-	substdio_fdbuf(&ssout,write,fd,outbuf,sizeof(outbuf));
+	substdio_fdbuf(&ss,subread,0,buf,sizeof(buf));
+	substdio_fdbuf(&ssout,subwrite,fd,outbuf,sizeof(outbuf));
 	if (substdio_put(&ssout,rpline.s,rpline.len) == -1) goto fail;
 	if (substdio_put(&ssout,dtline.s,dtline.len) == -1) goto fail;
 
@@ -346,8 +347,8 @@ mailfile(char *fn)
 	seek_end(fd);
 	pos = seek_cur(fd);
 
-	substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
-	substdio_fdbuf(&ssout,write,fd,outbuf,sizeof(outbuf));
+	substdio_fdbuf(&ss,subread,0,buf,sizeof(buf));
+	substdio_fdbuf(&ssout,subwrite,fd,outbuf,sizeof(outbuf));
 	if (substdio_put(&ssout,ufline.s,ufline.len)) goto writeerrs;
 	if (substdio_put(&ssout,rpline.s,rpline.len)) goto writeerrs;
 	if (substdio_put(&ssout,dtline.s,dtline.len)) goto writeerrs;

@@ -115,6 +115,7 @@ int main()
   if (!local) local = env_get("TCPLOCALIP");
   if (!local) local = "unknown";
  
+  flagdos = 0;
   for (;;) {
     if (!stralloc_copys(&failure,"")) resources();
     flagsenderok = 1;

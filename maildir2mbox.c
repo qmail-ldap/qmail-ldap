@@ -77,8 +77,8 @@ int main()
  if (fdnewmbox == -1)
    strerr_die4sys(111,FATAL,"unable to create ",mboxtmp,": ");
 
- substdio_fdbuf(&ssin,read,fdoldmbox,inbuf,sizeof(inbuf));
- substdio_fdbuf(&ssout,write,fdnewmbox,outbuf,sizeof(outbuf));
+ substdio_fdbuf(&ssin,subread,fdoldmbox,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ssout,subwrite,fdnewmbox,outbuf,sizeof(outbuf));
 
  switch(substdio_copy(&ssout,&ssin))
   {
@@ -94,7 +94,7 @@ int main()
    fd = open_read(filenames.s + pe.id);
    if (fd == -1)
      strerr_die4sys(111,FATAL,"unable to read $MAILDIR/",filenames.s + pe.id,": ");
-   substdio_fdbuf(&ssin,read,fd,inbuf,sizeof(inbuf));
+   substdio_fdbuf(&ssin,subread,fd,inbuf,sizeof(inbuf));
 
    if (getln(&ssin,&line,&match,'\n') != 0)
      strerr_die4sys(111,FATAL,"unable to read $MAILDIR/",filenames.s + pe.id,": ");

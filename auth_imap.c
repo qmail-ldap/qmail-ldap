@@ -301,7 +301,7 @@ auth_forward(int fd, char *login, char *passwd)
 		auth_error(PANIC);
 	
 	get_ok(fd, "*");
-	substdio_fdbuf(&ss,write,fd,buf,sizeof(buf));
+	substdio_fdbuf(&ss,subwrite,fd,buf,sizeof(buf));
 	substdio_puts(&ss, tag);
 	substdio_puts(&ss, " login "); 
 	substdio_puts(&ss, login); 
