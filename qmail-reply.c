@@ -1,10 +1,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "base64.h"
 #include "byte.h"
 #include "case.h"
 #include "control.h"
 #include "constmap.h"
+#include "digest_md5.h"
 #include "direntry.h"
 #include "env.h"
 #include "error.h"
@@ -53,6 +55,20 @@ void usage(void)
 }
 
 stralloc replytext = {0};
+stralloc hashed = {0};
+
+void hashreplytext(void)
+{
+	MD5_CTX ctx;
+	unsigned char buffer[MD5_LEN];
+
+	MD5Init(&ctx);
+	MD5Update(&ctx, replytext.s, replytext.len);
+	MD5Final(buffer,&ctx);
+
+	if (hex_ntops(buffer, sizeof(buffer), &hashed) == -1) temp_nomem();
+	if (!stralloc_0(&hashed) == -1) temp_nomem();
+}
 
 void envmail(void)
 {
@@ -64,6 +80,7 @@ void envmail(void)
 		strerr_die3x(100, FATAL, ENV_REPLYTEXT,
 		    " not present.");
 	}
+	hashreplytext();
 }
 
 char buffer[1024];
@@ -92,6 +109,7 @@ void readmail(char *file)
 		}
 		if (!stralloc_cat(&replytext, &line)) temp_nomem();
 	}
+	hashreplytext();
 }
 
 stralloc to={0};
@@ -232,6 +250,8 @@ datetime_sec timeout;
 #endif
 #define MAX_SIZE (32 * 1024) /* 32kB */
 
+int checkstamp(char *, int);
+
 int recent_lookup(char *buf, int len)
 {
 	char *s;
@@ -242,13 +262,19 @@ int recent_lookup(char *buf, int len)
 		case 1:
 			break;
 		case 0:
-			return 0;
+			goto done;
 		default:
 			strerr_die2sys(111, FATAL,
 			    "Read database file failed: ");
 	}
 
 	slen = rs.len; s = rs.s;
+	if (!case_startb(s, slen, "QRDBv1:")) goto done;
+	s += 7; slen -= 7;
+	if (slen < hashed.len || case_diffb(s, hashed.len, hashed.s) != 0)
+		return 0;
+	s += hashed.len; slen -= hashed.len;
+
 	for (i = 0; i < slen; i += str_len(s+i) + 1) {
 		if (case_diffb(buf, len, s+i) == 0) {
 			/* match found, look at timeval */
@@ -261,12 +287,12 @@ int recent_lookup(char *buf, int len)
 				return 0;
 			}
 			last = get_stamp(s+i);
-			if (last + timeout < now()) return 0;
+			if (last + timeout < now()) goto done;
 			else return 1;
 		}
 	}
-
-	return 0;
+done:
+	return checkstamp(buf, len);
 }
 
 int trylock(void)
@@ -310,6 +336,23 @@ void unlock(void)
 
 stralloc sfs = {0};
 stralloc spath = {0};
+
+int checkstamp(char *buf, int len)
+{
+	struct stat st;
+	
+	if (!stralloc_copys(&spath, "tmp/@") ||
+	    !stralloc_catb(&spath, buf, len) ||
+	    !stralloc_0(&spath)) temp_nomem();
+	if (stat(spath.s,&st) == -1) {
+		if (errno == error_noent) return 0;
+		strerr_warn4(WARN, "Can't stat stamp file: ",
+		    spath.s, ": ", &strerr_sys);
+		return 0;
+	}
+	if (st.st_mtime + timeout < now()) return 0;
+	return 1;
+}
 
 void addstamps(void)
 {
@@ -386,6 +429,12 @@ void recent_update(char *buf, int len)
 
 	/* first limit database length to MAX_SIZE */
 	s = rs.s; slen = rs.len;
+	/* hop over possible header */
+	if (case_startb(s, slen, "QRDBv1:")) {
+		i = str_len(s);
+		slen -= i;
+		s += i;
+	}
 	for(; slen > MAX_SIZE; ) {
 		i = str_len(s) + 1;
 		slen -= i;
@@ -420,6 +469,10 @@ void recent_update(char *buf, int len)
 	}
 	
 	substdio_fdbuf(&ss, subwrite, fd, rsoutbuf, sizeof(rsoutbuf));
+	
+	if (substdio_puts(&ss, "QRDBv1:") == -1) goto fail;
+	if (substdio_puts(&ss, hashed.s) == -1) goto fail;
+	if (substdio_put(&ss, "\n", 1) == -1) goto fail;
 
 	/* dump database */
 	for (i = 0; i < slen; i += str_len(s+i) + 1) {
