@@ -144,12 +144,10 @@ int quota_calc(char *dir, int *fd, quota_t *q)
 	return ret;
 }
 
-int quota_recalc(char *dir, int *fd, quota_t *q, unsigned long size, 
-               unsigned long count, int *perc)
+int quota_recalc(char *dir, int *fd, quota_t *q)
 {
 	int  i = 0;
 	int  j;
-	int  ret;
 	int  lines = 0;
 	time_t tm;
 	struct stat st;
@@ -187,16 +185,14 @@ int quota_recalc(char *dir, int *fd, quota_t *q, unsigned long size,
 		*fd = -1;
 		unlink(path.s);
 	}
-	if (quota_calcsize(q, fd, buf5120, i) == -1) return -1;
 	
-	ret = quota_check(q, size, count, perc);
-	return ret;
-
+	return quota_calcsize(q, fd, buf5120, i);
+	
 }
 
 int quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc)
 {
-	int i;
+	int sp , cp;
 	
 	if (q->quota_size == 0 && q->quota_count == 0) {
 		/* no quota defined */
@@ -204,25 +200,27 @@ int quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc)
 		return 0;
 	}
 		
+	if (perc != NULL) {
+		sp = q->quota_size != 0 ?
+			(int)((q->size + size)*100.0/q->quota_size) :
+			0;
+		cp = q->quota_count != 0 ?
+			(int)((q->count + count)*100.0/q->quota_count) :
+			0;
+		if (sp > cp)
+			*perc = sp;
+		else
+			*perc = cp;
+	}
+	
 	if (q->size + size > q->quota_size && q->quota_size != 0) {
-		if(perc) *perc = 100;
 		return -1;
 	}
 
 	if (q->count + count > q->quota_count && q->quota_count != 0) {
-		if(perc) *perc = 100;
 		return -1;
 	}
 	
-	if (!perc) return 0;
-	
-	*perc = q->quota_size 
-		? (int)((q->size + size)*100.0/q->quota_size)
-		: 0;
-	i = q->quota_count
-		? (int)((q->count + count)*100.0/q->quota_count)
-		: 0;
-	if (i > *perc) *perc = i;
 	return 0;
 }
 
@@ -520,7 +518,8 @@ static int check_maxtime(time_t time)
 			if (!stralloc_cats(&path, dp->d_name)) temp_nomem();
 			if (!stralloc_cats(&path, "/cur")) temp_nomem();
 			if (!stralloc_0(&path)) temp_nomem();
-			if (stat(path.s, &filest) == 0 && filest.st_mtime > time) {
+			if (stat(path.s, &filest) == 0
+			    && filest.st_mtime > time) {
 				i = 1;
 				break;
 			}
@@ -528,7 +527,8 @@ static int check_maxtime(time_t time)
 			if (!stralloc_cats(&path, dp->d_name)) temp_nomem();
 			if (!stralloc_cats(&path, "/new")) temp_nomem();
 			if (!stralloc_0(&path)) temp_nomem();
-			if (stat(path.s, &filest) == 0 && filest.st_mtime > time) {
+			if (stat(path.s, &filest) == 0
+			    && filest.st_mtime > time) {
 				i = 1;
 				break;
 			}
@@ -536,7 +536,8 @@ static int check_maxtime(time_t time)
 		if (!str_diff("new", dp->d_name)) {
 			path.len = slen;
 			if (!stralloc_cats(&path, "/new")) temp_nomem();
-			if (stat(path.s, &filest) == 0 && filest.st_mtime > time) {
+			if (stat(path.s, &filest) == 0
+			    && filest.st_mtime > time) {
 				i = 1;
 				break;
 			}
@@ -544,7 +545,8 @@ static int check_maxtime(time_t time)
 		if (!str_diff("cur", dp->d_name)) {
 			path.len = slen;
 			if (!stralloc_cats(&path, "/cur")) temp_nomem();
-			if (stat(path.s, &filest) == 0 && filest.st_mtime > time) {
+			if (stat(path.s, &filest) == 0
+			    && filest.st_mtime > time) {
 				i = 1;
 				break;
 			}
@@ -595,63 +597,42 @@ static void calc_curnew(quota_t *q, time_t *maxtime)
 	direntry		*dp;
 	DIR			*dirp;
 	char			*f;
+	int			i;
 
 	if (!stralloc_cats(&path, "/new/")) temp_nomem();
 	if (!stralloc_0(&path)) temp_nomem();
 	
-	/* update the latest modified time to avoid race conditions */
-	if (stat(path.s, &filest) == 0 && filest.st_mtime > *maxtime)
-		*maxtime = filest.st_mtime;
-	
-	dirp = opendir(path.s);
-	/* start with new */
-	while (dirp && (dp = readdir(dirp)) != 0) {
-		f = dp->d_name;
-		if ( *f == '.' ) continue; /* ignore all dot-files */
-		while(*f) {
-			if (*f != ':' || f[1] != '2' || f[2] != ',') {
-				f++;
-			} else {
-				f += 3;
-				while(*f >= 'A' && *f <= 'Z' && *f != 'T') f++;
-				break;
-			}
-		}
-		if (*f == 'T') continue;
-		/* get the file size */
-		if(get_file_size(dp->d_name, &filest) == 0) {
-			q->count++;
-			q->size += (long)filest.st_size;
-		} 
-	}
+	for (i = 0; i < 2; i++) {
+		/* update the latest modified time to avoid race conditions */
+		if (stat(path.s, &filest) == 0 && filest.st_mtime > *maxtime)
+			*maxtime = filest.st_mtime;
 
-	path.s[path.len-5] = 'c';
-	path.s[path.len-4] = 'u';
-	path.s[path.len-3] = 'r';
-	/* the same thing with cur */
-	
-	if (stat(path.s, &filest) == 0 && filest.st_mtime > *maxtime)
-		*maxtime = filest.st_mtime;
-		
-	dirp = opendir(path.s);
-	while (dirp && (dp = readdir(dirp)) != 0) {
-		f = dp->d_name;
-		if (*f == '.') continue; /* ignore all dot-files */
-		while(*f) {
-			if (*f != ':' || f[1] != '2' || f[2] != ',') {
-				f++;
-			} else {
-				f += 3;
-				while(*f >= 'A' && *f <= 'Z' && *f != 'T') f++;
-				break;
+		dirp = opendir(path.s);
+		/* start with new */
+		while (dirp && (dp = readdir(dirp)) != 0) {
+			f = dp->d_name;
+			if ( *f == '.' ) continue; /* ignore all dot-files */
+			while(*f) {
+				if (*f != ':' || f[1] != '2' || f[2] != ',') {
+					f++;
+				} else {
+					f += 3;
+					while (	*f >= 'A'
+						&& *f <= 'Z'
+						&& *f != 'T') f++;
+					break;
+				}
 			}
+			if (*f == 'T') continue;
+			/* get the file size */
+			if(get_file_size(dp->d_name, &filest) == 0) {
+				q->count++;
+				q->size += (long)filest.st_size;
+			} 
 		}
-		if (*f == 'T') continue;
 
-		if(get_file_size(dp->d_name, &filest) == 0) {
-			q->count++;
-			q->size += (long)filest.st_size;
-		}
+		/* the same thing with cur */
+		fmt_str("cur", path.s + path.len - 5);
 	}
 }
 

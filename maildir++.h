@@ -11,8 +11,7 @@ typedef struct {
 void quota_add(int fd, unsigned long size, unsigned long count);
 void quota_rm(int fd, unsigned long size, unsigned long count);
 int quota_calc(char *dir, int *fd, quota_t *q);
-int quota_recalc(char *dir, int *fd, quota_t *q, unsigned long size, 
-               unsigned long count, int *perc);
+int quota_recalc(char *dir, int *fd, quota_t *q);
 int quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc);
 void quota_get(quota_t *q, char *quota);
 

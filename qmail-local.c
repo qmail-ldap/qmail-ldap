@@ -260,15 +260,24 @@ char *fn;
    if (quota_calc(fn, &msfd, &q) == -1) {
      /* second chance */
      sleep(3);
-	 /* XXX fd can be -1 when retval = 0 quota_add/rm take care of that */
      if (quota_calc(fn, &msfd, &q) == -1) {
        strerr_die1x(111,"Temporary race condition while calculating quota. (LDAP-ERR #2.4.2)");
      }
    }
+   /* XXX fd can be -1 when retval = 0 quota_add/rm take care of that */
    
-   if (quota_check(&q, mailsize, 1, &perc) != 0) /* 0 if OK */
-     if (quota_recalc(fn, &msfd, &q, mailsize, 1, &perc) != 0)
+   if (quota_check(&q, mailsize, 1, &perc) != 0) { /* 0 if OK */
+     if (quota_recalc(fn, &msfd, &q) == -1) {
+       /* second chance */
+       sleep(3);
+       if (quota_recalc(fn, &msfd, &q) == -1)
+	 strerr_die1x(111,"Temporary race condition while recalculating quota. (LDAP-ERR #2.4.2)");
+     }
+     if (quota_check(&q, mailsize, 1, &perc) != 0)
        quota_bounce("mailfolder");
+   }
+   /* XXX fd can be -1 when retval = 0 quota_add/rm take care of that */
+
    if (perc >= QUOTA_WARNING_LEVEL) 
 	 /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);

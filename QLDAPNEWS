@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/10/02 21:12:30 $ ($Revision: 1.69 $)
+RELEASE: $Date: 2002/10/25 17:29:03 $ ($Revision: 1.70 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,8 +18,20 @@ TODO:
 
 NEWS for current stuff:
 
- In qmail.schema 'ProgramDeliveryPath' was incorrectly specified as SINGLE-VALUE.
- Thanks to <andreas.schulze@web.de> for finding it.
+ Fixed some bugs and cleand up maildir++.c. The maildirsize parser is now
+ rock solid and does no longer freak out when lines start with spaces.
+
+ quota_check() returns now also percentages over 100% (if over quota) and
+ the percentages calculation does not overflow with sizes over 40MB.
+ NOTE: quotas with sizes of around 4GB may overflow if large mails are
+ delivered and so the maildir size may get far over quota. This is a bug
+ and will get fixed.
+
+ maildir++ quota API cleanup. quota_recalc() works now exactly like
+ quota_calc().
+
+ In qmail.schema 'ProgramDeliveryPath' was incorrectly specified as 
+ SINGLE-VALUE. Thanks to <andreas.schulze@web.de> for finding it.
 
 NEWS for 20021001 stuff:
 
