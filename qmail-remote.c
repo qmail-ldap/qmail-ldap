@@ -871,7 +871,7 @@ void getcontrols(void)
   if (!ip_scan(outgoingip.s, &outip)) temp_noip();
 
 #ifdef TLS_REMOTE
-  if (control_rldef(&sslcert, "control/remotecert", 0, "") == -1)
+  if (control_readline(&sslcert, "control/remotecert") == -1)
     temp_control();
   if (!stralloc_0(&sslcert)) temp_nomem();
 #endif

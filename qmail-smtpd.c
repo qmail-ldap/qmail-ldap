@@ -168,7 +168,7 @@ void err_bmfunknown(void) { out("553 sorry, your mail from a host ["); out(remot
 void err_maxrcpt(void) { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway(void) { out("553 sorry, relaying denied from your location ["); out(remoteip); out("] (#5.7.1)\r\n"); }
 void err_badbounce(void) { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
-void err_unimpl(char *arg) { out("502 unimplemented (#5.5.1)\r\n"); logline2(3,"unrecognized command: ",arg); }
+void err_unimpl(const char *arg) { out("502 unimplemented (#5.5.1)\r\n"); logline2(3,"unrecognized command: ",arg); }
 void err_size(void) { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because: 'SMTP SIZE' too big"); }
 void err_syntax(void) { out("555 syntax error (#5.5.4)\r\n"); }
 void err_relay(void) { out("553 sorry, we don't relay for ["); out(remoteip); out("] (#5.7.1)\r\n"); }
@@ -329,7 +329,7 @@ void setup(void)
   sslpath = env_get("SSLCERT");
   if (!sslpath)
     sslpath = (char *)"control/smtpcert";
-  if (control_rldef(&sslcert, sslpath, 0, "") == -1)
+  if (control_readline(&sslcert, sslpath) == -1)
     die_control();
   if (!stralloc_0(&sslcert)) die_nomem();
 #endif
@@ -1486,7 +1486,7 @@ void smtp_auth(char *arg)
   const char *status;
 
   if (!flagauth) {
-    err_unimpl((char *)0);
+    err_unimpl("AUTH without STARTTLS");
     return;
   }
   if (flagauthok) {
@@ -1582,8 +1582,8 @@ void smtp_tls(char *arg)
 {
   SSL_CTX *ctx;
 
-  if (sslcert.s && *sslcert.s) {
-    err_unimpl((char *)0);
+  if (!sslcert.s || *sslcert.s == '\0') {
+    err_unimpl("STARTTLS");
     return;
   }
 
@@ -1605,15 +1605,15 @@ void smtp_tls(char *arg)
   if(!SSL_CTX_use_RSAPrivateKey_file(ctx, sslcert.s, SSL_FILETYPE_PEM))
   {
     out("454 TLS not available: missing RSA private key (#4.3.0)\r\n");
-    logline(3,"aborting TLS negotiations, "
-      "RSA private key invalid or unable to read ~control/cert.pem");
+    logline2(3,"aborting TLS negotiations, "
+      "RSA private key invalid or unable to read ", sslcert.s);
     return;
   }
   if(!SSL_CTX_use_certificate_file(ctx, sslcert.s, SSL_FILETYPE_PEM))
   {
     out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
-    logline(3,"aborting TLS negotiations, "
-      "local cert invalid or unable to read ~control/cert.pem");
+    logline2(3,"aborting TLS negotiations, "
+      "local cert invalid or unable to read ", sslcert.s);
     return;
   }
   SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_cb);
