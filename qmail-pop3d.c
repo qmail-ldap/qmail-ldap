@@ -38,11 +38,11 @@ int loglevel = 0;
 stralloc logs_pidhostinfo = {0};
 unsigned long log_bytes = 0;
 
-void log(int l, char *s) { if(l <= loglevel) substdio_puts(&subfderr,s);}
+void log(int l, char *s) { if(l <= loglevel) substdio_puts(subfderr,s);}
 void logf(int l, char *s) {
 	if(l > loglevel) return;
-	substdio_puts(&subfderr,s);
-	substdio_putsflush(&subfderr,"\n");
+	substdio_puts(subfderr,s);
+	substdio_putsflush(subfderr,"\n");
 }
 
 void log_quit()
@@ -137,11 +137,9 @@ void log_init()
   char *l;
   unsigned long v;
   
-  l = env_get("LOGLEVEL");
+  l = env_get("POP3_LOGLEVEL");
   if (l) { scan_ulong(l,&v); loglevel = v; };
 
-  
-  
   remoteip = env_get("TCPREMOTEIP");
   if (!remoteip) remoteip = "unknown";
   remotehost = env_get("TCPREMOTEHOST");
@@ -374,7 +372,7 @@ void pop3_top(arg) char *arg;
   char foo[FMT_ULONG];
 #endif
  
-  log(4, "comm: top: "); logf(4, arg);
+  log(4, "comm: retr/top: "); logf(4, arg);
   i = msgno(arg);
   if (i == -1) return;
  
