@@ -23,6 +23,7 @@
 #include "fmt.h"
 #include "myctime.h"
 #include "qmail-ldap.h"
+#include "date822fmt.h"
 
 /* global vars */
 stralloc warning={0};
@@ -86,7 +87,8 @@ static int wild_matchb(register char* pattern, register unsigned int pat_len,
    register unsigned int i;
    register unsigned int t;
    
-   t = len-pat_len;
+   if ( len < pat_len ) return 1;
+   t = len-pat_len+1;
    for(i=0; i < t; i++) {
       if (!str_diffn( pattern, string+i, pat_len) )
          return 0;
@@ -97,18 +99,22 @@ static int wild_matchb(register char* pattern, register unsigned int pat_len,
 
 void check_maildir(void)
 {
-   char *(dirs[3]);
+   char *(dirs[2]);
    DIR *folder;
    struct dirent *entry;
    int i;
+   unsigned int j;
 
-   dirs[0]="new"; dirs[1]="cur"; dirs[2]="tmp";
-   for (i=0; i<3; i++ ) {
+   dirs[0]="new"; dirs[1]="cur"; 
+   for (i=0; i<2; i++ ) {
       /* checking for old mail */
       if ( (folder = opendir(dirs[i])) == 0 )
          strerr_die1x(111,"Error while checking for QUOTA_WARNING file (LDAP-ERR #5.2.2)");
       while ((entry = readdir(folder)) != 0) {
-         if (!str_diffn("QUOTA_WARNING", entry->d_name, str_len( "QUOTA_WARNING")))
+	 if (*entry->d_name == '.') continue;
+	 j = str_rchr(entry->d_name, '.');
+	 if (entry->d_name[j] == '\0' || entry->d_name[++j] == '\0') continue;
+         if (!str_diffn("QUOTA_WARNING", &entry->d_name[j], 13))
             _exit(0);
       }
       closedir(folder);
@@ -121,15 +127,18 @@ char fnnewtph[30];
 void tryunlinktmp() { unlink(fntmptph); }
 void sigalrm()
    { tryunlinktmp(); strerr_die1x(111,"Timeout on quota-warning delivery. (LDAP-ERR #5.2.9)"); }
+static char timebuf[DATE822FMT];
 
 void write_maildir(char* fn)
 {
    char *s;
    char *t;
    int loop;
-   struct stat st;
+   int pid;
    int fd;
    datetime_sec starttime;
+   struct datetime dt;
+   struct stat st;
    substdio ssout;
  
    sig_alarmcatch(sigalrm);
@@ -158,7 +167,9 @@ void write_maildir(char* fn)
    
    if (!stralloc_copys(&rpline,"Return-Path: <>\n")) temp_nomem();
 
+   pid = getpid();
    starttime = now();
+   datetime_tai(&dt,starttime);
    if (!newfield_datemake(starttime)) temp_nomem();
    if (!newfield_msgidmake(host.s,host.len,starttime)) temp_nomem();
 
@@ -166,7 +177,10 @@ void write_maildir(char* fn)
    for (loop = 0;;++loop) {
       s = fntmptph;
       s += fmt_str(s,"tmp/");
-      s += fmt_strn(s,"QUOTA_WARNING",sizeof("QUOTA_WARNING")); *s++ = 0;
+      s += fmt_ulong(s,starttime); *s++ = '.';
+      s += fmt_ulong(s,pid); *s++ = '.';
+      s += fmt_strn(s,"QUOTA_WARNING",sizeof("QUOTA_WARNING")); 
+      *s++ = 0;
       if (stat(fntmptph,&st) == -1) if (errno == error_noent) break;
       /* really should never get to this point */
       if (loop == 2) strerr_die1x(111,"Temporary error on qmail-warning delivery. (LDAP_ERR #5.2.8)");
@@ -174,6 +188,7 @@ void write_maildir(char* fn)
    }
    str_copy(fnnewtph,fntmptph);
    byte_copy(fnnewtph,3,"new");
+
 
    alarm(86400);
    fd = open_excl(fntmptph);
@@ -185,7 +200,7 @@ void write_maildir(char* fn)
    /* Received: line */
    if (substdio_puts(&ssout,"Received: (directly through the qmail-quota-warning program);\n\t"))
       goto fail;
-   if (substdio_puts(&ssout,myctime(starttime))) goto fail;
+   if (substdio_put(&ssout,timebuf, date822fmt(timebuf, &dt))) goto fail;
    /* Qmail-QUOTAWARNING: line */
    if (substdio_puts(&ssout,"Qmail-QuotaWarning: ")) goto fail;
    if (substdio_put(&ssout,host.s,host.len)) goto fail;
@@ -196,7 +211,7 @@ void write_maildir(char* fn)
    /* To: From: and Subject: */
    if (substdio_put(&ssout,to.s,to.len)) goto fail;
    if (substdio_put(&ssout,from.s,from.len)) goto fail;
-   if (substdio_puts(&ssout,"Subject: QUOTA-WARNING !\n")) goto fail;
+   if (substdio_puts(&ssout,"Subject: QUOTA-WARNING!\n")) goto fail;
    /* don't forget the single \n */
    if (substdio_puts(&ssout,"\n")) goto fail;
    /* the Warning */
@@ -258,6 +273,7 @@ void write_mailfile(char* fn)
    int flaglocked;
    char *t;
    datetime_sec starttime;
+   struct datetime dt;
 
    /* set To: From: Delivered-to: Return-Path: UFLINE Date: Message-ID: */
    if (! (t = env_get("RECIPIENT") ) )
@@ -280,6 +296,7 @@ void write_mailfile(char* fn)
    if (!stralloc_cats(&ufline,"MAILER-DAEMON")) temp_nomem();
    if (!stralloc_cats(&ufline," ")) temp_nomem();
    starttime = now();
+   datetime_tai(&dt,starttime);
    if (!stralloc_cats(&ufline,myctime(starttime))) temp_nomem();
 
    if (!newfield_datemake(starttime)) temp_nomem();
@@ -305,7 +322,7 @@ void write_mailfile(char* fn)
    /* Received: line */
    if (substdio_puts(&ssout,"Received: (directly through the qmail-quota-warning program);\n\t"))
       goto writeerrs;
-   if (substdio_puts(&ssout,myctime(starttime))) goto writeerrs;
+   if (substdio_put(&ssout,timebuf, date822fmt(timebuf, &dt))) goto writeerrs;
    /* Qmail-QUOTAWARNING: line */
    if (substdio_puts(&ssout,"Qmail-QuotaWarning: ")) goto writeerrs;
    if (substdio_put(&ssout,host.s,host.len)) goto writeerrs;
@@ -316,12 +333,12 @@ void write_mailfile(char* fn)
    /* To: From: and Subject: */
    if (substdio_put(&ssout,to.s,to.len)) goto writeerrs;
    if (substdio_put(&ssout,from.s,from.len)) goto writeerrs;
-   if (substdio_puts(&ssout,"Subject: QUOTA-WARNING !\n")) goto writeerrs;
+   if (substdio_puts(&ssout,"Subject: QUOTA-WARNING!\n")) goto writeerrs;
    /* don't forget the single \n */
    if (substdio_puts(&ssout,"\n")) goto writeerrs;
    /* the Warning */
    if (substdio_put(&ssout,warning.s,warning.len)) goto writeerrs;
-   if (warning.s[warning.len-1] == '\n')
+   if (warning.s[warning.len-1] != '\n')
       if (substdio_bputs(&ssout,"\n")) goto writeerrs;
    if (substdio_bputs(&ssout,"\n")) goto writeerrs;
    if (substdio_flush(&ssout)) goto writeerrs;
