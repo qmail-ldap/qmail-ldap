@@ -786,7 +786,9 @@ struct commands smtpcommands[] = {
 
 void main()
 {
+#ifdef TLS
   sig_alarmcatch(sigalrm);
+#endif
   sig_pipeignore();
   if (chdir(auto_qmail) == -1) die_control();
   setup();
