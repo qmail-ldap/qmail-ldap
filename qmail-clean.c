@@ -85,7 +85,7 @@ if (unlink(fnbuf) == -1) if (errno != error_noent) { respond("!"); continue; }
      U("mess/",1)
      respond("+");
     }
-   else if (byte_equal(line.s,4,"todo/"))
+   else if (byte_equal(line.s,5,"todo/"))
     {
      U("intd/",0)
      U("todo/",0)
