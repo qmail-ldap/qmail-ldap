@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/07/30 21:13:24 $ ($Revision: 1.106 $)
+RELEASE: $Date: 2003/07/31 14:29:41 $ ($Revision: 1.107 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,7 +18,12 @@ TODO:
 
 NEWS for current stuff:
 
- Some cleanup and clarification in smtpd logging.
+ Removed checking of client certificates from TLS in qmail-smtpd. It is
+ no longer possible to allow automatic relaying via TLS client certs.
+ TLS functionality for transport is not affected and continues to be
+ fully functional.
+
+ Some cleanup and clarification in smtpd and rbl logging.
 
  Added Russell Nelsons antivirus patch for qmail-smtpd.
  Compile qmail-ldap with the -DSMTPEXECCHECK option and turn it on with
@@ -44,8 +49,6 @@ NEWS for current stuff:
  we have a few modes -- manly forwardonly, noforward, localdelivery,
  normal and nombox -- that are exclusive. Anyway for now this should make
  life a bit easier.
-
- Nicer log output in qmail-smtpd and rbl code.
 
  qmail-remote tries now higher MX servers if the previous server temporary
  fails in the HELO/EHLO command exchange. >=500 errors result in a delivery
