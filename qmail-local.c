@@ -782,7 +782,8 @@ char **argv;
    if (flagdoit) {
      ++count_program;
      if (!stralloc_copys(&foo,"qmail-group ")) temp_nomem();
-     if (!stralloc_cats(&foo,aliasempty)) temp_nomem();
+     if (*aliasempty == '.' || *aliasempty == '/')
+       if (!stralloc_cats(&foo,aliasempty)) temp_nomem();
      if (!stralloc_0(&foo)) temp_nomem();
      mailprogram(foo.s);
    } else
@@ -846,7 +847,8 @@ char **argv;
 	     ++count_forward;
              if (flagdoit) {
 	       if (!stralloc_copys(&qapp,"qmail-reply ")) temp_nomem();
-	       if (!stralloc_cats(&qapp,aliasempty)) temp_nomem();
+	       if (*aliasempty == '.' || *aliasempty == '/')
+	         if (!stralloc_cats(&qapp,aliasempty)) temp_nomem();
 	       if (!stralloc_0(&qapp)) temp_nomem();
                mailprogram(qapp.s);
              } else {

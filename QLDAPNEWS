@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/05/17 13:15:17 $ ($Revision: 1.193 $)
+RELEASE: $Date: 2004/06/08 14:47:57 $ ($Revision: 1.194 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,18 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ If the defaultdelivery aka aliasempty is not a local delivery qmail-local
+ my start additionally programs while running qmail-reply. Reported by
+ Florian Pflug.
+
+ Add some random fuzz to the retry time calculation. This should dampen
+ the retry peaks to single servers with small incomming concurrency.
+
+ Fix the SIGHUP handling between qmail-send and qmail-local.
+
+ Messages sent from a moderator to a group only need to be approved from the
+ moderator himself. 
 
  qmail-todo started to spin if qmail-send exited non nicely (aka crashed).
 
