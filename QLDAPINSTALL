@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/10/30 09:13:02 $)
+RELEASE: current ($Date: 2003/11/13 15:22:36 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -96,7 +96,8 @@ INSTALL:
                 compression or non.)
                -DSMTPEXECCHECK (to enable Russell Nelsons antivirus patch
 	        for qmail-smtpd. To turn it on set the REJECTEXEC env-var.)
-               -DDUPEALIAS
+               -DDUPEALIAS (to make migration from some X.400 messaging
+                systems easier. See QLDAPNEWS 20031101 for more information.)
 
    - LDAPLIBS: the libraries you need for ldap, e.g. -lldap -llber
      NOTE: on Solaris Systems you probably need also -lnsl -lsocket
@@ -254,9 +255,32 @@ CONFIG FILES:
  Default delivery mode used by the startup scripts.
  Default: ./Maildir/
  Example: ./
- Note: if you have a more complex default delivery you need to edit the
+ Note: If you have a more complex default delivery you need to edit the
        runscripts because qmail-pop3d and the imapd do not understand this
        complex format.
+
+~control/locals.cdb
+
+ Replaces locals and is read by qmail-local and qmail-smtpd on the fly.
+ Default: locals
+ Note: You don't have to -HUP qmail-send for changes in locals.cdb to
+       take effect. As soon as you regenerate locals.cdb it will become
+       active. Use bin/qmail-cdb to create the locals.cdb file.
+       Alternatively you can do "make" in ~control/ directory. See the
+       Makefile for more information.
+       If this file exists locals is ignored.
+
+~control/rcpthosts.cdb
+
+ Replaces rcpthosts and morercpthosts.cdb and is read by qmail-smtpd on the fly.
+ Default: rcpthosts and morercpthosts.cdb
+ Note: qmail-smtpd reads locals(.cdb) as well and there is no need anymore
+       to replicate all domains here too. Only domains you are doing queueing
+       for must be listed here. As soon as you regenerate locals.cdb it will
+       become active. Use bin/qmail-cdb to create the morercpthosts.cdb file.
+       Alternatively you can do "make" in ~control/ directory. See the
+       Makefile for more information.
+       If this file exists rcpthosts and morercpthosts.cdb are ignored.
 
 ~control/ldapserver
 
@@ -817,6 +841,41 @@ SENDERCHECK
        if they have a valid existing email address with you.
        Addresses or domains listed in ~control/goodmailaddr are unconditionally
        allowed in all cases.
+
+SMTPAUTH
+
+ Enables SMTP-AUTH for remote clients. Authenticated clients are allowed to
+ relay through this server and their login is being recorded in the received
+ line.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "TLSREQUIRED" or "" (any value will do)
+ Note: With SMTP-AUTH remote users can use this mail server for relaying.
+       SMTP is unencrypted and auth passwords are in clear text equivalent
+       base64 encoding. With TLSREQUIRED enabled SMTP-AUTH is only accepted
+       when the SMTP session is TLS encrypted to prevent password sniffing.
+       TLSREQUIRED requires TLS option to be compiled into qmail-ldap.
+
+AUTHREQUIRED
+
+ Allow sending of messages (for this host and relaying) only to authenticated
+ senders.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Use this only if all clients support AMTP-AUTH. Be careful not to block
+       remote mail servers sending messages for local users. This is only useful
+       if you want to restrict certain IP ranges (for example you dial-up or
+       other customers) to be able to send only as existing and valid users.
+
+AUTHPREPEND
+
+ String that is prepended to the login in the received line.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "Authenticated user: "
+ Note: Just for additional information in the received line. You can use this
+       to make tracking of (ab)users easier.
 
 
 ================================================================================
