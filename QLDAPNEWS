@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/03/04 13:31:46 $ ($Revision: 1.182 $)
+RELEASE: $Date: 2004/03/05 19:34:48 $ ($Revision: 1.183 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,12 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Print remote IP address in error messages for RBL rejects and denied
+ relaying attempts to make debugging based on the bounce messages far
+ easier.  Requested by Jason Eggleston.
+
+NEWS for 20040301 stuff:
 
  Fix buffer overflow noticed by Georgi Guninski in qmail-qmtpd.c.
  There is no easy way to exploit it. Additionally the same issue is

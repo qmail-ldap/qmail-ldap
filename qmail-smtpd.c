@@ -152,22 +152,22 @@ void err_qqt(void) { out("451 qqt failure (#4.3.0)\r\n"); }
 void err_dns(void) { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
 void err_ldapsoft(void) { out("451 temporary ldap lookup failure, try again later\r\n"); logline(1,"temporary ldap lookup failure"); }
 void err_bmf(void) { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
-void err_bmfunknown(void) { out("553 sorry, your mail from a host without valid reverse DNS was administratively denied (#5.7.1)\r\n"); }
+void err_bmfunknown(void) { out("553 sorry, your mail from a host ["); out(remoteip); out("] without valid reverse DNS was administratively denied (#5.7.1)\r\n"); }
 void err_maxrcpt(void) { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
-void err_nogateway(const char *arg) { out("553 sorry, relaying denied from your location ["); out(arg); out("] (#5.7.1)\r\n"); }
+void err_nogateway(void) { out("553 sorry, relaying denied from your location ["); out(remoteip); out("] (#5.7.1)\r\n"); }
 void err_badbounce(void) { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
 void err_unimpl(char *arg) { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command: "); logstring(3,arg); logflush(3); }
 void err_size(void) { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because: 'SMTP SIZE' too big"); }
 void err_syntax(void) { out("555 syntax error (#5.5.4)\r\n"); }
-void err_relay(void) { out("553 we don't relay (#5.7.1)\r\n"); }
+void err_relay(void) { out("553 sorry, we don't relay for ["); out(remoteip); out("] (#5.7.1)\r\n"); }
 void err_wantmail(void) { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
 void err_wantrcpt(void) { out("503 RCPT first (#5.5.1)\r\n"); logline(3,"'rcpt to' first"); }
 
 void err_noop(char *arg) { out("250 ok\r\n"); logline(3,"'noop'"); }
 void err_vrfy(char *arg) { out("252 send some mail, i'll try my best\r\n"); logpid(3); logstring(3,"vrfy for: "); logstring(3,arg); logflush(3); }
 
-void err_rbl(char *arg) { out("553 sorry, your mailserver is rejected by "); out(arg); out("\r\n"); }
-void err_deny(void) { out("553 sorry, mail from your location is administratively denied (#5.7.1)\r\n"); }
+void err_rbl(char *arg) { out("553 sorry, your mailserver ["); out(remoteip); out("] is rejected by "); out(arg); out("\r\n"); }
+void err_deny(void) { out("553 sorry, mail from your location ["); out(remoteip); out("] is administratively denied (#5.7.1)\r\n"); }
 void err_badrcptto(void) { out("553 sorry, mail to that recipient is not accepted (#5.7.1)\r\n"); }
 void err_554msg(const char *arg)
 {
@@ -1044,7 +1044,7 @@ void smtp_rcpt(char *arg)
   } else {
     if (!addrallowed())
     { 
-      err_nogateway(remoteip);
+      err_nogateway();
       logpid(2); logstring(2,"no mail relay for 'rcpt to': ");
       logstring(2,arg); logflush(2);
       if (errdisconnect) err_quit();
