@@ -390,8 +390,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
 
    /* do the search for the email address */
    ret = ldap_lookup(&search, attrs, &info, extra);
-   if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM); 
-   /* XXX doesn't free mem */
+
    if ( ret != 0 && qldap_errno == LDAP_NOSUCH ) {
       /* this handles the "catch all" extension */
       at = 0;
@@ -400,13 +399,14 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       for (at = i - 1; r[at] != '@' && at >= 0 ; at--) ; 
 	     /* handels also mailwith 2 @ */
       /* build the search string for the email address */
+      if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM); 
       if (!stralloc_copys(&filter,"(|(" ) ) _exit(QLX_NOMEM);
       /* optional objectclass */
       if (qldap_objectclass.len) {
-      if (!stralloc_cats(&filter,LDAP_OBJECTCLASS)) _exit(QLX_NOMEM);
-      if (!stralloc_cats(&filter,"=")) _exit(QLX_NOMEM);
-      if (!stralloc_cat(&filter,qldap_objectclass)) _exit(QLX_NOMEM);
-      if (!stralloc_cats(&filter,")(")) _exit(QLX_NOMEM);
+        if (!stralloc_cats(&filter,LDAP_OBJECTCLASS)) _exit(QLX_NOMEM);
+        if (!stralloc_cats(&filter,"=")) _exit(QLX_NOMEM);
+        if (!stralloc_cat(&filter,qldap_objectclass)) _exit(QLX_NOMEM);
+        if (!stralloc_cats(&filter,")(")) _exit(QLX_NOMEM);
       } /* end */
       if (!stralloc_cats(&filter,LDAP_MAIL)) _exit(QLX_NOMEM);
       if (!stralloc_cats(&filter,"=")) _exit(QLX_NOMEM);
@@ -421,9 +421,8 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
       
       debug(16, "retry with filter '%s'\n", filter.s);
-      /* do the search for the email address */
+      /* do the search for the catchall address */
       ret = ldap_lookup(&search, attrs, &info, extra);
-      /* count the results, we must have exactly one */
    }
    alloc_free(filter.s); filter.s = 0;
    if ( ret != 0 ) {
