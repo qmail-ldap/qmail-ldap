@@ -1,28 +1,28 @@
 # Edit this few lines to configure your ldap stuff and checkpassword
 
-# to enable qmail-ldap some additional stuff uncomment the next line
-#LDAPFLAGS=-DLDAP_ESCAPE_BUG
+# to enable qmail-ldap some additional stuff put it on the LDAPFLAGS line
 # -DLDAP_ESCAPE_BUG should be added as long as the ldap servers have 
-# problems with the escapeing of LDAP filters
+# problems with the escapeing of LDAP filters (fixed with OpenLDAP 1.2.7)
 # -DQLDAP_CLUSTER for enabling cluster support
+LDAPFLAGS=-DLDAP_ESCAPE_BUG
 
 # Perhaps you have different ldap libraries, change them here
-#LDAPLIBS=-L/usr/local/lib -lldap -llber
+LDAPLIBS=-L/usr/local/lib -lldap -llber
 # and change the location of the include files here
-#LDAPINCLUDES=-I/usr/local/include
+LDAPINCLUDES=-I/usr/local/include
 # for example on my Linux box I use:
-LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
+#LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
 # if you need a special include-directory for ldap headers enable this
-LDAPINCLUDES=-I/opt/OpenLDAP/include
+#LDAPINCLUDES=-I/opt/OpenLDAP/include
 
-# TLS SMTP encryption in qmail-smtpd and qmail-remote
+# TLS (SMTP encryption) in qmail-smtpd and qmail-remote, see TLS.readme
 # You need OpenSSL for this
 # TLS enable
-TLSON=-DTLS
+#TLSON=-DTLS
 # Path to OpenSSL includes
-TLSINCLUDES=-I/usr/local/include
+#TLSINCLUDES=-I/usr/local/include
 # Path to OpenSSL libraries
-TLSLIBS=-L/usr/local/lib -lssl -lcrypto
+#TLSLIBS=-L/usr/local/lib -lssl -lcrypto
 
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
@@ -34,7 +34,7 @@ MDIRMAKE=-DAUTOMAILDIRMAKE
 # to enable the auto-homedir-make feature uncomment the next line
 HDIRMAKE=-DAUTOHOMEDIRMAKE
 
-# on OpenBSD system the next line has to be commented
+# on FreeBSD and OpenBSD systems we need this to make checkpassword
 SHADOWLIBS=-lcrypt
 # To use shadow passwords under Linux, uncomment the next two lines.
 #SHADOWLIBS=-lcrypt -lshadow
@@ -43,11 +43,11 @@ SHADOWLIBS=-lcrypt
 
 # to enable the possibility to log and debug imap and pop uncoment the
 # next line
-DEBUG=-DDEBUG
+#DEBUG=-DDEBUG
 # WARNING: you need NONE DEBUG auth_* to run with inetd
 
 # Just for me, make from time to time a backup
-BACKUPPATH=/backup/qmail-backup/qmail-ldap.`date "+%Y%m%d-%H%M"`.tar
+#BACKUPPATH=/backup/qmail-backup/qmail-ldap.`date "+%Y%m%d-%H%M"`.tar
 # STOP editing HERE !!!
 
 # Don't edit Makefile! Use conf-* for configuration.
