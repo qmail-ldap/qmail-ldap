@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/07/30 17:16:48 $ ($Revision: 1.104 $)
+RELEASE: $Date: 2003/07/30 18:35:32 $ ($Revision: 1.105 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -24,20 +24,21 @@ NEWS for current stuff:
 
  Added qmail-queue patch. Compile-time option via -DALTQUEUE.
 
- On-the-fly SMTP data compression via ESMTP DATAZ extension.
- This is currently experimental.
+ On-the-fly SMTP session data compression via ESMTP DATAZ extension.
+ Saves a damn lot of bandwidth. This is currently draft. See
+ draft-oppermann-smtp-datacompression-00.txt.
 
- Bug fix in Makefile (qmail-todo dependencies)
+ Bug fix in Makefile (qmail-todo dependencies).
 
  Better handling of SMTP mail-parameters mainly SIZE. Until now only the first
  mail-parameter was used all others where ignored. Also specially escaped
- or quoted mail addesses could result in strange results.
+ or quoted mail addresses could result in strange outcomes.
 
  New control/rbllist parser, it is no longer needed to use one tab as
  separator. Lines starting with a # are comments and will be ignored.
 
  New delivery mode noforward to disable all forwarding entries in ldap
- and .qmail. The deliveryMode attributes need some major overwork becasue
+ and .qmail. The deliveryMode attributes need some major overhaul becasue
  we have a few modes -- manly forwardonly, noforward, localdelivery,
  normal and nombox -- that are exclusive. Anyway for now this should make
  life a bit easier.

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2003/07/30 17:16:48 $)
+RELEASE: current ($Date: 2003/07/30 18:35:32 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -596,13 +596,13 @@ QMAILQUEUE
 
 REJECTEXEC
 
- Reject Dos/Windows executables in mail attachements.
+ Reject DOS/Windows executables in mail attachements.
  Default: off
  Affects: qmail-smtpd
  Example: "" (any value will do)
  Note: This patch does not distinguish between valid applications and
        evil viruses and trojans so handle with care. It is not a 100%
-       guaranteed protection.
+       guaranteed protection but a handles a lot of unwanted stuff.
        See also: http://www.qmail.org/qmail-smtpd-viruscan-1.1.patch
 
 LOGLEVEL
