@@ -329,8 +329,8 @@ int len;
          substdio_puts(ss, "DMissing ~control/ldapserver. (LDAP-ERR #199)\n");
       REPORT_RETURN;
 
-      case 200: /* XXX: this error will be removed in near fututre */
-         substdio_puts(ss, "DReceipient email address contains illegal characters. (LDAP-ERR #200)\n");
+      case 200:
+         substdio_puts(ss, "DReceipient email address is not a valid email address. (LDAP-ERR #200)\n");
       REPORT_RETURN;
 
       case 201:
@@ -459,10 +459,10 @@ int qldap_get( stralloc *mail )
                                 LDAP_UID,
                                 LDAP_PASSWD, NULL };
 
-   int            version,
+   int            version, at, ext,
                   rc, i, reply = 0,
                   num_entries = 0;
-
+   char           *r;
    stralloc       filter = {0};
 
    /* lower case the receipient email address before     *
@@ -505,9 +505,44 @@ int qldap_get( stralloc *mail )
       return 14;
    }
    if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
-
+   ext = 0; at = 0;
+   r = mail->s;
    /* count the results, we must have exactly one */
-   if ( (num_entries = ldap_count_entries(ld,res)) != 1) return 1;
+   if ( (num_entries = ldap_count_entries(ld,res)) != 1) {
+#if 0 /* this handles the -default extension */
+      i = mail->len;
+      for (at = i - 1; r[at] != '@' && at >= 0 ; at--) ;
+      for (ext = at; ext > 0;--ext)
+         if (r[ext - 1] == '-' ) {
+            /* build the search string for the email address */
+            if (!stralloc_copys(&filter,"(|(mail=" ) ) _exit(QLX_NOMEM);
+            if (!stralloc_copyb(&filter,r,ext)) _exit(QLX_NOMEM);
+            if (!stralloc_cats(&filter,"default@")) _exit(QLX_NOMEM);
+            if (!stralloc_catb(&filter,r+at+1, i-at-1)) _exit(QLX_NOMEM);
+            if (!stralloc_cats(&filter,")(mailalternateaddress=")) _exit(QLX_NOMEM);
+            if (!stralloc_catb(&filter,r,ext)) _exit(QLX_NOMEM);
+            if (!stralloc_cats(&filter,"default@")) _exit(QLX_NOMEM);
+            if (!stralloc_catb(&filter,r+at+1, i-at-1)) _exit(QLX_NOMEM);
+            if (!stralloc_cats(&filter,"))")) _exit(QLX_NOMEM);
+            if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
+            DEBUG("def-filter: ", filter.s, "\n", 0);
+            
+            /* do the search for the email address */
+            if ( (rc = ldap_search_s(ld,qldap_basedn.s,LDAP_SCOPE_SUBTREE,filter.s,attrs,0,&res)) != LDAP_SUCCESS ) {
+               ERROR("ldap_search_ext_s: ", ldap_err2string(rc), "\n", 0);
+               if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
+               return 14;
+            }
+            if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
+            /* count the results, we must have exactly one */
+            if ( (num_entries = ldap_count_entries(ld,res)) == 1) break;
+         }
+      if (num_entries != 1) 
+         
+#endif
+      return 1;
+   }
+   
 
    /* go to the first entry */
    msg = ldap_first_entry(ld,res);
@@ -589,9 +624,9 @@ int qldap_get( stralloc *mail )
    /* At the moment we ignore the dash-field and the extension field *
     * so we fill up the nughde structure with '\0'                   */
    
-   if (!stralloc_cats(&nughde, "")) _exit(QLX_NOMEM);
+   if (ext) if (!stralloc_cats(&nughde, "-")) _exit(QLX_NOMEM);
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-   if (!stralloc_cats(&nughde, "")) _exit(QLX_NOMEM);
+   if (ext) if (!stralloc_catb(&nughde, r+ext, at-ext)) _exit(QLX_NOMEM);
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
 
    /* get the quota for the user of that maildir mbox */
@@ -689,7 +724,7 @@ int qldap_get( stralloc *mail )
 
    /* ok, we finished, lets clean up and disconnect from the LDAP server */
    ldap_unbind_s(ld);
-   return(0);
+   return 0;
 }
 #endif /* end -- LDAP server query routines */
 
@@ -820,10 +855,10 @@ char *s; char *r; int at;
         INFO("LDAP lookup succeded, user found\n",0,0,0);
       break;
 
-      case 1: case 2:
+      case 1: 
          WARNING("LDAP lookup failed, ",0,0,0);
          if (!stralloc_copys(&nughde,"")) _exit(QLX_NOMEM);
-         if ( rv == 1 && qldap_localdelivery == 1 ) {
+         if ( qldap_localdelivery == 1 ) {
            WARNING("... looking up on local db\n",0,0,0);
 #endif /* end -- do the address lookup - part 1 */
 

@@ -126,7 +126,7 @@ INSTALL:
        1. Compile the qmail-ldap specific stuff:
           # make qldap
        2. Install the checkpassword program:
-          # mv checkpassword /bin/checkpassword
+          # cp checkpassword /bin/checkpassword
           # chown root:root /bin/checkpassword
           # chmod 700 /bin/checkpassword
        3. Install qmail-reply and qmail-quotawarn
