@@ -128,10 +128,10 @@ int escape_forldap(stralloc *toescape)
    t = escape_tmp.s;
    
    for(;;) {
-      if(!len) break; if (*s == '*' || *s == '(' || *s == ')') *t++ = '\\' ; *t++ = *s++; len--;
-      if(!len) break; if (*s == '*' || *s == '(' || *s == ')') *t++ = '\\' ; *t++ = *s++; len--;
-      if(!len) break; if (*s == '*' || *s == '(' || *s == ')') *t++ = '\\' ; *t++ = *s++; len--;
-      if(!len) break; if (*s == '*' || *s == '(' || *s == ')') *t++ = '\\' ; *t++ = *s++; len--;
+      if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
+      if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
+      if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
+      if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
    }
    *t = '\0';
    if (!stralloc_copys(toescape, escape_tmp.s)) { /* ARRG: almost certainly successful */

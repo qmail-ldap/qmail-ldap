@@ -248,8 +248,8 @@ char *dir;
      if (stat(file.s, &filest) == 0) {
        if ( S_ISREG(filest.st_mode) )
          temp += filest.st_size;
-     } else {
-       strerr_die5x(111,"Unable to quota ", file.s, ": ",error_str(errno),". (LDAP-ERR #2.4.3)");
+     } else if (! S_ISLNK(filest.st_mode) ) {
+       strerr_warn5("Unable to quota ", file.s, ": ",error_str(errno),". (LDAP-ERR #2.4.3)",0);
      }
    }
    closedir(dirp);

@@ -470,7 +470,8 @@ int qldap_get( stralloc *mail )
    /* case_lowerb(mail->s, mail->len); */ /* XXX: no longer used */
 
    /* check the mailaddress for illegal characters       *
-    * escape '*', '(' and ')' with a preceding '\'       */
+    * escape '*', ,'\', '(' and ')' with a preceding '\' */
+   /* NOTE: also '\0' should be escaped but this is not done. */
    if (!escape_forldap(mail)) _exit(QLX_NOMEM);
 
    /* initialize the LDAP connection and get a handle */
