@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/04/18 17:32:10 $ ($Revision: 1.48 $)
+RELEASE: $Date: 2002/04/23 21:01:15 $ ($Revision: 1.49 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -31,6 +31,10 @@ NEWS for current stuff:
  recipient. So auto-reply programs at the recipients will not answer such
  mails. A message forwarded to more than one recipient is now considered
  a mailing list email.
+
+ Add an external TODO processor program. This moves the queue todo processing
+ out of qmail-send to avoid the silly qmail syndrome with high injection rates
+ (see EXTTODO for more info). Enable with -DEXTTODO in Makefile.
 
 NEWS for 20011001 stuff:
 
