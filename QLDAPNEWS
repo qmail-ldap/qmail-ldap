@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/04/24 07:36:36 $ ($Revision: 1.50 $)
+RELEASE: $Date: 2002/04/24 11:49:04 $ ($Revision: 1.51 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,14 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ added Russ Nelson patch to qmail-remote to send using QMTP.
+ From his patch:
+  This patch to qmail-remote causes it to attempt qmtp first if the MX priority
+  indicates so.  Read http://cr.yp.to/proto/mxps.txt for more information.
+  If you want this qmail-remote to be able to send email to you using qmtp,
+  then you should be running a qmtpd on port 209, and you should have your
+  lowest MX priority be 12801.
 
  added pop-before-smtp tools (see POPBEFORESMTP for more info).
 
