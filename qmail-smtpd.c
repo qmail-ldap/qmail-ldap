@@ -470,7 +470,7 @@ int rblcheck()
       {
         logstring(2,"found match, sender is blocked"); logflush();
         stralloc_copys(&rblmessage,p);
-        stralloc0(&rblmessages);
+        stralloc_0(&rblmessage);
         return 1;
       }
     /* continue */
@@ -600,6 +600,8 @@ void smtp_rset()
   out("250 flushed\r\n");
   logline(3,"remote rset");
 }
+
+struct qmail qqt;
 
 void smtp_mail(arg) char *arg;
 {
@@ -883,7 +885,6 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
 char ssinbuf[1024];
 substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
-struct qmail qqt;
 unsigned int bytestooverflow = 0;
 unsigned int bytesreceived = 0;
 
@@ -979,7 +980,7 @@ void smtp_data() {
   int hops;
   unsigned long qp;
   char *qqx;
-  char buf[FMT_ULONG];
+//  char buf[FMT_ULONG];
 #ifdef TLS
   stralloc protocolinfo = {0};
 #endif
