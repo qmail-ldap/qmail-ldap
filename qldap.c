@@ -838,12 +838,20 @@ fail:
  * perform a bind operation to follow a referral. Works only with OpenLDAP.
  */
 #if defined(LDAP_API_FEATURE_X_OPENLDAP) && (LDAP_API_VERSION > 2000)
+#if LDAP_VENDOR_VERSION >= 20100 /* Oh no! They changed again the api, honey. */
 static int dorebind(LDAP *, LDAP_CONST char *, ber_tag_t , ber_int_t, void *);
+#else
+static int dorebind(LDAP *, LDAP_CONST char *, int, ber_int_t);
+#endif
 
-
+#if LDAP_VENDOR_VERSION >= 20100 /* Oh no! They changed again the api, honey. */
 static int
 dorebind(LDAP *ld, LDAP_CONST char *url,
     ber_tag_t request, ber_int_t msgid, void *dummy)
+#else
+static int
+dorebind(LDAP *ld, LDAP_CONST char *url, int request, ber_int_t msgid)
+#endif
 {
 	int		r;
 	LDAPURLDesc	*srv;
