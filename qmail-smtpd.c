@@ -135,6 +135,7 @@ void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); 
 void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
 
 void err_bmf() { out("553 syntax error, please forward to your postmaster (#5.7.1)\r\n"); }
+void err_hard(arg) char *arg; { out("554 syntax error, "); out(arg); out(" (#5.5.4)\r\n"); } */
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
 #ifdef TLS
 void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
@@ -356,6 +357,7 @@ int badmxcheck(dom) char *dom;
     case DNS_HARD: 
          ret=DNS_HARD; 
          break;
+
     case 1:
          if (checkip.len <= 0) ret=DNS_HARD; 
          break;
@@ -513,16 +515,18 @@ void smtp_mail(arg) char *arg;
 
   if (denymail)
   {
-    if (!str_diff("SPAM", denymail)) {
+    if (!str_diff("SPAM", denymail))
+    {
        flagbarf=1;
        spamflag=1;
        why = "refused to accept SPAM";
     }
     else
-      if (!addr.s[0] || !str_diff("#@[]", addr.s)) /*mjr*/
-      /* if (!addr.s[0]) */
-      {  
-         if (!str_diff("NOBOUNCE", denymail)) {
+    {
+      if (!addr.s[0] || !str_diff("#@[]", addr.s)) /* if (!addr.s[0]) */
+      {
+         if (!str_diff("NOBOUNCE", denymail))
+         {
             why = "refused to accept RFC821 bounce from remote";
             flagbarf=1;
          }
@@ -530,56 +534,67 @@ void smtp_mail(arg) char *arg;
       else
       {
         /* Invalid Mailfrom */
-        if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len) {
+        if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len)
+        {
            why = "refused 'mail from' without @";
-           flagbarf=1; }      /* no '@' in from */
+           flagbarf=1;
+        }
         else
         {
           /* money!@domain.TLD */
-          if (addr.s[i-1] == '!') {
+          if (addr.s[i-1] == '!')
+          {
              why = "refused 'mail from' with !@";
-             flagbarf=1; }
+             flagbarf=1;
+          }
              
           /* check syntax, visual */
-          if ((j = byte_rchr(addr.s+i, addr.len-i, '.')) >= addr.len-i) {
+          if ((j = byte_rchr(addr.s+i, addr.len-i, '.')) >= addr.len-i)
+          {
              why = "refused 'mail from' without . in domain";
-             flagbarf=1; } /* curious no '.' in domain.TLD */
-         
+             flagbarf=1; /* curious no '.' in domain.TLD */
+          }
+
           j = addr.len-(i+1+j+1);
-          if (j < 2 || j > 3) {
+          if (j < 2 || j > 3)
+          {
              /* XXX: This needs adjustment when new TLD's are constituded */
              why = "refused 'mail from' without country or top level domain";
-             flagbarf=1; } /* root domain, not a country (2), nor TLD (3)*/
-
-         if (!flagbarf)
-          if (!str_diff("DNSCHECK", denymail)) 
-          {
-            /* check syntax, via DNS */
-            switch (badmxcheck(&addr.s[i+1]))
-            {
-              case 0:
-                break; /*valid*/
-              case DNS_SOFT:
-                flagbarf=2; /*fail tmp*/
-                why = "refused 'mail from' because return MX lookup failed temporarly";
-                break;
-              case DNS_HARD:
-                flagbarf=1; 
-                why = "refused 'mail from' because return MX does not exist";
-                break;
-            }
+             flagbarf=1;
           }
-        }
-      }
-    if (flagbarf)    
+
+          if (!flagbarf)
+          {
+            if (!str_diff("DNSCHECK", denymail)) 
+            {
+              /* check syntax, via DNS */
+              switch (badmxcheck(&addr.s[i+1]))
+              {
+                case 0:
+                  break; /*valid*/
+                case DNS_SOFT:
+                  flagbarf=2; /*fail tmp*/
+                  why = "refused 'mail from' because return MX lookup failed temporarly";
+                  break;
+                case DNS_HARD:
+                  flagbarf=1; 
+                  why = "refused 'mail from' because return MX does not exist";
+                  break;
+              }
+            } /* DNSCHECK */
+          } /* if !flagbarf */
+        } /* without @ */
+      } /* bounce */
+    } /* SPAM */
+    if (flagbarf)
     {
       logpid(2); logstring(2,why); logstring(2,"for ="); logstring(2,addr.s); logflush(2);
-      if (2==flagbarf)
-        err_dns(); 
-      else if (1==spamflag)
+      if (flagbarf=2)
+        err_dns();
+      else if (spamflag=1)
         err_spam();
       else
-        err_bmf();
+        err_hard(why);
       return;
     }
   } /* denymail */
