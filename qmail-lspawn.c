@@ -265,6 +265,7 @@ int len;
 
       case 201:
          substdio_puts(ss, "ZUnable to initialize LDAP connection (bad server address or server down?).\n");
+      return;
       
       case 202:
          substdio_puts(ss, "DInternal error in ldap_set_option.\n");
