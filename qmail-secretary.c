@@ -892,7 +892,8 @@ void sigalrm(void)
 	strerr_die1x(111, "Timeout on maildir delivery.");
 }
 
-void savemessage(stralloc *hash, const char *maildir, const char *subdir)
+void
+savemessage(stralloc *hash, const char *maildir, const char *subdir)
 {
 	struct	stat	st;
 	substdio	ss, ssout;
