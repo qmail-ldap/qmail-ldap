@@ -17,7 +17,7 @@ PATH="$QMAIL/bin:$PATH"
 # source the environemt in ./env
 eval `env - PATH=$PATH envdir ./env awk '\
 	BEGIN { for (i in ENVIRON) \
-		export printf "%s=\"%s\"\n", i, ENVIRON[i] }'`
+		printf "export %s=\"%s\"\n", i, ENVIRON[i] }'`
 
 # enforce some sane defaults
 # Nothing so far
