@@ -18,8 +18,6 @@ extern int h_errno;
 #include "dns.h"
 #include "case.h"
 
-#define FUCKVERISIGN 1
-
 static unsigned short getshort(c) unsigned char *c;
 { unsigned short u; u = c[0]; return (u << 8) + c[1]; }
 

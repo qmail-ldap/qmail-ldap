@@ -12,8 +12,10 @@
 # -DDATA_COMPRESS to use the smtp on the fly DATA compression 
 # -DEXTERNAL_TODO to use the external high-performance todo processing (this
 #     avoids the silly qmail syndrome with high injection rates)
+# -DFUCKVERISIGN to disallow dns wildchar matches on gtlds, thanks verisign.
 # -DQLDAP_CLUSTER for enabling cluster support
 # -DQMQP_COMPRESS to use the QMQP on the fly compression (for clusters)
+# -DQUOTATRASH to include the Trash in the quota calculation (normaly it is not)
 # -DSMTPEXECCHECK to enable smtp DOS/Windows executable detection
 #LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT -DDATA_COMPRESS -DQMQP_COMPRESS
 
@@ -88,7 +90,7 @@ default: it ldap
 
 ldap: qmail-quotawarn qmail-reply auth_pop auth_imap auth_smtp digest \
 qmail-ldaplookup pbsadd pbscheck pbsdbd qmail-todo qmail-forward \
-qmail-secretary qmail-group
+qmail-secretary qmail-group qmail-verify
 
 addresses.0: \
 addresses.5
@@ -2088,6 +2090,18 @@ qmail-users.9 conf-break conf-spawn
 	| sed s}BREAK}"`head -1 conf-break`"}g \
 	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
 	> qmail-users.5
+
+qmail-verify: \
+load qmail-verify.o qldap.a read-ctrl.o control.o getln.a substdio.a \
+stralloc.a env.a alloc.a error.a open.a fs.a case.a str.a auto_qmail.o
+	./load qmail-verify qldap.a read-ctrl.o control.o getln.a \
+	substdio.a stralloc.a env.a alloc.a error.a open.a fs.a case.a \
+	str.a auto_qmail.o $(LDAPLIBS)
+
+qmail-verify.o: \
+compile qmail-verify.c getln.h qldap.h qldap-errno.h qmail-ldap.h \
+read-ctrl.h stralloc.h subfd.h substdio.h
+	./compile $(LDAPFLAGS) $(DEBUG) qmail-verify.c
 
 qmail.0: \
 qmail.7
