@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/09/10 07:54:29 $)
+RELEASE: current ($Date: 2003/09/26 19:23:42 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -903,6 +903,8 @@ LDAP_PROGRAM (default: "deliveryProgramPath")
        Program delivery is done in addition to local (maildir/mbox) delivery.
        Program delivery can be disabled without having to remove the
        entries. See deliveryMode for more information on both.
+       A valid home-directory is needed so either LDAP_MAILSTORE or
+       LDAP_HOMEDIR needs to be defined.
 
 LDAP_MODE (default: "deliveryMode")
 
