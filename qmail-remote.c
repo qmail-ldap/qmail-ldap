@@ -40,7 +40,10 @@ SSL *ssl = NULL;
 
 #define HUGESMTPTEXT 5000
 
+#ifndef PORT_SMTP /* this is for testing purposes, so you can overwrite 
+					 this port via a simple -D argument */
 #define PORT_SMTP 25 /* silly rabbit, /etc/services is for users */
+#endif
 unsigned long port = PORT_SMTP;
 
 GEN_ALLOC_typedef(saa,stralloc,sa,len,a)

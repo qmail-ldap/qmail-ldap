@@ -16,6 +16,10 @@
 #include "fmt.h"
 
 #define QLDAP_PORT LDAP_PORT
+#ifndef PORT_LDAP /* this is for testing purposes, so you can overwrite 
+					 this port via a simple -D argument */
+#define PORT_LDAP QLDAP_PORT
+#endif
 
 /* system libraries for syscalls */
 /* #include <unistd.h> */
@@ -202,7 +206,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 #ifndef USE_CLDAP
 	debug(128, "ldap_lookup: ");
 	/* allocate the connection */
-	if ( (ld = ldap_init(qldap_server.s,QLDAP_PORT)) == 0 ) {
+	if ( (ld = ldap_init(qldap_server.s,PORT_LDAP)) == 0 ) {
 		qldap_errno = LDAP_INIT;
 		return -1;
 	}
@@ -264,7 +268,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 #else /* USE_CLDAP */
 	debug(128, "ldap_lookup: ");
 	/* allocate the connection */
-	if ( (ld = cldap_open(qldap_server.s,QLDAP_PORT)) == 0 ) {
+	if ( (ld = cldap_open(qldap_server.s,PORT_LDAP)) == 0 ) {
 		qldap_errno = LDAP_INIT;
 		return -1;
 	}

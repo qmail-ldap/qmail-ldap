@@ -18,7 +18,10 @@
 #include "control.h"
 #include "fmt.h"
 
+#ifndef PORT_QMQP /* this is for testing purposes, so you can overwrite 
+					 this port via a simple -D argument */
 #define PORT_QMQP 628
+#endif
 
 void die_success() { _exit(0); }
 void die_perm() { _exit(31); }
