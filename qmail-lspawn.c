@@ -327,7 +327,6 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
                       LDAP_REPLYTEXT,
                       LDAP_DOTMODE, 0 };
    int  ret;
-   int  reply;
    int  at;
    int  i;
    int  force_forward;
@@ -338,6 +337,8 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    /* check the mailaddress for illegal characters       *
     * escape '*', ,'\', '(' and ')' with a preceding '\' */
    if (!escape_forldap(mail) ) _exit(QLX_NOMEM);
+
+   /* XXX qldap_ldapopen() */
 
    /* build the search string for the email address */
    if (!stralloc_copys(&filter,"(" ) ) _exit(QLX_NOMEM);
@@ -567,15 +568,23 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    }
    ldap_value_free(extra[2].vals);
 
+   /* prefetch the reply text so we can remove it if no deliverymode
+    * is set. */
+   if ( extra[4].vals != 0 ) {
+      log(32, "%s: %s\n", ENV_REPLYTEXT, extra[4].vals[0] );
+      if ( !env_put2(ENV_REPLYTEXT, extra[4].vals[0]) ) _exit(QLX_NOMEM);
+   } else {
+      if ( !env_unset(ENV_REPLYTEXT) ) _exit(QLX_NOMEM);
+   }
+   ldap_value_free(extra[4].vals);
+
    /* get the deliverymode of the mailbox:                    *
     * reply, echo, forwardonly, normal, nombox, localdelivery */
-   reply = 0;
    if ( extra[3].vals != 0 ) {
       if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
       for ( i = 0; extra[3].vals[i] != 0; i++ ) {
          /* append */
          case_lowers(extra[3].vals[i]);
-         if ( !str_diff(MODE_REPLY, extra[3].vals[i]) ) reply = 1;
          if (!stralloc_cats(&foo, extra[3].vals[i])) _exit(QLX_NOMEM);
          if (extra[3].vals[i+1] == 0 ) break;
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
@@ -590,14 +599,6 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    }
    ldap_value_free(extra[3].vals);
    
-   if ( reply ) {
-      if ( extra[4].vals != 0 ) {
-         log(32, "%s: %s\n", ENV_REPLYTEXT, extra[4].vals[0] );
-         if ( !env_put2(ENV_REPLYTEXT, extra[4].vals[0]) ) _exit(QLX_NOMEM);
-      }
-      ldap_value_free(extra[4].vals);
-   }
-
    /* get the mode of the .qmail interpretion: ldaponly, dotonly, both, none */
    if ( extra[5].vals != 0 ) {
       case_lowers(extra[5].vals[0]);
@@ -627,6 +628,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
      if ( !env_put2(ENV_MODE, MODE_FORWARD) ) _exit(QLX_NOMEM);
    }
    /* ok, we finished, lets clean up and disconnect from the LDAP server */
+   /* XXX qldap_ldapclose() */
    return 0;
 }
 /* end -- LDAP server query routines */
