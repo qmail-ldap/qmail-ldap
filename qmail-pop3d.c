@@ -20,10 +20,6 @@
  #include "error.h"
 #endif
 
-/* This is now set via the Makefile */
-/* #define MAKE_NETSCAPE_WORK       */
-/* make the Netscape download progress bar work with qmail-pop3d */
-
 void die() { _exit(0); }
 
 int saferead(fd,buf,len) int fd; char *buf; int len;
