@@ -851,7 +851,7 @@ char **argv;
          count_print();
          _exit(0); 
       } else {
-         strerr_die3x(100,"Error: No valid dot-mode found: ",s,". (LDAP-ERR #2.0.2)");
+         strerr_die3x(100,"Error: Non valid dot-mode found: ",s,". (LDAP-ERR #2.0.2)");
       }
    } else qmode = DO_DOT;  /* no qmailmode, so I use standard .qmail */
 	   
@@ -916,7 +916,8 @@ char **argv;
        } else if ( !str_diff(MODE_LDELIVERY, s) ) {
          if (!flagdoit) sayit("force local delivery ",s,0);
          localdelivery = 1;
-       } else strerr_warn1("Error: undefined mail mode (ignored). (LDAP-ERR #2.1.2)", 0);
+       } else strerr_warn5("Error: undefined mail delivery mode: ",
+                     LDAP_MODE,"=",s," (ignored). (LDAP-ERR #2.1.2)", 0);
        
        j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }

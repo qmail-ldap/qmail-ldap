@@ -81,6 +81,31 @@ int sanitypathchecks(register char *s, register unsigned char mask)
 	return sanitypathcheckb(s, str_len(s), mask);
 }
 
+/************************************************************
+You can allow or deny chars by adding:
+  DENY_ALL:   always deny this char
+  ALLOW_ALL:  always allow this char
+  ALLOW_USER: allow this char for username checks (chck_user)
+  DENY_USER:  deny this char for username checks (chck_user)
+  ALLOW_PATH: allow this char for path checks (chck_path)
+  DENY_PATH:  deny this char for path checks (chck_path)
+  ALLOW_PROG: allow this char for program checks (chck_prog)
+  DENY_PROG:  deny this char for program checks (chck_prog)
+  NOT_FIRST:  deny this char at the beginning of a string
+  SPACE:      alias to ALLOW_PROG
+  PARANOIA:   deny most shell special chars like '|' or '*' for program checks
+              can be turned on or of in qmail-ldap.h
+  Example:
+   * 7  \007 ^G * DENY_ALL,               * deny control chars *
+   * 45 '-'     * ALLOW_ALL|NOT_FIRST,    * allowed but not first *
+   * 47 '/'     * ALLOW_ALL&DENY_USER,    * allowed only for path and prog *
+   * 58 ':'     * ALLOW_PROG|ALLOW_PATH,  * like before *
+ 
+  As you can see ALLOWs have to be ORed together whereas DENYs have to be ANDed
+  NOT_FIRST has to be ORed and PARANOIA has to be ANDed.
+
+************************************************************/
+
 unsigned char testvektor[128] = { 
 #define SPACE			ALLOW_PROG
 #if RESTRICT_PROG == 1

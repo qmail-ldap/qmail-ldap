@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/10/06 16:05:51 $)
+RELEASE: current ($Date: 2001/10/11 14:11:59 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -43,6 +43,8 @@ INSTALL:
 
 2. Read this document. THIS IS IMPORTANT, this is no 
    ./configure; make; make install software.
+   If you are not familiar with compiling software you should definitifly
+   read http://www.lifewithqmail.org/ldap/ first.
 
 3. You need the following compiled and installed
     - OpenLDAP 1.2.x/2.x or higher (others might also work)
@@ -76,8 +78,11 @@ INSTALL:
      NOTE: on Solaris Systems you probably need also -lnsl -lsocket
            newer OpenLDAP libs my need also -lresolv (DNS support).
            It is also good to set the ld runpath with the -R switch
-           for more info ld(1) or gcc(1).
+           for more info ld(1) or gcc(1) and 
+           http://www.lifewithqmail.org/ldap/.
    - LDAPINCLUDES: perhaps you need a special include-path for ldap
+     NOTE: if you need this you may run into shared library problems
+           see http://www.lifewithqmail.org/ldap/.
 
    - MNW=-DMAKE_NETSCAPE_WORK (turns on the patch that fixes the problem 
      with the Netscape download progress bar and qmail-pop3d)
@@ -90,7 +95,7 @@ INSTALL:
    - SHADOWLIBS=-lcrypt is needed on most systems (except my OpenBSD box :-) )
      SHADOWLIBS=-lcrypt -lshadow , SHADOWOPTS=-DPW_SHADOW are needed on some 
      Systems (Solaris, Linux) for local password lookups 
-     (just like the original djb-checkpassword)
+     (just like the original djb-checkpassword. See Makefile.)
    - DEBUG=-DDEBUG (compiles debugging into the auth modules and qmail-ldap, 
      see also 10.)
    - TLS* stuff for TLS (SMTP encryption) mostly self explaining
@@ -116,7 +121,8 @@ INSTALL:
      path: [a-zA-Z0-9@_./:=][a-zA-Z0-9@_.-/:=]* 
            (for LDAP_MAILSTORE and LDAP_HOMEDIR)
      prog: [a-zA-Z0-9@_./:=\\\t\n "'+,][a-zA-Z0-9@_.-/:=\\\t\n "'+,]* 
-           (for LDAP_PROGRAM with RESTRICT_PROG on)
+           (for LDAP_PROGRAM with RESTRICT_PROG on, if RESTRICT_PROG is 0
+           then most shell escape characters are also allowed. e.g [$#!%&()*;])
      NOTE: have a look at QLDAPNEWS for more info
 
 5.3 Note on DASH_EXT:
@@ -135,7 +141,14 @@ INSTALL:
     install -> HINT: read the INSTALL and the FAQ file!!! :) ).
     Now everything should be installed with correct permissions.
 
-6.1 If using TLS you can use 'make cert' or 'make cert-req' to create TLS 
+6.1 If "make setup check" fails with an error like this:
+       /usr/local/lib/libldap.so: undefined reference to `res_query' 
+       /usr/local/lib/libldap.so: undefined reference to `dn_expand'
+       collect2: ld returned 1 exit status
+       make: *** [qmail-lspawn] Error 1
+    You have forgotten to add -lresolv to LDAPLIBS.
+
+6.2 If using TLS you can use 'make cert' or 'make cert-req' to create TLS 
     certificates
 
 7.  Create the LDAP user database and start the LDAP server
