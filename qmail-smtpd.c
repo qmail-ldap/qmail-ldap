@@ -412,16 +412,20 @@ void rbl_init()
   }
 }
 
+stralloc rbl_tmp;
+
 int rbl_lookup(char *base)
 {
-  stralloc tmp;
   ipalloc rblsa = {0};
 
-  if (!stralloc_copy(&tmp,&ip_reverse)) die_nomem();
-  if (!stralloc_cats(&tmp,base)) die_nomem();
+  if (!*base) return 2;
 
-  dns_init(0);
-  switch (dns_ip(&rblsa,&tmp))
+  if (!stralloc_copys(&rbl_tmp,"")) die_nomem();
+
+  if (!stralloc_copy(&rbl_tmp,&ip_reverse)) die_nomem();
+  if (!stralloc_cats(&rbl_tmp,base)) die_nomem();
+
+  switch (dns_ip(&rblsa,&rbl_tmp))
   {
     case DNS_MEM:
     case DNS_SOFT:
@@ -705,12 +709,15 @@ void smtp_mail(arg) char *arg;
   } /* denymail */
 
   /* Allow relaying based on envelope sender address */
-  if (!relayok) if (rmfcheck())
-  {
-    relayclient = "";
-    logline(2,"relaying allowed for envelope sender");
+  if (!relayok)
+  { 
+    if (rmfcheck())
+    {
+      relayclient = "";
+      logline(2,"relaying allowed for envelope sender");
+    }
+    else relayclient = 0;
   }
-  else relayclient = 0;
 
   seenmail = 1;
   if (!stralloc_copys(&rcptto,"")) die_nomem();
@@ -789,7 +796,7 @@ void smtp_rcpt(arg) char *arg; {
               logpid(2); logstring(2,"client cert no found, no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
               return;
            }
-           relayclient = "";
+           relayclient = 0;
         }
         else
         {
