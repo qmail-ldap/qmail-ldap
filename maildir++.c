@@ -57,7 +57,6 @@ void quota_add(int fd, long int size, int count)
 	if (substdio_put(&ss, foo2.s, foo2.len) == -1) goto addfail;
 	if (substdio_flush(&ss) == -1) goto addfail; 
 	if (fsync(fd) == -1) goto addfail; 
-	if (close(fd) == -1) goto addfail; 
 	return;
 	
 addfail:
@@ -94,7 +93,6 @@ void quota_rm(int fd, long int size, int count)
 	if (substdio_put(&ss, foo2.s, foo2.len) == -1) goto rmfail;
 	if (substdio_flush(&ss) == -1) goto rmfail; 
 	if (fsync(fd) == -1) goto rmfail; 
-	if (close(fd) == -1) goto rmfail; 
 	return;
 	
 rmfail:
@@ -197,7 +195,6 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize,
 					/* compare if the settings have changed */
 					if ( size == q_size && count == q_count ) {
 						/* finaly parse the maildirsize */
-						size = 0; count = 0;
 						if ( parse_quota(&ss, &size, &count, &lines) == -1 || 
 								lines == 0 ) {
 							if ( unlink(maildirsize.s) == -1 && 
@@ -214,6 +211,7 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize,
 						calc_size(dir, &size, &count, &maxtime);
 					}
 				} else {
+					q_count = count; q_size = size;
 					if ( parse_quota(&ss, &size, &count, &lines) == -1 || 
 							lines == 0 ) {
 						*fd = -1;
@@ -311,7 +309,7 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize,
 			return quota_maildir(dir, quota, fd, mailsize, mailcount);
 		}
 	}
-	/* release some buffers */
+	/* should release some buffers (but not possible) */
 	if ( ! stralloc_copys(&foo, "") ) temp_nomem();
 	if ( ! stralloc_copys(&foo2, "") ) temp_nomem();
 	if ( ! stralloc_copys(&maildirsize, "") ) temp_nomem();

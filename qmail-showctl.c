@@ -19,6 +19,9 @@
 stralloc me = {0};
 int meok;
 
+stralloc ldapserver = {0};
+int ldapok;
+
 stralloc line = {0};
 char num[FMT_ULONG];
 
@@ -213,6 +216,17 @@ void main()
     substdio_flush(subfdout);
     _exit(111);
   }
+  ldapok = control_readline(&ldapserver,"ldapserver");
+  if (ldapok == -1) {
+    substdio_puts(subfdout,"Oops! Trouble reading control/ldapserver.");
+    substdio_flush(subfdout);
+    _exit(111);
+  }
+  substdio_puts(subfdout,"me: My name is ");
+  substdio_put(subfdout, me.s, me.len);
+  substdio_puts(subfdout,"\nldapserver: My ldap server is ");
+  substdio_put(subfdout, ldapserver.s, ldapserver.len);
+  substdio_puts(subfdout,"\n\n");
 
   do_lst("badmailfrom","Any MAIL FROM is allowed.",""," not accepted in MAIL FROM.");
   do_str("bouncefrom",0,"MAILER-DAEMON","Bounce user name is ");
@@ -262,6 +276,28 @@ void main()
   do_int("timeoutsmtpd","1200","SMTP server data timeout is "," seconds");
   do_lst("virtualdomains","No virtual domains.","Virtual domain: ","");
 
+
+  substdio_puts(subfdout,"\nnow the qmail-ldap specific files\n");
+  do_str("ldapbasedn",0,"NULL","LDAP basedn: ");
+  do_str("ldaplogin",0,"NULL","LDAP login: ");
+  do_str("ldappassword",0,"NULL","LDAP password: ");
+  do_int("ldaplocaldelivery","1","local passwd lookup is "," (1 = on, 0 = off)");
+  do_int("ldaprebind","0","ldap rebinding is "," (1 = on, 0 = off)");
+  do_int("ldapcluster","0","clustering is "," (1 = on, 0 = off)");
+  do_str("ldapdefaultquota",0,"not defined","Default quota for ldap users: ");
+  do_str("ldapdefaultdotmode",0,"not defined","Default dot mode for ldap users: ");
+  do_str("ldapmessagestore",0,"not defined","Prefix for non absolute paths: ");
+  do_str("ldapuid",0,"not defined","Default UID is: ");
+  do_str("ldapgid",0,"not defined","Default GID is: ");
+  do_lst("custombouncetext","No custombouncetext.","","");
+  do_lst("quotawarning","No quotawarning.","","");
+  do_int("tarpitcount","0",""," RCPT TOs are accepted before tarpitting (0 = off)");
+  do_int("tarpitdelay","5",""," seconds of delay to introduce after each subsequent RCPT TO");
+  do_lst("badrcptto","Any RCPT TO is allowed.",""," not accepted in RCPT TO");
+  do_str("dirmaker",0,"not defined","Location of programm to create homedirs: ");
+  substdio_puts(subfdout,"\n");
+  
+  
   while (d = readdir(dir)) {
     if (str_equal(d->d_name,".")) continue;
     if (str_equal(d->d_name,"..")) continue;
@@ -296,7 +332,32 @@ void main()
     if (str_equal(d->d_name,"timeoutremote")) continue;
     if (str_equal(d->d_name,"timeoutsmtpd")) continue;
     if (str_equal(d->d_name,"virtualdomains")) continue;
-    substdio_puts(subfdout,"\n");
+    if (str_equal(d->d_name,"ldapserver")) continue;
+    if (str_equal(d->d_name,"ldapbasedn")) continue;
+    if (str_equal(d->d_name,"ldaplogin")) continue;
+    if (str_equal(d->d_name,"ldappassword")) continue;
+    if (str_equal(d->d_name,"ldaplocaldelivery")) continue;
+    if (str_equal(d->d_name,"ldaprebind")) continue;
+    if (str_equal(d->d_name,"ldapcluster")) continue;
+    if (str_equal(d->d_name,"ldapdefaultquota")) continue;
+    if (str_equal(d->d_name,"ldapdefaultdotmode")) continue;
+    if (str_equal(d->d_name,"ldapmessagestore")) continue;
+    if (str_equal(d->d_name,"ldapuid")) continue;
+    if (str_equal(d->d_name,"ldapgid")) continue;
+    if (str_equal(d->d_name,"custombouncetext")) continue;
+    if (str_equal(d->d_name,"quotawarning")) continue;
+    if (str_equal(d->d_name,"tarpitcount")) continue;
+    if (str_equal(d->d_name,"tarpitdelay")) continue;
+    if (str_equal(d->d_name,"badrcptto")) continue;
+    if (str_equal(d->d_name,"dirmaker")) continue;
+    if (str_equal(d->d_name,"ldappasswdappend")) {
+        substdio_puts(subfdout,"ldappasswdappend: No longer used, please remove.\n");
+        continue;
+    }
+    if (str_equal(d->d_name,"ldapusername")) {
+        substdio_puts(subfdout,"ldapusername: No longer used, please remove.\n");
+        continue;
+    }
     substdio_puts(subfdout,d->d_name);
     substdio_puts(subfdout,": I have no idea what this file does.\n");
   }

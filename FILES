@@ -467,3 +467,9 @@ qldap-mdm.c
 qldap-mdm.h
 qldap-errno.c
 qmail-ldaplookup.c
+QLDAPTODO
+QLDAPPICTURE
+TLS.readme
+dirmaker
+popfetch.pl
+

@@ -484,7 +484,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
       for ( i = 0; extra[2].vals[i] != 0; i++ ) {
          /* append */
-         if (!chck_paths(extra[2].vals[i]) ) return 31; /* XXX */
+         if (!chck_progs(extra[2].vals[i]) ) return 31; /* XXX */
          if (!stralloc_cats(&foo, extra[2].vals[i])) _exit(QLX_NOMEM);
          if (extra[2].vals[i+1] == 0 ) break;
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);

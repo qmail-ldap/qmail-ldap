@@ -234,6 +234,9 @@ int main(int argc, char **argv)
 			output( "\t\t%s: %s\n", extra[i].what, extra[i].vals[0]);
 			for ( j = 1; extra[i].vals[j] != 0; j++ ) {
 				output( "\t\t\t\t %s\n", extra[i].vals[j]);
+				if ( i == 4 && !chck_progs(extra[i].vals) ) { 
+					output( "\tWARNING %s contains illegal chars!\n", LDAP_PROGRAM);
+				}
 			}
 			ldap_value_free(extra[i].vals);
 		} else {

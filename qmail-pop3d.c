@@ -183,16 +183,8 @@ void pop3_stat()
 void pop3_rset()
 {
   int i;
-/* qmail-ldap stuff */
-/* this is just minimal support, because pop3 can not produce new mail */
-  for (i = 0;i < numm;++i) {
-    if ( m[i].flagdeleted == 1 ) {
-      quota_maildir(dir,(char *) 0, &qfd, 0, 0);
-      if ( qfd != -1 ) quota_add(qfd, m[i].size, 1);
-    }
-    m[i].flagdeleted = 0;
-  }
-/* end qmail-ldap stuff */
+
+  for (i = 0;i < numm;++i) m[i].flagdeleted = 0;
   last = 0;
   okay();
 }
@@ -208,8 +200,13 @@ void pop3_last()
 void pop3_quit()
 {
   int i;
+/* qmail-ldap stuff */
+/* this is just minimal support, because pop3 can not produce new mail */
+  quota_maildir(dir,(char *) 0, &qfd, 0, 0);
   for (i = 0;i < numm;++i)
     if (m[i].flagdeleted) {
+      if ( qfd != -1 ) quota_rm(qfd, m[i].size, 1);
+/* end qmail-ldap stuff */
       if (unlink(m[i].fn) == -1) err_nounlink();
     }
     else
@@ -221,6 +218,7 @@ void pop3_quit()
 	rename(m[i].fn,line.s); /* if it fails, bummer */
       }
   okay();
+  if ( qfd != -1 ) close(qfd);
   die();
 }
 
@@ -242,11 +240,6 @@ void pop3_dele(arg) char *arg;
   if (i == -1) return;
   m[i].flagdeleted = 1;
   if (i + 1 > last) last = i + 1;
-/* qmail-ldap stuff */
-/* this is just minimal support, because pop3 can not produce new mail */
-  quota_maildir(dir,(char *) 0, &qfd, 0, 0);
-  if ( qfd != -1 ) quota_rm(qfd, m[i].size, 1);
-/* end qmail-ldap stuff */
   okay();
 }
 

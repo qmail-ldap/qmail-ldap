@@ -201,6 +201,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	/* connect to the LDAP server */
 	if ( (rc = ldap_simple_bind_s(ld,qldap_user.s,qldap_password.s)) 
 			!= LDAP_SUCCESS ) {
+		debug(128, ", bind NOT succesful\n");
 		qldap_errno = LDAP_BIND;
 		return -1;
 	}
@@ -271,6 +272,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 
 static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 /* NOTE: all default qldap_* strallocs are 0-terminated */
+/* Thanks to Tony Abbott for the bug fixes */
 {
 	char **vals;
 	int i;

@@ -254,6 +254,7 @@ char *fn;
      /* second chance */
      sleep(3);
      perc = quota_maildir(fn, quotastring, &fd, mailsize, 1);
+	 /* XXX fd can be -1 when perc = 0 quota_add/rm take care of that */
      if ( perc == -1 )
        strerr_die1x(111,"Temporary race condition while calculating quota. (LDAP-ERR #2.4.2)");
    }
@@ -264,6 +265,7 @@ char *fn;
      quota_warning(fn);
 
    quota_add(fd, mailsize , 1);
+   close(fd);
  }
  
  /* end -- quota handling maildir */

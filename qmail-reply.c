@@ -138,12 +138,11 @@ void check_header_and_get_subject(stralloc *subject)
       case_lowerb(line.s, (len = byte_chr(line.s,line.len,':') ) );
       if( !str_diffn("subject:", line.s, len+1) ) {
          temp.s = line.s+len+1; /* cut away "subject:" without ' ' */
-         temp.len = line.len-len-2; /* reducing lenght: amount lenght of "subject:" and this &*"! '\n' */
-         if (temp.len > 1 ) { /* subject has to be more than 1 char (normaly a space) */
+         temp.len = line.len-len-1; /* reducing lenght: amount lenght of "subject:" */
+         if (temp.len > 1 ) { /* subject has to be more than 1 char (normaly a \n) */
             if (!stralloc_copys(subject, "Re:")) temp_nomem();
             if (!stralloc_cat(subject, &temp)) temp_nomem();
            temp.s = 0; temp.len = 0;
-           if (!stralloc_0(subject)) temp_nomem();
          }
       }
       if( !str_diffn("mailing-list:", line.s, len+1) ) exit(0); /* don't send to mailing-lists */
@@ -199,7 +198,7 @@ void send_reply(stralloc *dtl, stralloc *to, stralloc *from, stralloc *subject, 
  write(pi[1], from->s, from->len);
  write(pi[1], "\nSubject: ", 10);
  write(pi[1], subject->s, subject->len);
- write(pi[1], "\n\n", 2);
+ write(pi[1], "\n", 2);
  write(pi[1],replytext->s,replytext->len);
  close(pi[1]);
  wait_pid(&wstat,child);

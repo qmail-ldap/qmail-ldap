@@ -4,6 +4,8 @@
 # -DLDAP_ESCAPE_BUG should be added as long as the ldap servers have 
 # problems with the escapeing of LDAP filters (fixed with OpenLDAP 1.2.7)
 # -DQLDAP_CLUSTER for enabling cluster support
+# to use cleartext passwords (a bad idea on production systems) add
+# -DCLEARTEXTPASSWD to the LDAPFLAGS
 #LDAPFLAGS=-DQLDAP_CLUSTER
 
 # Perhaps you have different ldap libraries, change them here

@@ -9,7 +9,7 @@ char *qldap_err_str(int enbr )
 {
 	switch (enbr) {
 		case ERRNO:
-			return error_str(enbr);
+			return error_str(errno);
 		case LDAP_INIT:
 			return "initalizing of ldap connection faild";
 		case LDAP_BIND:
