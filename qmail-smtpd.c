@@ -137,8 +137,8 @@ void err_dns() { out("421 DNS temporary failure at return MX check, try again la
 void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
 void err_qqt() { out("451 qqt failure (#4.3.0)\r\n"); }
 
-void err_bmf() { out("553 sorry, your mail was administratvely denied. (#5.7.1)\r\n"); }
-void err_bmfunknown() { out("553 sorry, your mail from a host without RR DNS was administratvely denied. (#5.7.1)\r\n"); }
+void err_bmf() { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
+void err_bmfunknown() { out("553 sorry, your mail from a host without RR DNS was administratively denied. (#5.7.1)\r\n"); }
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
 void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
