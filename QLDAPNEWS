@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/09/30 08:30:16 $ ($Revision: 1.67 $)
+RELEASE: $Date: 2002/09/30 21:30:20 $ ($Revision: 1.68 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,7 +20,7 @@ NEWS for current stuff:
 
  Corrected qmail.schema contributed by Mike Jackson.
 
- Docu bug in POPBEFORESMTP fixed.
+ Documentation bug in POPBEFORESMTP fixed.
 
  Add LDAPv3 protocol support.
 
