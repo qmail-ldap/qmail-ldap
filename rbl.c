@@ -32,7 +32,7 @@ int numrbl;
 static stralloc ip_reverse = {0};
 static stralloc rbl_tmp = {0};
 
-static void rbl_start(char *remoteip)
+static int rbl_start(char *remoteip)
 {
   unsigned int i;
   unsigned int j;
@@ -45,12 +45,16 @@ static void rbl_start(char *remoteip)
 
   i = str_len(ip_env);
   while (i) {
-    for (j = i;j > 0;--j) if (ip_env[j - 1] == '.') break;
+    for (j = i;j > 0;--j) {
+      if (ip_env[j - 1] == '.') break;
+      if (ip_env[j - 1] == ':') return 0; /* no IPv6 */
+    }
     if (!stralloc_catb(&ip_reverse,ip_env + j,i - j)) die_nomem();
     if (!stralloc_cats(&ip_reverse,".")) die_nomem();
     if (!j) break;
     i = j - 1;
   }
+  return 1;
 }
 
 static char ipstr[IPFMT];
@@ -110,7 +114,7 @@ int rblcheck(char *remoteip, char** rblname)
   if (!rblenabled) return 0;
 
   if(!stralloc_copys(&rblmessage, "")) die_nomem();
-  rbl_start(remoteip);
+  if(!rbl_start(remoteip)) return 0;
 
   for (i=0; i < numrbl; i++) {
     logpid(2); logstring(2,"RBL check with '"); logstring(2,rbl[i].baseaddr); logstring(2,"':");
