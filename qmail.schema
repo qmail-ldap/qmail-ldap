@@ -6,6 +6,7 @@
 # Created by: David E. Storey <dave@tamos.net>
 # Modified and included into qmail-ldap by Andre Oppermann <opi@nrg4u.com>
 # Schema fixes by Mike Jackson <mjj@pp.fi>
+# Schema fixes by Christian Zoffoli (XMerlin) <czoffoli@xmerlin.org>
 #
 #
 # This schema depends on:
@@ -77,6 +78,7 @@ attributetype ( 1.3.6.1.4.1.7914.1.2.1.10 NAME 'deliveryMode'
 
 attributetype ( 1.3.6.1.4.1.7914.1.2.1.11 NAME 'mailReplyText'
 	DESC 'A reply text for every incoming message'
+	EQUALITY caseIgnoreMatch
 	SUBSTR caseIgnoreSubstringsMatch
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{4096} SINGLE-VALUE )
 
@@ -138,6 +140,7 @@ attributetype ( 1.3.6.1.4.1.7914.1.3.1.5 NAME 'membersonly'
 
 attributetype ( 1.3.6.1.4.1.7914.1.3.1.6 NAME 'confirmtext'
 	DESC 'Text that will be sent with sender confirmation email.'
+	EQUALITY caseIgnoreMatch
 	SUBSTR caseIgnoreSubstringsMatch
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{4096} SINGLE-VALUE )
 
@@ -154,6 +157,7 @@ attributetype ( 1.3.6.1.4.1.7914.1.3.1.8 NAME 'rfc822moderator'
 
 attributetype ( 1.3.6.1.4.1.7914.1.3.1.9 NAME 'moderatortext'
 	DESC 'Text that will be sent with request for moderation email.'
+	EQUALITY caseIgnoreMatch
 	SUBSTR caseIgnoreSubstringsMatch
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{4096} SINGLE-VALUE )
 
