@@ -736,7 +736,8 @@ int main(int argc, char **argv)
 
 	/* check if a reply is needed */
 	if (junksender(to.s, to.len)) _exit(0);
-	if (maildir)
+	if (maildir && (*maildir == '.' || *maildir == '/') &&
+	    maildir[str_len(maildir)-1] == '/')
 		if (recent(to.s, to.len, maildir)) _exit(0);
 	/* parse header, exit if a precedence or mailinglist field
 	   has been found or the mail is not directly sent to us. */
