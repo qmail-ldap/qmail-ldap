@@ -537,7 +537,7 @@ int qldap_get( stralloc *mail )
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
    if (!stralloc_cats(&nughde, "")) _exit(QLX_NOMEM);
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-   if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+//   if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
 
 #ifdef QLDAPDEBUG 
    printf("nughde.len: %i\n", nughde.len);
@@ -790,15 +790,15 @@ char *s; char *r; int at;
             
             if (!stralloc_copys(&nughde, pw->pw_name)) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-            if (!stralloc_copys(&nughde,num,fmt_ulong(num, (long) pw->pw_uid))) _exit(QLX_NOMEM);
+            if (!stralloc_cats(&nughde,num,fmt_ulong(num, (long) pw->pw_uid))) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-            if (!stralloc_copyb(&nughde,num,fmt_ulong(num, (long) pw->pw_gid))) _exit(QLX_NOMEM);
+            if (!stralloc_cats(&nughde,num,fmt_ulong(num, (long) pw->pw_gid))) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-            if (!stralloc_copys(&nughde, pw->pw_dir)) _exit(QLX_NOMEM); 
+            if (!stralloc_cats(&nughde, pw->pw_dir)) _exit(QLX_NOMEM); 
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-            if (!stralloc_copys(&nughde,"-")) _exit(QLX_NOMEM);
+            if (!stralloc_cats(&nughde,"-")) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-            if (!stralloc_copys(&nughde,r)) _exit(QLX_NOMEM);
+            if (!stralloc_cats(&nughde,r)) _exit(QLX_NOMEM);
             if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
             free(pw);
          }
