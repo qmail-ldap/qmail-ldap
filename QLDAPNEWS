@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/12/19 12:02:50 $ ($Revision: 1.25 $)
+RELEASE: $Date: 2000/12/22 13:00:49 $ ($Revision: 1.26 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,10 @@ NEWS for current stuff:
 
  introduced ~control/objectclass to limit the ldap search to a specific
  ldap objectclass as suggested in some recommended procedures.
+
+ bugfix in maildir++:
+    files with sizes containig 0 or 9 where claclculated wrong
+    if only one of C or S type where declared the quota of the other was ignored
 
 NEWS for 20001201:
 

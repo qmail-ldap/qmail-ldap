@@ -169,26 +169,26 @@ int quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc)
 {
 	int i;
 	
-	if ( q->quota_size == 0 || q->quota_count == 0 ) {
+	if ( q->quota_size == 0 && q->quota_count == 0 ) {
 		/* no quota defined */
 		if (perc) *perc = 0;
 		return 0;
 	}
 		
-	if ( q->size + size > q->quota_size ) {
+	if ( q->size + size > q->quota_size && q->quota_size != 0 ) {
 		if(perc) *perc = 100;
 		return -1;
 	}
 
-	if ( q->count + count > q->quota_count ) {
+	if ( q->count + count > q->quota_count && q->quota_count != 0 ) {
 		if(perc) *perc = 100;
 		return -1;
 	}
 	
 	if (!perc) return 0;
 	
-	*perc = (int) ( (q->size + size)*100/q->quota_size );
-	i = (int) ( (q->count + count)*100/q->quota_count );
+	*perc = q->quota_size ? (int) ( (q->size + size)*100/q->quota_size ) : 0;
+	i = q->quota_count ? (int) ( (q->count + count)*100/q->quota_count ) : 0;
 	if (i > *perc) *perc = i;
 	return 0;
 }
@@ -512,7 +512,7 @@ static int get_file_size(char *name, struct stat *st)
 		} else {
 			s += 3;
 			st->st_size = 0;
-			while ( *s > '0' && *s < '9' )
+			while ( *s >= '0' && *s <= '9' )
 				st->st_size = st->st_size*10 + (*s++ - '0');
 			return 0;
 		}
