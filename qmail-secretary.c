@@ -264,6 +264,7 @@ main(int argc, char **argv)
 		_exit(99);
 	} else if (case_startb(action.s, action.len, "approve")) {
 		nullsender();
+		bouncefx();
 		if (hashid.len == 0)
 			strerr_die2x(100, FATAL, "Approve message without id.");
 		checkmessage(&hashid, maildir, "cur/");
@@ -272,6 +273,7 @@ main(int argc, char **argv)
 		_exit(99);
 	} else if (case_startb(action.s, action.len, "confirm")) {
 		nullsender();
+		bouncefx();
 		if (hashid.len == 0)
 			strerr_die2x(100, FATAL, "Confirm message without id.");
 		checkmessage(&hashid, maildir, "new/");
@@ -720,7 +722,8 @@ bouncefx(void)
 {
 	substdio	ss;
 	int		match;
-	
+	unsigned int	l;
+
 	if (seek_begin(0) == -1) temp_rewind();
 	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
 	for (;;)
@@ -731,6 +734,21 @@ bouncefx(void)
 		if (case_startb(messline.s, messline.len, "mailing-list:"))
 			strerr_die2x(100, FATAL,
 			    "incoming message has Mailing-List. (#5.7.2)");
+		if (case_startb(messline.s, messline.len, "precedence:")) {
+			for (l = 11; l < messline.len; l++)
+				if (messline.s[l] != ' ' &&
+				    messline.s[l] != '\t')
+					break;
+			if (case_startb(messline.s + l, messline.len - l,
+			    "junk") ||
+			    case_startb(messline.s + l, messline.len - l,
+			    "bulk") ||
+			    case_startb(messline.s + l, messline.len - l,
+			    "list"))
+				strerr_die2x(100, FATAL,
+				    "incoming message has bad precedence. "
+				    "(#5.7.2)");
+		}
 		if (messline.len == dtline.len)
 			if (byte_equal(messline.s, messline.len, dtline.s))
 				strerr_die2x(100, FATAL,

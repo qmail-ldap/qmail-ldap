@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/03/25 18:36:01 $ ($Revision: 1.185 $)
+RELEASE: $Date: 2004/03/26 12:40:37 $ ($Revision: 1.186 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,8 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Qmail-secretary should ignore mails with precedence set to list, junk or bulk.
 
  Added Bruce Guenters qmail-qmqpc connect timeout patch.
 
