@@ -428,6 +428,9 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       if (!stralloc_cats(&filter,LDAP_CATCH_ALL)) _exit(QLX_NOMEM);
       if (!stralloc_catb(&filter,r+at, i-at)) _exit(QLX_NOMEM);
       if (!stralloc_cats(&filter,"))")) _exit(QLX_NOMEM);
+      if ( qldap_objectclass.len ) {
+        if (!stralloc_cats(&filter,")")) _exit(QLX_NOMEM);
+      }
       if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
       
       debug(16, "retry with filter '%s'\n", filter.s);
