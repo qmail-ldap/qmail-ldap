@@ -252,24 +252,24 @@ char *fn;
  quota_t q;
  unsigned long mailsize;
 
- if( quotastring && *quotastring ) {
+ if(quotastring && *quotastring) {
    if (fstat(0, &mailst) != 0)
        strerr_die3x(111,"Can not stat mail for quota: ",error_str(errno),". (LDAP-ERR #2.4.1)");
    mailsize = mailst.st_size;
    quota_get(&q, quotastring);
-   if ( quota_calc(fn, &msfd, &q) == -1 ) {
+   if (quota_calc(fn, &msfd, &q) == -1) {
      /* second chance */
      sleep(3);
 	 /* XXX fd can be -1 when retval = 0 quota_add/rm take care of that */
-     if ( quota_calc(fn, &msfd, &q) == -1 ) {
+     if (quota_calc(fn, &msfd, &q) == -1) {
        strerr_die1x(111,"Temporary race condition while calculating quota. (LDAP-ERR #2.4.2)");
      }
    }
    
-   if ( quota_check(&q, mailsize, 1, &perc) ) /* 0 if OK */
-     if ( quota_recalc(fn, &msfd, &q, mailsize, 1, &perc) )
+   if (quota_check(&q, mailsize, 1, &perc) =! 0) /* 0 if OK */
+     if (quota_recalc(fn, &msfd, &q, mailsize, 1, &perc))
        quota_bounce("mailfolder");
-   if ( perc >= QUOTA_WARNING_LEVEL ) 
+   if (perc >= QUOTA_WARNING_LEVEL) 
 	 /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
  }
@@ -286,6 +286,8 @@ char *fn;
      maildir_child(fn);
      _exit(111);
   }
+
+ close(msfd); /* close the maildirsize fd in the parent */
 
  wait_pid(&wstat,child);
  if (wait_crashed(wstat))
