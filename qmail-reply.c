@@ -98,6 +98,7 @@ int main()
 	}
 	if ( s = env_get("RECIPIENT") ) {
 		if (!stralloc_copys(&from,s)) temp_nomem();
+		if (!stralloc_0(&from)) temp_nomem();
 	} else {
 		strerr_die1x(111,"RECIPIENT not present (LDAP-ERR #4.1.4)");
 	}
@@ -113,7 +114,7 @@ int main()
 
 	if (!stralloc_copys(&foo,"QMAILSHOST=")) temp_nomem();
 	if (!stralloc_catb(&foo,from.s+i+1, from.len - i - 1)) temp_nomem();
-	if (!stralloc_0(&foo)) temp_nomem();
+	/* from is already zero terminated */
 	if (!env_put(foo.s)) temp_nomem();
 	
 	check_header_and_get_subject();
@@ -179,7 +180,7 @@ void check_header_and_get_subject(void)
 /* reply function */
 void send_reply(void)
 {
-	char *(args[3]);
+	char *(args[5]);
 	int child;
 	int pi[2];
 	int wstat;
@@ -196,7 +197,8 @@ void send_reply(void)
 		case 0:
 			close(pi[1]);
 			if(fd_move(0,pi[0]) == -1) _exit(QLX_SYS);
-			args[0]=prog.s; args[1]="-t"; args[2]=0;
+			args[0]=prog.s; args[1]="-t";
+			args[2]="-f"; args[3]=from.s; args[4]=0;
 			sig_pipedefault();
 			execv(*args,args);
 			strerr_die5x(111,"Unable to run ",prog.s,": ",error_str(errno),". (LDAP-ERR #4.4.0)");
@@ -208,7 +210,7 @@ void send_reply(void)
 	write(pi[1],"To: ", 4);
 	write(pi[1],to.s, to.len);
 	write(pi[1], "\nFrom: ", 7);
-	write(pi[1], from.s, from.len);
+	write(pi[1], from.s, from.len-1); /* from is zero terminated */
 	write(pi[1], " (via the qmail-reply program)", 30);
 	write(pi[1], "\nSubject: ", 10);
 	write(pi[1], "[Auto-Reply] ", 13);
