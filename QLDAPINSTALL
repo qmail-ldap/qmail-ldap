@@ -422,7 +422,7 @@ mailReplyText
 qmailDotMode
 
  The default interpretation of .qmail files
- Values: both, dotonly, ldaponly, none (just Maildir/box delivery)
+ Values: both, dotonly, ldaponly, ldapwithprog, none (just Maildir/box delivery)
  Default: set by file ~control/ldapdefaultdotmode
  Note: Works only for deliveries based on LDAP lookups,
        overrides ldapdefaultdotmode
