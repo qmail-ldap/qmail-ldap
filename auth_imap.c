@@ -219,7 +219,7 @@ void auth_error(int errnum)
 	if (!(env = env_get("AUTHUSER")))
 		_exit(100);
 #endif
-	execv(env, argvs);
+	execv(*argvs, argvs);
 	_exit(111);
 	
 }
