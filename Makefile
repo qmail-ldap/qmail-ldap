@@ -45,7 +45,7 @@ MNW=-DMAKE_NETSCAPE_WORK
 # WARNING: you need NONE DEBUG auth_* to run with inetd
 
 # Just for me, make a backup before compiling
-BACKUPPATH=/backup/qmail-backup/qmail-ldap.`date "+%Y%m%d-%H%M"`.tar
+#BACKUPPATH=/backup/qmail-backup/qmail-ldap.`date "+%Y%m%d-%H%M"`.tar
 # STOP editing HERE !!!
 
 # Don't edit Makefile! Use conf-* for configuration.
