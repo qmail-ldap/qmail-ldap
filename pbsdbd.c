@@ -142,6 +142,43 @@ unsigned long hash(const unsigned char *key,unsigned int keylen)
   return result;
 }
 
+void unlinkaddr(const unsigned char *key, unsigned int keylen)
+{
+  unsigned long pos;
+  unsigned long prevpos;
+  unsigned long nextpos;
+  unsigned int loop;
+
+  if (!cache) return;
+
+  prevpos = hash(key,keylen);
+  pos = get4(prevpos);
+  loop = 0;
+
+  while (pos) {
+    if (pos + 13 > cachesize) cache_impossible();
+    nextpos = prevpos ^ get4(pos);
+    if (nextpos == prevpos) cache_impossible();
+    if (*(cache + pos + 12) == keylen) {
+      if (pos + 13 + keylen > cachesize) cache_impossible();
+      if (byte_equal(key,keylen,cache + pos + 13)) {
+	set4(prevpos, get4(prevpos) ^ pos ^ nextpos);
+	if (nextpos != 0)
+	  set4(nextpos, get4(nextpos) ^ pos ^ prevpos);
+	set4(pos, 0);
+//	strerr_warn2(info, "clearing entry.", 0);
+	return;
+      }
+    }
+    prevpos = pos;
+    pos = nextpos;
+    if (++loop > 100) {
+      strerr_warn2(warning, "hash flooding", 0);
+      return; /* to protect against hash flooding */
+    }
+  }
+}
+
 /* to be stored: 4-byte link, 4-byte timestamp, 4-byte envsize, 1-byte size,
    size-byte Address and envsize-byte Environment */
 /* see also dnscache */
@@ -158,16 +195,22 @@ void setaddr(const unsigned char *key,unsigned int keylen,
   
   entrylen = 13 + keylen + envlen;
   
+  unlinkaddr(key, keylen);
+  
   while (writer + entrylen > oldest) {
     if (oldest == unused) {
-      if (writer <= hashsize) return;
+      if (writer <= hashsize) cache_impossible();
       unused = writer;
       oldest = hashsize;
       writer = hashsize;
+      strerr_warn2(info, "reached end of cache, wrapping...", 0);
     }
 
     pos = get4(oldest);
-    set4(pos,get4(pos) ^ oldest);
+    if (!pos)
+      strerr_warn2(info, "skipping cleared entry", 0);
+    if (pos)
+      set4(pos,get4(pos) ^ oldest);
   
     if (oldest + 13 > cachesize ) cache_impossible();
     tmplen = get4(oldest + 8);
@@ -215,7 +258,7 @@ int checkaddr(const unsigned char *key,unsigned int keylen,
   *envlen = 0;
 
   while (pos) {
-    if (pos + 13 > cachesize ) cache_impossible();
+    if (pos + 13 > cachesize) cache_impossible();
     if (*(cache + pos + 12) == keylen) {
       if (pos + 13 + keylen > cachesize) cache_impossible();
       if (byte_equal(key,keylen,cache + pos + 13)) {
@@ -231,6 +274,7 @@ int checkaddr(const unsigned char *key,unsigned int keylen,
       }
     }
     nextpos = prevpos ^ get4(pos);
+    if (nextpos == prevpos) cache_impossible();
     prevpos = pos;
     pos = nextpos;
     if (++loop > 100) {
