@@ -554,13 +554,16 @@ void smtp_mail(arg) char *arg;
             /* check syntax, via DNS */
             switch (badmxcheck(&addr.s[i+1]))
             {
-              case 0:                 break; /*valid*/
-              case DNS_SOFT:  flagbarf=2; /*fail tmp*/
-                              why = "refused 'mail from' because return MX lookup failed temporarly";
-                              break;
-              case DNS_HARD:  flagbarf=1; 
-                              why = "refused 'mail from' because return MX does not exist";
-                              break;
+              case 0:
+                break; /*valid*/
+              case DNS_SOFT:
+                flagbarf=2; /*fail tmp*/
+                why = "refused 'mail from' because return MX lookup failed temporarly";
+                break;
+              case DNS_HARD:
+                flagbarf=1; 
+                why = "refused 'mail from' because return MX does not exist";
+                break;
             }
           }
         }
