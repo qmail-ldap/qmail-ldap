@@ -389,7 +389,7 @@ void comm_do(fd_set *wfds, fd_set *rfds)
       int r;
       r = read(fdin, &c, 1);
       if (r <= 0) {
-	if ((r == -1) && (errno != error_intr))
+	if (r != -1 || errno != error_intr)
 	  senddied();
       } else {
 	switch(c) {
