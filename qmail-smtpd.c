@@ -321,14 +321,15 @@ void setup()
   if (!local) local = env_get("TCPLOCALIP");
   if (!local) local = "unknown";
   logstring(2,local);
-
-  logstring(2, ": ");
+  logstring(2, ", options: ");
   if (errdisconnect) logstring(2,"smtp550disconnect ");
   if (nobounce) logstring(2,"nobounce ");
   if (sanitycheck) logstring(2,"sanitycheck ");
   if (returnmxcheck) logstring(2,"returnmxcheck ");
   if (blockrelayprobe) logstring(2,"blockrelayprobe ");
   if (relayclient) logstring(2,"relayclient ");
+  if env_get("RBL") logstring(2,"rblcheck ");
+  if env_get("RBLONLYHEADER") logstring(2,"rblonlyheader ");
 #ifdef SMTPEXECCHECK
   if (execcheck_on()) logstring(2, "rejectexecutables ");
 #endif

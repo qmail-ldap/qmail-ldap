@@ -133,22 +133,22 @@ int rblcheck(char *remoteip, char** rblname)
 
     r = rbl_lookup(rbl[i].baseaddr, rbl[i].matchon);
     if (r == 2) {
-      logstring(2,"temporary DNS error, ignored."); logflush(2);
+      logstring(2,"temporary DNS error, ignored"); logflush(2);
     } else if (r == 1) {
       logstring(2,"found match, ");
       *rblname = rbl[i].message;
       if (rblonlyheader) {
-	logstring(2,"only tagging header."); logflush(2);
+	logstring(2,"tag header"); logflush(2);
 	rbladdheader(rbl[i].baseaddr, rbl[i].matchon, rbl[i].message);
 	continue;
       }
       if (!str_diff("addheader", rbl[i].action)) {
-	logstring(2,"will tag header."); logflush(2);
+	logstring(2,"tag header"); logflush(2);
 	rbladdheader(rbl[i].baseaddr, rbl[i].matchon, rbl[i].message);
 	continue;
       } else {
 	/* default reject */
-	logstring(2,"sender is rejected."); logflush(2);
+	logstring(2,"reject sender"); logflush(2);
 	rblprintheader = 0;
 	return 1;
       }
@@ -173,12 +173,12 @@ int rblinit(void)
   rblonlyheader = 0;
   rblenabled = 0;
 
+  rblenabled = env_get("RBL");
+  if (!rblenabled) return 0;
+
   on = control_readfile(&rbldata,"control/rbllist",0);
   if (on == -1) return on;
   if (!on) return on;
-
-  rblenabled = env_get("RBL");
-  if (!rblenabled) return 0;
 
   for(i=0, numrbl=0; i < rbldata.len; ++i)
     if (rbldata.s[i] == '\0')
@@ -195,7 +195,7 @@ int rblinit(void)
       /* hop over spaces */
       if (rbldata.s[i] != ' ' && rbldata.s[i] != '\t') break;
       if (rbldata.s[i] == '\0') {
-	logline(1, "parse error in rbllist, unexpected end of line.");
+	logline(1, "parse error in rbllist, unexpected end of line");
 	return -1;
       }
       i++;
@@ -212,7 +212,7 @@ int rblinit(void)
         /* hop over argument */
         if (rbldata.s[i] == ' ' || rbldata.s[i] == '\t') break;
         if (rbldata.s[i] == '\0') {
-	  logline(1, "parse error in rbllist, unexpected end of line.");
+	  logline(1, "parse error in rbllist, unexpected end of line");
 	  return -1;
         }
         i++;
@@ -229,7 +229,6 @@ int rblinit(void)
   on = control_readint(&rblonlyheader,"control/rblonlyheader",0);
   if (on == -1) return on;
   rblonlyheader = env_get("RBLONLYHEADER");
-  if (rblonlyheader) logline(2,"Note RBL match will only tag header, no message will be rejected");
 
   return 1;
 }
