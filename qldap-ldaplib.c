@@ -232,14 +232,34 @@ int qldap_open(void)
 	log(128, "init successful");
 
 #ifdef LDAP_OPT_PROTOCOL_VERSION
-	/* set LDAP connection options (only with Mozilla LDAP SDK) */
-	version = LDAP_VERSION2;
+	/* OpenLDAP 1.x does not have ldap_set_option() so compile only if
+	   available. */
+	/* set LDAP connection options according to RFC 2251, Section 4.2*/
+	/* first try version 3 */
+	version = LDAP_VERSION3;
 	if ( ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &version)
-		   	!= LDAP_SUCCESS ) {
-		qldap_errno = LDAP_INIT;
-		return -1;
+		   	== LDAP_OPT_SUCCESS ) {
+		log(128, ", set_option to LDAPv3 successful");
+	} else {
+		/* try version 2 */
+		ldap_unbind(ld);
+		if ( (ld = ldap_init(qldap_server.s,PORT_LDAP)) == 0 ) {
+			qldap_errno = LDAP_INIT;
+			return -1;
+		}
+		log(128, "init successful");
+
+#if 0
+		version = LDAP_VERSION2;
+		if ( ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &version)
+				== LDAP_OPT_SUCCESS ) {
+			log(128, ", set_option successful");
+		} else {
+			qldap_errno = LDAP_INIT;
+			return -1;
+		}
+#endif
 	}
-	log(128, ", set_option successful");
 #endif
 
 	/* connect to the LDAP server */
