@@ -24,7 +24,6 @@
 
 #include "maildir++.h"
 #include "env.h"
-char *dir;
 int qfd;
 /* end qmail-ldap stuff */
  
@@ -202,7 +201,7 @@ void pop3_quit()
   int i;
 /* qmail-ldap stuff */
 /* this is just minimal support, because pop3 can not produce new mail */
-  quota_maildir(dir,(char *) 0, &qfd, 0, 0);
+  quota_maildir(".",(char *) 0, &qfd, 0, 0);
   for (i = 0;i < numm;++i)
     if (m[i].flagdeleted) {
       if ( qfd != -1 ) quota_rm(qfd, m[i].size, 1);
@@ -384,7 +383,6 @@ char **argv;
    } else if (! S_ISDIR(st.st_mode) ) die_maildir();
   }
 #endif
-  dir = argv[1];
 /* qmail-ldap stuff */
 
   getlist();
