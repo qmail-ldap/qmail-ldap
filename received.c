@@ -71,18 +71,24 @@ char *rcptto;
   safeput(qqt,remoteip);
   qmail_puts(qqt,"])");
 
-  qmail_puts(qqt,"\n          (envelope-sender <");
-  if (mailfrom) safeput(qqt,mailfrom);
-  qmail_puts(qqt,">)\n          by ");
+  if (mailfrom) {
+    qmail_puts(qqt,"\n          (envelope-sender <");
+    safeput(qqt,mailfrom);
+    qmail_puts(qqt,">)");
+  }
+  qmail_puts(qqt,"\n          by ");
 
   safeput(qqt,local);
   qmail_puts(qqt," (qmail-ldap-1.03) with ");
   qmail_puts(qqt,protocol);
 
-  qmail_puts(qqt,"\n          for <");
-  if (rcptto) safeput(qqt,rcptto);
-  qmail_puts(qqt,">; ");
-
+  if (rcptto) {
+    qmail_puts(qqt,"\n          for <");
+    safeput(qqt,rcptto);
+    qmail_puts(qqt,">");
+  }
+  qmail_puts(qqt,"; ");
+  
   datetime_tai(&dt,now());
   qmail_put(qqt,buf,date822fmt(buf,&dt));
 }
