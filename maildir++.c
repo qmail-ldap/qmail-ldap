@@ -211,7 +211,7 @@ int quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc)
 		return 0;
 	}
 		
-	if (perc != NULL) {
+	if (perc != (int *)0) {
 		sp = q->quota_size != 0 ?
 			(int)((q->size + size)*100.0/q->quota_size) :
 			0;
@@ -244,7 +244,7 @@ void quota_get(quota_t *q, char *quota)
 	q->size = 0;
 	q->count = 0;
 	
-	if (quota == NULL) return;
+	if (quota == (char *)0) return;
 
 	while (*quota) {
 		if (*quota < '0' || *quota > '9') {
@@ -421,7 +421,7 @@ static int quota_writesize(quota_t *q, int *fd, time_t maxtime)
 		tm = now();
 		pid = getpid();
 		buf = (char *)alloc(path.len + 17 + (2 * FMT_ULONG) + 2);
-		if (buf == NULL)
+		if (buf == (char *)0)
 			temp_nomem();
 		s = buf;
 		byte_copy(s, path.len, path.s); s += path.len;
