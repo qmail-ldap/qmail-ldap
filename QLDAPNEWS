@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/02/02 01:25:24 $ ($Revision: 1.174 $)
+RELEASE: $Date: 2004/02/17 12:52:20 $ ($Revision: 1.175 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,19 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Fix endless lopp in qmail-ldaplookup noticed by Tomas Kuliavas.
+
+ Fix bug in substdio_feed noticed by Stefan Paletta.
+
+ Fix qmail-inject -f "" bug noticed by Mesa de Ayuda.
+
+ Added LDAPFLAG -DBIND_8_COMPAT needed on system with new incompatible
+ bind9 header files. Currently this is necessary on MacOS X 10.3.
+
+ Disable the to generic zip signature in the example signature file.
+
+NEWS for 20040201 stuff:
 
  Yet another bug fix in the maildirmake code of auth_mod.c. The previous fix
  was definitifly not strong enough,
