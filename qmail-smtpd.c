@@ -125,6 +125,16 @@ void logline(int level, const char *string)
   substdio_flush(subfderr);
 }
 
+void logline2(int level, const char *s1, const char *s2)
+{
+  if (level > loglevel) return;
+  logpid(level);
+  substdio_puts(subfderr,s1);
+  substdio_puts(subfderr,s2);
+  substdio_puts(subfderr,"\n");
+  substdio_flush(subfderr);
+}
+
 void logstring(int level, const char *string)
 {
   if (level > loglevel) return;
@@ -158,15 +168,15 @@ void err_bmfunknown(void) { out("553 sorry, your mail from a host ["); out(remot
 void err_maxrcpt(void) { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway(void) { out("553 sorry, relaying denied from your location ["); out(remoteip); out("] (#5.7.1)\r\n"); }
 void err_badbounce(void) { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
-void err_unimpl(char *arg) { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command: "); logstring(3,arg); logflush(3); }
+void err_unimpl(char *arg) { out("502 unimplemented (#5.5.1)\r\n"); logline2(3,"unrecognized command: ",arg); }
 void err_size(void) { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because: 'SMTP SIZE' too big"); }
 void err_syntax(void) { out("555 syntax error (#5.5.4)\r\n"); }
 void err_relay(void) { out("553 sorry, we don't relay for ["); out(remoteip); out("] (#5.7.1)\r\n"); }
-void err_wantmail(void) { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
-void err_wantrcpt(void) { out("503 RCPT first (#5.5.1)\r\n"); logline(3,"'rcpt to' first"); }
+void err_wantmail(void) { out("503 MAIL first (#5.5.1)\r\n"); logline(4,"'mail from' first"); }
+void err_wantrcpt(void) { out("503 RCPT first (#5.5.1)\r\n"); logline(4,"'rcpt to' first"); }
 
-void err_noop(char *arg) { out("250 ok\r\n"); logline(3,"'noop'"); }
-void err_vrfy(char *arg) { out("252 send some mail, i'll try my best\r\n"); logpid(3); logstring(3,"vrfy for: "); logstring(3,arg); logflush(3); }
+void err_noop(char *arg) { out("250 ok\r\n"); logline(4,"'noop'"); }
+void err_vrfy(char *arg) { out("252 send some mail, i'll try my best\r\n"); logline2(4,"vrfy for: ",arg); }
 
 void err_rbl(char *arg) { out("553 sorry, your mailserver ["); out(remoteip); out("] is rejected by "); out(arg); out("\r\n"); }
 void err_deny(void) { out("553 sorry, mail from your location ["); out(remoteip); out("] is administratively denied (#5.7.1)\r\n"); }
@@ -174,9 +184,7 @@ void err_badrcptto(void) { out("553 sorry, mail to that recipient is not accepte
 void err_554msg(const char *arg)
 {
 	out("554 "); out(arg); out("\r\n");
-	logpid(3);
-	logstring(3,"message denied because: "); logstring(3,arg);
-	logflush(3);
+	logline2(3,"message denied because: ",arg);
 }
 
 
@@ -208,21 +216,21 @@ void smtp_help(char *arg)
 {
   out("214-qmail home page: http://pobox.com/~djb/qmail.html\r\n");
   out("214 qmail-ldap patch home page: http://www.nrg4u.com\r\n");
-  logline(3,"help requested");
+  logline(4,"help requested");
 }
 void smtp_quit(char *arg)
 {
   if (!stralloc_copys(&greeting,"Goodbye."))
     die_nomem();
   smtp_line("221 ");
-  logline(3,"quit, closing connection");
+  logline(4,"quit, closing connection");
   flush();
   cleanup();
   _exit(0);
 }
 void err_quit(void)
 {
-  logline(3,"force closing connection");
+  logline(4,"force closing connection");
   flush();
   cleanup();
   _exit(0);
@@ -285,6 +293,7 @@ const char *authprepend;
 #ifdef TLS_SMTPD
 stralloc sslcert = {0};
 #endif
+char smtpsize[FMT_ULONG];
 
 void setup(void)
 {
@@ -295,7 +304,7 @@ void setup(void)
   unsigned long u;
 
   l = env_get("LOGLEVEL");
-  if (l) { scan_ulong(l,&u); loglevel = u > 3 ? 3 : u; }
+  if (l) { scan_ulong(l,&u); loglevel = u > 4 ? 4 : u; }
 
   if (control_init() == -1) die_control();
 
@@ -417,40 +426,46 @@ void setup(void)
   logstring(2,") to "); logstring(2,local);
   logflush(2);
 
-  logpid(2);
-  logstring(2, "enabled options: ");
-  if (greeting550) logstring(2,"greeting550 ");
+  logpid(3);
+  logstring(3, "enabled options: ");
+  if (databytes != 0) {
+    smtpsize[fmt_ulong(smtpsize, databytes)] = 0;
+    logstring(3,"max msg size: ");
+    logstring(3,smtpsize);
+    logstring(3," ");
+  }
+  if (greeting550) logstring(3,"greeting550 ");
 #ifdef TLS_SMTPD
-  if (sslcert.s && *sslcert.s) logstring(2, "starttls ");
+  if (sslcert.s && *sslcert.s) logstring(3, "starttls ");
 #endif
-  if (relayclient) logstring(2,"relayclient ");
-  if (sanitycheck) logstring(2,"sanitycheck ");
-  if (returnmxcheck) logstring(2,"returnmxcheck ");
-  if (blockrelayprobe) logstring(2,"blockrelayprobe ");
-  if (nobounce) logstring(2,"nobounce ");
-  if (rblok) logstring(2,"rblcheck ");
-  if (rbloh) logstring(2,"rblonlyheader ");
-  if (sendercheck) logstring(2,"sendercheck");
-  if (sendercheck == 1) logstring(2," ");
-  if (sendercheck == 2) logstring(2,"-loose ");
-  if (sendercheck == 3) logstring(2,"-strict ");
-  if (rcptcheck) logstring(2,"rcptcheck ");
-  if (ldapsoftok) logstring(2,"ldapsoftok ");
-  if (flagauth) logstring(2, "smtp-auth");
-  if (needssl) logstring(2, "-tls-required ");
-  else logstring(2, " ");
-  if (needauth) logstring(2, "authrequired ");
+  if (relayclient) logstring(3,"relayclient ");
+  if (sanitycheck) logstring(3,"sanitycheck ");
+  if (returnmxcheck) logstring(3,"returnmxcheck ");
+  if (blockrelayprobe) logstring(3,"blockrelayprobe ");
+  if (nobounce) logstring(3,"nobounce ");
+  if (rblok) logstring(3,"rblcheck ");
+  if (rbloh) logstring(3,"rblonlyheader ");
+  if (sendercheck) logstring(3,"sendercheck");
+  if (sendercheck == 1) logstring(3," ");
+  if (sendercheck == 2) logstring(3,"-loose ");
+  if (sendercheck == 3) logstring(3,"-strict ");
+  if (rcptcheck) logstring(3,"rcptcheck ");
+  if (ldapsoftok) logstring(3,"ldapsoftok ");
+  if (flagauth) logstring(3, "smtp-auth");
+  if (needssl) logstring(3, "-tls-required ");
+  else logstring(3, " ");
+  if (needauth) logstring(3, "authrequired ");
 #ifdef SMTPEXECCHECK
-  if (execcheck_on()) logstring(2, "rejectexecutables ");
+  if (execcheck_on()) logstring(3, "rejectexecutables ");
 #endif
-  if (errdisconnect) logstring(2,"smtp550disconnect ");
+  if (errdisconnect) logstring(3,"smtp550disconnect ");
 #ifdef ALTQUEUE
   if (env_get("QMAILQUEUE")) {
-    logstring(2,"qmailqueue ");
-    logstring(2,env_get("QMAILQUEUE"));
+    logstring(3,"qmailqueue ");
+    logstring(3,env_get("QMAILQUEUE"));
   }
 #endif
-  logflush(2);
+  logflush(3);
 
   dohelo(remotehost);
 }
@@ -770,16 +785,17 @@ void smtp_helo(char *arg)
 {
   smtp_line("250 ");
   seenmail = 0; dohelo(arg);
-  logpid(3); logstring(3,"remote helo: "); logstring(3,arg); logflush(3);
+  logline2(4, "remote helo: ", arg);
 }
 
-char smtpsize[FMT_ULONG];
 void smtp_ehlo(char *arg)
 {
   smtp_line("250-");
   out("250-PIPELINING\r\n");
-  smtpsize[fmt_ulong(smtpsize, databytes)] = 0;
-  out("250-SIZE "); out(smtpsize); out("\r\n");
+  if (databytes != 0) {
+    smtpsize[fmt_ulong(smtpsize, databytes)] = 0;
+    out("250-SIZE "); out(smtpsize); out("\r\n");
+  }
 #ifdef DATA_COMPRESS
   out("250-DATAZ\r\n");
 #endif
@@ -795,8 +811,7 @@ void smtp_ehlo(char *arg)
   out("250 8BITMIME\r\n");
 
   seenmail = 0; dohelo(arg);
-  logpid(3); logstring(3,"remote ehlo: "); logstring(3,arg); logflush(3);
-  logpid(3); logstring(3,"max msg size: "); logstring(3,smtpsize); logflush(3);
+  logline2(4,"remote ehlo: ",arg);
 }
 
 void smtp_rset(char *arg)
@@ -804,7 +819,7 @@ void smtp_rset(char *arg)
   seenmail = 0;
   relayclient = relayok; /* restore original relayclient setting */
   out("250 flushed\r\n");
-  logline(3,"remote rset");
+  logline(4,"remote rset");
 }
 
 struct qmail qqt;
@@ -815,21 +830,20 @@ void smtp_mail(char *arg)
   char *rblname;
   int bounceflag = 0;
 
-  logpid(3); logstring(3,"remote sent 'mail from': "); logstring(3,arg); logflush(3);
-
   /* address syntax check */
   if (!addrparse(arg))
   {
     err_syntax(); 
-    logpid(2); logstring(2,"RFC2821 syntax error in mail from: "); logstring(2,arg); logflush(2);
+    logline2(3,"RFC2821 syntax error in mail from: ",arg);
     if (errdisconnect) err_quit();
     return;
   }
-  logpid(3); logstring(3,"mail from: "); logstring(3,addr.s); logflush(3);
+
+  logline2(3,"mail from: ",addr.s);
 
   if (needauth && !flagauthok) {
     out("530 authentication needed\r\n");
-    logline(2, "auth needed");
+    logline(3, "auth needed");
     if (errdisconnect) err_quit();
     return;
   }
@@ -850,7 +864,7 @@ void smtp_mail(char *arg)
   if (bmfcheck())
   {
     err_bmf();
-    logpid(2); logstring(2,"bad mailfrom: "); logstring(2,addr.s); logflush(2);
+    logline2(3,"bad mailfrom: ",addr.s);
     if (errdisconnect) err_quit();
     return;
   }
@@ -858,8 +872,7 @@ void smtp_mail(char *arg)
   if (bmfunknowncheck())
   {
     err_bmfunknown();
-    logpid(2); logstring(2,"bad mailfrom unknown: ");
-    logstring(2,addr.s); logflush(2);
+    logline2(3,"bad mailfrom unknown: ",addr.s);
     if (errdisconnect) err_quit();
     return;
   }
@@ -887,14 +900,16 @@ void smtp_mail(char *arg)
       return;
     }
     if (i == 0 || addr.s[i+1] == '\0') {
-      err_554msg("mailfrom without user or domain part is administratively denied");
+      err_554msg("mailfrom without user or domain part is "
+        "administratively denied");
       if (errdisconnect) err_quit();
       return;
     }
     /* No '.' in domain.TLD */
     if ((j = byte_rchr(addr.s+i, addr.len-i, '.')) >= addr.len-i)
     {
-      err_554msg("mailfrom without . in domain part is administratively denied");
+      err_554msg("mailfrom without . in domain part is "
+        "administratively denied");
       if (errdisconnect) err_quit();
       return;
     }
@@ -906,7 +921,8 @@ void smtp_mail(char *arg)
        * OK, now after the candidates are nominated we know new TLD's
        * may contain up to six characters.
        */
-      err_554msg("mailfrom without country or top level domain is administratively denied");
+      err_554msg("mailfrom without country or top level domain is "
+        "administratively denied");
       if (errdisconnect) err_quit();
       return;
      }
@@ -916,7 +932,7 @@ void smtp_mail(char *arg)
   if (!relayclient) {
     if (rmfcheck()) {
       relayclient = "";
-      logline(2,"relaying allowed for mailfrom");
+      logline(4,"relaying allowed via relaymailfrom");
     }
   }
 
@@ -938,7 +954,7 @@ void smtp_mail(char *arg)
         if (errdisconnect) err_quit();
         return;
       default: /* ok, go ahead */
-        logline(3,"RBL checking completed");
+        logline(4,"RBL checking completed");
         break;
     }
   }
@@ -953,7 +969,8 @@ void smtp_mail(char *arg)
 	  break; /* valid */
 	case DNS_SOFT:
 	  err_dns();
-	  logline(3,"refused mailfrom because return MX lookup failed temporarly");
+	  logline(3,"refused mailfrom because return MX lookup "
+            "failed temporarly");
 	  if (errdisconnect) err_quit();
 	  return;
 	case DNS_HARD:
@@ -989,13 +1006,15 @@ void smtp_mail(char *arg)
         /* normal mode: let through, it's just an external mail coming in */
         /* loose mode: see if sender is in rcpthosts, if no reject here */
         if (sendercheck == 2 && !addrallowed()) {
-          err_554msg("refused mailfrom because valid local sender address required");
+          err_554msg("refused mailfrom because valid "
+            "local sender address required");
           if (errdisconnect) err_quit();
           return;
         }
         /* strict mode: we require validated sender so reject here right out */
         if (sendercheck == 3) {
-          err_554msg("refused mailfrom because valid local sender address required");
+          err_554msg("refused mailfrom because valid "
+            "local sender address required");
           if (errdisconnect) err_quit();
           return;
         }
@@ -1008,6 +1027,8 @@ void smtp_mail(char *arg)
   if (!stralloc_copys(&mailfrom,addr.s)) die_nomem();
   if (!stralloc_0(&mailfrom)) die_nomem();
   rcptcount = 0;
+  if (loglevel == 2)
+    logline2(2,"mail from: ",mailfrom.s);
   out("250 ok\r\n");
 }
 
@@ -1019,17 +1040,17 @@ void smtp_rcpt(char *arg)
     if (errdisconnect) err_quit();
     return;
   }
-  logpid(3); logstring(3,"remote sent 'rcpt to': "); logstring(3,arg); logflush(3);
 
   /* syntax check */
   if (!addrparse(arg))
   {
     err_syntax();
-    logpid(2); logstring(2,"syntax error in 'rcpt to': "); logstring(2,arg); logflush(2);
+    logline2(3,"syntax error in 'rcpt to': ",arg);
     if (errdisconnect) err_quit();
     return;
   }
-  logpid(3); logstring(3,"rcpt to: "); logstring(3,addr.s); logflush(3);
+
+  logline2(3,"rcpt to: ",addr.s);
 
   /* block stupid and bogus sendwhale bug relay probing */
   if (blockrelayprobe) /* don't enable this if you use percenthack */
@@ -1037,7 +1058,7 @@ void smtp_rcpt(char *arg)
     if (relayprobe())
     {
       err_relay();
-      logline(3,"'rcpt to' denied = looks like bogus sendwhale bug relay probe");
+      logline(3,"'rcpt to' denied, looks like bogus sendwhale bug relay probe");
       if (errdisconnect) err_quit();
       return;
     }
@@ -1047,7 +1068,7 @@ void smtp_rcpt(char *arg)
   if (rcptdenied())
   {
     err_badrcptto();
-    logpid(2); logstring(2,"'rcpt to' denied: "); logstring(2,arg); logflush(2);
+    logline2(3,"'rcpt to' denied: ",arg);
     if (errdisconnect) err_quit();
     return;
   }
@@ -1061,8 +1082,7 @@ void smtp_rcpt(char *arg)
     if (!addrallowed())
     { 
       err_nogateway();
-      logpid(2); logstring(2,"no mail relay for 'rcpt to': ");
-      logstring(2,arg); logflush(2);
+      logline2(3,"no mail relay for 'rcpt to': ",arg);
       if (errdisconnect) err_quit();
       return; 
     }
@@ -1073,7 +1093,8 @@ void smtp_rcpt(char *arg)
   if (maxrcptcount && rcptcount > maxrcptcount)
   {
     err_maxrcpt();
-    logline(1,"message denied because of more 'RCPT TO' than allowed by MAXRCPTCOUNT");
+    logline(3,"message denied because of more 'RCPT TO' than "
+      "allowed by MAXRCPTCOUNT");
     if (errdisconnect) err_quit();
     return;
   }
@@ -1082,7 +1103,7 @@ void smtp_rcpt(char *arg)
   if (rcptcount > 1 && (!mailfrom.s[0] || !str_diff("#@[]", mailfrom.s)))
   {
     err_badbounce();
-    logline(1,"bounce message denied because it has more than one recipient");
+    logline(3,"bounce message denied because it has more than one recipient");
     if (errdisconnect) err_quit();
     return;
   }
@@ -1090,24 +1111,24 @@ void smtp_rcpt(char *arg)
   /* check if recipient exists in ldap */
   if (rcptcheck) {
     if (!goodmailaddr()) {
-      logline(3,"recipient verify, recipient not in goodmailaddr");
+      logline(4,"recipient verify, recipient not in goodmailaddr");
       if (addrlocals()) {
 	char *s;
-	logline(3,"recipient verify, recipient is local");
+	logline(4,"recipient verify, recipient is local");
         switch (ldaplookup(addr.s, &s)) {
           case 1: /* valid */
-	    logline(3,"recipient verify OK");
+	    logline(4,"recipient verify OK");
             break;
           case 0: /* invalid */
-	    logline(1,"message denied because of recipient verify");
+	    logline(3,"message denied because of recipient verify");
             err_554msg(s);
             if (errdisconnect) err_quit();
             return;
           case -1:
           default: /* other error, treat as soft 4xx */
-	    logline(2,"recipient verify soft error");
             if (ldapsoftok)
               break;
+	    logline(3,"recipient verify soft error");
             err_ldapsoft();
             if (errdisconnect) err_quit();
             return;
@@ -1116,12 +1137,14 @@ void smtp_rcpt(char *arg)
     }
   }
 
+  if (loglevel == 2)
+    logline2(2,"rcpt to: ",addr.s);
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
   if (!stralloc_0(&rcptto)) die_nomem();
   if (tarpitcount && tarpitdelay && rcptcount >= tarpitcount)
   {
-    logline(2,"tarpitting");
+    logline(4,"tarpitting");
     while (sleep(tarpitdelay));
   }
   out("250 ok\r\n");
@@ -1150,7 +1173,7 @@ int compression_init(void)
 }
 int compression_done(void)
 {
-  char num[FMT_ULONG];
+  char num[FMT_ULONG + 1];
   int r;
 
   compdata = 0;
@@ -1169,9 +1192,11 @@ int compression_done(void)
   } else
     num[0] = ' ';
   num[fmt_uint(num+1,r)+1] = 0;
-  logpid(1);
-  logstring(1,"DDC saved ");
-  logstring(1,num); logstring(1," percent"); logflush(1);
+  logpid(3);
+  logstring(3,"DDC saved ");
+  logstring(3,num);
+  logstring(3," percent");
+  logflush(3);
   return 0;
 }
 #endif
@@ -1209,6 +1234,7 @@ int saferead(int fd,void *buf,int len)
       default:
 	out("451 Receiving compressed data failed: ");
 	out(stream.msg); out(" #(4.3.0)\r\n");
+	logline2(1, "compressed data read failed: ", stream.msg);
 	flush();
 	die_read();
       }
@@ -1307,39 +1333,38 @@ void blast(unsigned int *hops)
   }
 }
 
-char accept_buf[FMT_ULONG];
 void acceptmessage(unsigned long qp)
 {
+  static char buf[FMT_ULONG];
+
   datetime_sec when;
   when = now();
   out("250 ok ");
-  accept_buf[fmt_ulong(accept_buf,(unsigned long) when)] = 0;
-  out(accept_buf);
-  logpid(2); logstring(2,"message queued: "); logstring(2,accept_buf);
+  buf[fmt_ulong(buf,(unsigned long) when)] = 0;
+  out(buf);
+  logpid(2); logstring(2,"message queued: "); logstring(2,buf);
   out(" qp ");
-  accept_buf[fmt_ulong(accept_buf,qp)] = 0;
-  out(accept_buf);
+  buf[fmt_ulong(buf,qp)] = 0;
+  out(buf);
   out(" by ");
   out(me.s);
   out("\r\n");
-  logstring(2," qp "); logstring(2,accept_buf); logflush(2);
+  logstring(2," qp "); logstring(2,buf);
+  buf[fmt_ulong(buf, bytesreceived)] = 0;
+  logstring(2, " size ");
+  logstring(2, buf);
+  logstring(2, " bytes");
+  logflush(2);
 }
 
 #ifdef TLS_SMTPD
 stralloc protocolinfo = {0};
 #endif
 
-char receivedbytes[FMT_ULONG];
 void smtp_data(char *arg) {
   unsigned int hops;
   unsigned long qp;
   const char *qqx;
-
-#ifdef DATA_COMPRESS
-  if (wantcomp) logline(3,"smtp dataz");
-  else
-#endif
-  logline(3,"smtp data");
 
   ldaplookupdone();
   if (!seenmail) {
@@ -1363,7 +1388,7 @@ void smtp_data(char *arg) {
     return;
   }
   qp = qmail_qp(&qqt);
-  out("354 go ahead punk, make my day\r\n"); logline(3,"go ahead");
+  out("354 go ahead punk, make my day\r\n"); logline(4,"go ahead");
   rblheader(&qqt);
 
 #ifdef TLS_SMTPD
@@ -1404,9 +1429,6 @@ void smtp_data(char *arg) {
   if (wantcomp) { if (compression_done() != 0) return; }
 #endif
 
-  receivedbytes[fmt_ulong(receivedbytes, bytesreceived)] = 0;
-  logpid(3); logstring(3,"data bytes received: "); logstring(3,receivedbytes); logflush(3);
-
   hops = (hops >= MAXHOPS);
   if (hops)
     qmail_fail(&qqt);
@@ -1417,24 +1439,25 @@ void smtp_data(char *arg) {
   if (!*qqx) { acceptmessage(qp); return; }
   if (hops) {
     out("554 too many hops, this message is looping (#5.4.6)\r\n");
-    logline(2,"too many hops, message is looping");
+    logline(3,"too many hops, message is looping");
     if (errdisconnect) err_quit();
     return;
   }
   if (databytes) if (!bytestooverflow) {
     out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n");
-    logline(2,"datasize limit exceeded");
+    logline(3,"datasize limit exceeded");
     if (errdisconnect) err_quit();
     return;
   }
 #ifdef SMTPEXECCHECK
   if (execcheck_flag()) {
     out("552 we don't accept email with this MIME content (#5.3.4)\r\n");
-    logline(2,"bad MIME attachement detected");
+    logline(3,"bad MIME attachement detected");
     if (errdisconnect) err_quit();
     return;
   }
 #endif
+
   logpid(1);
   if (*qqx == 'D') {
     out("554 "); logstring(1,"message permanently not accepted because: ");
@@ -1466,17 +1489,16 @@ void smtp_auth(char *arg)
     err_unimpl((char *)0);
     return;
   }
-  logline(3,"smtp auth");
   if (flagauthok) {
     out("503 you are already authenticated\r\n");
-    logline(2,"reauthentication attempt rejected");
+    logline(3,"reauthentication attempt rejected");
     if (errdisconnect) err_quit();
     return;
   }
 #ifdef TLS_SMTPD
   if (needssl && !ssl) {
     out("538 Encryption required for requested authentication mechanism");
-    logline(2,"TLS encryption required for authentication");
+    logline(3,"TLS encryption required for authentication");
     if (errdisconnect) err_quit();
     return;
   }
@@ -1489,7 +1511,7 @@ void smtp_auth(char *arg)
   }
   
   if (case_diffs(type, "login") == 0) {
-    logline(3,"auth login");
+    logline(4,"auth login");
     if (call_open(&cct, "bin/auth_smtp", 30, 1) == -1) goto fail;
     call_puts(&cct, "login"); call_put(&cct, "", 1);
     if (*arg) {
@@ -1503,7 +1525,7 @@ void smtp_auth(char *arg)
     if (call_getln(&ssin, &line) <= 0) die_read();
     call_puts(&cct, line.s); call_putflush(&cct, "", 1);
   } else if (case_diffs(type, "plain") == 0) {
-    logline(3,"auth plain");
+    logline(4,"auth plain");
     if (call_open(&cct, "bin/auth_smtp", 30, 1) == -1) goto fail;
     call_puts(&cct, "plain"); call_put(&cct, "", 1);
     if (*arg) {
@@ -1515,10 +1537,10 @@ void smtp_auth(char *arg)
     }
   } else {
     out("504 authentication type not supported\r\n");
-    logstring(2,"authentication type ");
-    logstring(2,type);
-    logstring(2,": not supported");
-    logflush(2);
+    logstring(3,"authentication type ");
+    logstring(3,type);
+    logstring(3,": not supported");
+    logflush(3);
     if (errdisconnect) err_quit();
     return;
   }
@@ -1529,15 +1551,13 @@ fail:
     flagauthok = 1;
     remoteinfo = line.s;
     out(status);
-    logline(2,"authentication success");
+    logline2(2,"authentication success, user ", remoteinfo);
     break;
   case '4':
   case '5':
     sleep(1);
     out(status); flush();
-    logstring(2, "authentication failed: ");
-    logstring(2, status + 4);
-    logflush(2);
+    logline2(3, "authentication failed: ", status + 4);
     sleep(4);
     if (errdisconnect) err_quit();
     break;
@@ -1570,7 +1590,7 @@ void smtp_tls(char *arg)
   if (*arg)
   {
     out("501 Syntax error (no parameters allowed) (#5.5.4)\r\n");
-    logline(1,"aborting TLS negotiations, no parameters to starttls allowed");
+    logline(3,"aborting TLS negotiations, no parameters to starttls allowed");
     return;
   }
 
@@ -1578,19 +1598,22 @@ void smtp_tls(char *arg)
   if(!(ctx=SSL_CTX_new(SSLv23_server_method())))
   {
     out("454 TLS not available: unable to initialize ctx (#4.3.0)\r\n"); 
-    logline(1,"aborting TLS negotiations, unable to initialize local SSL context");
+    logline(3,"aborting TLS negotiations, "
+      "unable to initialize local SSL context");
     return;
   }
   if(!SSL_CTX_use_RSAPrivateKey_file(ctx, sslcert.s, SSL_FILETYPE_PEM))
   {
     out("454 TLS not available: missing RSA private key (#4.3.0)\r\n");
-    logline(1,"aborting TLS negotiations, RSA private key invalid or unable to read ~control/cert.pem");
+    logline(3,"aborting TLS negotiations, "
+      "RSA private key invalid or unable to read ~control/cert.pem");
     return;
   }
   if(!SSL_CTX_use_certificate_file(ctx, sslcert.s, SSL_FILETYPE_PEM))
   {
     out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
-    logline(1,"aborting TLS negotiations, local cert invalid or unable to read ~control/cert.pem");
+    logline(3,"aborting TLS negotiations, "
+      "local cert invalid or unable to read ~control/cert.pem");
     return;
   }
   SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_cb);
@@ -1599,13 +1622,13 @@ void smtp_tls(char *arg)
 
   if(!(ssl=SSL_new(ctx))) 
   {
-    logline(2,"aborting TLS connection, unable to set up SSL session");
+    logline(3,"aborting TLS connection, unable to set up SSL session");
     die_read();
   }
   SSL_set_fd(ssl,0);
   if(SSL_accept(ssl)<=0)
   {
-    logline(2,"aborting TLS connection, unable to finish SSL accept");
+    logline(3,"aborting TLS connection, unable to finish SSL accept");
     die_read();
   }
   //substdio_fdbuf(&ssout,SSL_write,ssl,ssoutbuf,sizeof(ssoutbuf));
@@ -1693,3 +1716,4 @@ int main(int argc, char **argv)
   /* NOTREACHED */
   return 1;
 }
+

@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/06/11 14:17:25 $)
+RELEASE: current ($Date: 2004/06/29 19:01:59 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -707,8 +707,9 @@ LOGLEVEL
  Levels:
      0 = no logging
      1 = fatal errors
-     2 = connection setup and warnings
-     3 = verbose
+     2 = accounting
+     3 = connection setup and smtp errors
+     4 = verbose
  Note: integer value, everything will be logged through tcpserver
 
 POP3_LOGLEVEL
