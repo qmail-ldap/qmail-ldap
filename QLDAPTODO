@@ -2,7 +2,7 @@ QMAIL-LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 2000-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/04/16 13:24:16 $ ($Revision: 1.35 $)
+RELEASE: $Date: 2004/08/03 20:27:44 $ ($Revision: 1.36 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -14,9 +14,8 @@ NEWS:
 TODO:
 
 ongoing - Debugging and testing, testing, testing
-ongoing - The big qmail-ldap picture
+done    - The big qmail-ldap picture
 ongoing - full code review by a third person
-planned - splitting the patch into smaller separate pieces
 planned - make it possible to have locals and rcpthosts in ldap
           and perhaps also the rules for the tcpserver (certs?)
           some people refer to this as ldap-control
@@ -27,12 +26,11 @@ PS: planned means we see the use of the idea but there are a lot more
 ALSO ON THE LIST: (priority list)
 - update qmail-ldaplookup (mainly ldap login, passwd check and group handling)
 - cleanup the debug code, unify the debug levels
-- (done) SMTP_AUTH (Hennings patch and the f*#&ing SASL stuff)
-- (done) SMTP recipient verify (only if recipientdomain is in locals, with ldap)
-- (done) SMTP sender verify (only if senderdomain is in locals, with ldap)
+- cleanup failures (hard vs. temporary)
 - use pbstools for enhanced tarpit idea
 - make full example for qmailaccountpurge.sh
 - docu cleanup
+- address rewriting (envelope only)
 
 older stuff still on the list:
 - add more and clearer documentation.
