@@ -136,6 +136,8 @@ void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n")
 
 void err_bmf() { out("553 syntax error, please forward to your postmaster (#5.7.1)\r\n"); }
 void err_hard(arg) char *arg; { out("554 syntax error, "); out(arg); out(" (#5.5.4)\r\n"); }
+void err_rbl() { out("553 sorry, mail from your location is not accepted here (#5.7.1)\r\n"); }
+void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
 #ifdef TLS
 void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
@@ -183,6 +185,7 @@ char *local;
 char *relayclient;
 char *relayok;
 char *denymail;
+char *rblenabled;
 int  spamflag = 0;
 
 stralloc helohost = {0};
@@ -202,8 +205,12 @@ struct constmap mapbmf;
 int rmfok = 0;
 stralloc rmf = {0};
 struct constmap maprmf;
+int rblok = 0;
+stralloc rbl = {0};
+struct constmap maprbl;
 int tarpitcount = 0;
 int tarpitdelay = 5;
+int maxrcptcount = 0;
 
 void setup()
 {
@@ -231,6 +238,11 @@ void setup()
   x = env_get("TARPITDELAY");
   if (x) { scan_ulong(x,&u); tarpitdelay = u; };
 
+  if (control_readint(&maxrcptcount,"control/maxrcptcount") == -1) die_control();
+  if (maxrcptcount < 0) maxrcptcount = 0;
+  x = env_get("MAXRCPTCOUNT");
+  if (x) { scan_ulong(x,&u); maxrcptcount = u; };
+
   if (rcpthosts_init() == -1) die_control();
 
   bmfok = control_readfile(&bmf,"control/badmailfrom",0);
@@ -247,6 +259,12 @@ void setup()
   if (brtok == -1) die_control();
   if (brtok)
     if (!constmap_init(&mapbadrcptto,brt.s,brt.len,0)) die_nomem();
+
+  rblok = control_readfile(&rmf,"control/rbllist",0);
+  if (rblok == -1) die_control();
+  if (rblok)
+    if (!constmap_init(&maprbl,rbl.s,rbl.len,0)) die_nomem();
+      else rblenabled = env_get("RBL");
  
   if (control_readint(&databytes,"control/databytes") == -1) die_control();
   x = env_get("DATABYTES");
@@ -365,6 +383,62 @@ int badmxcheck(dom) char *dom;
 
   return (ret);
 }
+
+/* RBL */
+
+char *ip_env;
+stralloc ip_reverse;
+
+void rbl_init()
+{
+  unsigned int i;
+  unsigned int j;
+
+  ip_env = remoteip;
+  if (!ip_env) ip_env = "";
+
+  if (!stralloc_copys(&ip_reverse,"")) die_nomem();
+
+  i = str_len(ip_env);
+  while (i) {
+    for (j = i;j > 0;--j) if (ip_env[j - 1] == '.') break;
+    if (!stralloc_catb(&ip_reverse,ip_env + j,i - j)) die_nomem();
+    if (!stralloc_cats(&ip_reverse,".")) die_nomem();
+    if (!j) break;
+    i = j - 1;
+  }
+}
+
+stralloc rbltext;
+
+int rbl_lookup(char *base)
+{
+  stralloc tmp;
+  if (!stralloc_copy(&tmp,&ip_reverse)) die_nomem();
+  if (!stralloc_cats(&tmp,base)) die_nomem();
+  if (dns_txt(&rbltext,&tmp) == -1) {
+   /* dns_ip4() */
+    if (!stralloc_copys(&rbltext,"temporary RBL lookup error")) die_nomem();
+    return 2;
+  }
+  if (rbltext.len)
+    return 1;
+  else
+    return 0;
+}
+
+int rblcheck()
+{
+  int r;
+
+  rbl_init();
+  /* should go through all RBL's listed in maprbl here */
+  r = rbl_lookup("rbl.maps.vix.com");
+
+  return r;
+}
+
+/* RBL */
 
 int sizelimit(arg)
 char *arg;
@@ -507,11 +581,26 @@ void smtp_mail(arg) char *arg;
 
   /************
    DENYMAIL is set for this session from this client, 
-             so heavy checking of mailfrom
+             so heavy checking of mailfrom is done
    SPAM     -> refuse all mail
    NOBOUNCE -> refuse null mailfrom
    DNSCHECK -> validate Mailfrom domain
   ************/
+
+  if (rblenabled)
+  {
+    switch(rblcheck())
+    {
+      case 2: /* soft error lookup */
+        err_dns();
+        break;
+      case 1: /* host is listed in RBL */
+        err_rbl();
+        break;
+      default: /* ok, go ahead */
+        return;
+    }
+  }
 
   if (denymail)
   {
@@ -586,6 +675,7 @@ void smtp_mail(arg) char *arg;
         } /* without @ */
       } /* bounce */
     } /* SPAM */
+
     if (flagbarf)
     {
       logpid(2); logstring(2,why); logstring(2,"for ="); logstring(2,addr.s); logflush(2);
@@ -597,6 +687,7 @@ void smtp_mail(arg) char *arg;
         err_hard(why);
       return;
     }
+
   } /* denymail */
 
   /* Allow relaying based on envelope sender address */
@@ -706,7 +797,9 @@ void smtp_rcpt(arg) char *arg; {
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
   if (!stralloc_0(&rcptto)) die_nomem();
-  if (tarpitcount && ++rcptcount >= tarpitcount)
+  ++rcptcount;
+  if (maxrcptcount && rcptcount >= maxrcptcount) err_maxrcpt();
+  if (tarpitcount && rcptcount >= tarpitcount)
   {
     logline(2,"tarpitting");
     while (sleep(tarpitdelay)); 
