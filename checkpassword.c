@@ -92,7 +92,7 @@ check_ldap(stralloc *login, stralloc *authdata,
 	int	r, status, pwok, needforward;
 	unsigned long count, size, max;
 	const	char	*attrs[] = {
-				LDAP_UID, /* the first 6 attrs are default */
+				LDAP_UID, /* the first 10 attrs are default */
 				LDAP_QMAILUID,
 				LDAP_QMAILGID,
 				LDAP_ISACTIVE,
@@ -125,7 +125,7 @@ check_ldap(stralloc *login, stralloc *authdata,
 			attrs[1] = 0;
 	} else {
 		if (qldap_need_rebind() != 0)
-			attrs[7] = 0;
+			attrs[10] = 0;
 	}
 
 	filter = filter_uid(login->s);

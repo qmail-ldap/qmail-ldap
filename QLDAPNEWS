@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/06/11 14:17:25 $ ($Revision: 1.196 $)
+RELEASE: $Date: 2004/06/29 17:29:43 $ ($Revision: 1.197 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,9 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
 
 NEWS for current stuff:
 
+ Fix a bug in checkpassword.c that caused auth_pop and auth_imap to ignore
+ the per user quota if rebind was used. Reported by nbari at unixmexico.com
+
  Add ~control/remotecert for qmail-remote similar to ~control/smtpcert
  for qmail-smtpd. The big difference is that qmail-remote will use STARTTLS
  and SSL encryption even without this file as a certificate is optional for
@@ -28,9 +31,6 @@ NEWS for current stuff:
  If the defaultdelivery aka aliasempty is not a local delivery qmail-local
  my start additionally programs while running qmail-reply. Reported by
  Florian Pflug.
-
- Add some random fuzz to the retry time calculation. This should dampen
- the retry peaks to single servers with small incomming concurrency.
 
  Fix the SIGHUP handling between qmail-send and qmail-local.
 
@@ -45,7 +45,7 @@ NEWS for current stuff:
  Fix QUOTATRASH option by including LDAPFLAGS to the maildir++.o target.
  Reported by Zachary Denison.
 
- Replaced the cdb fucntions with the public domain mmaped version of tcpserver.
+ Replaced the cdb functions with the public domain mmaped version of tcpserver.
  This makes it possible to keep the file open and do extremly fast searches.
 
  Add license to files that are under our (Andre or mine) copyright. At least
