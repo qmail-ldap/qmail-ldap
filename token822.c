@@ -13,6 +13,7 @@ token822_alloc *ta;
  unsigned int n;
  struct token822 temp;
 
+ if (ta->len == 0) return;
  n = ta->len - 1;
  for (i = 0;i + i < n;++i)
   {
