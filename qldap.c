@@ -42,8 +42,8 @@ stralloc	ldap_login = {0};
 stralloc	ldap_password = {0};
 int		ldap_timeout = QLDAP_TIMEOUT;	/* default timeout is 30 secs */
 int		rebind = 0;			/* default off */
-int		default_uid;
-int		default_gid;
+int		default_uid = 0;
+int		default_gid = 0;
 stralloc	default_messagestore = {0};
 stralloc	dotmode = {0};
 unsigned long	quotasize = 0;
