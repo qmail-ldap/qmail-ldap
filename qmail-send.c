@@ -1624,6 +1624,10 @@ void todo_del(char* s)
     flagchan[1] = 1;
     break;
   case 'X':
+    /*
+     * this is not an error but it is neither correct,
+     * sending messages with no recipients is plain stupid.
+     */
     log1("warning: qmail-todo neither by land nor by sea...\n");
     break;
   default:
