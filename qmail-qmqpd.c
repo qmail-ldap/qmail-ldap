@@ -121,7 +121,8 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
       out("ZReceiving compressed data failed: ", stream.msg, " #(4.3.0)");
       return -1;
     }
-    return len;
+    if (stream.avail_out == len) continue;
+    return len - stream.avail_out;
   } while (1);
 uncompressed:
 #endif 
