@@ -503,7 +503,7 @@ void smtp(void)
 #endif
     else if (i+9 < smtptext.len && !case_diffb("AUTH ", 5, smtptext.s+i+4)) {
       for (j = i+4; j < smtptext.len; j++)
-	if (j == ' ')
+	if (smtptext.s[j] == ' ')
 	  if (j + 6 < smtptext.len && !case_diffb("LOGIN", 5, smtptext.s+j+1))
 	    flagauth = 1;
     }
