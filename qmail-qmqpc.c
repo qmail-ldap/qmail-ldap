@@ -40,7 +40,7 @@ void die_format() { _exit(91); }
 int lasterror = 55;
 int qmqpfd;
 
-#ifdef DATA_COMPRESS
+#ifdef QMQP_COMPRESS
 z_stream stream;
 char zbuf[4096];
 
@@ -96,12 +96,6 @@ int safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
 #ifdef QMQP_COMPRESS
-  static int done = -1;
-  if (done == -1) {
-    compression_init();
-    done = 0;
-  }
-  if (done == 1) die_conn();
   stream.avail_in = len;
   stream.next_in = buf;
   do {
@@ -195,6 +189,9 @@ char *server;
     return;
   }
 
+#ifdef QMQP_COMPRESS
+  compression_init();
+#endif
   strnum[fmt_ulong(strnum, (unsigned long) 
          (beforemessage.len + message.len + aftermessage.len))] = 0;
   substdio_puts(&to,strnum);
@@ -204,6 +201,9 @@ char *server;
   substdio_put(&to,aftermessage.s,aftermessage.len);
   substdio_puts(&to,",");
   substdio_flush(&to);
+#ifdef QMQP_COMPRESS
+  compression_done();
+#endif
 
   for (;;) {
     substdio_get(&from,&ch,1);
