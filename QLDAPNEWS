@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/12/25 17:45:44 $ ($Revision: 1.27 $)
+RELEASE: $Date: 2001/01/01 23:06:21 $ ($Revision: 1.28 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -28,6 +28,10 @@ NEWS for current stuff:
  changed ALIASEMPTY in qmail-ldap.h from /dev/null to |sh -c "cat > /dev/null"
  direct writing to /dev/null resulted in a soft error. This shell call does the
  same without an error.
+
+ introduced ~control/ldaptimeout to limit the time and ldap search might
+ take until the delivery attempt is being deferred and tried again later.
+ The default is 30 seconds.
 
 NEWS for 20001201:
 

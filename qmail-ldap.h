@@ -33,6 +33,9 @@
  * to make a notify the postmaster if something like this happens.
  * It's up to the reader to write such a simple script */
 
+/* Default ldap search timeout. In seconds */
+#define	LDAP_TIMEOUT		30
+
 /*********************************************************************
         ldap variables used in qmail-lspawn and checkpassword
 *********************************************************************/
@@ -55,7 +58,7 @@
 #define LDAP_ISACTIVE		"accountStatus"
 
 #define DOTMODE_LDAPONLY 	"ldaponly"
-#define DOTMODE_LDAPWITHPROG "ldapwithprog"
+#define DOTMODE_LDAPWITHPROG	"ldapwithprog"
 #define DOTMODE_DOTONLY		"dotonly"
 #define DOTMODE_BOTH		"both"
 #define DOTMODE_NONE		"none"

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2000/12/25 17:45:43 $)
+RELEASE: current ($Date: 2001/01/01 23:06:20 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -275,6 +275,15 @@ CONFIG FILES:
  Default: NULL
  Example: 1010
  Note: should be a real GID, must be above 100
+
+~control/ldaptimeout
+
+ The time the ldap search waits for a response from the ldap server
+ Default: 30 seconds
+ Example: 60
+ Note: in seconds, if it gets no response within this time it will
+       continue either with the next specified ldap server or it will
+       defer the delivery and try again later.
 
 ~control/custombouncetext
 

@@ -14,6 +14,7 @@
 #include "byte.h"
 #include "qldap-debug.h"
 #include "fmt.h"
+#include <sys/time.h> /* for ldap search timeout */
 
 #define QLDAP_PORT LDAP_PORT
 #ifndef PORT_LDAP /* this is for testing purposes, so you can overwrite 
@@ -36,12 +37,12 @@ stralloc qldap_objectclass = {0};		/* the search objectclass, external visible *
 static stralloc qldap_server = {0};		/* name of ldap server */
 static stralloc qldap_basedn = {0};		/* the search basedn */
 static stralloc qldap_user = {0};		/* the ldap user ( for login ) */
-static stralloc qldap_password = {0};	/* the ldap login password */
+static stralloc qldap_password = {0};		/* the ldap login password */
 
 static stralloc qldap_uid = {0};		/* UID if not specified in db */
 static stralloc qldap_gid = {0};		/* UID if not specified in db */
-static stralloc qldap_messagestore = {0}; /* perfix for maildirpaths */
-
+static stralloc qldap_messagestore = {0}; 	/* prefix for maildirpaths */
+static long	qldap_timeout = LDAP_TIMEOUT;	/* default timeout is 30 secs */
 
 /* char replacement */
 static unsigned int replace(char *s, register unsigned int len, char f, char r)
@@ -81,6 +82,7 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 	cf = ctrl_file;
 	cf += fmt_str(cf, auto_qmail);
 	*cf++ = '/';
+
 	t = cf;
 	t += fmt_strn(cf, "control/me", 64); *t=0;
 	if (control_rldef(&qldap_me, ctrl_file, 0, "") == -1) return -1;
@@ -138,6 +140,12 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 	if (!stralloc_0(&qldap_messagestore)) return -1;
 	debug(64, "init_ldap: control/ldapmessagestore: %s\n", 
 			qldap_messagestore.s);
+
+	t = cf;
+	t += fmt_strn(cf, "control/ldaptimeout", 64); *t=0;
+	if (control_readint(qldap_timeout, ctrl_file) == -1)
+		return -1;
+	debug(64, "init_ldap: control/ldaptimeout: %i\n", qldap_timeout);
 
 	if (localdelivery != 0) {
 		t = cf;
@@ -210,6 +218,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	int rc;
 	int version;
 	int num_entries;
+	struct timeval ldaptimeout = {0};
 
 #ifndef USE_CLDAP
 	debug(128, "ldap_lookup: ");
@@ -218,7 +227,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		qldap_errno = LDAP_INIT;
 		return -1;
 	}
-	debug(128, "init succesful");
+	debug(128, "init successful");
 
 #ifdef LDAP_OPT_PROTOCOL_VERSION
 	/* set LDAP connection options (only with Mozilla LDAP SDK) */
@@ -228,13 +237,13 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		qldap_errno = LDAP_INIT;
 		return -1;
 	}
-	debug(128, ", set_option succesful");
+	debug(128, ", set_option successful");
 #endif
 
 	/* connect to the LDAP server */
 	if ( (rc = ldap_simple_bind_s(ld,qldap_user.s,qldap_password.s)) 
 			!= LDAP_SUCCESS ) {
-		debug(128, ", bind NOT succesful (%s)\n", ldap_err2string(rc) );
+		debug(128, ", bind NOT successful (%s)\n", ldap_err2string(rc) );
 
 		/* probably more detailed information should be returned, eg.:
 		   LDAP_STRONG_AUTH_NOT_SUPPORTED,
@@ -252,11 +261,15 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 			return -1;
 		}
 	}
-	debug(128, ", bind succesful\n");
+	debug(128, ", bind successful\n");
+
+        /* set up the ldap search timeout */
+        ldaptimeout.tv_sec = qldap_timeout;
+        ldaptimeout.tv_usec = 0;
 
 	/* do the search for the login uid */
-	if ( (rc = ldap_search_s(ld, qldap_basedn.s, LDAP_SCOPE_SUBTREE,
-							 search->filter, attrs, 0, &res )) != LDAP_SUCCESS ) {
+	if ( (rc = ldap_search_st(ld, qldap_basedn.s, LDAP_SCOPE_SUBTREE,
+		search->filter, attrs, 0, &ldaptimeout, &res )) != LDAP_SUCCESS ) {
 		debug(64, "ldap_lookup: search for %s failed (%s)\n", 
 				search->filter, ldap_err2string(rc) );
 
