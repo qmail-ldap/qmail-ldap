@@ -3,7 +3,7 @@ exec 2>&1
 #
 # pop before smtp database daemon
 #
-USER=qmiald
+USER=qmaild
 QMAIL=/var/qmail
 
 PATH=$PATH:"$QMAIL/bin"
