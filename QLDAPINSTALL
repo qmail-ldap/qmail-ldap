@@ -204,7 +204,7 @@ CONFIG FILES:
  Example: /maildisk/
  Note: Used in virtual users environments
 
-~control/ldapuser
+~control/ldapusername
 
  The default username used in virtual users environments
  Default: NULL
