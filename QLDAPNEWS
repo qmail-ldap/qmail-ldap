@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/02/23 17:14:40 $ ($Revision: 1.81 $)
+RELEASE: $Date: 2003/02/25 13:01:21 $ ($Revision: 1.82 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,13 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ For ISP that need to implement some surveillance method because of some
+ beloved authoroties (like here in switzerland), we added the
+ BIGBROTHER switch. This enables a per address queue extra feature.
+ Just put a key pair like badguy@badplace.ch:bigbrother@admin.ch in
+ ~control/bigbrother to automaticaly forward all mail to or from
+ badguy to bigbrother. bigbrother can be a local, ldap or remote address.
 
  Bug fix in qmail-local: flagforwardonly was set to 0 instead of 1 if 
  deliverymode was forwardonly.
