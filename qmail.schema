@@ -79,10 +79,16 @@ attributetype ( 1.3.6.1.4.1.7914.1.2.1.11 NAME 'mailReplyText'
 	SINGLE-VALUE )
 
 attributetype ( 1.3.6.1.4.1.7914.1.2.1.12 NAME 'accountStatus'
-	DESC 'The status of a user account: active, nopop, disabled'
+	DESC 'The status of a user account: active, nopop, disabled, deleted'
 	EQUALITY caseIgnoreIA5Match
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.44
 	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.7914.1.2.1.14 NAME 'qmailAccountPurge'
+        DESC 'The earliest date when a mailMessageStore will be purged'
+        EQUALITY caseIgnoreIA5Match
+        SYNTAX 1.3.6.1.4.1.1466.115.121.1.44
+        SINGLE-VALUE )
 
 # Object Class Definitions
 
@@ -93,5 +99,5 @@ objectclass ( 1.3.6.1.4.1.7914.1.2.2.1 NAME 'qmailUser'
 	      mailAlternateAddress $ qmailUID $ qmailGID $ mailQuota $
 	      mailHost $ mailForwardingAddress $ deliveryProgramPath $
 	      qmailDotMode $ deliveryMode $ mailReplyText $
-	      accountStatus ) )
+	      accountStatus $ qmailAccountPurge ) )
 

@@ -56,6 +56,7 @@
 #define LDAP_PASSWD			"userPassword"
 #define LDAP_OBJECTCLASS	"objectclass"
 #define LDAP_ISACTIVE		"accountStatus"
+#define LDAP_PURGE		"qmailAccountPurge"
 
 #define DOTMODE_LDAPONLY 	"ldaponly"
 #define DOTMODE_LDAPWITHPROG	"ldapwithprog"
@@ -71,8 +72,10 @@
 #define MODE_ECHO			"echo"
 
 #define ISACTIVE_BOUNCE		"disabled"
+#define ISACTIVE_DELETE		"deleted"
 #define ISACTIVE_NOPOP		"nopop"
 #define ISACTIVE_ACTIVE		"active"
+
 
 /*********************************************************************
                  normaly you can stop editing here

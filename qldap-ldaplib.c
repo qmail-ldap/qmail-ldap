@@ -457,6 +457,8 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 		debug(64, "%s (from server)\n", vals[0]);
 		if ( !str_diff(ISACTIVE_BOUNCE, vals[0]) ) 
 			info->status = STATUS_BOUNCE;
+		else if ( !str_diff(ISACTIVE_DELETE, vals[0]) ) 
+			info->status = STATUS_BOUNCE;
 		else if ( !str_diff(ISACTIVE_NOPOP, vals[0]) ) 
 			info->status = STATUS_NOPOP;
 		else info->status = STATUS_OK;

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/03/01 20:20:07 $)
+RELEASE: current ($Date: 2001/04/16 22:34:04 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -600,7 +600,19 @@ LDAP_ISACTIVE (default: "accountStatus")
  Values: active (no restrictions), 
          nopop (only mail delivery but no pop access), 
          disabled (bounce incoming messages)
+	 deleted (bounce incoming messages and mark for deletion, see LDAP_PURGE)
  Default: no accountStatus is equal to active.
+
+
+LDAP_PURGE (default: "qmailAccountPurge")
+
+ If accountStatus set to 'deleted', the earliest date when the mailMessageStore
+ including all remaining content will be deleted from the filesystem.
+ Values: date and time in seconds since Jan. 1, 1970 (the epoch)
+ Default: not set
+ Note: This deletion has to be done by an external helper program, for example
+       periodically run from cron. A sample script is included under the name
+       qmailAccountPurge.sh. Handle automatic deletions with care!
 
 
 LDAP_QMAILUSER (default: "qmailUser")
@@ -671,7 +683,8 @@ objectclass qmailUser
                 qmailDotMode,
                 deliveryMode,
                 mailReplyText,
-                accountStatus
+                accountStatus,
+		qmailAccountPurge
 
 
 FOR OpenLDAP 2.x DO THIS INSTEAD:

@@ -255,6 +255,7 @@ int main(int argc, char **argv)
 	}
 	output( "\t\t%s: %s\n", LDAP_ISACTIVE, 
 			info.status==STATUS_BOUNCE?ISACTIVE_BOUNCE:
+			info.status==STATUS_BOUNCE?ISACTIVE_DELETE:
 			info.status==STATUS_NOPOP?ISACTIVE_NOPOP:
 			info.status==STATUS_OK?ISACTIVE_ACTIVE:"undefined");
 
