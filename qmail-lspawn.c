@@ -616,6 +616,8 @@ fail:
    default:
      cae(q, QLX_LDAPFAIL);
    }
+   /* NOTREACHED */
+   return -1;
 }
 /* end -- LDAP server query routines */
 

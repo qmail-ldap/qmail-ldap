@@ -112,17 +112,17 @@ auth_imap: \
 load auth_imap.o auth_mod.o checkpassword.o passwd.o digest_md4.o \
 digest_md5.o digest_rmd160.o digest_sha1.o base64.o read-ctrl.o \
 control.o dirmaker.o mailmaker.o qldap.a localdelivery.o locallookup.o \
-pbsexec.o constmap.o getln.a substdio.a stralloc.a env.a wait.a dns.o \
-ip.o ipalloc.o ipme.o alloc.a str.a case.a fs.a error.a timeoutconn.o \
+pbsexec.o constmap.o getln.a strerr.a substdio.a stralloc.a env.a wait.a \
+dns.o ip.o ipalloc.o ipme.o alloc.a str.a case.a fs.a error.a timeoutconn.o \
 timeoutread.o ndelay.a open.a sig.a prot.o auto_uids.o auto_qmail.o \
 dns.lib socket.lib
 	./load auth_imap auth_mod.o checkpassword.o passwd.o digest_md4.o \
 	digest_md5.o digest_rmd160.o digest_sha1.o base64.o read-ctrl.o \
 	control.o dirmaker.o mailmaker.o qldap.a localdelivery.o \
-	locallookup.o pbsexec.o constmap.o getln.a substdio.a stralloc.a \
-	env.a wait.a dns.o ip.o ipalloc.o ipme.o alloc.a str.a case.a fs.a \
-	error.a timeoutconn.o timeoutread.o ndelay.a open.a sig.a prot.o \
-	auto_uids.o auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS) \
+	locallookup.o pbsexec.o constmap.o getln.a strerr.a substdio.a \
+	stralloc.a env.a wait.a dns.o ip.o ipalloc.o ipme.o alloc.a str.a \
+	case.a fs.a error.a timeoutconn.o timeoutread.o ndelay.a open.a \
+	sig.a prot.o auto_uids.o auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS) \
 	`cat dns.lib` `cat socket.lib`
 
 auth_imap.o: \
@@ -141,17 +141,17 @@ auth_pop: \
 load auth_pop.o auth_mod.o checkpassword.o passwd.o digest_md4.o \
 digest_md5.o digest_rmd160.o digest_sha1.o base64.o read-ctrl.o \
 control.o dirmaker.o mailmaker.o qldap.a localdelivery.o locallookup.o \
-pbsexec.o constmap.o getln.a substdio.a stralloc.a env.a wait.a dns.o \
-ip.o ipalloc.o ipme.o alloc.a str.a case.a fs.a error.a timeoutconn.o \
+pbsexec.o constmap.o getln.a strerr.a substdio.a stralloc.a env.a wait.a \
+dns.o ip.o ipalloc.o ipme.o alloc.a str.a case.a fs.a error.a timeoutconn.o \
 timeoutread.o ndelay.a open.a prot.o auto_uids.o auto_qmail.o \
 dns.lib socket.lib
 	./load auth_pop auth_mod.o checkpassword.o passwd.o digest_md4.o \
 	digest_md5.o digest_rmd160.o digest_sha1.o base64.o read-ctrl.o \
 	control.o qldap.a dirmaker.o mailmaker.o localdelivery.o \
-	locallookup.o pbsexec.o constmap.o getln.a substdio.a stralloc.a \
-	env.a wait.a dns.o ip.o ipalloc.o ipme.o alloc.a str.a case.a \
-	fs.a error.a timeoutconn.o timeoutread.o ndelay.a open.a prot.o \
-	auto_uids.o auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS) \
+	locallookup.o pbsexec.o constmap.o getln.a strerr.a substdio.a \
+	stralloc.a env.a wait.a dns.o ip.o ipalloc.o ipme.o alloc.a str.a \
+	case.a fs.a error.a timeoutconn.o timeoutread.o ndelay.a open.a \
+	prot.o auto_uids.o auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS) \
 	`cat dns.lib` `cat socket.lib`
 
 auth_pop.o: \
@@ -163,11 +163,11 @@ auth_mod.h
 auth_smtp: \
 load auth_smtp.o checkpassword.o passwd.o digest_md4.o digest_md5.o \
 digest_rmd160.o digest_sha1.o base64.o read-ctrl.o control.o qldap.a \
-constmap.o getln.a substdio.a stralloc.a env.a alloc.a str.a case.a \
-fs.a error.a open.a prot.o auto_uids.o auto_qmail.o
+constmap.o getln.a strerr.a substdio.a stralloc.a env.a alloc.a str.a \
+case.a fs.a error.a open.a prot.o auto_uids.o auto_qmail.o
 	./load auth_smtp checkpassword.o passwd.o digest_md4.o \
 	digest_md5.o digest_rmd160.o digest_sha1.o base64.o read-ctrl.o \
-	control.o qldap.a constmap.o getln.a substdio.a stralloc.a \
+	control.o qldap.a constmap.o getln.a strerr.a substdio.a stralloc.a \
 	env.a alloc.a str.a case.a fs.a error.a open.a prot.o auto_uids.o \
 	auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS)
 	
@@ -584,11 +584,12 @@ compile datetime_un.c datetime.h
 
 digest: \
 load digest.o passwd.o digest_md4.o digest_md5.o digest_rmd160.o \
-digest_sha1.o base64.o qldap-debug.o output.o getopt.a substdio.a \
-case.a env.a stralloc.a str.a fs.a alloc.a error.a
+digest_sha1.o base64.o qldap-debug.o output.o getopt.a strerr.a \
+substdio.a case.a env.a stralloc.a str.a fs.a alloc.a error.a
 	./load digest passwd.o digest_md4.o digest_md5.o digest_rmd160.o \
-	digest_sha1.o base64.o qldap-debug.o output.o getopt.a substdio.a \
-	case.a env.a stralloc.a str.a fs.a alloc.a error.a $(SHADOWLIBS)
+	digest_sha1.o base64.o qldap-debug.o output.o getopt.a strerr.a \
+	substdio.a case.a env.a stralloc.a str.a fs.a alloc.a error.a \
+	$(SHADOWLIBS)
 
 digest.o: \
 compile digest.c base64.h error.h passwd.h qldap-errno.h \

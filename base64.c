@@ -49,8 +49,9 @@
 #include <sys/types.h>
 #include "str.h"
 #include "stralloc.h"
+#include "strerr.h"
 
-#define Assert(Cond) if (!(Cond)) abort()
+#define Assert(Cond) if (!(Cond)) strerr_die1x(111, "Abort: assert condition false in base64.")
 
 static const char Base64[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -254,7 +255,7 @@ b64_pton(char const *src, unsigned char *target, size_t targsize)
 			state = 0;
 			break;
 		default:
-			abort();
+			strerr_die1x(111, "Abort: bad state in base64 decode.");
 		}
 	}
 
@@ -411,7 +412,7 @@ b64_ptons(char const *src, stralloc *dest)
 			state = 0;
 			break;
 		default:
-			abort();
+			strerr_die1x(111, "Abort: bad state in base64 decode.");
 		}
 	}
 
@@ -519,7 +520,7 @@ hex_ptons(char const *src, stralloc *dest)
 			state = 0;
 			break;
 		default:
-			abort();
+			strerr_die1x(111, "Abort: bad state in hex decode.");
 		}
 	}
 	if (state != 0)

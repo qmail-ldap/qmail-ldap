@@ -139,5 +139,7 @@ main (int argc, char **argv)
 	strnum1[fmt_ulong(strnum1, (unsigned long) when)] = 0;
 	strnum2[fmt_ulong(strnum2, qp)] = 0;
 	strerr_die5x(0, "qmail-forward: ok ", strnum1, " qp ", strnum2, ".");
+	/* NOTREACHED */
+	return 0;
 }
 

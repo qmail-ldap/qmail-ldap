@@ -165,7 +165,7 @@ quota_recalc(const char *dir, int *fd, quota_t *q)
 	
 	if (!stralloc_copys(&path, dir)) temp_nomem();
 	if (path.s[path.len-1] != '/')
-		if (! stralloc_cats(&path, "/")) temp_nomem();
+		if (!stralloc_cats(&path, "/")) temp_nomem();
 
 	while (mailfolder()) {
 		if (!stralloc_cats(&path, "../")) temp_nomem();
@@ -177,7 +177,7 @@ quota_recalc(const char *dir, int *fd, quota_t *q)
 	if (!stralloc_cats(&path, "maildirsize")) temp_nomem();
 	if (!stralloc_0(&path)) temp_nomem();
 	
-	*fd = read5120( path.s, buf5120, &i);
+	*fd = read5120(path.s, buf5120, &i);
 	
 	if (*fd != -1) {
 		for (j = 0; j < i && lines <= 2 ; j++) {
@@ -209,7 +209,6 @@ quota_recalc(const char *dir, int *fd, quota_t *q)
 	}
 	
 	return quota_calcsize(q, fd, buf5120, i);
-	
 }
 
 int
@@ -496,8 +495,8 @@ quota_writesize(quota_t *q, int *fd, time_t maxtime)
 		goto fail; 
 	
 	i = check_maxtime(maxtime);
-	if (! stralloc_cats(&path, "maildirsize")) temp_nomem();
-	if (! stralloc_0(&path)) temp_nomem();
+	if (!stralloc_cats(&path, "maildirsize")) temp_nomem();
+	if (!stralloc_0(&path)) temp_nomem();
 	if (unlink(path.s) == -1 && errno != error_noent) goto fail;
 	
 	if (i) {
@@ -520,8 +519,8 @@ fail:
 	strerr_warn3("Problems while trying to get maildirsize: ", 
 			error_str(errno), ". (QUOTA #1.1.1)", 0);
 	unlink(buf);
-	alloc_free(buf);
-	_exit(111);
+	*fd = -1;
+	return -1;
 }
 
 static int
