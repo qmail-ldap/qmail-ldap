@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/16 16:56:56 $ ($Revision: 1.120 $)
+RELEASE: $Date: 2003/09/23 09:42:08 $ ($Revision: 1.121 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,10 +18,12 @@ TODO:
 
 NEWS for current stuff:
 
+ Bug fix in qldap_get_status reported by <krits at home dot pl>
+
  Removed some unneccesary verbositiy in qmail-secretary.
 
  Bug fix in the maildir string creation. A specified count value will over-
- wirte any size settings.
+ wirte any size settings. Thanks to Neil Sequeira for reporting this issue.
 
  Added auth_smtp and AUTH capabilities to qmail-smtpd. Enabled via the 
  SMTPAUTH env var. If SMTPAUTH is set to TLSREQUIRED it is neccesairy to
