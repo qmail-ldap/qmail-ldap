@@ -136,7 +136,8 @@ check_ldap(stralloc *login, stralloc *authdata,
 
 	r = qldap_get_status(q, &status);
 	if (r != OK) goto fail;
-	if (status == STATUS_BOUNCE || status == STATUS_NOACCESS) {
+	if (status == STATUS_BOUNCE || status == STATUS_NOACCESS ||
+	    status == STATUS_DELETE) {
 		qldap_free(q);
 		return ACC_DISABLED;
 	}
