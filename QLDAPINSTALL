@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20001101 ($Date: 2000/11/25 16:33:34 $)
+RELEASE: 20001201 ($Date: 2000/11/25 17:18:45 $)
 
 TOC:
  INSTALL             how to install the patch
