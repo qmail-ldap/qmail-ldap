@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20000501 ($Date: 2000/06/01 21:06:31 $)
+RELEASE: 20000501 ($Date: 2000/06/06 07:38:17 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -29,7 +29,7 @@ IMPORTANT NEWS:
  db entries. Similar to the old checkpassword with debug support.
  Usage: qmail-ldaplookup {-m mailaddress | -u userid [passwd]}
  NOTE: because this tool could show critical data (like the hashed passwd)
-	   it is installed with mode 700 (rwx------) only root has the permision 
+       it is installed with mode 700 (rwx------) only root has the permision 
        to start it.
 
  Add the new control files and their meaning to qmail-showctl
@@ -167,6 +167,7 @@ CONFIG FILES:
 
  Username for the LDAP server connection
  Default: NULL
+ Example: cn=qmail-ldap, o=Internet Pipeline, c=CH
  Note: The user must have enough rights to lookup all user information
 
 ~control/ldappassword
