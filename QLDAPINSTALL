@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/12/01 14:19:49 $)
+RELEASE: current ($Date: 2005/04/01 13:18:30 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -63,6 +63,10 @@ INSTALL:
    on Solaris based systems, use the gnu patch utility instead.
    A pre-compiled binary should be available at http://www.sunfreeware.com/
    or on many mirrors around the world.
+
+   NOTE: the qmail-ldap patches need to be applied to a clean qmail-1.03 tree
+         not netqmail. All netqmail patches have been integrated into qmail-ldap
+         a long time ago.
 
 5. Edit the conf-* files and the top of the Makefile (only the top ;-) )
    You can set/change:
