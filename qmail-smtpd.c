@@ -1582,7 +1582,7 @@ void smtp_tls(char *arg)
 {
   SSL_CTX *ctx;
 
-  if (!sslcert.s || *sslcert.s == '\0') {
+  if (sslcert.s == 0 || *sslcert.s == '\0') {
     err_unimpl("STARTTLS");
     return;
   }
@@ -1625,7 +1625,8 @@ void smtp_tls(char *arg)
     logline(3,"aborting TLS connection, unable to set up SSL session");
     die_read();
   }
-  SSL_set_fd(ssl,0);
+  SSL_set_rfd(ssl,substdio_fileno(&ssin));
+  SSL_set_wfd(ssl,substdio_fileno(&ssout));
   if(SSL_accept(ssl)<=0)
   {
     logline(3,"aborting TLS connection, unable to finish SSL accept");
