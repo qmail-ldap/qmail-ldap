@@ -136,8 +136,8 @@ void hier()
   C(auto_qmail,"boot/qmail-qmqpd", "run", "qmail-qmqpd.run",auto_uido,auto_gidq,0755);
   C(auto_qmail,"boot/qmail-pop3d", "run", "qmail-pop3d.run",auto_uido,auto_gidq,0755);
   C(auto_qmail,"boot/qmail-imapd", "run", "qmail-imapd.run",auto_uido,auto_gidq,0755);
-  C(auto_qmail,"boot/qmail-pop3d", "run", "qmail-pop3d-ssl.run",auto_uido,auto_gidq,0755);
-  C(auto_qmail,"boot/qmail-imapd", "run", "qmail-imapd-ssl.run",auto_uido,auto_gidq,0755);
+  C(auto_qmail,"boot/qmail-pop3d-ssl", "run", "qmail-pop3d-ssl.run",auto_uido,auto_gidq,0755);
+  C(auto_qmail,"boot/qmail-imapd-ssl", "run", "qmail-imapd-ssl.run",auto_uido,auto_gidq,0755);
   C(auto_qmail,"boot/qmail-pbsdbd", "run", "qmail-pbsdbd.run",auto_uido,auto_gidq,0755);
 
   /* run files for logging process */
