@@ -17,6 +17,9 @@
 #include "scan.h"
 #include "str.h"
 #include "stralloc.h"
+#ifdef QLDAP_CLUSTER
+#include "qldap-cluster.h"
+#endif
 
 #include "checkpassword.h"
 
@@ -173,7 +176,6 @@ check_ldap(stralloc *login, stralloc *authdata,
 			break;
 		}
 	}
-done:
 	log(32, "check_ldap: password compare was %s\n", 
 	    pwok == OK?"successful":"not successful");
 	qldap_free(q);

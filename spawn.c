@@ -1,5 +1,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include "readwrite.h"
 #include "alloc.h"
 #include "sig.h"
 #include "wait.h"
@@ -185,7 +187,7 @@ void getcmd()
 
 char inbuf[128];
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -249,8 +251,8 @@ char **argv;
 	   continue; /* read error on a readable pipe? be serious */
 	 if (r == 0)
 	  {
-	   char ch; ch = i; substdio_put(&ssout,&ch,1);
-	   ch = i >> 8; substdio_put(&ssout,&ch,1);
+	   char c; c = i; substdio_put(&ssout,&c,1);
+	   c = i >> 8; substdio_put(&ssout,&c,1);
 	   report(&ssout,d[i].wstat,d[i].output.s,d[i].output.len);
 	   substdio_put(&ssout,"",1);
 	   substdio_flush(&ssout);
@@ -285,7 +287,7 @@ char **argv;
 	      if (truncreport > 100)
 		if (d[i].log.len > truncreport)
 		 {
-		  char *truncmess = "\nError report too long, sorry.\n";
+		  const char *truncmess = "\nError report too long, sorry.\n";
 		  d[i].log.len = truncreport - str_len(truncmess) - 3;
 		  stralloc_cats(&d[i].log,truncmess);
 		 }
@@ -314,7 +316,7 @@ char **argv;
 	    if (truncreport > 100)
 	      if (d[i].output.len > truncreport)
 	       {
-		char *truncmess = "\nError report too long, sorry.\n";
+		const char *truncmess = "\nError report too long, sorry.\n";
 		d[i].output.len = truncreport - str_len(truncmess) - 3;
 		stralloc_cats(&d[i].output,truncmess);
 	       }
@@ -335,4 +337,6 @@ char **argv;
 	}
     }
   }
+ /* NOTREACHED */
+ return 0;
 }

@@ -498,7 +498,7 @@ void
 sendconfirm(stralloc *hash, int fd)
 {
 	struct qmail qqt;
-	char *qqx;
+	const char *qqx;
 	unsigned long qp;
 	int r;
 	
@@ -537,7 +537,8 @@ void
 sendmoderator(stralloc *hash, int fd)
 {
 	struct qmail qqt;
-	char *qqx, *s, *smax;
+	char *s, *smax;
+	const char *qqx;
 	unsigned long qp;
 	int r;
 	
@@ -562,7 +563,7 @@ sendmoderator(stralloc *hash, int fd)
 	}
 	qqx = qmail_close(&qqt);
 	if (!*qqx) {
-		strnum[fmt_ulong(strnum,qmail_qp(&qp))] = 0;
+		strnum[fmt_ulong(strnum,qmail_qp(&qqt))] = 0;
 		strerr_warn2("qmail-secretary: info: qp ", strnum, 0);
 		return;
 	}

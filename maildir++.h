@@ -13,6 +13,6 @@ void quota_rm(int , unsigned long , unsigned long);
 int quota_calc(const char *, int *fd, quota_t *);
 int quota_recalc(const char *, int *fd, quota_t *);
 int quota_check(quota_t *, unsigned long , unsigned long , int *);
-void quota_get(quota_t *, char const *);
+void quota_get(quota_t *, const char *);
 
 #endif

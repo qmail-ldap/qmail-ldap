@@ -1,3 +1,7 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <unistd.h>
 #include "strerr.h"
 #include "stralloc.h"
 #include "substdio.h"
@@ -7,6 +11,7 @@
 #include "open.h"
 #include "auto_qmail.h"
 #include "cdbmss.h"
+#include "case.h"
 
 #define FATAL "qmail-newmrh: fatal: "
 
@@ -29,7 +34,7 @@ struct cdbmss cdbmss;
 stralloc line = {0};
 int match;
 
-void main()
+int main()
 {
   umask(033);
   if (chdir(auto_qmail) == -1)
@@ -66,5 +71,5 @@ void main()
   if (rename("control/morercpthosts.tmp","control/morercpthosts.cdb") == -1)
     strerr_die2sys(111,FATAL,"unable to move control/morercpthosts.tmp to control/morercpthosts.cdb");
 
-  _exit(0);
+  return 0;
 }

@@ -30,7 +30,7 @@ struct qmail *qqt;
 char *s;
 {
   char ch;
-  while (ch = *s++) {
+  while ((ch = *s++)) {
     if (!issafe(ch)) ch = '?';
     qmail_put(qqt,&ch,1);
   }
@@ -44,14 +44,14 @@ static char buf[DATE822FMT];
 void 
 received(qqt,protocol,local,remoteip,remotehost,remoteinfo,helo,mailfrom,rcptto)
 struct qmail *qqt;
-char *protocol;
-char *local;
-char *remoteip;
-char *remotehost;
-char *remoteinfo;
-char *helo;
-char *mailfrom;
-char *rcptto;
+const char *protocol;
+const char *local;
+const char *remoteip;
+const char *remotehost;
+const char *remoteinfo;
+const char *helo;
+const char *mailfrom;
+const char *rcptto;
 {
   struct datetime dt;
 

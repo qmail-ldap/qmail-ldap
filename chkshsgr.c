@@ -1,4 +1,7 @@
+#include <sys/types.h>
+#include <unistd.h>
 #include "exit.h"
+
 void main()
 {
  short x[4];

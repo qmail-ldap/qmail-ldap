@@ -324,7 +324,7 @@ qldap_lookup(qldap *q, const char *filter, const char *attrs[])
 	tv.tv_usec = 0;
 
 	rc = ldap_search_st(q->ld, basedn.s, LDAP_SCOPE_SUBTREE,
-		filter, attrs, 0, &tv, &q->res);
+		filter, (char **)attrs, 0, &tv, &q->res);
 	
 	switch (rc) {
 	/* probably more detailed information should be returned, eg.:
@@ -411,7 +411,7 @@ qldap_filter(qldap *q, const char *filter, const char *attrs[],
 	tv.tv_usec = 0;
 
 	rc = ldap_search_st(q->ld, bdn, scope, filter,
-	    attrs, 0, &tv, &q->res);
+	    (char **)attrs, 0, &tv, &q->res);
 	
 	switch (rc) {
 	/* probably more detailed information should be returned, eg.:

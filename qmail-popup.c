@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "commands.h"
 #include "fd.h"
 #include "sig.h"
@@ -207,7 +208,7 @@ struct commands pop3commands[] = {
 , { 0, err_authoriz, 0 }
 } ;
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -221,5 +222,5 @@ char **argv;
  
   pop3_greet();
   commands(&ssin,pop3commands);
-  die();
+  return 1;
 }

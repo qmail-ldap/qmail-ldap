@@ -18,9 +18,9 @@ int len;
   return h;
 }
 
-char *constmap(cm,s,len)
+const char *constmap(cm,s,len)
 struct constmap *cm;
-char *s;
+const char *s;
 int len;
 {
   constmap_hash h;
@@ -39,7 +39,7 @@ int len;
 
 int constmap_init(cm,s,len,flagcolon)
 struct constmap *cm;
-char *s;
+const char *s;
 int len;
 int flagcolon;
 {
@@ -58,7 +58,7 @@ int flagcolon;
  
   cm->first = (int *) alloc(sizeof(int) * h);
   if (cm->first) {
-    cm->input = (char **) alloc(sizeof(char *) * cm->num);
+    cm->input = (const char **) alloc(sizeof(char *) * cm->num);
     if (cm->input) {
       cm->inputlen = (int *) alloc(sizeof(int) * cm->num);
       if (cm->inputlen) {

@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "readwrite.h"
 #include "sig.h"
 #include "exit.h"
@@ -21,6 +22,7 @@
 #define ADDR 1003
 
 #ifdef BIGBROTHER
+#include "byte.h"
 #include "constmap.h"
 #include "control.h"
 #include "stralloc.h"
@@ -166,13 +168,14 @@ void pidopen()
 
 char tmp[FMT_ULONG];
 
-void main()
+int main()
 {
  unsigned int len;
  char ch;
 #ifdef BIGBROTHER
  unsigned int xlen, n;
- char *x, *b;
+ char *x;
+ const char *b;
 #endif
 
  sig_blocknone();
@@ -292,7 +295,7 @@ void main()
    do
     {
      n = byte_chr(x,xlen,0);
-     if (b = constmap(&mapbb, x, n)) {
+     if ((b = constmap(&mapbb, x, n))) {
        if (*b) {
          if (substdio_bput(&ssout,"T", 1) == -1) die_write();
          if (substdio_bputs(&ssout,b) == -1) die_write();
@@ -311,5 +314,5 @@ void main()
  if (link(intdfn,todofn) == -1) die(66);
 
  triggerpull();
- die(0);
+ return 0;
 }

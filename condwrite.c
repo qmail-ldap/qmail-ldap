@@ -72,7 +72,7 @@ void
 maildir_child(char *dir)
 {
 	unsigned long pid;
-	unsigned long time;
+	unsigned long tnow;
 	char host[64];
 	char *s;
 	int loop;
@@ -91,10 +91,10 @@ maildir_child(char *dir)
 	gethostname(host,sizeof(host));
 	for (loop = 0;;++loop)
 	{
-		time = now();
+		tnow = now();
 		s = fntmptph;
 		s += fmt_str(s,"tmp/");
-		s += fmt_ulong(s,time); *s++ = '.';
+		s += fmt_ulong(s,tnow); *s++ = '.';
 		s += fmt_ulong(s,pid); *s++ = '.';
 		s += fmt_strn(s,host,sizeof(host)); *s++ = 0;
 		if (stat(fntmptph,&st) == -1) if (errno == error_noent) break;

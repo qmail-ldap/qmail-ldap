@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "sig.h"
 #include "readwrite.h"
 #include "stralloc.h"
@@ -150,7 +151,7 @@ void err_ldapsoft() { out("451 temporary ldap lookup failure, try again later\r\
 void err_bmf() { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
 void err_bmfunknown() { out("553 sorry, your mail from a host without valid reverse DNS was administratively denied (#5.7.1)\r\n"); }
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
-void err_nogateway(char *arg) { out("553 sorry, relaying denied from your location ["); out(arg); out("] (#5.7.1)\r\n"); }
+void err_nogateway(const char *arg) { out("553 sorry, relaying denied from your location ["); out(arg); out("] (#5.7.1)\r\n"); }
 void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
 void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command: "); logstring(3,arg); logflush(3); }
 void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because: 'SMTP SIZE' too big"); }
@@ -220,13 +221,13 @@ void err_quit()
   _exit(0);
 }
 
-char *remoteip;
-char *remotehost;
-char *remoteinfo;
-char *local;
-char *relayclient;
-char *relayok;
-char *greeting550;
+const char *remoteip;
+const char *remotehost;
+const char *remoteinfo;
+const char *local;
+const char *relayclient;
+const char *relayok;
+const char *greeting550;
 int  spamflag = 0;
 
 stralloc helohost = {0};
@@ -275,7 +276,7 @@ int flagauth = 0;
 int needauth = 0;
 int needssl = 0;
 int authenticated = 0;
-char *authprepend;
+const char *authprepend;
 int sslenabled = 0;
 
 void setup()
@@ -477,7 +478,7 @@ char *arg;
   if (!stralloc_copys(&addr,"")) die_nomem();
   flagesc = 0;
   flagquoted = 0;
-  for (i = 0;ch = arg[i];++i) { /* copy arg to addr, stripping quotes */
+  for (i = 0;(ch = arg[i]);++i) { /* copy arg to addr, stripping quotes */
     if (flagesc) {
       if (!stralloc_append(&addr,&ch)) die_nomem();
       flagesc = 0;
@@ -913,10 +914,8 @@ void smtp_mail(arg) char *arg;
   }
 
   /* relay mail from check (allow relaying based on evelope sender address) */
-  if (!relayok)
-  {
-    if (rmfcheck())
-    {
+  if (!relayok) {
+    if (rmfcheck()) {
       relayclient = "";
       logline(2,"relaying allowed for mailfrom");
     }
@@ -1057,8 +1056,7 @@ void smtp_rcpt(arg) char *arg; {
   if (authenticated && relayclient == 0) relayclient = "";
   
   /* is sender ip allowed to relay */
-  if (relayclient)
-  {
+  if (relayclient) {
     --addr.len;
     if (!stralloc_cats(&addr,relayclient)) die_nomem();
     if (!stralloc_0(&addr)) die_nomem();
@@ -1339,7 +1337,7 @@ char receivedbytes[FMT_ULONG];
 void smtp_data() {
   int hops;
   unsigned long qp;
-  char *qqx;
+  const char *qqx;
 
 #ifdef DATA_COMPRESS
   if (wantcomp) logline(3,"smtp dataz");
@@ -1551,15 +1549,15 @@ fail:
 }
 
 #ifdef TLS_SMTPD
-RSA *tmp_rsa_cb(ssl,export,keylength) SSL *ssl; int export; int keylength; 
+RSA *tmp_rsa_cb(s,export,keylength) SSL *s; int export; int keylength; 
 {
   RSA* rsa;
   BIO* in;
 
   if (!export || keylength == 512)
-   if (in=BIO_new(BIO_s_file_internal()))
+   if ((in=BIO_new(BIO_s_file_internal())))
     if (BIO_read_filename(in,"control/rsa512.pem") > 0)
-     if (rsa=PEM_read_bio_RSAPrivateKey(in,NULL,NULL,NULL))
+     if ((rsa=PEM_read_bio_RSAPrivateKey(in,NULL,NULL,NULL)))
       return rsa;
   return (RSA_generate_key(export?keylength:512,RSA_F4,NULL,NULL));
 }
@@ -1614,7 +1612,7 @@ void smtp_tls(arg) char *arg;
     logline(2,"aborting TLS connection, unable to finish SSL accept");
     die_read();
   }
-  substdio_fdbuf(&ssout,SSL_write,ssl,ssoutbuf,sizeof(ssoutbuf));
+  //substdio_fdbuf(&ssout,SSL_write,ssl,ssoutbuf,sizeof(ssoutbuf));
 
   remotehost = env_get("TCPREMOTEHOST");
   if (!remotehost) remotehost = "unknown";
@@ -1648,7 +1646,7 @@ struct commands smtpcommands[] = {
 , { 0, err_unimpl, flush }
 } ;
 
-void main()
+int main()
 {
 #ifdef TLS_SMTPD
   sig_alarmcatch(sigalrm);
@@ -1665,6 +1663,8 @@ void main()
     err_quit();
   }
   smtp_greet("220 ");
-  if (commands(&ssin,&smtpcommands) == 0) die_read();
+  if (commands(&ssin,smtpcommands) == 0) die_read();
   die_nomem();
+  /* NOTREACHED */
+  return 1;
 }

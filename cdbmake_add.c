@@ -13,7 +13,7 @@ int cdbmake_add(cdbm,h,p,alloc)
 struct cdbmake *cdbm;
 uint32 h;
 uint32 p;
-char *(*alloc)();
+void *(*alloc)(unsigned int);
 {
   struct cdbmake_hplist *head;
 
@@ -34,7 +34,7 @@ char *(*alloc)();
 
 int cdbmake_split(cdbm,alloc)
 struct cdbmake *cdbm;
-char *(*alloc)();
+void *(*alloc)(unsigned int);
 {
   int i;
   uint32 u;

@@ -1,3 +1,7 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <unistd.h>
 #include "readwrite.h"
 #include "prioq.h"
 #include "env.h"
@@ -33,7 +37,7 @@ char outbuf[SUBSTDIO_OUTSIZE];
 
 void die_nomem() { strerr_die2x(111,FATAL,"out of memory"); }
 
-void main()
+int main()
 {
  substdio ssin;
  substdio ssout;
@@ -158,5 +162,5 @@ void main()
      strerr_warn4(WARNING,"$MAILDIR/",filenames.s + pe.id," will be delivered twice; unable to unlink: ",&strerr_sys);
   }
 
- _exit(0);
+ return 0;
 }

@@ -132,6 +132,7 @@ main(int argc, char **argv)
 		write_mailfile(fn);
 	}
 	/* NOTREACHED */
+	return 1;
 }
 
 static char timebuf[DATE822FMT];

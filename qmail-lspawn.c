@@ -42,7 +42,7 @@
 #include "dirmaker.h"
 #endif
 
-char *aliasempty;
+const char *aliasempty;
 
 #ifdef QLDAP_CLUSTER
 /* declaration of the mail forwarder function */
@@ -50,7 +50,7 @@ void forward_mail(char *, char *, char *, int , int);
 #endif
 
 #ifdef AUTOHOMEDIRMAKE
-void check_home(char *home, char *maildir)
+void check_home(const char *home, const char *maildir)
 {
   struct stat	st;
 
@@ -687,7 +687,7 @@ char *local;
   }
 
  if (pipe(pi) == -1) _exit(QLX_SYS);
- args[0] = "bin/qmail-getpw";
+ args[0] = (char *)"bin/qmail-getpw";
  args[1] = local;
  args[2] = 0;
  switch(gpwpid = vfork())
@@ -829,8 +829,8 @@ char *s; char *r; int at;
    x = nughde.s;
    xlen = nughde.len;
 
-   args[0] = "bin/qmail-local";
-   args[1] = "--";
+   args[0] = (char *)"bin/qmail-local";
+   args[1] = (char *)"--";
    args[2] = x;
    n = byte_chr(x,xlen,0); if (n++ == xlen) _exit(QLX_USAGE); x += n; xlen -= n;
 
@@ -854,7 +854,7 @@ char *s; char *r; int at;
 
    args[7] = r + at + 1;
    args[8] = s;
-   args[9] = aliasempty;
+   args[9] = (char *)aliasempty;
    args[10] = 0;
 
    log(8, "executing 'qmail-local -- %s %s %s %s %s %s %s %s' under uid=%i, gid=%i\n",
@@ -894,7 +894,7 @@ void forward_mail(char *remote, char *to, char *from, int fdmess, int fdout)
   if (prot_uid(auto_gidn) == -1) _exit(QLX_USAGE);
   if (!getuid()) _exit(QLX_ROOT);
 
-  args[0] = "bin/qmail-forward";
+  args[0] = (char *)"bin/qmail-forward";
   args[1] = remote;
   args[2] = from;
   args[3] = to;

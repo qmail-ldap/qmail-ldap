@@ -1,7 +1,7 @@
 #include "cdb.h"
 
 uint32 cdb_hash(buf,len)
-unsigned char *buf;
+const unsigned char *buf;
 unsigned int len;
 {
   uint32 h;

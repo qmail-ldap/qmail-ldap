@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "sig.h"
 #include "substdio.h"
 #include "stralloc.h"
@@ -35,10 +36,10 @@ int flagnamecomment = 0;
 int flaghackmess = 0;
 int flaghackrecip = 0;
 char *mailhost;
-char *mailuser;
+const char *mailuser;
 int mailusertokentype;
 char *mailrhost;
-char *mailruser;
+const char *mailruser;
 
 stralloc control_idhost = {0};
 stralloc control_defaultdomain = {0};
@@ -90,7 +91,7 @@ int flagresent;
 
 void exitnicely()
 {
- char *qqx;
+ const char *qqx;
 
  if (!flagqueue) substdio_flush(subfdout);
 
@@ -106,7 +107,7 @@ void exitnicely()
      if (!stralloc_0(&reciplist.sa[i])) die_nomem();
      qmail_to(&qqt,reciplist.sa[i].s);
     }
-   if (flagrh)
+   if (flagrh) {
      if (flagresent)
        for (i = 0;i < hrrlist.len;++i)
 	{
@@ -119,9 +120,9 @@ void exitnicely()
          if (!stralloc_0(&hrlist.sa[i])) die_nomem();
 	 qmail_to(&qqt,hrlist.sa[i].s);
 	}
-
+   }
    qqx = qmail_close(&qqt);
-   if (*qqx)
+   if (*qqx) {
      if (*qqx == 'D') {
        substdio_puts(subfderr,"qmail-inject: fatal: ");
        substdio_puts(subfderr,qqx + 1);
@@ -136,6 +137,7 @@ void exitnicely()
        substdio_flush(subfderr);
        temp();
      }
+   }
   }
 
  _exit(0);
@@ -682,7 +684,7 @@ void getcontrols()
 #define RECIP_HEADER 3
 #define RECIP_AH 4
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -770,4 +772,6 @@ char **argv;
  if (headerbody(subfdin,doheaderfield,finishheader,dobody) == -1)
    die_read();
  exitnicely();
+ /* NOTREACHED */
+ return 0;
 }

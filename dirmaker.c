@@ -29,7 +29,7 @@ dirmaker_init(void)
 }
 
 int
-dirmaker_make(char *home, char *maildir)
+dirmaker_make(const char *home, const char *maildir)
 {
 	char *(dirargs[3]);
 	int child, wstat;
@@ -42,8 +42,8 @@ dirmaker_make(char *home, char *maildir)
 			if (error_temp(errno)) return MAILDIR_FAILED;
 			return MAILDIR_HARD;
 		case 0:
-			dirargs[0] = dirmaker.s; dirargs[1] = home;
-			dirargs[2] = maildir; dirargs[3] = 0;
+			dirargs[0] = dirmaker.s; dirargs[1] = (char *)home;
+			dirargs[2] = (char *)maildir; dirargs[3] = 0;
 			execvp(*dirargs,dirargs);
 			if (error_temp(errno)) _exit(QLX_EXECSOFT);
 			_exit(QLX_EXECHARD);

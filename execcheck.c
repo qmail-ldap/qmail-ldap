@@ -1,4 +1,5 @@
 #ifdef SMTPEXECCHECK
+#include "byte.h"
 #include "case.h"
 #include "env.h"
 #include "qmail.h"

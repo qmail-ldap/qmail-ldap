@@ -19,6 +19,7 @@
 #include "qmail.h"
 #include "qmail-ldap.h"
 #include "read-ctrl.h"
+#include "readwrite.h"
 #include "seek.h"
 #include "sig.h"
 #include "str.h"
@@ -214,7 +215,8 @@ blast(void)
 {
 	struct qmail qqt;
 	substdio ss;
-	char *qqx, *s, *smax;
+	char *s, *smax;
+	const char *qqx;
 	unsigned long qp;
 	datetime_sec when;
 	int match;
@@ -285,7 +287,7 @@ stralloc moderators = {0};
 void
 secretary(char *maildir, int flagmoderate)
 {
-	char **args;
+	const char **args;
 	char *s, *smax;
 	int child, wstat;
 	int numargs;
@@ -300,7 +302,7 @@ secretary(char *maildir, int flagmoderate)
 	if (flagmoderate == 1)
 		numargs += 2 * nummoderators;
 	
-	args = (char **) alloc(numargs * sizeof(char *));
+	args = (const char **) alloc(numargs * sizeof(char *));
 	if (!args) temp_nomem();
 	i = 0;
 	args[i++] = "qmail-secretary";
@@ -332,7 +334,7 @@ secretary(char *maildir, int flagmoderate)
 			strerr_die2sys(111, FATAL,
 			    "Unable to run secretary: fd_move: ");
 		sig_pipedefault();
-		execvp(*args, args);
+		execvp(*args, (char **)args);
 		strerr_die3x(111,"Unable to run secretary: ",
 		    error_str(errno), ". (#4.3.0)");
 	}

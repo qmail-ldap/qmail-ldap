@@ -21,7 +21,7 @@ struct ip_address *ip;
 }
 
 unsigned int ip_scan(s,ip)
-char *s;
+const char *s;
 struct ip_address *ip;
 {
   unsigned int i;
@@ -40,7 +40,7 @@ struct ip_address *ip;
 }
 
 unsigned int ip_scanbracket(s,ip)
-char *s;
+const char *s;
 struct ip_address *ip;
 {
   unsigned int len;

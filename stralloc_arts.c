@@ -4,7 +4,7 @@
 
 int stralloc_starts(sa,s)
 stralloc *sa;
-char *s;
+const char *s;
 {
   int len;
   len = str_len(s);

@@ -1,8 +1,10 @@
 #ifndef RBL_H
 #define RBL_H
 
-extern void rblheader();
-extern int rblcheck();
-extern int rblinit();
+#include "qmail.h"
+
+extern void rblheader(struct qmail *);
+extern int rblcheck(const char *, char **, int);
+extern int rblinit(void);
 
 #endif

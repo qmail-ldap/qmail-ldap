@@ -6,6 +6,12 @@
 
 char buf[100 + FMT_ULONG];
 
+extern void c(const char *, const char *, const char *, int, int, int);
+extern void d(const char *, const char *, int, int, int);
+extern void h(const char *, int, int, int);
+extern void p(const char *, const char *, int, int, int);
+extern void z(const char *, const char *, int, int, int, int);
+
 void dsplit(base,uid,mode)
 char *base; /* must be under 100 bytes */
 int uid;

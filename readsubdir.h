@@ -7,13 +7,13 @@ typedef struct readsubdir
  {
   DIR *dir;
   int pos;
-  char *name;
+  const char *name;
   void (*pause)();
  }
 readsubdir;
 
-extern void readsubdir_init();
-extern int readsubdir_next();
+extern void readsubdir_init(readsubdir *, const char *, void (*)());
+extern int readsubdir_next(readsubdir *, unsigned long *);
 
 #define READSUBDIR_NAMELEN 10
 

@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "byte.h"
 #include "substdio.h"
 #include "ip.h"
@@ -32,7 +33,6 @@ int timeout;
 {
   char *x;
   int s;
-  struct sockaddr_in sin;
   substdio ss;
   char buf[32];
   unsigned int len;

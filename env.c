@@ -23,13 +23,13 @@ static void env_goodbye(i) int i;
 
 static char *null = 0;
 
-void env_clear()
+void env_clear(void)
 {
  if (env_isinit) while (en) env_goodbye(0);
  else environ = &null;
 }
 
-static void env_unsetlen(s,len) char *s; int len;
+static void env_unsetlen(s,len) const char *s; int len;
 {
  int i;
  for (i = en - 1;i >= 0;--i)
@@ -38,7 +38,7 @@ static void env_unsetlen(s,len) char *s; int len;
        env_goodbye(i);
 }
 
-int env_unset(s) char *s;
+int env_unset(s) const char *s;
 {
  if (!env_isinit) if (!env_init()) return 0;
  env_unsetlen(s,str_len(s));
@@ -47,13 +47,13 @@ int env_unset(s) char *s;
 
 static int env_add(s) char *s;
 {
- char *t;
+ const char *t;
  t = env_findeq(s);
  if (t) env_unsetlen(s,t - s);
  if (en == ea)
   {
    ea += 30;
-   if (!alloc_re(&environ,(en + 1) * sizeof(char *),(ea + 1) * sizeof(char *)))
+   if (!alloc_re((char **)&environ,(en + 1) * sizeof(char *),(ea + 1) * sizeof(char *)))
     { ea = en; return 0; }
   }
  environ[en++] = s;
@@ -61,7 +61,7 @@ static int env_add(s) char *s;
  return 1;
 }
 
-int env_put(s) char *s;
+int env_put(s) const char *s;
 {
  char *u;
  if (!env_isinit) if (!env_init()) return 0;
@@ -72,7 +72,7 @@ int env_put(s) char *s;
  return 1;
 }
 
-int env_put2(s,t) char *s; char *t;
+int env_put2(s,t) const char *s; const char *t;
 {
  char *u;
  int slen;
@@ -87,7 +87,7 @@ int env_put2(s,t) char *s; char *t;
  return 1;
 }
 
-int env_init()
+int env_init(void)
 {
  char **newenviron;
  int i;

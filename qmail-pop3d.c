@@ -1,5 +1,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+/* XXX unable to include stdio.h for rename because of puts() */
+#include <unistd.h>
 #include "commands.h"
 #include "sig.h"
 #include "getln.h"
@@ -409,7 +411,7 @@ struct commands pop3commands[] = {
 , { 0, err_unimpl, 0 }
 } ;
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -433,5 +435,6 @@ char **argv;
 
   okay();
   commands(&ssin,pop3commands);
-  die();
+  log_quit();
+  return 0;
 }

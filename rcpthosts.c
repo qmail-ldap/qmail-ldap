@@ -1,5 +1,6 @@
 #include "cdb.h"
 #include "byte.h"
+#include "case.h"
 #include "open.h"
 #include "error.h"
 #include "control.h"
@@ -12,7 +13,7 @@ static stralloc rh = {0};
 static struct constmap maprh;
 static int fdmrh;
 
-int rcpthosts_init()
+int rcpthosts_init(void)
 {
   flagrh = control_readfile(&rh,"control/rcpthosts",0);
   if (flagrh != 1) return flagrh;

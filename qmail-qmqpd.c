@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "auto_qmail.h"
 #include "byte.h"
 #include "qmail.h"
@@ -167,10 +168,10 @@ struct qmail qq;
 
 void identify()
 {
-  char *remotehost;
-  char *remoteinfo;
-  char *remoteip;
-  char *local;
+  const char *remotehost;
+  const char *remoteinfo;
+  const char *remoteip;
+  const char *local;
 
   remotehost = env_get("TCPREMOTEHOST");
   if (!remotehost) remotehost = "unknown";
@@ -213,9 +214,9 @@ int getbuf()
 
 int flagok = 1;
 
-main()
+int main()
 {
-  char *result;
+  const char *result;
   unsigned long qp;
   unsigned long len;
   char ch;
@@ -292,5 +293,5 @@ main()
   substdio_flush(subfderr);
   substdio_puts(&ssout,",");
   substdio_flush(&ssout);
-  _exit(0);
+  return 0;
 }

@@ -45,7 +45,7 @@ void flush()
   bufpos = 0;
 }
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -69,4 +69,6 @@ char **argv;
     if ((ch < 32) || (ch > 126)) ch = '?'; /* logger truncates at 0; GPACIC */
     buf[bufpos++] = ch;
   }
+  /* NOTREACHED */
+  return 0;
 }

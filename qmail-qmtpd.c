@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "stralloc.h"
 #include "substdio.h"
 #include "qmail.h"
@@ -11,6 +12,7 @@
 #include "readwrite.h"
 #include "control.h"
 #include "received.h"
+#include "scan.h"
 
 void badproto() { _exit(100); }
 void resources() { _exit(111); }
@@ -64,17 +66,17 @@ struct qmail qq;
 char buf[1000];
 char buf2[100];
 
-char *remotehost;
-char *remoteinfo;
-char *remoteip;
-char *local;
+const char *remotehost;
+const char *remoteinfo;
+const char *remoteip;
+const char *local;
 
 stralloc failure = {0};
 
 char *relayclient;
 int relayclientlen;
 
-main()
+int main()
 {
   char ch;
   int i;
@@ -84,7 +86,7 @@ main()
   int flagsenderok;
   int flagbother;
   unsigned long qp;
-  char *result;
+  const char *result;
   char *x;
   unsigned long u;
  
@@ -265,4 +267,6 @@ main()
  
     /* ssout will be flushed when we read from the network again */
   }
+  /* NOTREACHED */
+  return 0;
 }

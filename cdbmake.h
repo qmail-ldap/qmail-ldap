@@ -23,13 +23,14 @@ struct cdbmake {
   uint32 numentries;
 } ;
 
-extern void cdbmake_pack();
+extern void cdbmake_pack(unsigned char *, uint32);
 #define CDBMAKE_HASHSTART ((uint32) 5381)
-extern uint32 cdbmake_hashadd();
+extern uint32 cdbmake_hashadd(uint32, unsigned int);
 
-extern void cdbmake_init();
-extern int cdbmake_add();
-extern int cdbmake_split();
-extern uint32 cdbmake_throw();
+extern void cdbmake_init(struct cdbmake *);
+extern int cdbmake_add(struct cdbmake *, uint32, uint32,
+    void *(*)(unsigned int));
+extern int cdbmake_split(struct cdbmake *, void *(*)(unsigned int));
+extern uint32 cdbmake_throw(struct cdbmake *, uint32, int);
 
 #endif

@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "substdio.h"
 #include "subfd.h"
 #include "exit.h"
@@ -116,7 +117,7 @@ char *post;
   substdio_puts(subfdout,"\n");
   substdio_puts(subfdout,fn);
   substdio_puts(subfdout,": ");
-  switch(control_readfile(&line,fn)) {
+  switch(control_readfile(&line,fn, 0)) {
     case 0:
       substdio_puts(subfdout,"(Default.) ");
       substdio_puts(subfdout,def);
@@ -140,7 +141,7 @@ char *post;
   }
 }
 
-void main()
+int main()
 {
   DIR *dir;
   direntry *d;
@@ -323,7 +324,7 @@ void main()
   substdio_puts(subfdout,"\n");
   
   
-  while (d = readdir(dir)) {
+  while ((d = readdir(dir))) {
     if (str_equal(d->d_name,".")) continue;
     if (str_equal(d->d_name,"..")) continue;
     if (str_equal(d->d_name,"badmailfrom")) continue;
@@ -406,5 +407,5 @@ void main()
   }
 
   substdio_flush(subfdout);
-  _exit(0);
+  return 0;
 }

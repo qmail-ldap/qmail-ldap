@@ -3,7 +3,7 @@
 
 #define X(e,s) if (i == e) return s;
 
-char *error_str(i)
+const char *error_str(i)
 int i;
 {
   X(0,"no error")

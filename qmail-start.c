@@ -1,15 +1,18 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "fd.h"
 #include "prot.h"
 #include "exit.h"
 #include "fork.h"
 #include "auto_uids.h"
 
-char *(qsargs[]) = { "qmail-send", 0 };
-char *(qcargs[]) = { "qmail-clean", 0 };
-char *(qlargs[]) = { "qmail-lspawn", "./Mailbox", 0 };
-char *(qrargs[]) = { "qmail-rspawn", 0 };
+const char *(qsargs[]) = { "qmail-send", 0 };
+const char *(qcargs[]) = { "qmail-clean", 0 };
+const char *(qlargs[]) = { "qmail-lspawn", "./Mailbox", 0 };
+const char *(qrargs[]) = { "qmail-rspawn", 0 };
 #ifdef EXTERNAL_TODO
-char *(qtargs[]) = { "qmail-todo", 0};
+const char *(qtargs[]) = { "qmail-todo", 0};
 #endif
 
 void die() { _exit(111); }
@@ -45,7 +48,7 @@ void closepipes() {
 #endif
 }
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -106,7 +109,7 @@ char **argv;
       if (fd_copy(1,pi2[1]) == -1) die();
       close23456();
       closepipes();
-      execvp(*qlargs,qlargs);
+      execvp(*qlargs,(char **)qlargs);
       die();
   }
  
@@ -118,7 +121,7 @@ char **argv;
       if (fd_copy(1,pi4[1]) == -1) die();
       close23456();
       closepipes();
-      execvp(*qrargs,qrargs);
+      execvp(*qrargs,(char **)qrargs);
       die();
   }
  
@@ -130,7 +133,7 @@ char **argv;
       if (fd_copy(1,pi6[1]) == -1) die();
       close23456();
       closepipes();
-      execvp(*qcargs,qcargs);
+      execvp(*qcargs,(char **)qcargs);
       die();
   }
 
@@ -145,7 +148,7 @@ char **argv;
       if (fd_copy(2,pi9[1]) == -1) die();
       if (fd_copy(3,pi10[0]) == -1) die();
       closepipes();
-      execvp(*qtargs,qtargs);
+      execvp(*qtargs,(char **)qtargs);
       die();
   }
 
@@ -157,7 +160,7 @@ char **argv;
       if (fd_copy(1,pi10[1]) == -1) die();
       close23456();
       closepipes();
-      execvp(*qcargs,qcargs);
+      execvp(*qcargs,(char **)qcargs);
       die();
   }
 #endif
@@ -175,6 +178,6 @@ char **argv;
   if (fd_copy(8,pi8[0]) == -1) die();
 #endif
   closepipes();
-  execvp(*qsargs,qsargs);
-  die();
+  execvp(*qsargs,(char **)qsargs);
+  return 111;
 }

@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "readwrite.h"
 #include "sig.h"
 #include "env.h"
@@ -47,7 +48,7 @@ void temp_fork() { strerr_die3x(111,"Unable to fork: ",error_str(errno),". (#4.3
 void temp_read() { strerr_die3x(111,"Unable to read message: ",error_str(errno),". (#4.3.0)"); }
 void temp_slowlock()
 { strerr_die1x(111,"File has been locked for 30 seconds straight. (#4.3.0)"); }
-void temp_qmail(fn) char *fn;
+void temp_qmail(fn) const char *fn;
 { strerr_die5x(111,"Unable to open ",fn,": ",error_str(errno),". (#4.3.0)"); }
 
 int flagdoit;
@@ -91,8 +92,8 @@ void maildir_child(dir)
 char *dir;
 {
  unsigned long pid;
- unsigned long time;
- char host[64];
+ unsigned long tnow;
+ char hostname[64];
  char *s;
  int loop;
  struct stat st;
@@ -106,16 +107,16 @@ char *dir;
  }
 
  pid = getpid();
- host[0] = 0;
- gethostname(host,sizeof(host));
+ hostname[0] = 0;
+ gethostname(hostname,sizeof(hostname));
  for (loop = 0;;++loop)
   {
-   time = now();
+   tnow = now();
    s = fntmptph;
    s += fmt_str(s,"tmp/");
-   s += fmt_ulong(s,time); *s++ = '.';
+   s += fmt_ulong(s,tnow); *s++ = '.';
    s += fmt_ulong(s,pid); *s++ = '.';
-   s += fmt_strn(s,host,sizeof(host)); 
+   s += fmt_strn(s,hostname,sizeof(hostname)); 
    *s++ = 0;
    if (stat(fntmptph,&st) == -1) if (errno == error_noent) break;
    /* really should never get to this point */
@@ -402,7 +403,8 @@ char *prog;
    case -1:
      temp_fork();
    case 0:
-     args[0] = "/bin/sh"; args[1] = "-c"; args[2] = prog; args[3] = 0;
+     args[0] = (char *)"/bin/sh"; args[1] = (char *)"-c";
+     args[2] = prog; args[3] = 0;
      sig_pipedefault();
      execv(*args,args);
      strerr_die3x(111,"Unable to run /bin/sh: ",error_str(errno),". (#4.3.0)");
@@ -427,7 +429,7 @@ void mailforward(recips)
 char **recips;
 {
  struct qmail qqt;
- char *qqx;
+ const char *qqx;
  substdio ss;
  int match;
 
@@ -482,11 +484,12 @@ void checkhome()
    strerr_die3x(111,"Unable to stat home directory: ",error_str(errno),". (#4.3.0)");
  if (st.st_mode & auto_patrn)
    strerr_die1x(111,"Uh-oh: home directory is writable. (#4.7.0)");
- if (st.st_mode & 01000)
+ if (st.st_mode & 01000) {
    if (flagdoit)
      strerr_die1x(111,"Home directory is sticky: user is editing his .qmail file. (#4.2.1)");
    else
      strerr_warn1("Warning: home directory is sticky.",0);
+ }
 }
 
 int qmeox(dashowner)
@@ -623,7 +626,7 @@ void unescape(char *s)
   } while (*s++);
 }
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -721,7 +724,7 @@ char **argv;
  if (!stralloc_copys(&ufline,"From ")) temp_nomem();
  if (*sender)
   {
-   int len; int i; char ch;
+   int len; char ch;
 
    len = str_len(sender);
    if (!stralloc_readyplus(&ufline,len)) temp_nomem();
@@ -1030,5 +1033,5 @@ char **argv;
   }
 
  count_print();
- _exit(0);
+ return 0;
 }

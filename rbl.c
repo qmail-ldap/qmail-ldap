@@ -40,11 +40,11 @@ int numrbl;
 static stralloc ip_reverse = {0};
 static stralloc rbl_tmp = {0};
 
-static int rbl_start(char *remoteip)
+static int rbl_start(const char *remoteip)
 {
   unsigned int i;
   unsigned int j;
-  char *ip_env;
+  const char *ip_env;
 
   ip_env = remoteip;
   if (!ip_env) ip_env = "";
@@ -114,7 +114,7 @@ void rbladdheader(char *base, char *matchon, char *message)
   if(!stralloc_cats(&rblmessage, "\n")) die_nomem();
 }
 
-int rblcheck(char *remoteip, char** rblname, int rbloh)
+int rblcheck(const char *remoteip, char** rblname, int rbloh)
 {
   int r = 1;
   int i;

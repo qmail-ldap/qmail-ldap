@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "substdio.h"
 #include "readwrite.h"
 #include "wait.h"
@@ -16,9 +17,9 @@ static void
 setup_qqargs(void)
 {
   if(!binqqargs[0])
-    binqqargs[0] = env_get("QMAILQUEUE");
+    binqqargs[0] = (char *)env_get("QMAILQUEUE");
   if(!binqqargs[0])
-    binqqargs[0] = "bin/qmail-queue";
+    binqqargs[0] = (char *)"bin/qmail-queue";
 }
 
 #else
@@ -69,7 +70,7 @@ char *host;
   int pie[2];
   char *(args[3]);
 
-  args[0] = "bin/qmail-qmqpc";
+  args[0] = (char *)"bin/qmail-qmqpc";
   args[1] = host;
   args[2] = 0;
 
@@ -108,17 +109,17 @@ void qmail_fail(qq) struct qmail *qq;
   qq->flagerr = 1;
 }
 
-void qmail_put(qq,s,len) struct qmail *qq; char *s; int len;
+void qmail_put(qq,s,len) struct qmail *qq; const char *s; int len;
 {
   if (!qq->flagerr) if (substdio_put(&qq->ss,s,len) == -1) qq->flagerr = 1;
 }
 
-void qmail_puts(qq,s) struct qmail *qq; char *s;
+void qmail_puts(qq,s) struct qmail *qq; const char *s;
 {
   if (!qq->flagerr) if (substdio_puts(&qq->ss,s) == -1) qq->flagerr = 1;
 }
 
-void qmail_from(qq,s) struct qmail *qq; char *s;
+void qmail_from(qq,s) struct qmail *qq; const char *s;
 {
   if (substdio_flush(&qq->ss) == -1) qq->flagerr = 1;
   close(qq->fdm);
@@ -128,14 +129,14 @@ void qmail_from(qq,s) struct qmail *qq; char *s;
   qmail_put(qq,"",1);
 }
 
-void qmail_to(qq,s) struct qmail *qq; char *s;
+void qmail_to(qq,s) struct qmail *qq; const char *s;
 {
   qmail_put(qq,"T",1);
   qmail_puts(qq,s);
   qmail_put(qq,"",1);
 }
 
-char *qmail_close(qq)
+const char *qmail_close(qq)
 struct qmail *qq;
 {
   int wstat;

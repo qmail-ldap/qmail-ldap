@@ -17,6 +17,7 @@
 #include "ndelay.h"
 #include "now.h"
 #include "readsubdir.h"
+#include "readwrite.h"
 #include "scan.h"
 #include "select.h"
 #include "sig.h"
@@ -104,7 +105,7 @@ int rewrite(char *recip)
 {
   int i;
   int j;
-  char *x;
+  const char *x;
   static stralloc addr = {0};
   int at;
 
@@ -653,7 +654,7 @@ void reread(void)
   }
 }
 
-void main()
+int main()
 {
  datetime_sec wakeup;
  fd_set rfds;
@@ -726,5 +727,6 @@ void main()
     }
   }
   /* NOTREACHED */
+  return 1;
 }
 

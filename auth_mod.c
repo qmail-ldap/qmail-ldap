@@ -5,10 +5,12 @@
 #include "localdelivery.h"
 #include "locallookup.h"
 #include "output.h"
+#include "pbsexec.h"
 #include "qldap.h"
 #include "qldap-debug.h"
 #include "qldap-errno.h"
 #include "read-ctrl.h"
+#include "readwrite.h"
 #include "stralloc.h"
 #ifdef QLDAP_CLUSTER
 #include <sys/socket.h>

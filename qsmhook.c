@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "fd.h"
 #include "stralloc.h"
 #include "readwrite.h"
@@ -35,7 +36,7 @@ char outbuf[SUBSTDIO_OUTSIZE];
 substdio ssin;
 char inbuf[SUBSTDIO_INSIZE];
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -78,7 +79,7 @@ char **argv;
 
  if (!*argv) die_usage();
 
- for (arg = argv;x = *arg;++arg)
+ for (arg = argv;(x = *arg);++arg)
   {
    if (!stralloc_copys(&newarg,"")) die_temp();
    flagesc = 0;
@@ -133,5 +134,5 @@ char **argv;
 
  if (wait_pid(&wstat,pid) == -1) die_temp();
  if (wait_crashed(wstat)) die_temp();
- _exit(wait_exitcode(wstat));
+ return wait_exitcode(wstat);
 }

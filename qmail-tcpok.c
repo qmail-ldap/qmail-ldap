@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "strerr.h"
 #include "substdio.h"
 #include "lock.h"
@@ -11,7 +12,7 @@
 char buf[1024]; /* XXX: must match size in tcpto_clean.c, tcpto.c */
 substdio ss;
 
-void main()
+int main()
 {
   int fd;
   int i;
@@ -31,5 +32,5 @@ void main()
   for (i = 0;i < sizeof buf;++i) substdio_put(&ss,"",1);
   if (substdio_flush(&ss) == -1)
     strerr_die4sys(111,FATAL,"unable to clear ",auto_qmail,"/queue/lock/tcpto: ");
-  _exit(0);
+  return 0;
 }

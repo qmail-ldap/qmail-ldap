@@ -5,6 +5,6 @@
 int dirmaker_init(void);
 
 /* executes the dirmaker returns OK on success */
-int dirmaker_make(char *, char *);
+int dirmaker_make(const char *, const char *);
 
 #endif

@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "fd.h"
 #include "wait.h"
 #include "substdio.h"
@@ -84,7 +85,7 @@ char *s; char *r; int at;
  int f;
  char *(args[5]);
 
- args[0] = "qmail-remote";
+ args[0] = (char *)"qmail-remote";
  args[1] = r + at + 1;
  args[2] = s;
  args[3] = r;

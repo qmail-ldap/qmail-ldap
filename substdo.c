@@ -6,7 +6,7 @@
 static int allwrite(op,fd,buf,len)
 register int (*op)();
 register int fd;
-register char *buf;
+register const char *buf;
 register int len;
 {
   register int w;
@@ -37,7 +37,7 @@ register substdio *s;
 
 int substdio_bput(s,buf,len)
 register substdio *s;
-register char *buf;
+register const char *buf;
 register int len;
 {
   register int n;
@@ -54,7 +54,7 @@ register int len;
 
 int substdio_put(s,buf,len)
 register substdio *s;
-register char *buf;
+register const char *buf;
 register int len;
 {
   register int n;
@@ -79,7 +79,7 @@ register int len;
 
 int substdio_putflush(s,buf,len)
 register substdio *s;
-register char *buf;
+register const char *buf;
 register int len;
 {
   if (substdio_flush(s) == -1) return -1;
@@ -88,21 +88,21 @@ register int len;
 
 int substdio_bputs(s,buf)
 register substdio *s;
-register char *buf;
+register const char *buf;
 {
   return substdio_bput(s,buf,str_len(buf));
 }
 
 int substdio_puts(s,buf)
 register substdio *s;
-register char *buf;
+register const char *buf;
 {
   return substdio_put(s,buf,str_len(buf));
 }
 
 int substdio_putsflush(s,buf)
 register substdio *s;
-register char *buf;
+register const char *buf;
 {
   return substdio_putflush(s,buf,str_len(buf));
 }

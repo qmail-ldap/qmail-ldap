@@ -13,4 +13,9 @@ struct cdbmss {
   int fd;
 } ;
 
+extern int cdbmss_start(struct cdbmss *, int fd);
+extern int cdbmss_add(struct cdbmss *, const unsigned char *, unsigned int,
+    const unsigned char *, unsigned int);
+extern int cdbmss_finish(struct cdbmss *);
+
 #endif

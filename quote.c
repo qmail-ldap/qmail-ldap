@@ -9,7 +9,7 @@ no, 821 and 822 don't have the same encoding. they're not even close.
 no special encoding here for bytes above 127.
 */
 
-static char ok[128] = {
+static const char ok[128] = {
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 ,0,7,0,7,7,7,7,7,0,0,7,7,0,7,7,7 ,7,7,7,7,7,7,7,7,7,7,0,0,0,7,0,7
 ,0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7 ,7,7,7,7,7,7,7,7,7,7,7,0,0,0,7,7
@@ -40,7 +40,7 @@ stralloc *sain;
 }
 
 int quote_need(s,n)
-char *s;
+const char *s;
 unsigned int n;
 {
  unsigned char uch;
@@ -70,7 +70,7 @@ static stralloc foo = {0};
 
 int quote2(sa,s)
 stralloc *sa;
-char *s;
+const char *s;
 {
  int j;
  if (!*s) return stralloc_copys(sa,s);

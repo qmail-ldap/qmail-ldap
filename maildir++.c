@@ -11,6 +11,7 @@
 #include "getln.h"
 #include "now.h"
 #include "open.h"
+#include "readwrite.h"
 #include "scan.h"
 #include "seek.h"
 #include "sig.h"
@@ -247,7 +248,7 @@ quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc)
 }
 
 void
-quota_get(quota_t *q, char const *quota)
+quota_get(quota_t *q, const char *quota)
 {
 	unsigned long i;
 

@@ -18,7 +18,7 @@ struct call {
 } ;
 
 int call_getln(substdio *, stralloc *);
-int call_getc(struct call *, const char *);
+int call_getc(struct call *, char *);
 int call_put(struct call *, const char *, int);
 int call_puts(struct call *, const char *);
 int call_flush(struct call *);

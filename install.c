@@ -1,9 +1,13 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "substdio.h"
 #include "strerr.h"
 #include "error.h"
 #include "open.h"
 #include "readwrite.h"
 #include "exit.h"
+#include "fifo.h"
 
 extern void hier();
 
@@ -12,7 +16,7 @@ extern void hier();
 int fdsourcedir = -1;
 
 void h(home,uid,gid,mode)
-char *home;
+const char *home;
 int uid;
 int gid;
 int mode;
@@ -27,8 +31,8 @@ int mode;
 }
 
 void d(home,subdir,uid,gid,mode)
-char *home;
-char *subdir;
+const char *home;
+const char *subdir;
 int uid;
 int gid;
 int mode;
@@ -45,8 +49,8 @@ int mode;
 }
 
 void p(home,fifo,uid,gid,mode)
-char *home;
-char *fifo;
+const char *home;
+const char *fifo;
 int uid;
 int gid;
 int mode;
@@ -68,9 +72,9 @@ substdio ssin;
 substdio ssout;
 
 void c(home,subdir,file,uid,gid,mode)
-char *home;
-char *subdir;
-char *file;
+const char *home;
+const char *subdir;
+const char *file;
 int uid;
 int gid;
 int mode;
@@ -118,8 +122,8 @@ int mode;
 }
 
 void z(home,file,len,uid,gid,mode)
-char *home;
-char *file;
+const char *home;
+const char *file;
 int len;
 int uid;
 int gid;
@@ -152,7 +156,7 @@ int mode;
     strerr_die6sys(111,FATAL,"unable to chmod ",home,"/",file,": ");
 }
 
-void main()
+int main()
 {
   fdsourcedir = open_read(".");
   if (fdsourcedir == -1)
@@ -160,5 +164,5 @@ void main()
 
   umask(077);
   hier();
-  _exit(0);
+  return 0;
 }

@@ -6,7 +6,7 @@
 
 void readsubdir_init(rs,name,pause)
 readsubdir *rs;
-char *name;
+const char *name;
 void (*pause)();
 {
  rs->name = name;

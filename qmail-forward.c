@@ -82,7 +82,8 @@ main (int argc, char **argv)
 {
 	struct qmail qqt;
 	substdio ss;
-	char *remote, *to, *from, *qqx;
+	char *remote, *to, *from;
+	const char *qqx;
 	unsigned long qp;
 	datetime_sec when;
 	int match, i;

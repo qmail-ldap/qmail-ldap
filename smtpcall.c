@@ -28,7 +28,7 @@ int call_getln(substdio *ss, stralloc *l)
 }
 
 int
-call_getc(struct call *cc, const char *c)
+call_getc(struct call *cc, char *c)
 {
 	int r;
 	if (cc->flagerr || cc->flagabort) return -1;
@@ -135,7 +135,7 @@ call_open(struct call *cc, const char *prog, int timeout, int flagstar)
       if (fd_move(0,pit[0]) == -1) _exit(120);
       if (fd_move(1,pif[1]) == -1) _exit(120);
       if (chdir(auto_qmail) == -1) _exit(61);
-      execv(*args,args);
+      execv(*args,(char **)args);
       _exit(120);
   }
 
@@ -146,9 +146,9 @@ call_open(struct call *cc, const char *prog, int timeout, int flagstar)
   cc->tofd = pit[1]; close(pit[0]);
   cc->fromfd = pif[0]; close(pif[1]);
   coe(cc->tofd); coe(cc->fromfd);
-  substdio_fdbuf(&cc->ssto, write, cc->tofd,
+  substdio_fdbuf(&cc->ssto, mywrite, cc->tofd,
       cc->tobuf, sizeof(cc->tobuf));
-  substdio_fdbuf(&cc->ssfrom, read, cc->fromfd,
+  substdio_fdbuf(&cc->ssfrom, myread, cc->fromfd,
       cc->frombuf, sizeof(cc->frombuf));
   return 0;
 }

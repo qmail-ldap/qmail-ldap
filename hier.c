@@ -4,6 +4,13 @@
 #include "fmt.h"
 #include "fifo.h"
 
+extern void c(const char *, const char *, const char *, int, int, int);
+extern void d(const char *, const char *, int, int, int);
+extern void h(const char *, int, int, int);
+extern void p(const char *, const char *, int, int, int);
+extern void z(const char *, const char *, int, int, int, int);
+
+
 char buf[100 + FMT_ULONG];
 
 void dsplit(base,uid,mode)

@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "tcpto.h"
 #include "open.h"
 #include "substdio.h"
@@ -5,7 +6,7 @@
 
 char tcpto_cleanbuf[1024];
 
-void tcpto_clean() /* running from queue/mess */
+void tcpto_clean(void) /* running from queue/mess */
 {
  int fd;
  int i;

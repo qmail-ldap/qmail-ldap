@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "readwrite.h"
 #include "sig.h"
 #include "direntry.h"
@@ -62,9 +63,9 @@ char strnum2[FMT_ULONG];
 char strnum3[FMT_ULONG];
 
 #define CHANNELS 2
-char *chanaddr[CHANNELS] = { "local/", "remote/" };
-char *chanstatusmsg[CHANNELS] = { " local ", " remote " };
-char *tochan[CHANNELS] = { " to local ", " to remote " };
+const char *chanaddr[CHANNELS] = { "local/", "remote/" };
+const char *chanstatusmsg[CHANNELS] = { " local ", " remote " };
+const char *tochan[CHANNELS] = { " to local ", " to remote " };
 int chanfdout[CHANNELS] = { 1, 3 };
 int chanfdin[CHANNELS] = { 2, 4 };
 int chanskip[CHANNELS] = { 10, 20 };
@@ -123,7 +124,7 @@ char *recip;
 {
   int i;
   int j;
-  char *x;
+  const char *x;
   static stralloc addr = {0};
   int at;
 
@@ -154,7 +155,7 @@ char *recip;
 
   for (i = 0;i <= addr.len;++i)
     if (!i || (i == at + 1) || (i == addr.len) || ((i > at) && (addr.s[i] == '.')))
-      if (x = constmap(&mapvdoms,addr.s + i,addr.len - i)) {
+      if ((x = constmap(&mapvdoms,addr.s + i,addr.len - i))) {
         if (!*x) break;
         if (!stralloc_cats(&rwline,x)) return 0;
         if (!stralloc_cats(&rwline,"-")) return 0;
@@ -451,7 +452,7 @@ void pqstart()
 
  readsubdir_init(&rs,"info",pausedir);
 
- while (x = readsubdir_next(&rs,&id))
+ while ((x = readsubdir_next(&rs,&id)))
    if (x > 0)
      pqadd(id);
 }
@@ -585,7 +586,7 @@ char *recip;
  int i;
  char *domain;
  int domainlen;
- char *prepend;
+ const char *prepend;
 
  i = str_rchr(recip,'@');
  if (!recip[i]) return recip;
@@ -594,7 +595,7 @@ char *recip;
 
  for (i = 0;i <= domainlen;++i)
    if ((i == 0) || (i == domainlen) || (domain[i] == '.'))
-     if (prepend = constmap(&mapvdoms,domain + i,domainlen - i))
+     if ((prepend = constmap(&mapvdoms,domain + i,domainlen - i)))
       {
        if (!*prepend) break;
        i = str_len(prepend);
@@ -659,7 +660,7 @@ unsigned long id;
 {
  struct qmail qqt;
  struct stat st;
- char *bouncesender;
+ const char *bouncesender;
  char *bouncerecip;
  int r;
  int fd;
@@ -1738,7 +1739,7 @@ void reread()
   }
 }
 
-void main()
+int main()
 {
  int fd;
  datetime_sec wakeup;
@@ -1845,5 +1846,5 @@ void main()
   }
  pqfinish();
  log1("status: exiting\n");
- _exit(0);
+ return 0;
 }

@@ -11,7 +11,7 @@ char *s;
   if (substdio_puts(&ss1,s) == -1) _exit(111);
 }
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -29,7 +29,7 @@ char **argv;
   puts(name);
   puts("[] = \"\\\n");
 
-  while (ch = *value++) {
+  while ((ch = *value++)) {
     puts("\\");
     octal[3] = 0;
     octal[2] = '0' + (ch & 7); ch >>= 3;
@@ -40,5 +40,5 @@ char **argv;
 
   puts("\\\n\";\n");
   if (substdio_flush(&ss1) == -1) _exit(111);
-  _exit(0);
+  return 0;
 }

@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include "substdio.h"
 #include "getln.h"
 #include "readwrite.h"
@@ -221,7 +222,7 @@ stralloc outgoingip = {0};
 
 ipalloc ia = {0};
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -262,5 +263,5 @@ char **argv;
       i = j + 1;
     }
 
-  _exit(lasterror);
+  return lasterror;
 }

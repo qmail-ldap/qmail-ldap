@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "readwrite.h"
 #include "sig.h"
 #include "now.h"
@@ -26,12 +27,12 @@ void cleanuppid()
  DIR *dir;
  direntry *d;
  struct stat st;
- datetime_sec time;
+ datetime_sec tnow;
 
- time = now();
+ tnow = now();
  dir = opendir("pid");
  if (!dir) return;
- while (d = readdir(dir))
+ while ((d = readdir(dir)))
   {
    if (str_equal(d->d_name,".")) continue;
    if (str_equal(d->d_name,"..")) continue;
@@ -39,7 +40,7 @@ void cleanuppid()
    if (!stralloc_cats(&line,d->d_name)) continue;
    if (!stralloc_0(&line)) continue;
    if (stat(line.s,&st) == -1) continue;
-   if (time < st.st_atime + OSSIFIED) continue;
+   if (tnow < st.st_atime + OSSIFIED) continue;
    unlink(line.s);
   }
  closedir(dir);
@@ -49,7 +50,7 @@ char fnbuf[FMTQFN];
 
 void respond(s) char *s; { if (substdio_putflush(subfdoutsmall,s,1) == -1) _exit(100); }
 
-void main()
+int main()
 {
  int i;
  int match;
@@ -115,5 +116,5 @@ if (unlink(fnbuf) == -1) if (errno != error_noent) { respond("!"); continue; }
    else
      respond("x");
   }
- _exit(0);
+ return 0;
 }

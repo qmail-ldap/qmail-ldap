@@ -1,6 +1,6 @@
 #include "hfield.h"
 
-static char *(hname[]) = {
+static const char *(hname[]) = {
   "unknown-header"
 , "sender"
 , "from"
@@ -36,12 +36,12 @@ static char *(hname[]) = {
 static int hmatch(s,len,t)
 char *s;
 int len;
-char *t;
+const char *t;
 {
  int i;
  char ch;
 
- for (i = 0;ch = t[i];++i)
+ for (i = 0;(ch = t[i]);++i)
   {
    if (i >= len) return 0;
    if (ch != s[i])
@@ -65,9 +65,9 @@ char *s;
 int len;
 {
  int i;
- char *t;
+ const char *t;
 
- for (i = 1;t = hname[i];++i)
+ for (i = 1;(t = hname[i]);++i)
    if (hmatch(s,len,t))
      return i;
  return 0;

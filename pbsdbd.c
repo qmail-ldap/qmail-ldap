@@ -83,7 +83,7 @@ init(void)
 	if (port > 65000) die_control();
 
 	/* if a luser sets bad values it's his fault */
-	if (control_readint(&cachesize,"control/pbscachesize") == -1)
+	if (control_readulong(&cachesize,"control/pbscachesize") == -1)
 		die_control();
 	if (control_readint(&timeout,"control/pbstimeout") == -1)
 		die_control();

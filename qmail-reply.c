@@ -253,7 +253,7 @@ int recent_lookup(char *buf, int len)
 			/* match found, look at timeval */
 			i += len;
 			if (s[i++] != ':') {
-				strerr_warn(WARN,
+				strerr_warn2(WARN,
 				    "Database file corrupted", 0);
 				unlink("qmail-reply.db");
 				stralloc_copys(&rs, "");
@@ -650,7 +650,7 @@ struct mheader mheader[] = {
 void sendmail(void)
 {
 	struct qmail qqt;
-	char *qqx;
+	const char *qqx;
 	datetime_sec starttime;
 	unsigned long qp;
 	int offset;

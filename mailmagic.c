@@ -54,7 +54,7 @@ magicsubject(stralloc *l, stralloc *h, stralloc *s)
 			if (!stralloc_append(h, &l->s[i])) return -1;
 			continue;
 		}
-		if (case_startb(l->s + i, l - i, "%SUBJECT%") == 0) {
+		if (case_startb(l->s + i, j - i, "%SUBJECT%") == 0) {
 			if (!stralloc_append(h, &l->s[i])) return -1;
 			continue;
 		}
