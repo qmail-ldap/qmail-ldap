@@ -352,6 +352,24 @@ void quit(const char *prepend, const char *append)
   int r;
   char num[FMT_ULONG];
 #endif
+  substdio_putsflush(&smtpto,"QUIT\r\n");
+  /* waiting for remote side is just too ridiculous */
+  out(prepend);
+  outhost();
+  out(append);
+  out(".\n");
+#ifdef DATA_COMPRESS
+  if (wantcomp == 2) {
+	  r = 100 - (int)(100.0*stream.total_out/stream.total_in);
+	  if (r < 0) {
+	    num[0] = '-'; r*= -1;
+	  } else
+	    num[0] = ' ';
+	  num[fmt_uint(num+1,r) + 1] = 0;
+	  out("DDC saved ");
+	  out(num); out(" percent.\n");
+  }
+#endif
 /* TAG */
 #if defined(TLS_REMOTE) && defined(TLSDEBUG)
 #define ONELINE_NAME(X) X509_NAME_oneline(X,NULL,0)
@@ -379,24 +397,6 @@ void quit(const char *prepend, const char *append)
  }
 #endif
 
-  substdio_putsflush(&smtpto,"QUIT\r\n");
-  /* waiting for remote side is just too ridiculous */
-  out(prepend);
-  outhost();
-  out(append);
-  out(".\n");
-#ifdef DATA_COMPRESS
-  if (wantcomp == 2) {
-	  r = 100 - (int)(100.0*stream.total_out/stream.total_in);
-	  if (r < 0) {
-	    num[0] = '-'; r*= -1;
-	  } else
-	    num[0] = ' ';
-	  num[fmt_uint(num+1,r) + 1] = 0;
-	  out("DDC saved ");
-	  out(num); out(" percent.\n");
-  }
-#endif
   outsmtptext();
   zerodie();
 }
@@ -554,12 +554,20 @@ void smtp(void)
       substdio_puts(&smtpto,"\r\n");
       substdio_flush(&smtpto);
 
-      if (smtpcode() != 250)
-       {
-        quit("ZTLS connected to "," but my name was rejected");
-       }
-     } 
-   }
+      if (smtpcode() != 250) {
+	quit("ZTLS connected to "," but my name was rejected");
+      }
+      /* extension handling */
+      for (i = 0; i < smtptext.len; i += str_chr(smtptext.s+i,'\n') + 1) {
+	if (i+8 < smtptext.len && !case_diffb("SIZE", 4, smtptext.s+i+4) )
+	  flagsize = 1;
+#ifdef DATA_COMPRESS
+	else if (i+9 < smtptext.len && !case_diffb("DATAZ", 5, smtptext.s+i+4))
+	  wantcomp = 1;
+#endif
+      }
+    } 
+  }
 #endif
 
   substdio_puts(&smtpto,"MAIL FROM:<");
