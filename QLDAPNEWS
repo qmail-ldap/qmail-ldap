@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/30 16:49:27 $ ($Revision: 1.130 $)
+RELEASE: $Date: 2003/09/30 17:14:02 $ ($Revision: 1.131 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,17 +16,101 @@ TODO:
 
  see QLDAPTODO
 
+WARNING: If you are upgrading from 20030801a or earlier make sure that
+         you have read the news section for 20030901.
+
 NEWS for current stuff:
 
- Change nopop in accountStatus to noaccess as it is not just disabling
+ Change NOPOP in accountStatus to NOACCESS as it is not just disabling
  pop access but also imap and possibly others.
-
- Announce the EHLO STARTTLS option only if tls is compiled, enabled and
- we have found a valid certificate in ~control/cert.pem for encryption.
 
  ~control/ldapserver is now read with control_readfile. Multiple servers
  now have to be specified at one per line. Using # for comments is allowed
  and empty lines are removed.
+
+ qmail-smtpd now reads ~control/locals and merges this with ~control/rcpthosts.
+ It is no longer neccessary to list a domain in both files. Anything listed
+ in locals is now automatically accepted by qmail-smtpd. rcpthosts is only
+ used and needed for domains we have to do spooling for.
+
+ New compile time option IGNOREVERISIGN to disable dns wildcard matches
+ on gtlds. With this the return mx check will work again with .com domains.
+ This version can also handle multiple A records. A big hurray to verisign
+ who added this broken feature to the internet.
+
+ Added auth_smtp and AUTH capabilities to qmail-smtpd. Enabled via the 
+ SMTPAUTH env var. If SMTPAUTH is set to TLSREQUIRED it is neccesairy to
+ do a STARTTLS before issuing an AUTH command. If AUTHREQUIRED is set any
+ user MUST successfully authenticate before issuing a MAIL FROM command.
+ The string in the env var AUTHPREPEND will be prepended to the userid in
+ the received line.
+
+ New tool qmail-verify which is used for email address verification. See
+ next two new features.
+
+ smtp recipient verify. This qmail-smtpd feature will look up every RCPT TO
+ address in ldap with qmail-verify to check the recipients existance. If it
+ does not exist, qmail-smtpd will answer directly with a 550 reply instead
+ of accepting the email and bouncing it later. Only addresses whose domain
+ part is listed in ~control/locals are checked (because only there we know
+ the definite answer). Relaying and rcpthosts works as before, recipient is
+ not checked for those. Addresses listed in new ~control/goodmailaddr will
+ be accepted in any case. This is very useful for important or special
+ (like postmaster or mail admin) addresses which must work under any
+ circumstances (or local addresses which are not in ldap). Enabled with
+ RCPTCHECK env var.
+
+ smtp sender verify. This qmail-smtpd feature will look up every MAIL FROM
+ address in ldap with qmail-verify to check the senders existance. If it
+ does not exist, qmail-smtpd will reject with 550 reply. In normal mode
+ only (envelope) senders whose domain part is listed in ~control/locals
+ are checked. Otherwise no-one else from outside could send mail to local
+ users anymore. In mode LOOSE it will only allow verified sender plus any
+ sender with its domain listed in ~control/rcpthosts. In STRICT mode it
+ will allow only ldap verified senders. With this you can, for example,
+ enforce that users within your network must use a valid sender which
+ exists in ldap and no other. Addresses listed in new ~control/goodmailaddr
+ will be accepted in any case. This is very useful for important or special
+ (like postmaster or mail admin) addresses which must work under any circum-
+ stances (or local addresses which are not in ldap). Enabled with SENDERCHECK
+ env var.
+
+ 550greeting to reject smtp connections right away in the smtp
+ greeting message. Use this to permanently reject all messages coming
+ from a particular ip address(range).
+
+ smtpclustercookie feature for (large) smtp MX clusters behind load
+ balancers or NAT devices. The cookie is presentented in the smtp
+ greeting as last string before \r\n. qmail-remote compares the
+ cookie with it's own and if they match assumes that the message
+ is looping. Cookies are set in ~control/smtpclustercookies. Length
+ is limited to 32 characters. Fill with some random printable chars.
+
+ qmail-smtpd now prints its hostname (~control/me) along with QP
+ when acking a message. Makes it easier to track which smtp MX cluster
+ member took the message.
+
+ qmail-smtpd greeting restructured due to the above things. It now
+ prints "220 [~control/me] ESMTP [~control/smtpgreeting] [~control/
+ smtpclustercookie]\r\n". You don't have to put the hostname of the
+ machine into smtpgreeting anymore. It is just a text. Can be empty.
+
+ qmail-qmqpd supports now both clear and ZLIB compressed communications
+ for intra-cluster forwards.
+
+ auth_* sets now the MAILDIRQUOTA and DATASIZE environment vars.
+
+ New compile time option QUOTATRASH to include the Trash in the quota
+ calculation. The courier-imap secification tells explicitly to ignore
+ .Trash but in the last few weeks I had to find out that the courier
+ documentation should not be respected, because courier does not respect
+ it either.
+
+ qmail-reply will no longer send replies to mails tagged with a X-RBL header.
+ This should dramaticaly reduce reply bounces if used with the proper RBL.
+
+ Announce the EHLO STARTTLS option only if tls is compiled, enabled and
+ we have found a valid certificate in ~control/cert.pem for encryption.
 
  Fix bug in qmail-smtp addrparse function. If "mail from" or "rcpt to" did
  neither contain a '<' nor a ':' the function returned a nullsender (bounce)
@@ -44,12 +128,7 @@ NEWS for current stuff:
  Print the dynamic data compression message in qmail-remote only if compressed
  data was sent. Otherwise we get some junk number.
 
- qmail-smtpd now reads ~control/locals and merges this with ~control/rcpthosts.
- It is no longer neccessary to list a domain in both files. Anything listed
- in locals is now automatically accepted by qmail-smtpd. rcpthosts is only
- used and needed for domains we have to do spooling for.
-
- Fixing clustering. The cluster forwarding was broke during the rewrite
+ Fixing clustering. The cluster forwarding was broken during the rewrite
  (20030901).
 
  Bug fix in qldap_get_status reported by <krits at home dot pl>.
@@ -58,78 +137,6 @@ NEWS for current stuff:
 
  Bug fix in the maildir string creation. A specified count value will over-
  write any size settings. Thanks to Neil Sequeira for reporting this issue.
-
- Added auth_smtp and AUTH capabilities to qmail-smtpd. Enabled via the 
- SMTPAUTH env var. If SMTPAUTH is set to TLSREQUIRED it is neccesairy to
- do a STARTTLS before issuing an AUTH command. If AUTHREQUIRED is set the
- user MUST successfully authenticate before issuing a MAIL FROM command.
- The string in the env var AUTHPREPEND will be prepended to the userid.
-
- qmail-reply will no longer send replies to mails tagged with a X-RBL header.
- This should dramaticaly reduce reply bounces if used with the proper RBL.
-
- New compile time option QUOTATRASH to include the Trash in the quota
- calculation. The courier-imap secification tells explicitly to ignore
- .Trash but in the last few weeks I had to find out that the courier
- documentation should not be respected, because courier does not respect
- it either.
-
- New compile time option IGNOREVERISIGN to disable dns wildcard matches
- on gtlds. With this the return mx check will work again with .com doamins.
- This version can also handle multiple A records. A big hurray to verisign
- who added this new feature to the internet.
-
- New tool qmail-verify which is used for email address verification.
-
- smtp recipient verify. This qmail-smtpd feature will look up every RCPT TO
- address in ldap with qmail-verify to check the recipients existence. If it
- does not exist, qmail-smtpd will answer directly with a 550 reply instead
- of accepting the email and bouncing it later. Only addresses whose domain
- part is listed in ~control/locals are checked (because only there we know
- the definite answer). Relaying and rcpthosts works as before, recipient is
- not checked for those. Addresses listed in new ~control/goodmailaddr will
- be accepted in any case. This is very useful for important or special
- (like postmaster or mail admin) addresses which must work under any
- circumstances. Enabled with RCPTCHECK env var.
-
- smtp sender verify. This qmail-smtpd feature will look up every MAIL FROM
- address in ldap with qmail-verify to check the senders existence. If it
- does not exist, qmail-smtpd will reject with 550 reply. In normal mode
- only (envelope) senders whose domain part is listed in ~control/locals
- are checked. Otherwise no-one else from outside could send mail to local
- users anymore. In mode LOOSE it will only allow verified sender plus any
- sender with its domain listed in ~control/rcpthosts. In STRICT mode it
- will allow only ldap verified senders. With this you can for example
- enforce that users within your network must use a valid sender which
- exists in ldap. Addresses listed in new ~control/goodmailaddr will be
- accepted in any case. This is very useful for important or special (like
- postmaster or mail admin) addresses which must work under any circumstances.
- Enabled with SENDERCHECK env var.
-
- 550greeting to reject smtp connections right away in the smtp
- greeting message. Use this to permanently reject all messages coming
- from a particular ip address.
-
- smtpclustercookie feature for large smtp MX clusters behind load
- balancers or NAT devices. The cookie is presentented in the smtp
- greeting as last string before \r\n. qmail-remote compares the
- cookie with it's own and if they match assumes that the message
- is looping. Cookies are set in ~control/smtpclustercookies. Length
- is limited to 32 characters. Fill with some random printable chars.
-
- qmail-smtpd now prints its hostname (~control/me) along with QP
- when acking a message. Makes it easier to track which smtp MX cluster
- member took the message.
-
- qmail-smtpd greeting restructured due to the above things. It now
- prints "220 [~control/me] ESMTP [~control/smtpgreeting] [~control/
- smtpclustercookie]\r\n". You don't have to put the hostname of the
- machine into smtpgreeting anymore. It is just a text. Can be empty.
-
- auth_* sets now the MAILDIRQUOTA and DATASIZE environment vars (for
- maildrop).
-
- qmail-qmqpd supports now both clear and ZLIB compressed communications.
 
  SHADOWLIBS added in the digest link rule.
 
