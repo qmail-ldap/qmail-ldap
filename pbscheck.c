@@ -59,7 +59,7 @@ static void log(char* s)
 
 void die_usage()
 {
-  err("554 pop before smtp subprogram uncorrectly installedi (#5.3.5)");
+  err("554 pop before smtp subprogram uncorrectly installed (#5.3.5)");
   log("usage: pbscheck subprogram ...");
   die();
 }
@@ -75,7 +75,6 @@ void die_badenv()
   log("pbscheck: unable to read $TCPREMOTEIP");
   die();
 }
-void die_env() { log("pbscheck: unable to set environment"); }
 void die_control()
 {
   err("554 unable to read controls (#5.3.5)");
@@ -90,8 +89,20 @@ void die_nomem()
 }
 void die_envs()
 {
-  err("554 to many additiona environments defined (#5.3.5)");
-  log("pbsadd control/pbsenvs has to many entries");
+  err("554 to many additional environments defined (#5.3.5)");
+  log("pbscheck control/pbsenvs has to many entries");
+  die();
+}
+void die_dir()
+{
+  err("421 chdir failed (#4.3.0)");
+  log("pbscheck unable to open current directory");
+  die();
+}
+void die_dirback()
+{
+  err("421 chdir failed (#4.3.0)");
+  log("pbscheck unable to switch back to source directory");
   die();
 }
 
@@ -109,20 +120,28 @@ void setup(void)
 {
   char* s;
   int i;
+  int fdsourcedir;
   int len;
   
+  fdsourcedir = open_read(".");
+  if (fdsourcedir == -1)
+    die_dir();
+ 
   if (chdir(auto_qmail) == -1) die_control();
 
   if (control_readfile(&addresses,"control/pbsservers",0) != 1) die_control();
-  if (!stralloc_0(&addresses) ) die_nomem();
 
   if (control_readint(&serverport,"control/pbsport") == -1) die_control();
   if (serverport > 65000) die_control();
   if (control_readfile(&envs,"control/pbsenv",0) == -1) die_control();
  
+  if (fchdir(fdsourcedir) == -1)
+    die_dirback();
+
   for( i = 0; i < addresses.len; i++)
     if( addresses.s[i] == '\0' ) numservers++;
-  
+  if(numservers == 0) die_control();
+
   for( i = 0; i < envs.len; i++)
     if( envs.s[i] == '\0' ) numenvs++;
   if( numenvs > 255 ) die_envs();

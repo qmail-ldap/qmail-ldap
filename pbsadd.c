@@ -37,8 +37,8 @@ static void logs(char *s)
 
 void die_badenv() { log("pbsadd unable to read $TCPREMOTEIP"); die(); }
 void die_control() { log("pbsadd unable to read controls"); die(); }
-void die_dir() { log("pbsadd unable to open current directory: "); die(); }
-void die_dirback() { log("pbsadd unable to switch back to source directory: "); die(); }
+void die_dir() { log("pbsadd unable to open current directory"); die(); }
+void die_dirback() { log("pbsadd unable to switch back to source directory"); die(); }
 void die_secret() { log("pbsadd control/pbssecret is to long"); die(); }
 void die_envs() { log("pbsadd control/pbsenvs has to many entries"); die(); }
 void die_exec() { log("pbsadd unable to start pop3 daemon"); die(); }
@@ -92,8 +92,6 @@ void setup(void)
   
   if (fchdir(fdsourcedir) == -1)
     die_dirback();
-
-//  if (!stralloc_0(&addresses) ) log_nomem();
 
   for( i = 0; i < addresses.len; i++)
     if( addresses.s[i] == '\0' ) numservers++;
