@@ -981,7 +981,7 @@ void smtp_data() {
   int hops;
   unsigned long qp;
   char *qqx;
-//  char buf[FMT_ULONG];
+/*  char buf[FMT_ULONG]; */
 #ifdef TLS
   stralloc protocolinfo = {0};
 #endif
