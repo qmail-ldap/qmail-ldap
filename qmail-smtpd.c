@@ -642,7 +642,8 @@ void smtp_mail(arg) char *arg;
       relayclient = "";
       logline(2,"relaying allowed for envelope sender");
     }
-    else relayclient = 0; /* Do we really need this ?? */
+    /* else relayclient = 0; *//* Do we really need this ?? 
+    NO, could be problematic if a relaycheck is done before */
   }
 
   /* Check RBL only if relayclient is not set */
@@ -671,21 +672,22 @@ void smtp_mail(arg) char *arg;
   /* return MX check */
   if (returnmxcheck)
   {
-    switch (badmxcheck(&addr.s[i+1]))
-    {
-      case 0:
-        break; /* valid */
-      case DNS_SOFT:
-        err_dns();
-        logline(3,"refused mailfrom because return MX lookup failed temporarly");
-        if (errdisconnect) err_quit();
-        return;
-      case DNS_HARD:
-      default:
-        err_554msg("refused mailfrom because return MX does not exist");
-        if (errdisconnect) err_quit();
-        return;
-     }
+    if ((i=byte_rchr(addr.s,addr.len,'@')) < addr.len)
+      switch (badmxcheck(&addr.s[i+1]))
+      {
+	case 0:
+	  break; /* valid */
+	case DNS_SOFT:
+	  err_dns();
+	  logline(3,"refused mailfrom because return MX lookup failed temporarly");
+	  if (errdisconnect) err_quit();
+	  return;
+	case DNS_HARD:
+	default:
+	  err_554msg("refused mailfrom because return MX does not exist");
+	  if (errdisconnect) err_quit();
+	  return;
+      }
   }
 
   seenmail = 1;
