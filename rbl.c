@@ -18,11 +18,7 @@ char *remoteip;
 {
   if (!rblenabled) return;
   if (!rblprintheader) return;
-  qmail_puts(qqt,"X-RBL-Check: IP ");
-  if (*remoteip) safeput(qqt,remoteip);
-  qmail_puts(qqt,": ");
   if (*rblmessage.s) safeput(qqt,rblmessage.s);
-  qmail_puts(qqt,"\n");
 }
 
 struct rbl {
@@ -73,21 +69,31 @@ static int rbl_lookup(char *base, char* matchon)
   switch (dns_ip(&rblsa,&rbl_tmp)) {
     case DNS_MEM:
     case DNS_SOFT:
-         return 2; /* soft error */
+      return 2; /* soft error */
 
     case DNS_HARD:
-         return 0; /* found no match */
+      return 0; /* found no match */
 
     default:
-         /* found match */
-	 if (!str_diff("any", matchon) ) return 1; 
-	 for (i = 0;i < rblsa.len;++i) {
-	   ipstr[ip_fmt(ipstr,&rblsa.ix[0].ip)]=0;
-	   if (!str_diff(ipstr, matchon)) return 1;
-	 }
-         return 0; /* found match but ignored */
+      /* found match */
+      if (!str_diff("any", matchon) ) return 1; 
+      for (i = 0;i < rblsa.len;++i) {
+	ipstr[ip_fmt(ipstr,&rblsa.ix[0].ip)]=0;
+	if (!str_diff(ipstr, matchon)) return 1;
+      }
+      return 0; /* found match but ignored */
   }
   return 1; /* should never get here */
+}
+
+void rbladdheader(char* remoteip, char* base)
+{
+  rblprintheader = 1;
+  if(!stralloc_cats(&rblmessage, "X-RBL: ")) die_nomem();
+  if(!stralloc_cats(&rblmessage, remoteip)) die_nomem();
+  if(!stralloc_cats(&rblmessage, " is listed by ")) die_nomem();
+  if(!stralloc_cats(&rblmessage, base)) die_nomem();
+  if(!stralloc_cats(&rblmessage, "\n")) die_nomem();
 }
 
 int rblcheck(char* remoteip, char** why)
@@ -97,7 +103,7 @@ int rblcheck(char* remoteip, char** why)
 
   if (!rblenabled) return 0;
 
-  rblprintheader = 0;
+  if(!stralloc_copys(&rblmessage, "")) die_nomem();
   rbl_start(remoteip);
 
   for (i=0; i < numrbl; i++) {
@@ -105,30 +111,29 @@ int rblcheck(char* remoteip, char** why)
     r = rbl_lookup(rbl[i].baseaddr, rbl[i].matchon);
     if (r == 2) {
       logstring(2,"temporary DNS error, ignored."); logflush(2);
-      } else if (r == 1) {
-	logstring(2,"found match,");
-	stralloc_copys(&rblmessage,rbl[i].message);
-	stralloc_0(&rblmessage);
-	*why = rbl[i].message;
-	if (rblonlyheader) {
-	  logstring(2,"only tagging header."); logflush(2);
-	  rblprintheader = 1;
-	  return -1;
-	}
-	if (!str_diff("addheader", rbl[i].action)) {
-	  logstring(2,"would tag header."); logflush(2);
-	  rblprintheader = 1;
-	  continue;
-	} else {
-	  /* default reject */
-	  logstring(2,"sender is rejected."); logflush(2);
-	  return 1;
-	}
+    } else if (r == 1) {
+      logstring(2,"found match,");
+      *why = rbl[i].message;
+      if (rblonlyheader) {
+	logstring(2,"only tagging header."); logflush(2);
+	rbladdheader(remoteip, rbl[i].baseaddr);
+	continue;
+      }
+      if (!str_diff("addheader", rbl[i].action)) {
+	logstring(2,"would tag header."); logflush(2);
+	rbladdheader(remoteip, rbl[i].baseaddr);
+	continue;
+      } else {
+	/* default reject */
+	logstring(2,"sender is rejected."); logflush(2);
+	rblprintheader = 0;
+	return 1;
+      }
     }
     /* continue */
     logstring(2,"no match found, continue."); logflush(2);
   }
-  return 0; /* either tagged or allowed */
+  return 0; /* either tagged, soft error or allowed */
 }
 
 stralloc rbldata = {0};
