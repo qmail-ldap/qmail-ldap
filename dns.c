@@ -17,6 +17,9 @@ extern int h_errno;
 #include "stralloc.h"
 #include "dns.h"
 #include "case.h"
+#ifdef FUCKVERISIGN
+#include "byte.h"
+#endif
 
 static unsigned short getshort(c) unsigned char *c;
 { unsigned short u; u = c[0]; return (u << 8) + c[1]; }
@@ -282,6 +285,7 @@ struct ip_address *ip;
 
 #ifdef FUCKVERISIGN
 static stralloc tld = {0};
+static ipalloc  tldia = {0};
 #endif
 
 static int dns_ipplus(ia,sa,pref)
@@ -293,7 +297,7 @@ int pref;
  struct ip_mx ix;
 #ifdef FUCKVERISIGN
  int j;
- struct ip_address tldip;
+ struct ip_mx tldix;
 #endif
 
  if (!stralloc_copy(&glue,sa)) return DNS_MEM;
@@ -315,14 +319,20 @@ int pref;
      if(!stralloc_catb(&tld, sa->s+j, sa->len-j)) return DNS_MEM;
      switch(resolve(&tld,T_A))
      {
-       case DNS_HARD: byte_zero(&tldip, sizeof(tldip)); break;
+       case DNS_HARD: tldia.len = 0; break;
        case DNS_MEM: return DNS_MEM;
        case DNS_SOFT: return DNS_SOFT;
        default:
+         if (!ipalloc_readyplus(&tldia,0)) return DNS_MEM;
+	 tldia.len = 0;
+	 tldix.pref = 0;
          while ((r = findip(T_A)) != 2)
          {
            if (r == DNS_SOFT) return DNS_SOFT;
-           if (r == 1) tldip = ip;
+           if (r == 1) {
+	     tldix.ip = ip;
+	     if (!ipalloc_append(&tldia,&tldix)) return DNS_MEM;
+	   }
          }
      }
    }
@@ -341,7 +351,10 @@ int pref;
    if (r == DNS_SOFT) return DNS_SOFT;
    if (r == 1) {
 #ifdef FUCKVERISIGN
-     if (byte_diff(&tldip, sizeof(tldip), &ip) == 0) continue;
+     for (j = 0; j < tldia.len; j++)
+       if (byte_diff(&tldia.ix[j].ip, sizeof(struct ip_address), &ip) == 0)
+	 break;
+     if (j < tldia.len) continue;
 #endif
      if (!ipalloc_append(ia,&ix)) return DNS_MEM;
    }
