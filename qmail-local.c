@@ -653,6 +653,7 @@ char **argv;
  int localdelivery;
  int ldapprogdelivery;
  char *s;
+ char *rt;
  
  mboxdelivery = 1; localdelivery = 0; ldapprogdelivery = 0;
 
@@ -876,12 +877,12 @@ char **argv;
        } else if ( !str_diff(MODE_REPLY, s) ) {
          if( *sender ) {
            ++count_forward;
-           if ( s = env_get(ENV_REPLYTEXT) ) {
+           if ( rt = env_get(ENV_REPLYTEXT) ) {
              if ( flagdoit ) {
                mailprogram("qmail-reply");
              } else {
                sayit("reply to ",sender,str_len(sender));
-               sayit("replytext ",s,str_len(s));
+               sayit("replytext ",rt,str_len(rt));
              }
            } else {
              strerr_warn1("Error: Reply mode is on but there is no reply text (ignored). (LDAP-ERR #2.1.1)", 0);
