@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/02/17 12:52:02 $)
+RELEASE: current ($Date: 2004/03/15 10:05:05 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -993,8 +993,9 @@ LDAP_QUOTA_COUNT (default: "mailQuotaCount")
  Example: max 1000000 bytes size and max 1000 Mails
             mailQuotaSize: 1000000
             mailQuotaCount: 1000
- Note: overrides defaultquotasize and defaultquotacount per user.
-       the old string forma (1000000S,1000C) is no longer supported.
+ Note:  a value of 0 means unlimited quota for that limit (count or size).
+ Note2: overrides defaultquotasize and defaultquotacount per user.
+        the old string forma (1000000S,1000C) is no longer supported.
 
 LDAP_MAXMSIZE (default: "mailSizeMax")
 
