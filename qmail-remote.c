@@ -622,15 +622,16 @@ void smtp(void)
  
   blast();
 #ifdef DATA_COMPRESS
-  if (wantcomp == 1) {
+  if (wantcomp == 1)
     compression_done();
-    wantcomp = 2;
-  }
 #endif
   code = smtpcode();
   flagcritical = 0;
   if (code >= 500) quit("D"," failed after I sent the message");
   if (code >= 400) quit("Z"," failed after I sent the message");
+#ifdef DATA_COMPRESS
+  wantcomp++;
+#endif
   quit("K"," accepted message");
 }
 
