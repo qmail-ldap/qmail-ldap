@@ -38,6 +38,14 @@ PWOPTS=-DLOOK_UP_PASSWD
 #DEBUG=-DQLDAPDEBUG
 # WARNING: you need a NONE DEBUG checkpassword to run with qmail-pop3d
 
+# qmail-lspawn compiled with LSPAWN_LOG endabled does now some lspawn logging
+# There are these log levels:  
+#        DEBUG_LEVEL   4 : for debug information
+#        INFO_LEVEL    3 : a lot of generic infos
+#        WARNING_LEVEL 2 : warning (not an error, but not OK)
+#        ERROR_LEVEL   1 : error (no panic nessary)
+#LSPAWN_LOG=-DQLSPAWN_LOG -DLOG_LEVEL=3
+
 # Just for me, make a backup befor compiling
 #DOBACKUP=backup # allways do a backup
 BACKUPPATH=/backup/qmail-backup/qmail-ldap.`date "+%Y%m%d-%H%M"`.tar
@@ -1322,7 +1330,8 @@ compile qmail-lspawn.c fd.h wait.h prot.h substdio.h stralloc.h \
 gen_alloc.h scan.h exit.h fork.h error.h cdb.h uint32.h case.h \
 slurpclose.h auto_qmail.h auto_uids.h qlx.h check.c check.h str.h \
 getln.c getln2.c
-	./compile $(LDAPON) $(HDIRMAKE) $(LDAPINCLUDES) qmail-lspawn.c
+	./compile $(LDAPON) $(LSPAWN_LOG) $(HDIRMAKE) \
+	$(LDAPINCLUDES) qmail-lspawn.c
 
 qmail-newmrh: \
 load qmail-newmrh.o cdbmss.o getln.a open.a cdbmake.a seek.a case.a \

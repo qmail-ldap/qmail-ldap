@@ -32,13 +32,11 @@
 /* #define QLDAP *//* enable LDAP for qmail, done by the Makefile */
 
 #ifdef QLDAP /* includes for LDAP mode */
+#include "qmail-ldap.h"
 #include <dirent.h>
 #include "auto_qmail.h"
 #include "scan.h"
- 
-#define DO_LDAP 0x01
-#define DO_DOT  0x02
-#define DO_BOTH DO_LDAP | DO_DOT
+
 #endif
 
 void usage() { strerr_die1x(100,"qmail-local: usage: qmail-local [ -nN ] user homedir local dash ext domain sender aliasempty"); }
@@ -66,7 +64,7 @@ char *sender;
 char *aliasempty;
 
 #ifdef QLDAP /* define the global variables */
- unsigned long int g_quota;
+unsigned long int g_quota;
 #endif
 
 stralloc safeext = {0};
@@ -104,7 +102,7 @@ char *dir;
  substdio ssout;
 
  sig_alarmcatch(sigalrm);
- if (chdir(dir) == -1) { 
+ if (chdir(dir) == -1) {  
 #ifdef AUTOMAILDIRMAKE
    if (errno == error_noent) {
      umask(077);
@@ -113,7 +111,7 @@ char *dir;
      if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
      if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
      if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
-   } else
+   } else 
 #endif
    if (error_temp(errno)) _exit(1); else _exit(2); }
    
@@ -199,7 +197,7 @@ void quota_warning(char *fn)
  char *(args[3]);
  int wstat;
 
- if (!env_get("QMAILQUOTAWARNING") ) return;
+ if (!env_get(ENV_QUOTAWARNING) ) return;
  if (!stralloc_copys(&foo, auto_qmail)) temp_nomem();
  if (!stralloc_cats(&foo, "/bin/qmail-quotawarn")) temp_nomem();
  if (!stralloc_0(&foo)) temp_nomem();
@@ -649,20 +647,6 @@ register char r;
    }
 }
 
-/* set up the forwarding-env for the qmail-local native funtion */
-int do_forward_exp(numforward_env, recips_env)
-int numforward_env;
-char **recips_env;
-{ 
-   if (numforward_env) if (flagdoit) {
-      recips_env[numforward_env] = 0;
-      mailforward(recips_env);
-   }
-   count_print();
-   _exit(0);
-   return 1;
-}
-
 #endif /* end -- various LDAP funtions */
 
 void main(argc,argv)
@@ -681,9 +665,8 @@ char **argv;
  char *x;
 
 #ifdef QLDAP /* set up the variables */
- int n, slen;
+ int slen;
  int qmode;
- int c;
  int mboxdelivery;
  int localdelivery;
  char *s;
@@ -722,7 +705,7 @@ char **argv;
  if (homedir[0] != '/') usage();
  if (chdir(homedir) == -1) {
 #ifdef AUTOHOMEDIRMAKE
-   if (! (s = env_get("QLDAPAUTOHOMEDIRMAKE")) ) {
+   if (! (s = env_get(ENV_HOMEDIRMAKE)) ) {
      strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
    } else {
      if (errno == error_noent) {
@@ -859,9 +842,9 @@ char **argv;
 
 #ifdef QLDAP /* quota, dotmode and forwarding handling - part 1 */
    /* setting the quota */
-   if ( s = env_get("QMAILQUOTA") ) {
+   if ( s = env_get(ENV_QUOTA) ) {
       if (! scan_ulong(s, &g_quota) )
-         strerr_die3x(100,"AARRG: QMAILQUOTA is not a number, but: ",s,". (LDAP-ERR #2.0.1)");
+         strerr_die3x(100,"AARRG: the quota is not a number, but: ",s,". (LDAP-ERR #2.0.1)");
       g_quota *= 1024; /* we need bytes not kbytes as quota */
       if (!flagdoit) sayit("quota in kB ",s,str_len(s) );
    } else {
@@ -869,18 +852,18 @@ char **argv;
       if (!flagdoit) sayit("unlimited quota",s,0 );
    }
    
-   if ( s = env_get("QMAILDOTMODE") ) {
+   if ( s = env_get(ENV_DOTMODE) ) {
       case_lowers(s);
-      if ( !str_diff("ldaponly", s) ) {
+      if ( !str_diff(DOTMODE_LDAPONLY, s) ) {
          if (!flagdoit) sayit("ldaponly ",s,0);
          qmode = DO_LDAP;
-      } else if ( !str_diff("dotonly", s) ) {
+      } else if ( !str_diff(DOTMODE_DOTONLY, s) ) {
          if (!flagdoit) sayit("dotonly ",s,0);
          qmode = DO_DOT;
-      } else if ( !str_diff("both", s) ) {
+      } else if ( !str_diff(DOTMODE_BOTH, s) ) {
          if (!flagdoit) sayit("both ",s,0);
          qmode = DO_BOTH;
-      } else if ( !str_diff("none ", s) ){
+      } else if ( !str_diff(DOTMODE_NONE, s) ){
          ++count_file;
          if (!stralloc_copys(&foo,aliasempty)) temp_nomem();
          if (!stralloc_0(&foo)) temp_nomem();
@@ -893,7 +876,7 @@ char **argv;
          count_print();
          _exit(0); 
       } else {
-         strerr_die3x(100,"AARRG: Not expected QMAILDOTMODE found: ",s,". (LDAP-ERR #2.0.2)");
+         strerr_die3x(100,"AARRG: Not expected dot-mode found: ",s,". (LDAP-ERR #2.0.2)");
       }
    } else qmode = DO_DOT;  /* no qmailmode, so I use standard .qmail */
 	   
@@ -908,23 +891,22 @@ char **argv;
    if (!stralloc_0(&ueo)) temp_nomem();
    if (!env_put2("NEWSENDER",ueo.s)) temp_nomem();
 
-   if ( s = env_get("QMAILMODE") ) {
-     int tt;
+   if ( s = env_get(ENV_MODE) ) {
      case_lowers(s);
      if (!stralloc_copys(&foo, s)) temp_nomem();
      if (!stralloc_0(&foo)) temp_nomem();
 
-     tt = replace(foo.s, foo.len, ',', '\0') + 1;
+     i = replace(foo.s, foo.len, ',', '\0') + 1;
      s = foo.s;
      slen = foo.len-1;
-     for(c=0 ; tt > c; c++) {
-       if ( !str_diff("forwardonly", s) ) {
+     for( ; i > 0; i--) {
+       if ( !str_diff(MODE_FORWARD, s) ) {
          if (!flagdoit) sayit("forwardonly ",s,0);
          flagforwardonly = 0;
-       } else if ( !str_diff("reply", s) ) {
+       } else if ( !str_diff(MODE_REPLY, s) ) {
          if( *sender ) {
            ++count_forward;
-           if ( s = env_get("QMAILREPLYTEXT") ) {
+           if ( s = env_get(ENV_REPLYTEXT) ) {
              if ( flagdoit ) {
                mailprogram("qmail-reply");
              } else {
@@ -932,10 +914,10 @@ char **argv;
                sayit("replytext ",s,str_len(s));
              }
            } else {
-             strerr_warn("AARRG: Reply mode is on but QMAILREPLYTEXT is not set (ignored). (LDAP-ERR #2.1.1)");
+             strerr_warn1("AARRG: Reply mode is on but there is no reply text (ignored). (LDAP-ERR #2.1.1)", 0);
            }
          }
-       } else if ( !str_diff("echo", s) ) {
+       } else if ( !str_diff(MODE_ECHO, s) ) {
          if (*sender) {
            ++count_forward;
            recips = (char **) alloc(2 * sizeof(char *));
@@ -947,27 +929,27 @@ char **argv;
          }
          count_print();
          _exit(0);
-       } else if ( !str_diff("nombox", s) ) {
+       } else if ( !str_diff(MODE_NOMBOX, s) ) {
          if (!flagdoit) sayit("no mbox delivery ",s,0);
          mboxdelivery = 0;
-       } else if ( !str_diff("normal", s) ) {
+       } else if ( !str_diff(MODE_NORMAL, s) ) {
          if (!flagdoit) sayit("reseting delivery to normal",s,0);
          mboxdelivery = 1;
          flagforwardonly = 0;
          localdelivery = 0;
-       } else if ( !str_diff("localdelivery", s) ) {
+       } else if ( !str_diff(MODE_LDELIVERY, s) ) {
          if (!flagdoit) sayit("force local delivery ",s,0);
          localdelivery = 1;
-       } else strerr_warn("AARRG: undefined mail mode (ignored). (LDAP-ERR #2.1.2)");
+       } else strerr_warn1("AARRG: undefined mail mode (ignored). (LDAP-ERR #2.1.2)", 0);
        
-       n = byte_chr(s,slen,0); if (n++ == slen) break; s += n; slen -= n;
+       j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
    }
    if ( localdelivery ) {
          if (!stralloc_cats(&cmds,aliasempty)) temp_nomem();
          if (!stralloc_cats(&cmds, "\n")) temp_nomem();
    }    
-   if ( s = env_get("QMAILFORWARDS") ) {
+   if ( s = env_get(ENV_FORWARDS) ) {
      if (!stralloc_copys(&foo, s)) temp_nomem();
      if (!stralloc_0(&foo)) temp_nomem();
      replace(foo.s, foo.len, ',', '\0');
@@ -977,10 +959,10 @@ char **argv;
        if (!stralloc_cats(&cmds, "&")) temp_nomem();
        if (!stralloc_cats(&cmds, s)) temp_nomem();
        if (!stralloc_cats(&cmds, "\n")) temp_nomem();
-       n = byte_chr(s,slen,0); if (n++ == slen) break; s += n; slen -= n;
+       j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
    }
-   if ( s = env_get("QMAILDELIVERYPROGRAM") ) {
+   if ( s = env_get(ENV_PROGRAM) ) {
      if (!stralloc_copys(&foo, s)) temp_nomem();
      if (!stralloc_0(&foo)) temp_nomem();
      replace(foo.s, foo.len, ',', '\0');
@@ -990,7 +972,7 @@ char **argv;
        if (!stralloc_cats(&cmds, "|")) temp_nomem();
        if (!stralloc_cats(&cmds, s)) temp_nomem();
        if (!stralloc_cats(&cmds, "\n")) temp_nomem();
-       n = byte_chr(s,slen,0); if (n++ == slen) break; s += n; slen -= n;
+       j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
    }
 

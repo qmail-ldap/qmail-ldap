@@ -348,20 +348,20 @@ deliveryProgramPath
 deliveryMode
 
  multi field entries of these keywords
- - normal: the normal .qmail behavior
+ - normal: resets to the normal .qmail behavior
            (Maildir/box delivery only if no forwards or programs are executed)
  - forwardonly: is equal to set the execute bit of .qmail
                 so only forwards are allowed
  - nombox: prevents maildir/mbox delivery
  - localdelivery: forces maildir/mbox delivery (into $HOME/$ALIASEMPTY)
- - reply: like normal but send an auto_reply mail with text from mailReplyText 
+ - reply: send also an auto_reply mail with text from mailReplyText 
  - echo: something very strange, just echo the message (nothing else)
  Default: no QMAILMODE is eq to QMAILMODE=normal other stuff is ignored (with warning)
  Note: echo exits immediatly after the "echoing" (only useful for testing purposes)
        echo and reply are executed directly and do not interfere with the other settings
        "normal", "nombox", "localdelivery" and "forwardonly" are set one after another 
        (e.g. "nombox,localdelivery,normal" does only a "normal" delivery).
-       There are some strange behavior when localdelivery and nombox/forwardonla are set,
+       There are some strange behavior when localdelivery and nombox/forwardonly are set,
        so handle them with care.
        
 mailReplyText

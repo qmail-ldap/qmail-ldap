@@ -1,3 +1,4 @@
+#include "qmail-ldap.h"
 #include <errno.h>
 #define QLDAP_PORT LDAP_PORT
 #include "control.h"
@@ -64,17 +65,18 @@ int uplen;
 #define OUTPUT stderr
 #define debug_msg fprintf
 
-char* sa2s(stralloc sa)
+char *sa2s(stralloc *sa)
 {
-  if(! stralloc_0(&sa) ) return "No memory";
-  return sa.s;
+  if(! stralloc_0(sa) ) return "No memory";
+  sa->len--;
+  return sa->s;
 }
 
 #else
 #define OUTPUT 0
 void debug_msg( ) { ; }
 
-char* sa2s(stralloc sa) { return 0; }
+char* sa2s(stralloc *sa) { return 0; }
 
 #endif
 
@@ -120,21 +122,21 @@ void get_qldap_controls()
    debug_msg(OUTPUT," control/ldappassword \t: %s\n",qldap_password.s);
 
    if (control_rldef(&qldap_uid,"control/ldapuid",0,"") == -1) _exit(1);
-   debug_msg(OUTPUT," control/ldapuid \t: %s\n",sa2s(qldap_uid) );
+   debug_msg(OUTPUT," control/ldapuid \t: %s\n",sa2s(&qldap_uid) );
    
    if (control_rldef(&qldap_gid,"control/ldapgid",0,"") == -1) _exit(1);
-   debug_msg(OUTPUT," control/ldapgid \t: %s\n",sa2s(qldap_gid) );
+   debug_msg(OUTPUT," control/ldapgid \t: %s\n",sa2s(&qldap_gid) );
 
    if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"/home/") == -1) _exit(1);
-   debug_msg(OUTPUT," control/ldapmessagestore: %s\n",sa2s(qldap_messagestore) );
+   debug_msg(OUTPUT," control/ldapmessagestore: %s\n",sa2s(&qldap_messagestore) );
 
    if (control_rldef(&qldap_passwdappend,"control/ldappasswdappend",0,"./") == -1) 
-   debug_msg(OUTPUT," control/ldappasswdappend: %s\n",sa2s(qldap_passwdappend) );
+   debug_msg(OUTPUT," control/ldappasswdappend: %s\n",sa2s(&qldap_passwdappend) );
 
 #ifdef AUTOHOMEDIRMAKE
    if (control_rldef(&qldap_dirmaker,"control/dirmaker",0,(char *) 0) == -1) _exit(1);
    if (!stralloc_0(&qldap_dirmaker)) _exit(QLX_NOMEM);
-   debug_msg(OUTPUT," control/dirmaker \t: %s\n",sa2s(qldap_dirmaker) );
+   debug_msg(OUTPUT," control/dirmaker \t: %s\n",sa2s(&qldap_dirmaker) );
 #endif
 
    debug_msg(OUTPUT,"\naction: reading control files done successful\n");
@@ -150,11 +152,11 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
    LDAPMessage    *res, *msg;
    char           *dn,
                   **vals,
-                  *attrs[] = {  "uid",
-                                "userPassword",
-                                "qmailUID",
-                                "qmailGID",
-                                "mailMessagestore", NULL };
+                  *attrs[] = {  LDAP_UID,
+                                LDAP_PASSWD,
+                                LDAP_QMAILUID,
+                                LDAP_QMAILGID,
+                                LDAP_MAILSTORE, NULL };
 
    int            rc,
                   version,
@@ -246,7 +248,7 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
 #endif
       return 1;
    }
-   debug_msg(OUTPUT," rebinding with dn %s \t: succeeded\n");
+   debug_msg(OUTPUT," rebinding with dn %s \t: succeeded\n", dn);
 #endif
 #ifdef LDAP_OPT_PROTOCOL_VERSION /* (only with Mozilla LDAP SDK) */
    if ( dn != NULL ) ldap_memfree(dn);
@@ -257,7 +259,7 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
 #ifndef QLDAP_BIND
    /* go through the attributes and set the proper args for qmail-pop3d */
    /* get the stored and (hopefully) encrypted password */
-   if ( (vals = ldap_get_values(ld,msg,"userPassword")) != NULL ) {
+   if ( (vals = ldap_get_values(ld,msg,LDAP_PASSWD)) != NULL ) {
       if (!stralloc_copys(passwd, vals[0])) _exit(QLX_NOMEM);
       if (!stralloc_0(passwd)) _exit(QLX_NOMEM);
       debug_msg(OUTPUT," ldap search results \t: found password '%s'\n", vals[0]);
@@ -269,7 +271,7 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
 #endif
 
    /* get the UID for setuid() for POP retrieval */
-   if ( (vals = ldap_get_values(ld,msg,"qmailUID")) != NULL ) {
+   if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILUID)) != NULL ) {
       *uid = chck_ids(vals[0]);
       if (100 > *uid ) {
          debug_msg(OUTPUT," ldap search results \t: UID failed for '%s'\n",vals[0]);
@@ -286,16 +288,16 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
       }
       *uid = chck_idb(qldap_uid.s,qldap_uid.len);
       if (100 > *uid ) {
-         debug_msg(OUTPUT," ldap search results \t: control/ldapuid check failed for '%s'\n",sa2s(qldap_uid) );
+         debug_msg(OUTPUT," ldap search results \t: control/ldapuid check failed for '%s'\n",sa2s(&qldap_uid) );
          _exit(1);
       } else {
-         debug_msg(OUTPUT," ldap search results \t: control/ldapuid check succeeded for '%s'\n",sa2s(qldap_uid) );
+         debug_msg(OUTPUT," ldap search results \t: control/ldapuid check succeeded for '%s'\n",sa2s(&qldap_uid) );
       }
    }
    ldap_value_free(vals);
 
    /* get the GID for setgid() for POP retrieval */
-   if ( (vals = ldap_get_values(ld,msg,"qmailGID")) != NULL ) {
+   if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILGID)) != NULL ) {
       *gid = chck_ids(vals[0]);
       if ( 100 > *gid ) {
          debug_msg(OUTPUT," ldap search results \t: GID failed for '%s'\n",vals[0]);
@@ -312,16 +314,16 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
       }
       *gid = chck_idb(qldap_gid.s,qldap_gid.len);
       if ( 100 > *gid ) {
-         debug_msg(OUTPUT," ldap search results \t: control/ldapgid check failed for '%s'\n",sa2s(qldap_gid) );
+         debug_msg(OUTPUT," ldap search results \t: control/ldapgid check failed for '%s'\n",sa2s(&qldap_gid) );
          _exit(1);
       } else {
-         debug_msg(OUTPUT," ldap search results \t: control/ldapgid check succeeded for '%s'\n",sa2s(qldap_gid) );
+         debug_msg(OUTPUT," ldap search results \t: control/ldapgid check succeeded for '%s'\n",sa2s(&qldap_gid) );
       }
    }
    ldap_value_free(vals);
 
    /* get the path of the maildir for qmail-pop3d */
-   if ( (vals = ldap_get_values(ld,msg,"mailMessagestore")) != NULL ) {
+   if ( (vals = ldap_get_values(ld,msg,LDAP_MAILSTORE)) != NULL ) {
       if (vals[0][0] != '/') {   /* relative path */
             debug_msg(OUTPUT," ldap search results \t: maildir path is relative to messagestore\n");
          if (qldap_messagestore.s[0] != '/') {
@@ -510,7 +512,7 @@ char **argv;
     encrypted = crypt(entredpassword,password.s);
     debug_msg(OUTPUT," comparing passwords \t: crypt()ed '%s'\n",encrypted);
     if (!*password.s || str_diff(password.s,encrypted) ) {
-      debug_msg(OUTPUT," comparing passwords \t: compare crypt failed\n");
+      debug_msg(OUTPUT," comparing passwords \t: compare crypt failed\n");
       _exit(1);
     }
     debug_msg(OUTPUT," comparing passwords \t: compare crypt succeeded\n");
