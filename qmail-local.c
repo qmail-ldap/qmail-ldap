@@ -322,20 +322,22 @@ char *fn;
  
  if( quotastring && *quotastring ) {
    get_quota(quotastring, &quota, &dummy);
-   if (stat(fn, &filest) == -1)
+   if (stat(fn, &filest) == -1) {
+     filest.st_size = 0;        /* size of nonexisting mailfile */
      if ( errno != error_noent) { /* FALSE if file doesn't exist */
        strerr_die5x(111,"Unable to quota ", fn, ": ",error_str(errno), ". (LDAP-ERR #2.4.5)");
-       filest.st_size = 0;        /* size of nonexisting mailfile */
      }
+   }
    if (fstat(0, &mailst) != 0)
      strerr_die3x(111,"Unable to quota mail: ",error_str(errno), ". (LDAP-ERR #2.4.6)");
    
    totalsize = (long) filest.st_size + (long) mailst.st_size;
    if ( totalsize > quota ) {
      quota_bounce("mailbox");
-   } else if ( totalsize > (quota/100.0*QUOTA_WARNING_LEVEL) ) 
+   } else if ( totalsize > (quota/100.0*QUOTA_WARNING_LEVEL) ) {
 	 /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
+   }
  }
  
  /* end -- quota handling mbox */
