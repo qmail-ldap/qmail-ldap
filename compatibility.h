@@ -18,8 +18,10 @@
 
 #include <fcntl.h>
 
-typedef uint32_t u_int32_t;
-typedef uint64_t u_int64_t;
+//typedef uint32_t u_int32_t;
+//typedef uint64_t u_int64_t;
+typedef u_longlong_t   u_int64_t;
+typedef  unsigned int   u_int32_t;
 
 #endif
 
