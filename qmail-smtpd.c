@@ -415,38 +415,71 @@ char *dom;
   return (ret);
 }
 
-int sizelimit(arg)
+stralloc parameter = {0};
+
+char *getparameter(arg, name)
 char *arg;
+char *name;
 {
   int i;
-  long r;
-  unsigned long sizebytes = 0;
+  char ch;
+  char terminator;
+  int flagesc;
+  int flagquoted;
 
+  terminator = '>';
   i = str_chr(arg,'<');
   if (arg[i])
     arg += i + 1;
-  else {
+  else { /* partner should go read rfc 821 */
+    terminator = ' ';
     arg += str_chr(arg,':');
     if (*arg == ':') ++arg;
     while (*arg == ' ') ++arg;
   }
 
-  arg += str_chr(arg,' ');
-  if (*arg == ' ') while (*arg == ' ') ++arg;
-  else return 1;
-
-  i = str_chr(arg,'=');
-  arg[i] = 0;
-  if (case_equals(arg,"SIZE")) {
-    arg += i;
-    while (*++arg && *arg > 47 && *arg < 58) {
-      sizebytes *= 10;
-      sizebytes += *arg - 48;
+  flagesc = 0;
+  flagquoted = 0;
+  for (i = 0;ch = arg[i];++i) { /* skipping addr, respecting quotes */
+    if (flagesc) {
+      flagesc = 0;
+    } else {
+      if (!flagquoted && (ch == terminator)) break;
+      switch(ch) {
+        case '\\': flagesc = 1; break;
+        case '"': flagquoted = !flagquoted; break;
+        default: break;
+      }
     }
-    r = databytes - sizebytes;
-    if (r < 0) return 0;
   }
-  return 1;
+  if (!arg[i++]) return (char *)0; /* no parameters */
+  arg += i;
+  do {
+    while (*arg == ' ') if (!*arg++) return (char *)0;
+    if (case_diffb(arg, str_len(name), name) == 0) {
+      arg += str_len(name);
+      if (*arg++ == '=') {
+	i = str_chr(arg, ' ');
+	if (!stralloc_copyb(&parameter, arg, i)) die_nomem();
+	if (!stralloc_0(&parameter)) die_nomem();
+	return parameter.s;
+      }
+    }
+    while (*arg != ' ') if (!*arg++) return (char *)0;
+  } while (1);
+}
+
+int sizelimit(arg)
+char *arg;
+{
+  char *size;
+  unsigned long sizebytes = 0;
+
+  size = getparameter(arg, "SIZE");
+  if (!size) return 1;
+
+  scan_ulong(size, &sizebytes);
+  return (unsigned long)databytes >= sizebytes;
 }
 
 
