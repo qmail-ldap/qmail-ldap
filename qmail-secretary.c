@@ -74,7 +74,7 @@ I'm mailgroup secretary, an automated mail-handling program.\n\
 I received a message from you addressed to %LIST%\n\
 for which I'm responsible. The top of your message is shown below.\n\
 \n\
-I'm here to protect the address %LIST% form\n\
+I'm here to protect the address %LIST% from\n\
 all anonymous messages and bulk mail messages.\n\
 \n\
 If you reply to this notice, you are acknowledging that your message\n\
