@@ -164,7 +164,7 @@ void check_header_and_get_subject(stralloc *subject)
          }
       }   
    } while (match);
-   strerr_warn1("Premature end of header. AARRG! This message has no body. (LDAP-WARN #4.5.0) ignored",0);
+   strerr_warn1("Premature end of header. This message has no body. (LDAP-WARN #4.5.0) ignored",0);
    if ( subj_set == 0 ) {
       if (!stralloc_copys(subject, "Your mail")) temp_nomem();
    } 
@@ -205,7 +205,7 @@ void send_reply(stralloc *dtl, stralloc *to, stralloc *from, stralloc *subject, 
  write(pi[1], from->s, from->len);
  write(pi[1], " (via the qmail-reply program)", 30);
  write(pi[1], "\nSubject: ", 10);
- write(pi[1], "[Auto-Reply]", 12);
+ write(pi[1], "[Auto-Reply] ", 13);
  write(pi[1], subject->s, subject->len);
  write(pi[1], "\n", 1);
  write(pi[1],replytext->s,replytext->len);
