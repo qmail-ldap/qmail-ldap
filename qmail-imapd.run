@@ -1,20 +1,25 @@
 #!/bin/sh
 exec 2>&1
 #
-# IMAP service: this script uses courier-imap
+# IMAP service: this script is for courier-imap
 #
 QMAIL=/var/qmail
 COURIER=/usr/local
 ME=$(head -1 $QMAIL/control/me)
 ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty > /dev/null 2>&1)
 if test X"$ALIASEMPTY" = "X"; then
-	ALIASEMPTY=./Maildir/
+	ALIASEMPTY="./Maildir/"
 fi
+CONCURRENCY=${CONCURRENCY:=50}
+
+/* source the environemt in ./env */
+eval `env - envdir ./env env`
 
 PATH=$PATH:"$QMAIL/bin"
 
 exec envdir ./env \
-	tcpserver -v -HRl $ME -x$QMAIL/control/qmail-imapd.cdb 0 imap \
+	tcpserver -v -HRl $ME -c $CONCURRENCY \
+		-x$QMAIL/control/qmail-imapd.cdb 0 imap \
 	$COURIER/sbin/imaplogin \
 	$QMAIL/bin/auth_imap \
 	$QMAIL/bin/pbsadd \

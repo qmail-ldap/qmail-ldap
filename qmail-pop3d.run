@@ -9,11 +9,16 @@ ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty > /dev/null 2>&1)
 if test X"$ALIASEMPTY" = "X"; then
 	ALIASEMPTY=./Maildir/
 fi
+CONCURRENCY=${CONCURRENCY:=50}
+
+/* source the environemt in ./env */
+eval `env - envdir ./env env`
 
 PATH=$PATH:"$QMAIL/bin"
 
 exec envdir ./env \
-	tcpserver -v -HRl $ME -x$QMAIL/control/qmail-pop3d.cdb 0 pop3 \
+	tcpserver -v -HRl $ME -c $CONCURRENCY \
+		-x$QMAIL/control/qmail-pop3d.cdb 0 pop3 \
 	$QMAIL/bin/qmail-popup $ME \
 	$QMAIL/bin/auth_pop \
 	$QMAIL/bin/pbsadd \

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/11/27 10:14:12 $ ($Revision: 1.154 $)
+RELEASE: $Date: 2003/11/27 13:40:56 $ ($Revision: 1.155 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,11 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Make it possible to specify the number of concurrent connection of tcpserver
+ controlled daemons (qmail-smtpd, qmail-qmqpd, qmail-pop3d, qmail-imapd).
+ This can be achived by setting the CONCURRENCY environment variable. The
+ default CONCURRENCY is 50.
 
  qmail-reply does no longer reply to messages tagged with a spamassassin
  "X-Spam-Status: Yes" header.
