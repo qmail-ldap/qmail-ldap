@@ -12,15 +12,23 @@ PATH="$QMAIL/bin:$PATH"
 # source the environemt in ./env
 eval `env - PATH=$PATH envdir ./env awk '\
 	BEGIN { for (i in ENVIRON) \
-		printf "export %s=\"%s\"\n", i, ENVIRON[i] }'`
+		if (i != "PATH") { \
+			printf "export %s=\"%s\"\\n", i, ENVIRON[i] \
+		} \
+	}'`
 
 # enforce some sane defaults
 USER=${USER:="qmaild"}
+PBSTOOL=${PBSTOOL:="$QMAIL/bin/pbscheck"}
+
+if [ X${NOPBS+"true"} = X"true" ]; then
+	unset PBSTOOL
+fi
 
 exec \
 	envuidgid $USER \
 	tcpserver -v -URl $ME -x$QMAIL/control/qmail-smtpd.cdb \
-	    ${CONCURRENCY+"-c$CONCURRENCY"} ${BACKLOG+"-b$BACKLOG"} 0 smtp \
-	$QMAIL/bin/pbscheck \
+	    ${CONCURRENCY:+"-c$CONCURRENCY"} ${BACKLOG:+"-b$BACKLOG"} 0 smtp \
+	$PBSTOOL \
 	$QMAIL/bin/qmail-smtpd
 

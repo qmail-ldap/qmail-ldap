@@ -17,15 +17,22 @@ PATH="$QMAIL/bin:$PATH"
 # source the environemt in ./env
 eval `env - PATH=$PATH envdir ./env awk '\
 	BEGIN { for (i in ENVIRON) \
-		printf "export %s=\"%s\"\n", i, ENVIRON[i] }'`
+		if (i != "PATH") { \
+			printf "export %s=\"%s\"\\n", i, ENVIRON[i] \
+		} \
+	}'`
 
 # enforce some sane defaults
 COURIER=${COURIER:="/usr/local"}
+PBSTOOL=${PBSTOOL:="$QMAIL/bin/pbsadd"}
+
+if [ X${NOPBSR+"true"} = X"true" ]; then
+	unset PBSTOOL
+fi
 
 exec \
 	tcpserver -v -HRl $ME -x$QMAIL/control/qmail-imapd.cdb \
-	    ${CONCURRENCY+"-c$CONCURRENCY"} ${BACKLOG+"-b$BACKLOG"} 0 imap \
+	    ${CONCURRENCY:+"-c$CONCURRENCY"} ${BACKLOG:+"-b$BACKLOG"} 0 imap \
 	$COURIER/sbin/imaplogin \
-	$QMAIL/bin/auth_imap \
-	$QMAIL/bin/pbsadd \
+	$QMAIL/bin/auth_imap ${PBSTOOL:+"-d$PBSTOOL"} \
 	$COURIER/bin/imapd "$ALIASEMPTY"
