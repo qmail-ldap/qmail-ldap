@@ -1,12 +1,7 @@
 /* Who knows? */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include "compatibility.h"
 #include "digest_md4.h"
 #include "digest_md5.h"
 #include "digest_rmd160.h"

@@ -1,4 +1,4 @@
-/* digest_rmd160.h for QLDAP checkpassword.c */
+/* digest_rmd160.h for QLDAP modified to use djb's stuff */
 
 /*        */
 /* RMD160 */
@@ -25,28 +25,28 @@
 #define  _RMD160_H
 
 /********************************************************************/
+#include "uint32.h"
 
 /* structure definitions */
 
 typedef struct {
-        u_int32_t state[5];     /* state (ABCDE) */
-        u_int32_t length[2];    /* number of bits */
+        uint32 state[5];     /* state (ABCDE) */
+        uint32 length[2];    /* number of bits */
         unsigned char  bbuffer[64];    /* overflow buffer */
-        u_int32_t buflen;       /* number of chars in bbuffer */
+        uint32 buflen;       /* number of chars in bbuffer */
 } RMD160_CTX;
 
 /********************************************************************/
 
 /* function prototypes */
 
-void RMD160Init __P((RMD160_CTX *context));
-void RMD160Transform __P((u_int32_t state[5], const u_int32_t block[16]));
-void RMD160Update __P((RMD160_CTX *context, const unsigned char *data, unsigned int nbytes));
-void RMD160Final __P((unsigned char digest[20], RMD160_CTX *context));
-char *RMD160End __P((RMD160_CTX *, char *));
-char *RMD160File __P((char *, char *));
-char *RMD160Data __P((const unsigned char *, size_t, char *));
+void RMD160Init ();
+void RMD160Transform ();
+void RMD160Update ();
+void RMD160Final ();
+char *RMD160End ();
+char *RMD160Data ();
 
-char *RMD160DataBase64 __P((const unsigned char *, size_t, char *, size_t));
+char *RMD160DataBase64 ();
 
 #endif  /* _RMD160_H */

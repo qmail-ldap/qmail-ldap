@@ -1,4 +1,4 @@
-/* digest_md4.h for QLDAP checkpassword.c */
+/* digest_md4.h for QLDAP modified to use djb's stuff */
 
 /*        */
 /*  MD4   */
@@ -27,20 +27,21 @@
 #ifndef _MD4_H_
 #define _MD4_H_
 
+#include "uint32.h"
+
 /* MD4 context. */
 typedef struct MD4Context {
-    u_int32_t state[4];         /* state (ABCD) */
-    u_int64_t count;            /* number of bits, modulo 2^64 */
+    uint32 state[4];            /* state (ABCD) */
+    uint32 count[2];            /* number of bits, modulo 2^64 */
     unsigned char buffer[64];   /* input buffer */
 } MD4_CTX;
 
-void   MD4Init __P((MD4_CTX *));
-void   MD4Update __P((MD4_CTX *, const unsigned char *, size_t));
-void   MD4Final __P((unsigned char [16], MD4_CTX *));
-char  *MD4End __P((MD4_CTX *, char *));
-char  *MD4File __P((char *, char *));
-char  *MD4Data __P((const unsigned char *, size_t, char *));
+void   MD4Init ();
+void   MD4Update ();
+void   MD4Final ();
+char  *MD4End ();
+char  *MD4Data ();
 
-char  *MD4DataBase64 __P((const unsigned char *, size_t, char *, size_t));
+char  *MD4DataBase64 ();
 
 #endif /* _MD4_H_ */

@@ -1,4 +1,4 @@
-/* digest_sha1.c for QLDAP checkpassword.c              */
+/* digest_sha1.c for QLDAP modified to use djb stuff    */
 /* contains SHA1 algorithm stolen directly from OpenBSD */
 
 /*        */
@@ -21,18 +21,16 @@
 
 #define SHA1HANDSOFF            /* Copies data before messing with it. */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <sys/file.h>
 #include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
-#include <sys/param.h>
-#include <string.h>
-#include "compatibility.h"
+#include "uint32.h"
+#include "byte.h"
 #include "digest_sha1.h"
 #include "base64.h"
+
+/* some systems don't have NULL defined */
+#ifndef NULL
+#define NULL (void*) 0
+#endif
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
 
@@ -41,11 +39,9 @@
  * I got the idea of expanding during the round function from SSLeay
  */
 #ifdef __LITTLE_ENDIAN__
-/* #warning __LITTLE_ENDIAN__ */
 # define blk0(i) (block->l[i] = (rol(block->l[i],24)&0xFF00FF00) \
     |(rol(block->l[i],8)&0x00FF00FF))
 #else  /* __BIG_ENDIAN__ */
-/* #warning __BIG_ENDIAN__ */
 # define blk0(i) block->l[i]
 #endif /* __LITTLE_ENDIAN__ */
 
@@ -66,20 +62,20 @@
  * Hash a single 512-bit block. This is the core of the algorithm.
  */
 void SHA1Transform(state, buffer)
-    u_int32_t state[5];
-    const u_char buffer[64];
+    uint32 state[5];
+    const unsigned char buffer[64];
 {
-    u_int32_t a, b, c, d, e;
+    uint32 a, b, c, d, e;
     typedef union {
-        u_char c[64];
-        u_int l[16];
+        unsigned char c[64];
+        unsigned int l[16];
     } CHAR64LONG16;
     CHAR64LONG16 *block;
 
 #ifdef SHA1HANDSOFF
-    static u_char workspace[64];
+    static unsigned char workspace[64];
     block = (CHAR64LONG16 *)workspace;
-    (void)memcpy(block, buffer, 64);
+    byte_copy(block, 64, buffer);
 #else
     block = (CHAR64LONG16 *)buffer;
 #endif
@@ -147,17 +143,17 @@ void SHA1Init(context)
  */
 void SHA1Update(context, data, len)
     SHA1_CTX *context;
-    const u_char *data;
-    u_int len;
+    const unsigned char *data;
+    unsigned int len;
 {
-    u_int i, j;
+    unsigned int i, j;
 
     j = context->count[0];
     if ((context->count[0] += len << 3) < j)
         context->count[1] += (len>>29)+1;
     j = (j >> 3) & 63;
     if ((j + len) > 63) {
-        (void)memcpy(&context->buffer[j], data, (i = 64-j));
+        byte_copy(&context->buffer[j], (i = 64-j), data);
         SHA1Transform(context->state, context->buffer);
         for ( ; i + 63 < len; i += 64)
             SHA1Transform(context->state, &data[i]);
@@ -165,7 +161,7 @@ void SHA1Update(context, data, len)
     } else {
         i = 0;
     }
-    (void)memcpy(&context->buffer[j], &data[i], len - i);
+    byte_copy(&context->buffer[j], len - i, &data[i]);
 }
 
 
@@ -173,26 +169,30 @@ void SHA1Update(context, data, len)
  * Add padding and return the message digest.
  */
 void SHA1Final(digest, context)
-    u_char digest[20];
+    unsigned char digest[20];
     SHA1_CTX* context;
 {
-    u_int i;
-    u_char finalcount[8];
+    unsigned int i;
+    unsigned char finalcount[8];
 
     for (i = 0; i < 8; i++) {
-        finalcount[i] = (u_char)((context->count[(i >= 4 ? 0 : 1)]
+        finalcount[i] = (unsigned char)((context->count[(i >= 4 ? 0 : 1)]
          >> ((3-(i & 3)) * 8) ) & 255);  /* Endian independent */
     }
-    SHA1Update(context, (u_char *)"\200", 1);
+    SHA1Update(context, (unsigned char *)"\200", 1);
     while ((context->count[0] & 504) != 448)
-        SHA1Update(context, (u_char *)"\0", 1);
+        SHA1Update(context, (unsigned char *)"\0", 1);
     SHA1Update(context, finalcount, 8);  /* Should cause a SHA1Transform() */
 
     if (digest) {
         for (i = 0; i < 20; i++)
-            digest[i] = (u_char)
+            digest[i] = (unsigned char)
                 ((context->state[i>>2] >> ((3-(i & 3)) * 8) ) & 255);
-    }
+        /* Zeroize sensitive information.
+         */
+        byte_zero(context, sizeof (*context));
+	}
+	
 }
 
 
@@ -209,14 +209,14 @@ void SHA1Final(digest, context)
 char *
 SHA1End(ctx, buf)
     SHA1_CTX *ctx;
-    char *buf;
+    char *buf; /* needs to be 41 bytes big */
 {
     int i;
     char *p = buf;
-    u_char digest[20];
+    unsigned char digest[20];
     static const char hex[]="0123456789abcdef";
 
-    if (p == NULL && (p = malloc(41)) == NULL)
+    if (p == NULL )
         return 0;
 
     SHA1Final(digest,ctx);
@@ -229,33 +229,10 @@ SHA1End(ctx, buf)
 }
 
 char *
-SHA1File (filename, buf)
-    char *filename;
-    char *buf;
-{
-    u_char buffer[BUFSIZ];
-    SHA1_CTX ctx;
-    int fd, num, oerrno;
-
-    SHA1Init(&ctx);
-
-    if ((fd = open(filename,O_RDONLY)) < 0)
-        return(0);
-
-    while ((num = read(fd, buffer, sizeof(buffer))) > 0)
-        SHA1Update(&ctx, buffer, num);
-
-    oerrno = errno;
-    close(fd);
-    errno = oerrno;
-    return(num < 0 ? 0 : SHA1End(&ctx, buf));
-}
-
-char *
 SHA1Data (data, len, buf)
-    const u_char *data;
+    const unsigned char *data;
     size_t len;
-    char *buf;
+    char *buf; /* needs to be 41 bytes big */
 {
     SHA1_CTX ctx;
 
@@ -268,9 +245,9 @@ SHA1Data (data, len, buf)
 
 char *
 SHA1DataBase64 (data, len, buf, buflen)
-    const u_char *data;
+    const unsigned char *data;
     size_t len;
-    char *buf;
+    char *buf; /* needs to be 29 bytes big */
     size_t buflen;
 {
     SHA1_CTX ctx;

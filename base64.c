@@ -1,4 +1,4 @@
-/* base64.c for QLDAP checkpassword.c */
+/* base64.c for QLDAP modified to use only djb's qmail stuff */
 
 /*        */
 /* BASE64 */
@@ -47,14 +47,7 @@
  */
 
 #include <sys/types.h>
-/*#include <sys/param.h>
-  #include <netinet/in.h>
-*/
-#include <ctype.h>
-/* #include <stdio.h> */
-#ifndef NULL
-#define NULL (void*) 0
-#endif
+#include "str.h"
 
 #define Assert(Cond) if (!(Cond)) abort()
 
@@ -127,14 +120,14 @@ static const char Pad64 = '=';
 
 int
 b64_ntop(src, srclength, target, targsize)
-	u_char const *src;
+	unsigned char const *src;
 	size_t srclength;
 	char *target;
 	size_t targsize;
 {
 	size_t datalength = 0;
-	u_char input[3];
-	u_char output[4];
+	unsigned char input[3];
+	unsigned char output[4];
 	int i;
 
 	while (2 < srclength) {
@@ -196,27 +189,35 @@ b64_ntop(src, srclength, target, targsize)
    it returns the number of data bytes stored at the target, or -1 on error.
  */
 
+#define ISSPACE(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r')
+/* XXX
+   this is not the complete subset of ctypes.h isspace but for qmail-ldap
+   only space, tab, newline and carriage-return are useful (formfeed and 
+   vertical tabs are normaly not used in network communications.
+                                            Claudio Jeker
+ */
+
 int
 b64_pton(src, target, targsize)
 	char const *src;
-	u_char *target;
+	unsigned char *target;
 	size_t targsize;
 {
 	int tarindex, state, ch;
-	char *pos;
+	unsigned int pos;
 
 	state = 0;
 	tarindex = 0;
 
 	while ((ch = *src++) != '\0') {
-		if (isspace(ch))	/* Skip whitespace anywhere. */
+		if (ISSPACE(ch))	/* Skip whitespace anywhere. */
 			continue;
 
 		if (ch == Pad64)
 			break;
 
-		pos = strchr(Base64, ch);
-		if (pos == 0) 		/* A non-base64 character. */
+		pos = str_chr(Base64, ch);
+		if (pos > 63) 		/* A non-base64 character. */
 			return (-1);
 
 		switch (state) {
@@ -224,7 +225,7 @@ b64_pton(src, target, targsize)
 			if (target) {
 				if (tarindex >= targsize)
 					return (-1);
-				target[tarindex] = (pos - Base64) << 2;
+				target[tarindex] = pos << 2;
 			}
 			state = 1;
 			break;
@@ -232,9 +233,8 @@ b64_pton(src, target, targsize)
 			if (target) {
 				if (tarindex + 1 >= targsize)
 					return (-1);
-				target[tarindex]   |=  (pos - Base64) >> 4;
-				target[tarindex+1]  = ((pos - Base64) & 0x0f)
-							<< 4 ;
+				target[tarindex]   |=  pos >> 4;
+				target[tarindex+1]  = (pos & 0x0f) << 4 ;
 			}
 			tarindex++;
 			state = 2;
@@ -243,9 +243,8 @@ b64_pton(src, target, targsize)
 			if (target) {
 				if (tarindex + 1 >= targsize)
 					return (-1);
-				target[tarindex]   |=  (pos - Base64) >> 2;
-				target[tarindex+1]  = ((pos - Base64) & 0x03)
-							<< 6;
+				target[tarindex]   |=  pos >> 2;
+				target[tarindex+1]  = (pos & 0x03) << 6;
 			}
 			tarindex++;
 			state = 3;
@@ -254,7 +253,7 @@ b64_pton(src, target, targsize)
 			if (target) {
 				if (tarindex >= targsize)
 					return (-1);
-				target[tarindex] |= (pos - Base64);
+				target[tarindex] |= pos;
 			}
 			tarindex++;
 			state = 0;
@@ -279,7 +278,7 @@ b64_pton(src, target, targsize)
 		case 2:		/* Valid, means one byte of info */
 			/* Skip any number of spaces. */
 			for (; ch != '\0'; ch = *src++)
-				if (!isspace(ch))
+				if (!ISSPACE(ch))
 					break;
 			/* Make sure there is another trailing = sign. */
 			if (ch != Pad64)
@@ -294,7 +293,7 @@ b64_pton(src, target, targsize)
 			 * whitespace after it?
 			 */
 			for (; ch != '\0'; ch = *src++)
-				if (!isspace(ch))
+				if (!ISSPACE(ch))
 					return (-1);
 
 			/*

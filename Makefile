@@ -240,7 +240,7 @@ compile auto_usera.c
 	./compile auto_usera.c
 
 base64.o: \
-compile base64.c base64.h
+compile base64.c base64.h str.h
 	./compile $(LDAPFLAGS) base64.c
 
 binm1: \
@@ -397,7 +397,7 @@ compile check.c check.h str.h str_len.c
 checkpassword.o: \
 compile checkpassword.c qmail-ldap.h stralloc.h auth_mod.h qldap-ldaplib.h \
 qldap-errno.h readwrite.h error.h str.h open.h substdio.h getln.h select.h \
-compatibility.h digest_md4.h digest_md5.h digest_rmd160.h digest_sha1.h dns.h \
+digest_md4.h digest_md5.h digest_rmd160.h digest_sha1.h dns.h \
 ipalloc.h timeoutconn.h byte.h scan.h fmt.h alloc.h qldap-debug.h
 	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(LDAPINCLUDES) checkpassword.c
 
@@ -506,28 +506,29 @@ compile datetime_un.c datetime.h
 
 digest: \
 load digest.o digest_md4.o digest_md5.o digest_rmd160.o \
-digest_sha1.o base64.o
+digest_sha1.o base64.o stralloc.a str.a alloc.a error.a
 	./load digest digest_md4.o digest_md5.o digest_rmd160.o \
-	digest_sha1.o base64.o
+	digest_sha1.o base64.o stralloc.a str.a alloc.a error.a
 
 digest.o: \
-compile digest.c compatibility.h
+compile digest.c 
 	./compile $(LDAPFLAGS) digest.c
 
 digest_md4.o: \
-compile endian digest_md4.c digest_md4.h compatibility.h
+compile endian digest_md4.c digest_md4.h uint32.h base64.h byte.h
 	./compile $(LDAPFLAGS) `./endian` digest_md4.c
 
 digest_md5.o: \
-compile endian digest_md5.c digest_md5.h compatibility.h
+compile endian digest_md5.c digest_md5.h uint32.h base64.h byte.h \
+stralloc.h str.h
 	./compile $(LDAPFLAGS) `./endian` digest_md5.c
 
 digest_rmd160.o: \
-compile endian digest_rmd160.c digest_rmd160.h compatibility.h
+compile endian digest_rmd160.c digest_rmd160.h uint32.h base64.h byte.h
 	./compile $(LDAPFLAGS) `./endian` digest_rmd160.c
 
 digest_sha1.o: \
-compile endian digest_sha1.c digest_sha1.h compatibility.h
+compile endian digest_sha1.c digest_sha1.h uint32.h base64.h byte.h
 	./compile $(LDAPFLAGS) `./endian` digest_sha1.c
 
 direntry.h: \
@@ -996,7 +997,7 @@ strerr.h
 maildir++.o: \
 compile maildir++.c maildir++.h readwrite.h stralloc.h error.h str.h \
 open.h substdio.h getln.h error.h strerr.h fmt.h scan.h now.h seek.h \
-sig.h
+sig.h direntry.h
 	./compile maildir++.c
 
 maildir2mbox: \
@@ -1395,7 +1396,7 @@ auto_qmail.o getln.a substdio.a strerr.a
 qmail-ldaplookup.o: \
 compile qmail-ldaplookup.c qmail-ldap.h qldap-errno.h stralloc.h \
 alloc.h error.h str.h qldap-debug.h qldap-ldaplib.h check.h substdio.h \
-fmt.h scan.h readwrite.h byte.h getln.h compatibility.h digest_md4.h \
+fmt.h scan.h readwrite.h byte.h getln.h digest_md4.h \
 digest_md5.h digest_rmd160.h digest_sha1.h open.h 
 	./compile $(LDAPFLAGS) $(SHADOWOPTS) qmail-ldaplookup.c
 

@@ -16,7 +16,6 @@
 #include "byte.h"
 #include "getln.h"
 #include <sys/types.h>
-#include "compatibility.h"
 #include "digest_md4.h"
 #include "digest_md5.h"
 #include "digest_rmd160.h"

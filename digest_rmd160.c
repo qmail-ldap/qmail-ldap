@@ -24,26 +24,25 @@
 \********************************************************************/
 
 /*  header files */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/file.h>
 #include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
-#include "compatibility.h"
+#include "uint32.h"
+#include "byte.h"
 #include "digest_rmd160.h"
 #include "base64.h"
+
+/* some systems don't have NULL defined */
+#ifndef NULL
+#define NULL (void*) 0
+#endif
 
 /* macro definitions */
 
 /* collect four bytes into one word: */
 #define BYTES_TO_DWORD(strptr)                  \
-    (((u_int32_t) *((strptr)+3) << 24) |        \
-    ((u_int32_t) *((strptr)+2) << 16) |         \
-    ((u_int32_t) *((strptr)+1) <<  8) |         \
-    ((u_int32_t) *(strptr)))
+    (((uint32) *((strptr)+3) << 24) |        \
+    ((uint32) *((strptr)+2) << 16) |         \
+    ((uint32) *((strptr)+1) <<  8) |         \
+    ((uint32) *(strptr)))
 
 /* ROL(x, n) cyclically rotates x over n bits to the left */
 /* x must be of an unsigned 32 bits type and 0 <= n < 32. */
@@ -123,12 +122,12 @@ void RMD160Init(context)
 }
 
 void RMD160Transform(state, block)
-        u_int32_t state[5];
-        const u_int32_t block[16];
+        uint32 state[5];
+        const uint32 block[16];
 {
-        u_int32_t aa = state[0],  bb = state[1],  cc = state[2],
+        uint32 aa = state[0],  bb = state[1],  cc = state[2],
             dd = state[3],  ee = state[4];
-        u_int32_t aaa = state[0], bbb = state[1], ccc = state[2],
+        uint32 aaa = state[0], bbb = state[1], ccc = state[2],
             ddd = state[3], eee = state[4];
 
         /* round 1 */
@@ -322,14 +321,14 @@ void RMD160Transform(state, block)
 
 void RMD160Update(context, data, nbytes)
         RMD160_CTX *context;
-        const u_char *data;
-        u_int32_t nbytes;
+        const unsigned char *data;
+        uint32 nbytes;
 {
-        u_int32_t X[16];
-        u_int32_t ofs = 0;
-        u_int32_t i;
+        uint32 X[16];
+        uint32 ofs = 0;
+        uint32 i;
 #ifdef __BIG_ENDIAN__
-        u_int32_t j;
+        uint32 j;
 #endif /* __BIG_ENDIAN__ */
 
         /* update length[] */
@@ -337,23 +336,21 @@ void RMD160Update(context, data, nbytes)
                 context->length[1]++;           /* overflow to msb of length */
         context->length[0] += nbytes;
 
-        (void)memset(X, 0, sizeof(X));
+        byte_zero(X, sizeof(X));
 
         if ( context->buflen + nbytes < 64 )
         {
-                (void)memcpy(context->bbuffer + context->buflen, data, nbytes);
+                byte_copy(context->bbuffer + context->buflen, nbytes, data);
                 context->buflen += nbytes;
         }
         else
         {
                 /* process first block */
                 ofs = 64 - context->buflen;
-                (void)memcpy(context->bbuffer + context->buflen, data, ofs);
+                byte_copy(context->bbuffer + context->buflen, ofs, data);
 #ifdef __LITTLE_ENDIAN__
-/* #warning __LITTLE_ENDIAN__ */
-                (void)memcpy(X, context->bbuffer, sizeof(X));
+                byte_copy(X, sizeof(X), context->bbuffer);
 #else  /* __BIG_ENDIAN__ */
-/* #warning __BIG_ENDIAN__ */
                 for (j=0; j < 16; j++)
                         X[j] = BYTES_TO_DWORD(context->bbuffer + (4 * j));
 #endif /* __LITTLE_ENDIAN__ */
@@ -363,7 +360,7 @@ void RMD160Update(context, data, nbytes)
                 /* process remaining complete blocks */
                 for (i = 0; i < (nbytes >> 6); i++) {
 #ifdef __LITTLE_ENDIAN__
-                        (void)memcpy(X, data + (64 * i) + ofs, sizeof(X));
+                        byte_copy(X, sizeof(X), data + (64 * i) + ofs);
 #else  /* __BIG_ENDIAN__ */
                         for (j=0; j < 16; j++)
                                 X[j] = BYTES_TO_DWORD(data + (64 * i) + (4 * j) + ofs);
@@ -375,27 +372,27 @@ void RMD160Update(context, data, nbytes)
                  * Put last bytes from data into context's buffer
                  */
                 context->buflen = nbytes & 63;
-                memcpy(context->bbuffer, data + (64 * i) + ofs, context->buflen);
+                byte_copy(context->bbuffer, context->buflen, data + (64 * i) + ofs);
         }
 }
 
 void RMD160Final(digest, context)
-        u_char digest[20];
+        unsigned char digest[20];
         RMD160_CTX *context;
 {
-        u_int32_t i;
-        u_int32_t X[16];
+        uint32 i;
+        uint32 X[16];
 #ifdef __BIG_ENDIAN__
-        u_int32_t j;
+        uint32 j;
 #endif /* __BIG_ENDIAN__ */
 
         /* append the bit m_n == 1 */
         context->bbuffer[context->buflen] = '\200';
 
-        (void)memset(context->bbuffer + context->buflen + 1, 0,
+        byte_zero(context->bbuffer + context->buflen + 1,
                 63 - context->buflen);
 #ifdef __LITTLE_ENDIAN__
-        (void)memcpy(X, context->bbuffer, sizeof(X));
+        byte_copy(X, sizeof(X), context->bbuffer);
 #else  /* __BIG_ENDIAN__ */
         for (j=0; j < 16; j++)
                 X[j] = BYTES_TO_DWORD(context->bbuffer + (4 * j));
@@ -403,7 +400,7 @@ void RMD160Final(digest, context)
         if ((context->buflen) > 55) {
                 /* length goes to next block */
                 RMD160Transform(context->state, X);
-                (void)memset(X, 0, sizeof(X));
+                byte_zero(X, sizeof(X));
         }
 
         /* append length in bits */
@@ -437,14 +434,14 @@ void RMD160Final(digest, context)
 char *
 RMD160End(ctx, buf)
     RMD160_CTX *ctx;
-    char *buf;
+    char *buf; /* buf needs to be 41 bytes big */
 {
     int i;
     char *p = buf;
-    u_char digest[20];
+    unsigned char digest[20];
     static const char hex[]="0123456789abcdef";
 
-    if (p == NULL && (p = malloc(41)) == NULL)
+    if (p == NULL)
         return 0;
 
     RMD160Final(digest,ctx);
@@ -457,33 +454,10 @@ RMD160End(ctx, buf)
 }
 
 char *
-RMD160File (filename, buf)
-    char *filename;
-    char *buf;
-{
-    u_char buffer[BUFSIZ];
-    RMD160_CTX ctx;
-    int fd, num, oerrno;
-
-    RMD160Init(&ctx);
-
-    if ((fd = open(filename,O_RDONLY)) < 0)
-        return(0);
-
-    while ((num = read(fd, buffer, sizeof(buffer))) > 0)
-        RMD160Update(&ctx, buffer, num);
-
-    oerrno = errno;
-    close(fd);
-    errno = oerrno;
-    return(num < 0 ? 0 : RMD160End(&ctx, buf));
-}
-
-char *
 RMD160Data (data, len, buf)
-    const u_char *data;
+    const unsigned char *data;
     size_t len;
-    char *buf;
+    char *buf; /* buf needs to be 41 bytes big */
 {
     RMD160_CTX ctx;
 
@@ -496,9 +470,9 @@ RMD160Data (data, len, buf)
 
 char *
 RMD160DataBase64 (data, len, buf, buflen)
-    const u_char *data;
+    const unsigned char *data;
     size_t len;
-    char *buf;
+    char *buf; /* buf needs to be 29 bytes big */
     size_t buflen;
 {
     RMD160_CTX ctx;
@@ -510,3 +484,4 @@ RMD160DataBase64 (data, len, buf, buflen)
     b64_ntop(buffer,sizeof(buffer),buf,buflen);
     return(buf);
 }
+

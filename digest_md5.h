@@ -1,4 +1,4 @@
-/* digest_md5.h for QLDAP checkpassword.c */
+/* digest_md5.h for QLDAP modified to use djb's stuff */
 
 /*        */
 /*  MD5   */
@@ -29,24 +29,23 @@ documentation and/or software.
 #ifndef _MD5_H_
 #define _MD5_H_
 
+#include "uint32.h"
+
 /* MD5 context. */
 typedef struct MD5Context {
-    u_int32_t state[4];         /* state (ABCD) */
-    u_int64_t count;            /* number of bits, modulo 2^64 */
+    uint32 state[4];            /* state (ABCD) */
+    uint32 count[2];            /* number of bits, modulo 2^64 */
     unsigned char buffer[64];   /* input buffer */
 } MD5_CTX;
 
-void   MD5Init __P((MD5_CTX *));
-void   MD5Update __P((MD5_CTX *, const unsigned char *, size_t));
-void   MD5Final __P((unsigned char [16], MD5_CTX *));
-char  *MD5End __P((MD5_CTX *, char *));
-char  *MD5File __P((char *, char *));
-char  *MD5Data __P((const unsigned char *, size_t, char *));
+void   MD5Init ();
+void   MD5Update ();
+void   MD5Final ();
+char  *MD5End ();
+char  *MD5Data ();
 
-char  *MD5DataBase64 __P((const unsigned char *, size_t, char *, size_t));
+char  *MD5DataBase64 ();
 
-void   ns_mta_hexify(char *, char *, int);
-char  *ns_mta_hash_alg(char *, char *, char *);
-int    ns_mta_md5_cmp_pw(char *, char *);
+int    ns_mta_md5_cmp_pw();
 
 #endif /* _MD5_H_ */

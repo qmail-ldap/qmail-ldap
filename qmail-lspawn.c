@@ -408,15 +408,16 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       for (at = i - 1; r[at] != '@' && at >= 0 ; at--) ; 
 	     /* handels also mailwith 2 @ */
       /* build the search string for the email address */
-      if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM); 
-      if (!stralloc_copys(&filter,"(|(" ) ) _exit(QLX_NOMEM);
+      if (!stralloc_copys(&filter,"(" ) ) _exit(QLX_NOMEM);
       /* optional objectclass */
       if (qldap_objectclass.len) {
+        if (!stralloc_cats(&filter,"&(")) _exit(QLX_NOMEM);
         if (!stralloc_cats(&filter,LDAP_OBJECTCLASS)) _exit(QLX_NOMEM);
         if (!stralloc_cats(&filter,"=")) _exit(QLX_NOMEM);
         if (!stralloc_cat(&filter,&qldap_objectclass)) _exit(QLX_NOMEM);
         if (!stralloc_cats(&filter,")(")) _exit(QLX_NOMEM);
       } /* end */
+      if (!stralloc_cats(&filter,"|(")) _exit(QLX_NOMEM);
       if (!stralloc_cats(&filter,LDAP_MAIL)) _exit(QLX_NOMEM);
       if (!stralloc_cats(&filter,"=")) _exit(QLX_NOMEM);
       if (!stralloc_cats(&filter,LDAP_CATCH_ALL)) _exit(QLX_NOMEM);

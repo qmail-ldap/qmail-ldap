@@ -1,4 +1,4 @@
-/* digest_md4.c for QLDAP checkpassword.c              */
+/* digest_md4.c for QLDAP modified to use djb stuff    */
 /* contains MD4 algorithm stolen directly from OpenBSD */
 
 /*        */
@@ -26,17 +26,16 @@
    documentation and/or software.
  */
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/file.h>
 #include <sys/types.h>
-#include <sys/uio.h>
-#include "compatibility.h"
+#include "uint32.h"
+#include "byte.h"
 #include "digest_md4.h"
 #include "base64.h"
+
+/* some systems don't have NULL defined */
+#ifndef NULL
+#define NULL (void*) 0
+#endif
 
 /* POINTER defines a generic pointer type */
 typedef unsigned char *POINTER;
@@ -56,16 +55,14 @@ typedef unsigned char *POINTER;
 #define S33 11
 #define S34 15
 
-static void MD4Transform __P ((u_int32_t [4], const unsigned char [64]));
+static void MD4Transform __P ((uint32 [4], const unsigned char [64]));
 
 #ifdef __LITTLE_ENDIAN__
-/* #warning __LITTLE_ENDIAN__ */
-#define Encode memcpy
-#define Decode memcpy
+#define Encode byte_copy
+#define Decode byte_copy
 #else  /* __BIG_ENDIAN__ */
-/* #warning __BIG_ENDIAN__ */
-static void Encode __P ((void *, const void *, size_t));
-static void Decode __P ((void *, const void *, size_t));
+static void Encode ();
+static void Decode ();
 #endif /* __LITTLE_ENDIAN__ */
 
 static unsigned char PADDING[64] = {
@@ -91,24 +88,24 @@ static unsigned char PADDING[64] = {
     (a) = ROTATE_LEFT ((a), (s)); \
   }
 #define GG(a, b, c, d, x, s) { \
-    (a) += G ((b), (c), (d)) + (x) + (u_int32_t)0x5a827999; \
+    (a) += G ((b), (c), (d)) + (x) + (uint32)0x5a827999; \
     (a) = ROTATE_LEFT ((a), (s)); \
   }
 #define HH(a, b, c, d, x, s) { \
-    (a) += H ((b), (c), (d)) + (x) + (u_int32_t)0x6ed9eba1; \
+    (a) += H ((b), (c), (d)) + (x) + (uint32)0x6ed9eba1; \
     (a) = ROTATE_LEFT ((a), (s)); \
   }
 
 #ifdef __BIG_ENDIAN__
-/* Encodes input (u_int32_t) into output (unsigned char). Assumes len is
+/* Encodes input (uint32) into output (unsigned char). Assumes len is
      a multiple of 4.
  */
-static void Encode (out, in, len)
+static void Encode (out, len, in)
 void *out;
-const void *in;
 size_t len;
+const void *in;
 {
-  const u_int32_t *input = in;
+  const uint32 *input = in;
   unsigned char *output = out;
   size_t i, j;
 
@@ -120,21 +117,21 @@ size_t len;
   }
 }
 
-/* Decodes input (unsigned char) into output (u_int32_t). Assumes len is
+/* Decodes input (unsigned char) into output (uint32). Assumes len is
      a multiple of 4.
  */
-static void Decode (out, in, len)
+static void Decode (out, len, in)
 void *out;
-const void *in;
 size_t len;
+const void *in;
 {
-  u_int32_t *output = out;
+  uint32 *output = out;
   const unsigned char *input = in;
   size_t i, j;
 
   for (i = 0, j = 0; j < len; i++, j += 4)
-    output[i] = ((u_int32_t)input[j]) | (((u_int32_t)input[j+1]) << 8) |
-      (((u_int32_t)input[j+2]) << 16) | (((u_int32_t)input[j+3]) << 24);
+    output[i] = ((uint32)input[j]) | (((uint32)input[j+1]) << 8) |
+      (((uint32)input[j+2]) << 16) | (((uint32)input[j+3]) << 24);
 }
 #endif /* __BIG_ENDIAN__ */
 
@@ -143,7 +140,8 @@ size_t len;
 void MD4Init (context)
 MD4_CTX *context;                                        /* context */
 {
-  context->count = 0;
+  context->count[0] = 0;
+  context->count[1] = 0;
 
   /* Load magic initialization constants.
    */
@@ -163,18 +161,23 @@ const unsigned char *input;                     /* input block */
 size_t inputLen;                                /* length of input block */
 {
   unsigned int i, index, partLen;
+  uint32 t;
 
   /* Compute number of bytes mod 64 */
-  index = (unsigned int)((context->count >> 3) & 0x3F);
+  index = (unsigned int)((context->count[0] >> 3) & 0x3F);
 
   /* Update number of bits */
-  context->count += ((u_int64_t)inputLen << 3);
+  t = context->count[0] + ((uint32)inputLen << 3); /* lower part of count */
+  if ( t < context->count[0] ) context->count[1]++; 
+                       /* low part of count overflowed */
+  context->count[0] = t;
+  context->count[1] += ((uint32)inputLen >> 29); /* update high part of count */
 
   partLen = 64 - index;
   /* Transform as many times as possible.  */
   if (inputLen >= partLen) {
-    memcpy
-      ((POINTER)&context->buffer[index], (POINTER)input, partLen);
+    byte_copy
+      ((POINTER)&context->buffer[index], partLen, (POINTER)input);
     MD4Transform (context->state, context->buffer);
 
     for (i = partLen; i + 63 < inputLen; i += 64)
@@ -186,9 +189,8 @@ size_t inputLen;                                /* length of input block */
     i = 0;
 
   /* Buffer remaining input */
-  memcpy
-    ((POINTER)&context->buffer[index], (POINTER)&input[i],
-     inputLen-i);
+  byte_copy
+    ((POINTER)&context->buffer[index], inputLen-i, (POINTER)&input[i]);
 }
 
 /* MD4 finalization. Ends an MD4 message-digest operation, writing the
@@ -200,17 +202,17 @@ MD4_CTX *context;                                        /* context */
 {
   unsigned char bits[8];
   unsigned int index, padLen;
-  u_int32_t hi, lo;
+  uint32 hi, lo;
 
   /* Save number of bits */
-  hi = context->count >> 32;
-  lo = (u_int32_t)context->count & 0xffffffff;
-  Encode (bits, &lo, 4);
-  Encode (bits + 4, &hi, 4);
+  hi = context->count[1];
+  lo = context->count[0];
+  Encode (bits, 4, &lo);
+  Encode (bits + 4, 4, &hi);
 
   /* Pad out to 56 mod 64.
    */
-  index = (unsigned int)((context->count >> 3) & 0x3f);
+  index = (unsigned int)((context->count[0] >> 3) & 0x3f);
   padLen = (index < 56) ? (56 - index) : (120 - index);
   MD4Update (context, PADDING, padLen);
 
@@ -219,23 +221,23 @@ MD4_CTX *context;                                        /* context */
 
   if (digest != NULL) {
     /* Store state in digest */
-    Encode (digest, context->state, 16);
+    Encode (digest, 16, context->state);
 
     /* Zeroize sensitive information.
      */
-    memset ((POINTER)context, 0, sizeof (*context));
+	byte_zero((POINTER) context, sizeof (*context));
   }
 }
 
 /* MD4 basic transformation. Transforms state based on block.
  */
 static void MD4Transform (state, block)
-u_int32_t state[4];
+uint32 state[4];
 const unsigned char block[64];
 {
-  u_int32_t a = state[0], b = state[1], c = state[2], d = state[3], x[16];
+  uint32 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
-  Decode (x, block, 64);
+  Decode (x, 64, block);
 
   /* Round 1 */
   FF (a, b, c, d, x[ 0], S11); /* 1 */
@@ -298,7 +300,7 @@ const unsigned char block[64];
 
   /* Zeroize sensitive information.
    */
-  memset ((POINTER)x, 0, sizeof (x));
+  byte_zero((POINTER) x, sizeof (x));
 }
 
 /* mdXhl.c
@@ -314,15 +316,13 @@ const unsigned char block[64];
 char *
 MD4End(ctx, buf)
     MD4_CTX *ctx;
-    char *buf;
+    char *buf; /* buf needs to be 33 bytes big */
 {
     int i;
     char *p = buf;
     unsigned char digest[16];
     static const char hex[]="0123456789abcdef";
 
-    if (!p)
-        p = malloc(33);
     if (!p)
         return 0;
     MD4Final(digest,ctx);
@@ -335,32 +335,10 @@ MD4End(ctx, buf)
 }
 
 char *
-MD4File (filename, buf)
-    char *filename;
-    char *buf;
-{
-    unsigned char buffer[BUFSIZ];
-    MD4_CTX ctx;
-    int f,i,j;
-
-    MD4Init(&ctx);
-    f = open(filename,O_RDONLY);
-    if (f < 0) return 0;
-    while ((i = read(f,buffer,sizeof buffer)) > 0) {
-        MD4Update(&ctx,buffer,i);
-    }
-    j = errno;
-    close(f);
-    errno = j;
-    if (i < 0) return 0;
-    return MD4End(&ctx, buf);
-}
-
-char *
 MD4Data (data, len, buf)
     const unsigned char *data;
     size_t len;
-    char *buf;
+    char *buf; /* buf needs to be 33 bytes big */
 {
     MD4_CTX ctx;
 
@@ -373,9 +351,9 @@ MD4Data (data, len, buf)
 
 char *
 MD4DataBase64 (data, len, buf, buflen)
-    const u_char *data;
+    const unsigned char *data;
     size_t len;
-    char *buf;
+    char *buf; /* buf needs to be 25 bytes big */
     size_t buflen;
 {
     MD4_CTX ctx;

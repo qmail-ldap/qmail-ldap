@@ -8,7 +8,7 @@
 #include "substdio.h"
 #include "getln.h"
 #include "error.h"
-#include <dirent.h>
+#include "direntry.h"
 #include "strerr.h"
 #include "fmt.h"
 #include "scan.h"
@@ -321,7 +321,7 @@ static int quota_calcsize(quota_t *q, int *fd, char* buf, int len)
 	unsigned int slen;
 	time_t tm;
 	time_t maxtime;
-	struct dirent *dp;
+	direntry *dp;
 	DIR *dirp;
 	
 	if ( q->quota_size == 0 && q->quota_count == 0 ) {
@@ -452,7 +452,7 @@ fail:
 static int check_maxtime(time_t time)
 /* check if a directory has changed, to avoid race conditions */
 {
-	struct dirent *dp;
+	direntry *dp;
 	DIR *dirp;
 	struct stat filest;
 	unsigned int slen;
@@ -542,7 +542,7 @@ static void calc_curnew(quota_t *q, time_t *maxtime)
 /* calculate the size of the two dirs new and cur of a maildir 
  * (uses get_file_size) */
 {
-	struct dirent	*dp;
+	direntry		*dp;
 	DIR				*dirp;
 	struct stat		filest;
 	char			*f;
