@@ -17,7 +17,7 @@
 char debugbuffer[DEBUGLEN];
 char num[FMT_ULONG];
 int  debfd;
-int  dlevel;
+unsigned long  dlevel;
 substdio ssdeb;
 
 static const char nullString[] = "(null pointer)";
@@ -64,7 +64,7 @@ void debug(int level, char *fmt, ...)
 	unsigned char c;
 	stralloc *sa;
 
-	if ( level > dlevel ) return;
+	if ( level & dlevel ) return;
 	va_start(args,fmt);
 
 	start = fmt;
@@ -143,7 +143,7 @@ void debug(int level, char *fmt, ...)
 #endif /* DEBUG */
 }
 
-void init_debug(int fd, unsigned int maxlevel)
+void init_debug(int fd, unsigned long levelmask)
 /* 
  * Known DEBUGLEVELs: 
  *  1 = Error, only errors are reported (not verbose)
@@ -155,7 +155,9 @@ void init_debug(int fd, unsigned int maxlevel)
  * 64 = LDAP-Debug, show everything in the ldap-module
  *128 = some more LDAP-Debug stuff (good for ldap test tool)
  *256 = PASSWD-Debug, this shows the encrypted and clear text passwords
- *      so use it with care */
+ *      so use it with care 
+ *1024= profiling output (if compiled with profile support)
+ */
 {
 #ifdef DEBUG
 	char *a = env_get("DEBUGLEVEL");
@@ -164,7 +166,7 @@ void init_debug(int fd, unsigned int maxlevel)
 	if ( a && *a ) {
 		scan_ulong(a, &dlevel);
 	}
-	if ( dlevel > maxlevel ) dlevel = maxlevel;
+	dlevel &= levelmask;
 	
 	substdio_fdbuf(&ssdeb, write, fd, debugbuffer, sizeof(debugbuffer) );
 	

@@ -19,7 +19,7 @@ void debug(int level, char *fmt, ...);
  * p is the hex address of a generic pointer (void *)
  * % is the % sign */
 
-void init_debug(int fd, unsigned int maxlevel);
+void init_debug(int fd, unsigned long levelmask);
 /* reads the DEBUGLEVEL env var and sets the corresponding debuglevel */
 
 #endif
