@@ -577,16 +577,16 @@ static int make_filter(stralloc *value, stralloc *filter)
 		qldap_errno = ERRNO;
 		return 0;
 	}
-	if ( !stralloc_copys(&filter,"(" ) ) {
+	if ( !stralloc_copys(filter,"(" ) ) {
 		qldap_errno = ERRNO;
 		return 0;
 	}	
 	if ( qldap_objectclass.len && (
-		 !stralloc_cats(&filter,"&(" ) || 
-		 !stralloc_cats(&filter,LDAP_OBJECTCLASS) ||
-		 !stralloc_cats(&filter,"=") ||
-		 !stralloc_cat(&filter,&qldap_objectclass) ||
-		 !stralloc_cats(&filter,")(") ) ) {
+		 !stralloc_cats(filter,"&(" ) || 
+		 !stralloc_cats(filter,LDAP_OBJECTCLASS) ||
+		 !stralloc_cats(filter,"=") ||
+		 !stralloc_cat(filter,&qldap_objectclass) ||
+		 !stralloc_cats(filter,")(") ) ) {
 		qldap_errno = ERRNO;
 		return 0;
 	}
@@ -598,7 +598,7 @@ static int make_filter(stralloc *value, stralloc *filter)
 		return 0;
 	}
 	if ( qldap_objectclass.len && 
-		 !stralloc_cats(&filter,")") ) {
+		 !stralloc_cats(filter,")") ) {
 		qldap_errno = ERRNO;
 		return 0;
 	}
