@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/11/13 15:22:36 $)
+RELEASE: current ($Date: 2003/11/17 15:47:37 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -841,6 +841,19 @@ SENDERCHECK
        if they have a valid existing email address with you.
        Addresses or domains listed in ~control/goodmailaddr are unconditionally
        allowed in all cases.
+
+LDAPSOFTOK
+
+ Treat ldap soft errors (ldap server unavailable, etc) as if the check was
+ successful and continue.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Normally qmail-smtp will give a 450 temporary error if the ldap server
+       could not be successfuly queried. This changes to treat such errors as
+       if they had been successful. This is useful when it is more important
+       to keep the service available, even if the ldap server can't be queried
+       for some reason (down, unreachable, insufficient query rights, etc).
 
 SMTPAUTH
 
