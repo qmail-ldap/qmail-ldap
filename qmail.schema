@@ -75,7 +75,7 @@ attributetype ( 1.3.6.1.4.1.7914.1.2.1.10 NAME 'deliveryMode'
 attributetype ( 1.3.6.1.4.1.7914.1.2.1.11 NAME 'mailReplyText'
 	DESC 'A reply text for every incoming message'
 	SUBSTR caseIgnoreSubstringsMatch
-	SYNTAX 1.3.6.1.4.1.1466.115.121.1.44{4096}
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{4096}
 	SINGLE-VALUE )
 
 attributetype ( 1.3.6.1.4.1.7914.1.2.1.12 NAME 'accountStatus'
