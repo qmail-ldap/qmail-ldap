@@ -14,6 +14,7 @@
 # EXTERNAL_TODO). Useful for servers with very many non-preprocessed mails
 # -DBIGBROTHER to use the control/bigbrother file to forward all mails comming
 # from a specified account to another (swiss bigbrother law)
+# -DALTQUEUE to use a diffrent qmail-queue programm on runtime
 # -DDATA_COMPRESS to use the smtp on the fly DATA compression 
 #LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT 
 
@@ -30,6 +31,9 @@ LDAPINCLUDES=-I/usr/local/include
 
 # ZLIB needed for -DDATA_COMPRESS
 #ZLIB=-lz
+# of you installed zlib in a different path you can use something like this
+#ZLIB=-L/opt/zlib/lib -lz
+#ZINCLUDES=-I/opt/zlib/include
 
 # TLS (SMTP encryption) in qmail-smtpd and qmail-remote, see TLS.readme
 # You need OpenSSL for this
@@ -1753,7 +1757,8 @@ subfd.h substdio.h scan.h case.h error.h auto_qmail.h control.h dns.h \
 alloc.h quote.h ip.h ipalloc.h ip.h gen_alloc.h ipme.h ip.h ipalloc.h \
 gen_alloc.h gen_allocdefs.h str.h now.h datetime.h exit.h constmap.h \
 tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
-	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) qmail-remote.c
+	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) $(ZINCLUDES) \
+	qmail-remote.c
 
 qmail-reply: \
 load qmail-reply.o case.a control.o constmap.o getln.a sig.a newfield.o \
@@ -1765,9 +1770,9 @@ wait.a stralloc.a alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o
 	substdio.a error.a str.a fs.a auto_qmail.o
 
 qmail-reply.o: \
-compile qmail-reply.c byte.h case.h control.h constmap.h env.h error.h exit.h \
-getln.h newfield.h now.h open.h qmail.h qmail-ldap.h readwrite.h seek.h sgetopt.h \
-strerr.h stralloc.h substdio.h
+compile qmail-reply.c byte.h case.h control.h constmap.h env.h error.h \
+exit.h getln.h newfield.h now.h open.h qmail.h qmail-ldap.h readwrite.h \
+seek.h sgetopt.h strerr.h stralloc.h substdio.h
 	./compile $(LDAPFLAGS) qmail-reply.c
 
 qmail-rspawn: \
@@ -1792,13 +1797,13 @@ qmail-send: \
 load qmail-send.o qsutil.o control.o constmap.o newfield.o prioq.o \
 trigger.o fmtqfn.o quote.o now.o readsubdir.o qmail.o date822fmt.o \
 datetime.a case.a ndelay.a getln.a wait.a seek.a fd.a sig.a open.a \
-lock.a stralloc.a alloc.a substdio.a error.a str.a fs.a auto_qmail.o \
-auto_split.o
+lock.a stralloc.a env.a alloc.a substdio.a error.a str.a fs.a \
+auto_qmail.o auto_split.o
 	./load qmail-send qsutil.o control.o constmap.o newfield.o \
 	prioq.o trigger.o fmtqfn.o quote.o now.o readsubdir.o \
 	qmail.o date822fmt.o datetime.a case.a ndelay.a getln.a \
-	wait.a seek.a fd.a sig.a open.a lock.a stralloc.a alloc.a \
-	substdio.a error.a str.a fs.a auto_qmail.o auto_split.o 
+	wait.a seek.a fd.a sig.a open.a lock.a stralloc.a env.a \
+	alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_split.o 
 
 qmail-send.0: \
 qmail-send.8
@@ -1864,7 +1869,8 @@ substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
 exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h rbl.h
-	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) qmail-smtpd.c
+	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) $(ZINCLUDES) \
+	qmail-smtpd.c
 
 qmail-start: \
 load qmail-start.o prot.o fd.a auto_uids.o
@@ -1958,7 +1964,7 @@ qmail.7
 qmail.o: \
 compile qmail.c substdio.h readwrite.h wait.h exit.h fork.h fd.h \
 qmail.h substdio.h auto_qmail.h
-	./compile qmail.c
+	./compile $(LDAPFLAGS) qmail.c
 
 qreceipt: \
 load qreceipt.o headerbody.o hfield.o quote.o token822.o qmail.o \

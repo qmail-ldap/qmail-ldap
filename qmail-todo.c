@@ -1,5 +1,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
+#include <unistd.h>
 #include "alloc.h"
 #include "auto_qmail.h"
 #include "byte.h"
@@ -15,7 +17,6 @@
 #include "ndelay.h"
 #include "now.h"
 #include "readsubdir.h"
-#include "readwrite.h"
 #include "scan.h"
 #include "select.h"
 #include "str.h"

@@ -7,13 +7,34 @@
 #include "qmail.h"
 #include "auto_qmail.h"
 
+#ifdef ALTQUEUE
+#include "env.h"
+
+static char *binqqargs[2] = { 0, 0 } ;
+
+static void
+setup_qqargs(void)
+{
+  if(!binqqargs[0])
+    binqqargs[0] = env_get("QMAILQUEUE");
+  if(!binqqargs[0])
+    binqqargs[0] = "bin/qmail-queue";
+}
+
+#else
 static char *binqqargs[2] = { "bin/qmail-queue", 0 } ;
+#endif
+
 
 int qmail_open(qq)
 struct qmail *qq;
 {
   int pim[2];
   int pie[2];
+
+#ifdef ALTQUEUE
+  setup_qqargs();
+#endif
 
   if (pipe(pim) == -1) return -1;
   if (pipe(pie) == -1) { close(pim[0]); close(pim[1]); return -1; }
