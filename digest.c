@@ -184,7 +184,8 @@ main(int argc, char *argv[])
 		if (argc != 1) usage();
 		clear = argv[0];
 		if (salt.s == 0)
-			getsalt(&salt, 16);
+			getsalt(&salt, 18); /* actually 128bit salt but add
+					     * a bit for base64 errors */
 		feed_salt(salt.s, salt.len);
 		feed_crypt(cformat);
 		if (type != -1) {
