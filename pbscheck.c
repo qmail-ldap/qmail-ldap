@@ -232,6 +232,8 @@ int main (int argc, char** argv)
 	childargs = argv + 1;
 	if (!*childargs) die_usage();
 
+	if (env_get("NOPBS")) goto start_daemon;
+
 	setup();
 
 	t = now() ^ getpid(); /* at least on OpenBSD this is mostly random */
