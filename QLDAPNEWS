@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/04/11 16:52:49 $ ($Revision: 1.92 $)
+RELEASE: $Date: 2003/04/28 09:00:38 $ ($Revision: 1.93 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,9 +18,15 @@ TODO:
 
 NEWS for current stuff:
 
+ Better copy loop in checkpasswords imap/pop3 forwarding this should solve problems
+ with large file downloads over imap.
+
+ Remove duplicate entries from pbsdbd cache, this should solve the "hash flodding"
+ error message.
+
  Bug fix in rbl.c from Sami Farin.
 
- Bad handling of return values. A EHLO may return a 502 or perhaps a 504.
+ Bad handling of return values. A EHLO may return a 500, 502 or perhaps a 504.
  In this case retry with HELO.
 
 NEWS for 20030401 stuff:
