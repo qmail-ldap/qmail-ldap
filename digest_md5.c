@@ -177,16 +177,15 @@ const unsigned char *input;                             /* input block */
 size_t inputLen;                     /* length of input block */
 {
   unsigned int i, index, partLen;
-  uint32 t;
 
   /* Compute number of bytes mod 64 */
   index = (unsigned int)((context->count[0] >> 3) & 0x3F);
 
   /* Update number of bits */
-  t = context->count[0] + ((uint32)inputLen << 3); /* lower part of count */
-  if ( t < context->count[0] ) context->count[1]++; 
-                       /* low part of count overflowed */
-  context->count[0] = t;
+  if ( (context->count[0] += ((uint32)inputLen << 3)) /* lower part of count */
+       < ((uint32)inputLen << 3) )
+    context->count[1]++; /* low part of count overflowed */
+
   context->count[1] += ((uint32)inputLen >> 29); /* update high part of count */
 
   partLen = 64 - index;

@@ -511,7 +511,7 @@ digest_sha1.o base64.o stralloc.a str.a alloc.a error.a
 	digest_sha1.o base64.o stralloc.a str.a alloc.a error.a
 
 digest.o: \
-compile digest.c 
+compile digest.c uint32.h
 	./compile $(LDAPFLAGS) digest.c
 
 digest_md4.o: \
