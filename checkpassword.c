@@ -100,7 +100,8 @@ void main(int argc, char **argv)
 	
 	if ( check_ldap(&login, &authdata, &uid, &gid, &home, &maildir) ) {
 		debug(16, "authentication with ldap was not successful\n");
-		if ( locald == 1 && qldap_errno == LDAP_NOSUCH ) {
+		if ( locald == 1 && 
+				(qldap_errno == LDAP_NOSUCH || qldap_errno == LDAP_SEARCH) ) {
 			debug(16, "trying to authenticate with the local passwd db\n");
 			if ( check_passwd(&login, &authdata, &uid, &gid, &home, &maildir) ) {
 				auth_fail(argc, argv, login.s);
@@ -135,7 +136,7 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	if ( rebind ) {
 		extra[0].what = 0;	/* under rebind mode no additional info is needed */
 		search.bindpw = authdata->s;
-		attrs[6] = 0;
+		attrs[7] = 0;
 		/* rebind on, check passwd via ldap rebind */ 
 	} else {
 		extra[0].what = LDAP_PASSWD; /* need to get the crypted password */

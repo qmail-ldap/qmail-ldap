@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/06/18 20:59:37 $ ($Revision: 1.10 $)
+RELEASE: $Date: 2000/06/21 12:54:24 $ ($Revision: 1.11 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -24,6 +24,9 @@ NEWS for current stuff:
 
  bugfixes in hier.c and install-big.c to install qmail-ldaplookup with correct
  0700 permission, as told in the QLDAPINSTALL file
+
+ bugfix in checkpassword.c and qmail-ldaplookup.c with wrong index to the 
+ LDAP args array. Thanks to Ricardo Cerqueira
 
  small bug fix in qmail-ldaplookup, fixed a wrong output.
 

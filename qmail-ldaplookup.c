@@ -140,11 +140,11 @@ int main(int argc, char **argv)
 	extra[1].what = LDAP_MAILALTERNATE;
 	if ( mode == mail ) {
 		extra[8].what = 0; /* under mail lookups no passwords are compared */
-		attrs[14] = 0;
+		attrs[15] = 0;
 		search.bindpw = 0; /* rebind off */
 	} else if (!argv[3] || rebind ) {
 		extra[8].what = 0; /* passwd lookup not needed */
-		attrs[14] = 0;
+		attrs[15] = 0;
 		search.bindpw = 0; /* rebind off */
 		if (rebind) {
 			search.bindpw = argv[3];
