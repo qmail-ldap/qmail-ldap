@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/07/16 09:37:38 $ ($Revision: 1.100 $)
+RELEASE: $Date: 2003/07/28 15:42:42 $ ($Revision: 1.101 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,8 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Bug fix in Makefile (qmail-todo dependencies)
 
  Better handling of SMTP mail-parameters mainly SIZE. Until now only the first
  mail-parameter was used all others where ignored. Also specially escaped

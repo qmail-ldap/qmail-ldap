@@ -14,7 +14,7 @@
 # EXTERNAL_TODO). Useful for servers with very many non-preprocessed mails
 # -DBIGBROTHER to use the control/bigbrother file to forward all mails comming
 # from a specified account to another (swiss bigbrother law)
-#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO
+LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DBIGBROTHER -DDASH_EXT
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
@@ -32,27 +32,27 @@ LDAPINCLUDES=-I/usr/local/include
 # use -DTLS_REMOTE to enable tls support in qmail-remote
 # use -DTLS_SMTPD to enable tls support in qmail-smtpd
 # use -DTLSDEBUG to enable additional tls debug information in qmail-remote
-#TLS=-DTLS_REMOTE -DTLS_SMTPD
+TLS=-DTLS_REMOTE -DTLS_SMTPD
 # Path to OpenSSL includes
-#TLSINCLUDES=-I/usr/local/include
+TLSINCLUDES=-I/usr/local/include
 # Path to OpenSSL libraries
-#TLSLIBS=-L/usr/local/lib -lssl -lcrypto
+TLSLIBS=-L/usr/local/lib -lssl -lcrypto
 # Path to OpenSSL binary
 #OPENSSLBIN=/usr/local/bin/openssl
-#OPENSSLBIN=openssl
+OPENSSLBIN=openssl
 
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
 MNW=-DMAKE_NETSCAPE_WORK 
 
 # to enable the auto-maildir-make feature uncomment the next line
-#MDIRMAKE=-DAUTOMAILDIRMAKE
+MDIRMAKE=-DAUTOMAILDIRMAKE
 
 # to enable the auto-homedir-make feature uncomment the next line
-#HDIRMAKE=-DAUTOHOMEDIRMAKE
+HDIRMAKE=-DAUTOHOMEDIRMAKE
 
 # on most systems we need this to make auth_pop and auth_imap
-SHADOWLIBS=-lcrypt
+#SHADOWLIBS=-lcrypt
 # OpenBSD Systems seems to have no libcrypt, so comment the line out if you
 # get linking problems
 # To use shadow passwords under some Linux OS, uncomment the next two lines.
@@ -62,7 +62,7 @@ SHADOWLIBS=-lcrypt
 
 # to enable the possibility to log and debug imap and pop uncoment the
 # next line
-#DEBUG=-DDEBUG
+DEBUG=-DDEBUG
 # WARNING: you need a NONE DEBUG auth_* to run with inetd
 
 # for profiling ...
@@ -1920,9 +1920,9 @@ substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
 	alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
 
 qmail-todo.o: \
-compile alloc.h auto_qmail.h byte.h constmap.h control.h direntry.h error.h \
-exit.h fmt.h fmtqfn.h getln.h open.h ndelay.h now.h readsubdir.h readwrite.h \
-scan.h select.h str.h stralloc.h substdio.h trigger.h
+compile qmail-todo.c alloc.h auto_qmail.h byte.h constmap.h control.h \
+direntry.h error.h exit.h fmt.h fmtqfn.h getln.h open.h ndelay.h now.h \
+readsubdir.h readwrite.h scan.h select.h str.h stralloc.h substdio.h trigger.h
 	./compile $(LDAPFLAGS) qmail-todo.c
 
 qmail-upq: \
