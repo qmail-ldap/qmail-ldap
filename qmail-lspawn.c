@@ -259,6 +259,8 @@ char **argv;
    
 #ifdef QLDAP /* read the control files */
    get_qldap_controls();
+	sig_hangupcatch(get_qldap_controls);
+	sig_hangupunblock();
 #endif
 }
 
@@ -890,6 +892,8 @@ char *s; char *r; int at;
 #ifdef QLSPAWN_LOG
    fdlog = fdout;
 #endif
+	
+	sig_hangupdefault();
    if (!stralloc_copys(&ra,r)) _exit(QLX_NOMEM);
    DEBUG("address: ", r, "\n", 0);
 #endif /* end -- save the @ */

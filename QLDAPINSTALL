@@ -17,6 +17,9 @@ planned - splitting the patch into smaler separate pieces
 
 NEWS:
 
+ Added signal-handler for qmail-lspawn, now with a SIGHUP the qmail-lspawn
+ parent process reloads the his settings ( via the ~control files )
+
  Added cluster support, use -DQLDAP_CLUSTER for enabling.
 
  Removed PWOPTS=-DLOOK_UP_PASSWD because it was only for checkpassword
@@ -60,6 +63,7 @@ INSTALL:
    normaly "cd qmail-1.03_source_tree; patch -p1 < location_of_patch"
    works ;-). There seems to be a problem with the original patch utility
    on Solaris based systems, use the gnu patch utility instead.
+   A pre-compiled binary should be available at http://www.sunfreeware.com/
 
 5. Edit the conf-* files and the top of the Makefile (only the top ;-) )
    You can set/change:
