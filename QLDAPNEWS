@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/08/10 22:41:04 $ ($Revision: 1.204 $)
+RELEASE: $Date: 2004/11/03 14:40:54 $ ($Revision: 1.205 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,14 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Don't forget to check also for accountStatus deleted in the auth tools and
+ deny access in this case.
+
+ Only send the AUTH option in MAIL FROM: if the session is authenticated.
+ Fixes a problem seen with some obscure mail server.
+
+NEWS for current 20040801:
 
  In qmail-smtpd if SSLCERT is set use this as the path to the certificate and
  not as the path to a file containing the path to the certificate. Noticed by
