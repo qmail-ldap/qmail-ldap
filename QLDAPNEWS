@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/11/04 15:34:05 $ ($Revision: 1.74 $)
+RELEASE: $Date: 2002/11/25 13:12:47 $ ($Revision: 1.75 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,16 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ On a hup qmail-send rereads more ~control files. Now bouncemaxbytes,
+ custombouncetext, locals and virtualdomains are reloaded.
+
+ There seems to be a tiny bug in qmail-1.03 qmail-clean program.
+
+ Renamed QMAILQUOTA to MAILDIRQUOTA to work better with maildrop.
+
+ Bug fix in qldap-ldaplib.c if the ldap lookup timed out the wrong error
+ was returned.
 
  Minor bug fixes in the pbs tools inspired by Junjiro Okajima.
 
