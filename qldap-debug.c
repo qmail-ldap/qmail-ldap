@@ -81,11 +81,13 @@ void debug(int level, char *fmt, ...)
 						if ( substdio_put(&ssdeb, "-", 1) == -1 ) return;
 					}
 					ul = (unsigned long) l;
-					if ( substdio_put(&ssdeb, num, fmt_ulong(num, ul) ) ) return;
+					if ( substdio_put(&ssdeb, num, fmt_ulong(num, ul) ) ) 
+						return;
 					break;
 				case 'u':
 					ul = va_arg(args, unsigned long);
-					if ( substdio_put(&ssdeb, num, fmt_ulong(num, ul) ) ) return;
+					if ( substdio_put(&ssdeb, num, fmt_ulong(num, ul) ) ) 
+						return;
 					break;
 				case 's':
 					s = va_arg(args, char *);
@@ -95,7 +97,8 @@ void debug(int level, char *fmt, ...)
 				case 'S':
 					sa = va_arg(args, stralloc *);
 					if ( !sa ) {
-						if ( substdio_put(&ssdeb, nullString, str_len(nullString) ) )
+						if ( substdio_put(&ssdeb, nullString, 
+											str_len(nullString) ) )
 							return;
 						break;
 					}
@@ -107,11 +110,13 @@ void debug(int level, char *fmt, ...)
 				case 'p':
 					p = va_arg(args, void *);
 					ul = (unsigned long) p;
-					if ( substdio_put(&ssdeb, num, fmt_hexulong(num, ul) ) ) return;
+					if ( substdio_put(&ssdeb, num, fmt_hexulong(num, ul) ) ) 
+						return;
 					break;
 				case 'x':
 					ul = va_arg(args, unsigned long);
-					if ( substdio_put(&ssdeb, num, fmt_hexulong(num, ul) ) ) return;
+					if ( substdio_put(&ssdeb, num, fmt_hexulong(num, ul) ) ) 
+						return;
 					break;
 				case 'c':
 					c = va_arg(args, unsigned char);
