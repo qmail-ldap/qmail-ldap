@@ -282,11 +282,15 @@ int needauth = 0;
 int needssl = 0;
 int flagauthok = 0;
 const char *authprepend;
+#ifdef TLS_SMTPD
 stralloc sslcert = {0};
+#endif
 
 void setup(void)
 {
+#ifdef TLS_SMTPD
   char *sslpath;
+#endif
   char *x, *l;
   unsigned long u;
 
@@ -312,12 +316,14 @@ void setup(void)
   if (control_readint(&timeout,"control/timeoutsmtpd") == -1) die_control();
   if (timeout <= 0) timeout = 1;
 
+#ifdef TLS_SMTPD
   sslpath = env_get("SSLCERT");
   if (!sslpath)
     sslpath = (char *)"control/smtpcert";
   if (control_rldef(&sslcert, sslpath, 0, "") == -1)
     die_control();
   if (!stralloc_0(&sslcert)) die_nomem();
+#endif
 
   x = env_get("TARPITCOUNT");
   if (x) { scan_ulong(x,&u); tarpitcount = u >= UINT_MAX ? UINT_MAX - 1 : u; }
@@ -414,7 +420,9 @@ void setup(void)
   logpid(2);
   logstring(2, "enabled options: ");
   if (greeting550) logstring(2,"greeting550 ");
+#ifdef TLS_SMTPD
   if (sslcert.s && *sslcert.s) logstring(2, "starttls ");
+#endif
   if (relayclient) logstring(2,"relayclient ");
   if (sanitycheck) logstring(2,"sanitycheck ");
   if (returnmxcheck) logstring(2,"returnmxcheck ");

@@ -434,7 +434,9 @@ void blast(void)
 
 stralloc cookie = {0};
 stralloc recip = {0};
+#ifdef TLS_REMOTE
 stralloc sslcert = {0};
+#endif
 
 void smtp(void)
 {
@@ -868,9 +870,11 @@ void getcontrols(void)
   if (!stralloc_0(&outgoingip)) temp_nomem();
   if (!ip_scan(outgoingip.s, &outip)) temp_noip();
 
+#ifdef TLS_REMOTE
   if (control_rldef(&sslcert, "control/remotecert", 0, "") == -1)
     temp_control();
   if (!stralloc_0(&sslcert)) temp_nomem();
+#endif
 
 }
 
