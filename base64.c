@@ -474,7 +474,7 @@ b64_ptons(char const *src, stralloc *dest)
 
 /* function for decoding and encoding hex strings */
 static const char Hex[] = "0123456789abcdef";
-static const char HexBig[] = "0123456789ABCDEF";
+/* static const char HexBig[] = "0123456789ABCDEF"; */
 
 int
 hex_ntops(unsigned char const *src, size_t srclength, stralloc *dest)
