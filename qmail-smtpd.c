@@ -384,24 +384,36 @@ int addrallowed()
   return r;
 }
 
-
 void smtp_helo(arg) char *arg;
 {
   smtp_greet("250 "); out("\r\n");
   seenmail = 0; dohelo(arg);
   logpid(3); logstring(3,"remote helo ="); logstring(3,arg); logflush(3);
 }
+char smtpsize[FMT_ULONG];
 void smtp_ehlo(arg) char *arg;
 {
   smtp_greet("250-"); 
+  smtpsize[fmt_ulong(smtpsize,(unsigned long) databytes)] = 0;
 #ifdef TLS
-  if (ssl) out("\r\n250-PIPELINING\r\n250 8BITMIME\r\n");
-  else out("\r\n250-PIPELINING\r\n250-STARTTLS\r\n250 8BITMIME\r\n");
+  if (ssl) {
+   out("\r\n250-PIPELINING\r\n");
+   out("250-SIZE "); out(smtpsize); out("\r\n");
+   out("250 8BITMIME\r\n");
+  }
+  else {
+   out("\r\n250-PIPELINING\r\n");
+   out("250-SIZE "); out(smtpsize); out("\r\n");
+   out("250-STARTTLS\r\n250 8BITMIME\r\n");
+  }
 #else
-  out("\r\n250-PIPELINING\r\n250 8BITMIME\r\n");
+  out("\r\n250-PIPELINING\r\n");
+  out("250-SIZE "); out(smtpsize); out("\r\n");
+  out("250 8BITMIME\r\n");
 #endif
   seenmail = 0; dohelo(arg);
   logpid(3); logstring(3,"remote ehlo ="); logstring(3,arg); logflush(3);
+  logpid(3); logstring(3,"max msg size ="); logstring(3,smtpsize); logflush(3);
 }
 void smtp_rset()
 {
