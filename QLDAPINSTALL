@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2000/12/15 12:25:57 $)
+RELEASE: current ($Date: 2000/12/19 12:02:49 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -182,6 +182,13 @@ CONFIG FILES:
  Default: NULL
  Example: o=Internet Pipeline, c=CH
  Note: Referrals are ignored
+
+~control/ldapobjectclass
+
+ The ldap objectclass the search will be limited to
+ Default: NULL, will search all objectclasses
+ Example: qmailUser
+ Note: Can specify more than one, must then be written in ldap search syntax
 
 ~control/ldaplogin
 
@@ -624,7 +631,7 @@ suffix          "o=Internet Pipeline, c=CH"
 directory       /var/qmail/users
 rootdn          "cn=root, o=Internet Pipeline, c=CH"
 rootpw          secret
-index           mail,mailAlternateAddress,uid
+index           objectclass,mail,mailAlternateAddress,uid
 index           default none
 
 ================================================================================

@@ -32,6 +32,7 @@ static int ldap_get_extrainfo(LDAP *ld, LDAPMessage *msg, extrainfo *info);
 stralloc qldap_me = {0};				/* server name, also external visible */
 static stralloc qldap_server = {0};		/* name of ldap server */
 static stralloc qldap_basedn = {0};		/* the search basedn */
+static stralloc qldap_objectclass = {0};	/* the search objectclass */
 static stralloc qldap_user = {0};		/* the ldap user ( for login ) */
 static stralloc qldap_password = {0};	/* the ldap login password */
 
@@ -97,6 +98,12 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 	if (control_rldef(&qldap_basedn, ctrl_file, 0, "") == -1) return -1;
 	if (!stralloc_0(&qldap_basedn)) return -1; /* also stralloc sets errno's */
 	debug(64, "init_ldap: control/ldapbasedn: %s\n", qldap_basedn.s);
+
+        t = cf;
+        t += fmt_strn(cf, "control/ldapobjectclass", 64); *t=0;
+        if (control_rldef(&qldap_objectclass, ctrl_file, 0, "") == -1) return -1;
+        if (!stralloc_0(&qldap_objectclass)) return -1;
+        debug(64, "init_ldap: control/ldapobjectclass: %s\n", qldap_objectclass.s);
 
 	t = cf;
 	t += fmt_strn(cf, "control/ldaplogin", 64); *t=0;

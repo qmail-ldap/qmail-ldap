@@ -48,6 +48,7 @@
 #define LDAP_DOTMODE		"qmailDotMode"
 #define LDAP_UID			"uid"
 #define LDAP_PASSWD			"userPassword"
+#define LDAP_OBJECTCLASS	"objectclass"
 #define LDAP_ISACTIVE		"accountStatus"
 
 #define DOTMODE_LDAPONLY 	"ldaponly"
