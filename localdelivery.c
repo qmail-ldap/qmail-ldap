@@ -3,11 +3,13 @@
 
 #include "localdelivery.h"
 
-static int	flaglocaldelivery = 1; /* localdelivery is on (DEFAULT) */
+static int	flaglocaldelivery;
 
 int
 localdelivery_init(void)
 {
+	flaglocaldelivery = 1;	/* localdelivery is on (DEFAULT) */
+
 	if (control_readint(&flaglocaldelivery,
 		    "control/ldaplocaldelivery") == -1)
 		return -1;

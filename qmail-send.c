@@ -277,6 +277,28 @@ int c;
  return 1;
 }
 
+void comm_hup(c)
+int c;
+{
+  int w;
+  int l = 0;
+  
+  /* send a empty message with delivery number 0xBEEF (48879) to the
+   * spawn process. This may cause trouble if you have a concurrency
+   * bigger than this. Acctually it should be save but who has such
+   * a high concurrency anyway.
+   */
+  do {
+    w = write(chanfdout[c], "\357\276\0\0\0" + l, 5 - l);
+    if (w <= 0)
+    {
+      if ((w == -1) && (errno == error_pipe))
+        spawndied(c);
+    }
+    l += w;
+  } while (l < 5);
+}
+
 void comm_write(c,delnum,id,sender,recip)
 int c;
 int delnum;
@@ -960,6 +982,14 @@ int c;
     {
      delnum = (unsigned int) (unsigned char) dline[c].s[0];
      delnum += (unsigned int) ((unsigned int) dline[c].s[1]) << 8;
+#if 0
+     /* A hup is sent as delivery num 0xBEEF = 48879 */
+     if (delnum == 0xBEEF) {
+       log1("sighup response: ");
+       logsafe(dline[c].s + 3);
+       log1("\n");
+     } else
+#endif
      if ((delnum < 0) || (delnum >= concurrency[c]) || !d[c][delnum].used)
        log1("warning: internal error: delivery report out of range\n");
      else
@@ -1777,6 +1807,7 @@ void reread()
 #ifdef EXTERNAL_TODO
  write(todofdout, "H", 1);
 #endif
+ comm_hup(0); /* send hup to qmail-lspawn */
  regetcontrols();
  while (chdir("queue") == -1)
   {

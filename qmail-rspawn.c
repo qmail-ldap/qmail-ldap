@@ -11,6 +11,12 @@ void initialize(argc,argv)
 int argc;
 char **argv;
 {
+#if 0
+ extern int flagreinit;
+
+ if (flagreinit)
+   return;
+#endif
  tcpto_clean();
 }
 

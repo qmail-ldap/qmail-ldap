@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/11/26 15:13:18 $ ($Revision: 1.151 $)
+RELEASE: $Date: 2003/11/26 21:46:42 $ ($Revision: 1.152 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,13 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Sending a SIGHUP reloads now also the qmail-lspawn config. Sending a
+ SIGHUP directly to qmail-lspawn is no longer supported. qmail-send sends
+ upon receipt of a SIGHUP a empty message with delivery number 0xBEEF (48879)
+ to the qmail-lspawn process. This may cause trouble if you have a concurrency
+ bigger than this. The code should work even with higher values but I'm not
+ able to test this.
 
  qmail-reply should clear the database if the reply text changes. So that
  you get a new message after the change.

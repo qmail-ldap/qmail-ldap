@@ -87,14 +87,6 @@ ctrlfunc ctrls[] = {
   0
 };
 
-/* volatile */ extern int flagreinit;
-
-/* this is a simple wrapper for the signal handler */
-void huphandler()
-{
-  flagreinit = 1;
-}
-
 /* here it is not possible to log something */
 void initialize(argc,argv)
 int argc;
@@ -108,12 +100,6 @@ char **argv;
   if (read_controls(ctrls) == -1)
     _exit(QLX_USAGE);
 
-  if (flagreinit == 0) {
-    /* read the control files */
-    sig_hangupcatch(huphandler);
-    sig_hangupunblock();
-  }
-  flagreinit = 0;
 }
 
 int truncreport = 3000;

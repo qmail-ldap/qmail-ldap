@@ -94,6 +94,16 @@ void docmd()
  int pi[2];
  struct stat st;
 
+ /* SIGHUP HANDLING */
+ if (delnum == 0xBEEF)
+   if (*messid.s == '\0' && *sender.s == '\0' && *recip.s == '\0') {
+#if 0
+     err("HHUP received\n");
+#endif
+     flagreinit = 1;
+     return;
+   }
+ 
  if (flagabort) { err("Zqmail-spawn out of memory. (#4.3.0)\n"); return; }
  if (delnum < 0) { err("ZInternal error: delnum negative. (#4.3.5)\n"); return; }
  if (delnum >= auto_spawn) { err("ZInternal error: delnum too big. (#4.3.5)\n"); return; }
@@ -238,8 +248,10 @@ char **argv;
 
    if (r != -1)
     {
-     if (flagreinit)
+     if (flagreinit) {
        initialize(argc,argv);
+       flagreinit = 0;
+     }
      if (flagreading)
        if (FD_ISSET(0,&rfds))
 	 getcmd();

@@ -111,4 +111,5 @@ struct constmap *cm;
   alloc_free(cm->inputlen);
   alloc_free(cm->input);
   alloc_free(cm->first);
+  cm->num = 0;
 }

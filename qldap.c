@@ -40,12 +40,12 @@ stralloc	basedn = {0};
 stralloc	objectclass = {0};
 stralloc	ldap_login = {0};
 stralloc	ldap_password = {0};
+stralloc	default_messagestore = {0};
+stralloc	dotmode = {0};
 int		ldap_timeout = QLDAP_TIMEOUT;	/* default timeout is 30 secs */
 int		rebind = 0;			/* default off */
 int		default_uid = 0;
 int		default_gid = 0;
-stralloc	default_messagestore = {0};
-stralloc	dotmode = {0};
 unsigned long	quotasize = 0;
 unsigned long	quotacount = 0;
 
@@ -70,20 +70,14 @@ static int check_next_state(qldap *, int);
 int
 qldap_controls(void)
 {
-	/* read following files
-	     ldapserver
-	     ldapbasedn
-	     ldapobjectclass
-	     ldaplogin
-	     ldappassword
-	     ldapuid
-	     ldapgid
-	     ldapmessagestore
-	     ldaptimeout
-	     ldaprebind
-	     ldapdefaultdotmode ???
-	     ldapdefaultquota
-	 */
+	/* set defaults, so that a reread works */
+	ldap_timeout = QLDAP_TIMEOUT;	/* default timeout is 30 secs */
+	rebind = 0;			/* default off */
+	default_uid = 0;
+	default_gid = 0;
+	quotasize = 0;
+	quotacount = 0;
+
 	if (control_readfile(&ldap_server, "control/ldapserver", 0) != 1)
 		return -1; /* ... the errno should be set by control_* */
 	byte_repl(ldap_server.s, ldap_server.len, '\0', ' ');
@@ -95,7 +89,7 @@ qldap_controls(void)
 	if (!stralloc_0(&basedn)) return -1;
 	log(64, "init_ldap: control/ldapbasedn: %s\n", basedn.s);
 
-	if (control_readline(&objectclass, "control/ldapobjectclass") == -1)
+	if (control_rldef(&objectclass, "control/ldapobjectclass", 0, "") == -1)
 		return -1;
 	log(64, "init_ldap: control/ldapobjectclass: %S\n", &objectclass);
 

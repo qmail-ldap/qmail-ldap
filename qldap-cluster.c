@@ -7,7 +7,7 @@
 
 #include "qldap-cluster.h"
 
-static int		clusteron = 0;	/* default is off */
+static int		clusteron;
 static stralloc		me = {0};
 static stralloc		mh = {0};	/* buffer for constmap */
 static struct constmap	mailhosts_map;
@@ -16,6 +16,8 @@ static struct constmap	mailhosts_map;
 int
 cluster_init(void)
 {
+	clusteron = 0;	/* default is off */
+	
 	if (control_readline(&me, "control/me") != 1)
 		return -1;
 	if (control_readint(&clusteron, "control/ldapcluster") == -1)
@@ -30,6 +32,7 @@ cluster_init(void)
 	log(64, "init_ldap: control/ldapclusterhosts: read\n");
 	if (!stralloc_cat(&mh, &me) || !stralloc_0(&mh))
 		return -1;
+	if (mailhosts_map.num != 0) constmap_free(&mailhosts_map);
 	if (!constmap_init(&mailhosts_map, mh.s, mh.len,0))
 		return -1;
 	return 0;
