@@ -177,32 +177,36 @@ int len;
       break;
       
    /* report LDAP errors */
-   case 198:
+   case 198: /* XXX */
          substdio_puts(ss, "DInternal qmail-ldap-lspawn bug. (LDAP-ERR #198)\n");
       REPORT_RETURN;
 
-   case 199:
+   case 199: /* XXX */
          substdio_puts(ss, "ZMissing ~control/ldapserver. (LDAP-ERR #199)\n");
       REPORT_RETURN;
 
-   case 200:
+   case 200: /* XXX */
          substdio_puts(ss, "DReceipient email address is not a valid email address. (LDAP-ERR #200)\n");
       REPORT_RETURN;
 
    case 201:
-         substdio_puts(ss, "ZUnable to initialize LDAP connection (bad server address or server down?) (LDAP-ERR #201).\n");
+         substdio_puts(ss, "DInternal error initializing LDAP structure (LDAP-ERR #201).\n");
       REPORT_RETURN;
       
-   case 202:
+   case 202: /* XXX */
          substdio_puts(ss, "DInternal error in ldap_set_option. (LDAP-ERR #202)\n");
       REPORT_RETURN;
 
    case 203:
-         substdio_puts(ss, "ZUnable to login into LDAP server (bad username/password?). (LDAP-ERR #203)\n");
+         substdio_puts(ss, "ZUnable to login into LDAP server. (bad username/password?). (LDAP-ERR #203)\n");
       REPORT_RETURN;
 
-   case 204:
-         substdio_puts(ss, "ZInternal error in ldap_search_ext_s. (LDAP-ERR #204)\n");
+   case 204: /* XXX */
+         substdio_puts(ss, "DInternal error in ldap_search_ext_s. (LDAP-ERR #204)\n");
+      REPORT_RETURN;
+
+   case 205:
+         substdio_puts(ss, "ZUnable to contact LDAP server (bad server address or server down?). (LDAP-ERR #205)");
       REPORT_RETURN;
 
    case 210:
@@ -221,23 +225,23 @@ int len;
          substdio_puts(ss, "DLDAP attribute mailMessageStore contains illegal characters. (LDAP-ERR #213)\n");
       REPORT_RETURN;
 
-   case 214:
+   case 214: /* XXX */
          substdio_puts(ss, "ZLDAP attribute mailMessageStore in ~control/ldapmessagestore contains illegal characters. (LDAP-ERR #214)\n");
       REPORT_RETURN;
 
-   case 215:
+   case 215: /* XXX */
          substdio_puts(ss, "DLDAP attribute mailMessageStore is not given but mandatory. (LDAP-ERR #215)\n");
       REPORT_RETURN;
 
-   case 220:
+   case 220: /* XXX */
          substdio_puts(ss, "DLDAP attribute mailForwardingAddress contains illegal characters. (LDAP-ERR #220)\n");
       REPORT_RETURN;
 
-   case 221:
+   case 221: /* XXX */
          substdio_puts(ss, "DLDAP attribute deliveryProgramPath contains illegal characters. (LDAP-ERR #221)\n");
       REPORT_RETURN;
 
-   case 222:
+   case 222: /* XXX */
          substdio_puts(ss, "ZError while reading ~control files. (LDAP-ERR #222)\n");
       REPORT_RETURN;
 
@@ -245,7 +249,7 @@ int len;
          substdio_puts(ss, "DMailaddress is administrativley disabled. (LDAP-ERR #220)\n");
       REPORT_RETURN;
 
-   case 230:
+   case 230: /* XXX */
          substdio_puts(ss, "ZConfiguration file ~control/ldapusername is missing/empty and LDAP qmailUser is not given. (LDAP-ERR #230)\n");
       REPORT_RETURN;
 
@@ -253,31 +257,31 @@ int len;
          substdio_puts(ss, "ZConfiguration file ~control/ldapusername contains illegal characters. (LDAP-ERR #231)\n");
       REPORT_RETURN;
 
-   case 232:
+   case 232: /* XXX */
          substdio_puts(ss, "ZConfiguration file ~control/ldapuid is missing/empty and LDAP qmailUID is not given. (LDAP-ERR #232)\n");
       REPORT_RETURN;
 
-   case 233:
+   case 233: /* XXX */
          substdio_puts(ss, "ZConfiguration file ~control/ldapuid is too high/low or not numeric. (LDAP-ERR #233)\n");
       REPORT_RETURN;
 
-   case 234:
+   case 234: /* XXX */
          substdio_puts(ss, "ZConfiguration file ~control/ldapgid is missing/empty and LDAP qmailGID is not given. (LDAP-ERR #234)\n");
       REPORT_RETURN;
 
-   case 235:
+   case 235: /* XXX */
          substdio_puts(ss, "ZConfiguration file ~control/ldapgid is too high/low or not numeric. (LDAP-ERR #235)\n");
       REPORT_RETURN;
 
-   case 236:
+   case 236: /* XXX */
          substdio_puts(ss, "ZConfiguration file ~control/ldapmessagestore does not begin with an / or is emtpy. (LDAP-ERR #236)\n");
       REPORT_RETURN;
 
-   case 237:
+   case 237: /* XXX */
          substdio_puts(ss, "ZConfiguration file ~control/ldapmessagestore does not end with an / or is empty. (LDAP-ERR #237)\n");
       REPORT_RETURN;
       
-   case 238:
+   case 238: /* XXX */
          substdio_puts(ss, "ZAACK: qmail-qmqpc (as mail forwarder) crashed (LDAP-ERR #238)\n");
       REPORT_RETURN;
 
@@ -392,7 +396,21 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    }
    alloc_free(filter.s); filter.s = 0;
    if ( ret != 0 ) {
-      return 1;
+      switch(qldap_errno) {
+        case LDAP_INIT:
+          return 11;
+          break;
+        case LDAP_BIND:
+          return 13;
+          break;
+        case LDAP_BIND_UNREACH:
+          return 15;
+          break;
+        default:
+          return 1;
+          break;
+      }
+      return 1; /* just in case... */
    }
 
    /* go through the attributes and set the proper args for qmail-local  *
@@ -431,7 +449,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
 
    /* get the GID for delivery on the local system */
    scan_ulong(info.gid, &tid);
-   if (GID_MIN > tid || tid > GID_MAX ) return 21;
+   if (GID_MIN > tid || tid > GID_MAX ) return 22;
    if (!stralloc_cats(&nughde, info.gid)) _exit(QLX_NOMEM);
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
    alloc_free(info.gid);
@@ -754,7 +772,7 @@ char *s; char *r; int at;
          }
          /* end -- alias-user handling */
       break;
-        
+
       default:
          debug(2, "warning: ldap lookup failed with %i\n", rv);
          _exit(190 + rv);

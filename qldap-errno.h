@@ -10,6 +10,7 @@ extern int qldap_errno;
 /* first the LDAP errnos */
 #define LDAP_INIT		2				/* error while initalizing ldap connection */
 #define LDAP_BIND		3				/* error while binding to ldap server */
+#define LDAP_BIND_UNREACH	31				/* ldap server down or unreachable */
 #define LDAP_SEARCH		4				/* error on ldap search */
 #define LDAP_NOSUCH		5				/* no such ldap db entry */
 #define LDAP_REBIND		6				/* error while rebinding to ldap server */

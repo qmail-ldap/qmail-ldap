@@ -222,9 +222,23 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	/* connect to the LDAP server */
 	if ( (rc = ldap_simple_bind_s(ld,qldap_user.s,qldap_password.s)) 
 			!= LDAP_SUCCESS ) {
-		debug(128, ", bind NOT succesful\n");
-		qldap_errno = LDAP_BIND;
-		return -1;
+		debug(128, ", bind NOT succesful (%s)\n", ldap_err2string(rc) );
+
+		/* probably more detailed information should be returned, eg.:
+		   LDAP_STRONG_AUTH_NOT_SUPPORTED,
+		   LDAP_STRONG_AUTH_REQUIRED,
+		   *LDAP_INAPPROPRIATE_AUTH*,
+		   *LDAP_INVALID_CREDENTIALS*,
+		   LDAP_AUTH_UNKNOWN
+		*/
+		if (rc == LDAP_SERVER_DOWN) {
+			qldap_errno = LDAP_BIND_UNREACH;
+			return -1;
+		}
+		else {
+			qldap_errno = LDAP_BIND;
+			return -1;
+		}
 	}
 	debug(128, ", bind succesful\n");
 
@@ -233,6 +247,17 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 							 search->filter, attrs, 0, &res )) != LDAP_SUCCESS ) {
 		debug(64, "ldap_lookup: search for %s failed (%s)\n", 
 				search->filter, ldap_err2string(rc) );
+
+		/* probably more detailed information should be returned, eg.:
+		   LDAP_TIMELIMIT_EXCEEDED,
+		   LDAP_SIZELIMIT_EXCEEDED,
+		   LDAP_PARTIAL_RESULTS,
+		   LDAP_INSUFFICIENT_ACCESS,
+		   LDAP_BUSY,
+		   LDAP_UNAVAILABLE,
+		   LDAP_UNWILLING_TO_PERFORM,
+		   LDAP_TIMEOUT
+		*/
 		qldap_errno = LDAP_SEARCH;
 		return -1;
 	}
