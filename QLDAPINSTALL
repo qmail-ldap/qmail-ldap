@@ -107,7 +107,7 @@ INSTALL:
      into the release, you need the ~control/dirmaker file to turn the 
      patch on, see CONFIG FILES)
 
-   - QLDAPBIND=-DQLDAP_BIND (when on password are checked trought the
+   - QLDAPBIND=-DQLDAP_BIND (when password are checked trought the
      ldap-server (not checkpassword))
    - PWOPTS=-DLOOK_UP_PASSWD (turns local password lookups on)
    - SHADOWLIBS=-lshadow, SHADOWOPTS=-DPW_SHADOW are needed on some Systems
@@ -335,27 +335,35 @@ mailQuota
 
 mailForwardingAddress
 
- Addresses to forward all incoming messages, comma separated
+ Addresses to forward all incoming messages, multi field
  Example: jdoe@new.place
  Note: 
 
 deliveryProgramPath
 
- Program to execute with all incoming messages, comma separated
+ Program to execute with all incoming messages, multi field
  Example: /usr/bin/program -c -s
  Note: the same as |/usr/bin/program -c -s in .qmail
 
 deliveryMode
 
- Comma separated list of these keywords
- - normal or unset: the normal behavior
-                    (Maildir/box delivery, forward, program-executing)
- - forwardonly: only forwards are allowed
+ multi field entries of these keywords
+ - normal: the normal .qmail behavior
+           (Maildir/box delivery only if no forwards or programs are executed)
+ - forwardonly: is equal to set the execute bit of .qmail
+                so only forwards are allowed
+ - nombox: prevents maildir/mbox delivery
+ - localdelivery: forces maildir/mbox delivery (into $HOME/$ALIASEMPTY)
  - reply: like normal but send an auto_reply mail with text from mailReplyText 
  - echo: something very strange, just echo the message (nothing else)
- - nombox: like normal but no Maildir/box delivery
- Default: everything else is treated as normal (normally not set)
-
+ Default: no QMAILMODE is eq to QMAILMODE=normal other stuff is ignored (with warning)
+ Note: echo exits immediatly after the "echoing" (only useful for testing purposes)
+       echo and reply are executed directly and do not interfere with the other settings
+       "normal", "nombox", "localdelivery" and "forwardonly" are set one after another 
+       (e.g. "nombox,localdelivery,normal" does only a "normal" delivery).
+       There are some strange behavior when localdelivery and nombox/forwardonla are set,
+       so handle them with care.
+       
 mailReplyText
 
  A reply text for every incoming message (multiline)

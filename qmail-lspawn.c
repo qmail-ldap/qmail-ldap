@@ -32,7 +32,7 @@
 #include <sys/types.h>
 
 #ifndef NULL
- #define NULL 0
+#define NULL 0
 #endif
 
 #endif /* end -- Includes needed to make LDAP work */
@@ -65,6 +65,8 @@ stralloc    qldap_username = {0};
 stralloc    qldap_uid = {0};
 stralloc    qldap_gid = {0};
 
+stralloc    foo = {0};
+
 int         qldap_localdelivery = 1;
 /* init done */
 
@@ -91,35 +93,33 @@ char r;
 /* read the various LDAP control files */
 void get_qldap_controls()
 {
-   if (chdir(auto_qmail) == -1) _exit(QLX_USAGE);
-
-   if (control_rldef(&qldap_server,"control/ldapserver",0,(char *) 0) != 1) _exit(199);
+   if (control_rldef(&qldap_server,"../../control/ldapserver",0,(char *) 0) != 1) _exit(199);
    if (!stralloc_0(&qldap_server)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_basedn,"control/ldapbasedn",0,"") == -1) _exit(222);
+   if (control_rldef(&qldap_basedn,"../../control/ldapbasedn",0,"") == -1) _exit(222);
    if (!stralloc_0(&qldap_basedn)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_user,"control/ldaplogin",0,"") == -1) _exit(222);
+   if (control_rldef(&qldap_user,"../../control/ldaplogin",0,"") == -1) _exit(222);
    if (!stralloc_0(&qldap_user)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_password,"control/ldappassword",0,"") == -1) _exit(222);
+   if (control_rldef(&qldap_password,"../../control/ldappassword",0,"") == -1) _exit(222);
    if (!stralloc_0(&qldap_password)) _exit(QLX_NOMEM);
 
-   if (control_readint(&qldap_localdelivery,"control/ldaplocaldelivery") == -1) _exit(222);
+   if (control_readint(&qldap_localdelivery,"../../control/ldaplocaldelivery") == -1) _exit(222);
 
-   if (control_rldef(&qldap_defaultquota,"control/ldapdefaultquota",0,"0") == -1) _exit(222);
+   if (control_rldef(&qldap_defaultquota,"../../control/ldapdefaultquota",0,"0") == -1) _exit(222);
    if (!stralloc_0(&qldap_defaultquota)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_defdotmode,"control/ldapdefaultdotmode",0,"ldaponly") == -1) _exit(222);
+   if (control_rldef(&qldap_defdotmode,"../../control/ldapdefaultdotmode",0,"ldaponly") == -1) _exit(222);
    if (!stralloc_0(&qldap_defdotmode)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"/home/") == -1) _exit(222);
+   if (control_rldef(&qldap_messagestore,"../../control/ldapmessagestore",0,"/home/") == -1) _exit(222);
 
-   if (control_rldef(&qldap_username,"control/ldapusername",0,"") != 1) _exit(222);
-   if (control_rldef(&qldap_uid,"control/ldapuid",0,"") != 1) _exit(222);
-   if (control_rldef(&qldap_gid,"control/ldapgid",0,"") != 1) _exit(222);
+   if (control_rldef(&qldap_username,"../../control/ldapusername",0,"") != 1) _exit(222);
+   if (control_rldef(&qldap_uid,"../../control/ldapuid",0,"") != 1) _exit(222);
+   if (control_rldef(&qldap_gid,"../../control/ldapgid",0,"") != 1) _exit(222);
 
-   if (control_readfile(&qldap_quotawarning,"control/quotawarning",0) == 1 ) {
+   if (control_readfile(&qldap_quotawarning,"../../control/quotawarning",0) == 1 ) {
       replace(qldap_quotawarning.s, qldap_quotawarning.len, '\0', '\n');
       if (!stralloc_0(&qldap_quotawarning)) _exit(QLX_NOMEM);
       if ( !env_put2("QMAILQUOTAWARNING", qldap_quotawarning.s )) _exit(QLX_NOMEM);
@@ -128,7 +128,7 @@ void get_qldap_controls()
    }
 
 #ifdef AUTOHOMEDIRMAKE
-   if (control_readfile(&qldap_dirmaker,"control/dirmaker",0) == 1 ) {
+   if (control_readfile(&qldap_dirmaker,"../../control/dirmaker",0) == 1 ) {
       if (!stralloc_0(&qldap_dirmaker)) _exit(QLX_NOMEM);
       if ( !env_put2("QLDAPAUTOHOMEDIRMAKE", qldap_dirmaker.s )) _exit(QLX_NOMEM);
    } else {
@@ -252,103 +252,103 @@ int len;
       
 #ifdef QLDAP /* report LDAP errors */
       case 198:
-         substdio_puts(ss, "DInternal qmail-ldap-lspawn bug.\n");
+         substdio_puts(ss, "DInternal qmail-ldap-lspawn bug. (LDAP-ERR #198)\n");
       return;
 
 
       case 199:
-         substdio_puts(ss, "DMissing ~control/ldapserver.\n");
+         substdio_puts(ss, "DMissing ~control/ldapserver. (LDAP-ERR #199)\n");
       return;
 
 
       case 200:
-         substdio_puts(ss, "DReceipient email address contains illegal characters.\n");
+         substdio_puts(ss, "DReceipient email address contains illegal characters. (LDAP-ERR #200)\n");
       return;
 
       case 201:
-         substdio_puts(ss, "ZUnable to initialize LDAP connection (bad server address or server down?).\n");
+         substdio_puts(ss, "ZUnable to initialize LDAP connection (bad server address or server down?) (LDAP-ERR #201).\n");
       return;
       
       case 202:
-         substdio_puts(ss, "DInternal error in ldap_set_option.\n");
+         substdio_puts(ss, "DInternal error in ldap_set_option. (LDAP-ERR #202)\n");
       return;
 
       case 203:
-         substdio_puts(ss, "ZUnable to login into LDAP server (bad username/password?).\n");
+         substdio_puts(ss, "ZUnable to login into LDAP server (bad username/password?). (LDAP-ERR #203)\n");
       return;
 
       case 204:
-         substdio_puts(ss, "DInternal error in ldap_search_ext_s.\n");
+         substdio_puts(ss, "DInternal error in ldap_search_ext_s. (LDAP-ERR #204)\n");
       return;
 
 
       case 210:
-         substdio_puts(ss, "DLDAP attribute qmailUser contains illegal characters.\n");
+         substdio_puts(ss, "DLDAP attribute qmailUser contains illegal characters. (LDAP-ERR #210)\n");
       return;
 
       case 211:
-         substdio_puts(ss, "DLDAP attribute qmailUID is too high/low or not numeric.\n");
+         substdio_puts(ss, "DLDAP attribute qmailUID is too high/low or not numeric. (LDAP-ERR #211)\n");
       return;
 
       case 212:
-         substdio_puts(ss, "DLDAP attribute qmailGID is too high/low or not numeric.\n");
+         substdio_puts(ss, "DLDAP attribute qmailGID is too high/low or not numeric. (LDAP-ERR #212)\n");
       return;
 
       case 213:
-         substdio_puts(ss, "DLDAP attribute mailMessageStore contains illegal characters.\n");
+         substdio_puts(ss, "DLDAP attribute mailMessageStore contains illegal characters. (LDAP-ERR #213)\n");
       return;
 
       case 214:
-         substdio_puts(ss, "DLDAP attribute mailMessageStore with ~control/ldapmessagestore contains illegal characters.\n");
+         substdio_puts(ss, "DLDAP attribute mailMessageStore with ~control/ldapmessagestore contains illegal characters. (LDAP-ERR #214)\n");
       return;
 
       case 215:
-         substdio_puts(ss, "DLDAP attribute mailMessageStore is not given but mandatory.\n");
+         substdio_puts(ss, "DLDAP attribute mailMessageStore is not given but mandatory. (LDAP-ERR #215)\n");
       return;
 
       case 230:
-         substdio_puts(ss, "ZConfiguration file ~control/ldapusername is missing/empty and LDAP qmailUser is not given.\n");
+         substdio_puts(ss, "ZConfiguration file ~control/ldapusername is missing/empty and LDAP qmailUser is not given. (LDAP-ERR #230)\n");
       return;
 
       case 231:
-         substdio_puts(ss, "DConfiguration file ~control/ldapusername contains illegal characters.\n");
+         substdio_puts(ss, "DConfiguration file ~control/ldapusername contains illegal characters. (LDAP-ERR #231)\n");
       return;
 
       case 232:
-         substdio_puts(ss, "ZConfiguration file ~control/ldapuid is missing/empty and LDAP qmailUID is not given.\n");
+         substdio_puts(ss, "ZConfiguration file ~control/ldapuid is missing/empty and LDAP qmailUID is not given. (LDAP-ERR #232)\n");
       return;
 
       case 233:
-         substdio_puts(ss, "DConfiguration file ~control/ldapuid is too high/low or not numeric.\n");
+         substdio_puts(ss, "DConfiguration file ~control/ldapuid is too high/low or not numeric. (LDAP-ERR #233)\n");
       return;
 
       case 234:
-         substdio_puts(ss, "ZConfiguration file ~control/ldapgid is missing/empty and LDAP qmailGID is not given.\n");
+         substdio_puts(ss, "ZConfiguration file ~control/ldapgid is missing/empty and LDAP qmailGID is not given. (LDAP-ERR #234)\n");
       return;
 
       case 235:
-         substdio_puts(ss, "DConfiguration file ~control/ldapgid is too high/low or not numeric.\n");
+         substdio_puts(ss, "DConfiguration file ~control/ldapgid is too high/low or not numeric. (LDAP-ERR #235)\n");
       return;
 
       case 236:
-         substdio_puts(ss, "ZConfiguration file ~control/ldapmessagestore does not begin with an / or is emtpy.\n");
+         substdio_puts(ss, "ZConfiguration file ~control/ldapmessagestore does not begin with an / or is emtpy. (LDAP-ERR #236)\n");
       return;
 
       case 237:
-         substdio_puts(ss, "ZConfiguration file ~control/ldapmessagestore does not end with an / or is empty.\n");
+         substdio_puts(ss, "ZConfiguration file ~control/ldapmessagestore does not end with an / or is empty. (LDAP-ERR #237)\n");
       return;
 
 
       case 220:
-         substdio_puts(ss, "DLDAP attribute mailForwardingAddress contains illegal characters.\n");
+         substdio_puts(ss, "DLDAP attribute mailForwardingAddress contains illegal characters. (LDAP-ERR #220)\n");
       return;
 
       case 221:
-         substdio_puts(ss, "DLDAP attribute deliveryProgramPath contains illegal characters.\n");
+         substdio_puts(ss, "DLDAP attribute deliveryProgramPath contains illegal characters. (LDAP-ERR #221)\n");
       return;
 
       case 222:
-         substdio_puts(ss, "DError while reading ~control files.\n");
+         substdio_puts(ss, "DError while reading ~control files. (LDAP-ERR #222)\n");
       return;
 
 #endif /* end -- report LDAP errors */
@@ -394,7 +394,7 @@ int qldap_get( stralloc *mail )
                                 "userPassword", NULL };
 
    int            version,
-                  rc, i,
+                  rc, i, reply = 0,
                   num_entries = 0;
 
    stralloc       filter = {0};
@@ -442,8 +442,10 @@ int qldap_get( stralloc *mail )
 #ifdef QLDAPDEBUG 
       printf("ldap_search_ext_s: %s\n", ldap_err2string(rc));
 #endif
+      if (!stralloc_ready(&filter, 0)) _exit(QLX_NOMEM);
       return 14;
    }
+   if (!stralloc_ready(&filter, 0)) _exit(QLX_NOMEM);
 
    /* count the results, we must have exactly one */
    if ( (num_entries = ldap_count_entries(ld,res)) != 1) return 1;
@@ -540,6 +542,7 @@ int qldap_get( stralloc *mail )
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
    if (!stralloc_cats(&nughde, "")) _exit(QLX_NOMEM);
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+//   if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
 
 #ifdef QLDAPDEBUG 
    printf("nughde.len: %i\n", nughde.len);
@@ -556,16 +559,16 @@ int qldap_get( stralloc *mail )
    /* get the forwarding addresses and build a list *
     * equals to &jdoe@heaven.af.mil in .qmail       */
    if ( (vals = ldap_get_values(ld,msg,"mailForwardingAddress")) != NULL ) {
-      stralloc forwarders = {0};
+      if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
       for ( i = 0; vals[i] != NULL; i++ ) {
          /* append */
          if (!chck_mails(vals[i]) ) return 30;
-         if (!stralloc_cats(&forwarders, vals[i])) _exit(QLX_NOMEM);
+         if (!stralloc_cats(&foo, vals[i])) _exit(QLX_NOMEM);
          if (vals[i+1] == NULL ) break;
-         if (!stralloc_cats(&forwarders, ",") ) _exit(QLX_NOMEM);
+         if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
-      if (!stralloc_0(&forwarders) ) _exit(QLX_NOMEM);
-      if ( !env_put2("QMAILFORWARDS", forwarders.s) ) _exit(QLX_NOMEM);
+      if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
+      if ( !env_put2("QMAILFORWARDS", foo.s) ) _exit(QLX_NOMEM);
    } else {
       /* default */
       if ( !env_unset("QMAILFORWARDS") ) _exit(QLX_NOMEM);
@@ -575,43 +578,33 @@ int qldap_get( stralloc *mail )
    /* get the path of the local delivery program *
     * equals to |/usr/bin/program in .qmail      */
    if ( (vals = ldap_get_values(ld,msg,"deliveryProgramPath")) != NULL ) {
-      stralloc progpath = {0};
-      stralloc_copys(&progpath, "");
+      if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
       for ( i = 0; vals[i] != NULL; i++ ) {
          /* append */
          if (!chck_paths(vals[i]) ) return 31;
-         if (!stralloc_cats(&progpath, vals[i])) _exit(QLX_NOMEM);
+         if (!stralloc_cats(&foo, vals[i])) _exit(QLX_NOMEM);
          if (vals[i+1] == NULL ) break;
-         if (!stralloc_cats(&progpath, ",") ) _exit(QLX_NOMEM);
+         if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
-      if (!stralloc_0(&progpath) ) _exit(QLX_NOMEM);
-      if ( !env_put2("QMAILDELIVERYPROGRAM", progpath.s) ) _exit(QLX_NOMEM);
+      if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
+      if ( !env_put2("QMAILDELIVERYPROGRAM", foo.s) ) _exit(QLX_NOMEM);
    } else {
       /* default */
       if ( !env_unset("QMAILDELIVERYPROGRAM") ) _exit(QLX_NOMEM);
    }
    ldap_value_free(vals);
 
-   /* get the deliverymode of the mailbox: reply, echo, forwardonly */
+   /* get the deliverymode of the mailbox:                    *
+    * reply, echo, forwardonly, normal, nombox, localdelivery */
    if ( (vals = ldap_get_values(ld,msg,"deliveryMode")) != NULL ) {
-      case_lowers(vals[0]);
-      if ( !str_diff("reply", vals[0]) ) {
-         if ( !env_put2("QMAILMODE", "reply") ) _exit(QLX_NOMEM);
-            ldap_value_free(vals);
-            if ( (vals = ldap_get_values(ld,msg,"mailReplyText")) != NULL ) 
-               if ( !env_put2("QMAILREPLYTEXT", vals[0]) ) _exit(QLX_NOMEM);
-      } else if ( !str_diff("echo", vals[0]) ) {
-         if ( !env_put2("QMAILMODE", "echo") ) _exit(QLX_NOMEM);
-         if ( !env_unset("QMAILREPLYTEXT") ) _exit(QLX_NOMEM);
-      } else if ( !str_diff("forwardonly", vals[0]) ) {
-         if ( !env_put2("QMAILMODE", "forwardonly") ) _exit(QLX_NOMEM);
-         if ( !env_unset("QMAILREPLYTEXT") ) _exit(QLX_NOMEM);
-      } else if ( !str_diff("nombox", vals[0]) ) {
-         if ( !env_put2("QMAILMODE", "nombox") ) _exit(QLX_NOMEM);
-         if ( !env_unset("QMAILREPLYTEXT") ) _exit(QLX_NOMEM);
-      } else {
-         if ( !env_unset("QMAILMODE") ) _exit(QLX_NOMEM);
-         if ( !env_unset("QMAILREPLYTEXT") ) _exit(QLX_NOMEM);
+      if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
+      for ( i = 0; vals[i] != NULL; i++ ) {
+         /* append */
+         case_lowers(vals[i]);
+         if ( !str_diff("reply", vals[i]) ) reply = 1;
+         if (!stralloc_cats(&foo, vals[i])) _exit(QLX_NOMEM);
+         if (vals[i+1] == NULL ) break;
+         if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
    } else {
       /* default */
@@ -619,6 +612,13 @@ int qldap_get( stralloc *mail )
       if ( !env_unset("QMAILREPLYTEXT") ) _exit(QLX_NOMEM);
    }
    ldap_value_free(vals);
+   
+   if ( reply ) {
+      if ( (vals = ldap_get_values(ld,msg,"mailReplyText")) != NULL ) {
+          if ( !env_put2("QMAILREPLYTEXT", vals[0]) ) _exit(QLX_NOMEM);
+      }
+      ldap_value_free(vals);
+   }
 
    /* get the mode of the .qmail interpretion: ldaponly, dotonly, both, none */
    if ( (vals = ldap_get_values(ld,msg,"qmailDotMode")) != NULL ) {
