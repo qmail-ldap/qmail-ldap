@@ -214,6 +214,10 @@ int len;
          substdio_puts(ss, "ZUnable to contact LDAP server (bad server address or server down?). (LDAP-ERR #205)");
       REPORT_RETURN;
 
+   case 206:
+         substdio_puts(ss, "ZTimeout while performing search on LDAP server (server overloaded?). (LDAP-ERR #206)");
+      REPORT_RETURN;
+
    case 210:
          substdio_puts(ss, "DLDAP attribute qmailUser contains illegal characters. (LDAP-ERR #210)\n");
       REPORT_RETURN;
@@ -430,6 +434,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       ret = ldap_lookup(&search, attrs, &info, extra);
    }
    alloc_free(filter.s); filter.s = 0;
+
    if ( ret != 0 ) {
       switch(qldap_errno) {
         case LDAP_INIT:
@@ -440,6 +445,9 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
           break;
         case LDAP_BIND_UNREACH:
           return 15;
+          break;
+        case LDAP_SEARCH_TIMEOUT:
+          return 16;
           break;
         default:
           return 1;
