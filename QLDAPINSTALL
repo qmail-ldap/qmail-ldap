@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/08/03 20:27:14 $)
+RELEASE: current ($Date: 2004/12/01 14:19:49 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -28,8 +28,7 @@ IMPORTANT NEWS:
  - From release 20030901 on we broke certain backwards compatibility with
    release 20030801 and prior releases for clarity and cleanup reasons!!
 
- - To enable SMTP STARTTLS a the path to the cert file needs to be set in
-   ~control/smtpcert or set via the env var SSLCERT.
+ - New qmailGroup attribute "bounceadmin", see QLDAPGROUP for more info
 
  - and as always a lot of smaller patches see QLDAPNEWS
 
