@@ -215,10 +215,11 @@ char *dir;
    stralloc file = {0};
    unsigned long int temp = 0;
    
-   if ( (dirp = opendir(dir)) == 0 && errno != error_noent )
-     strerr_die5x(111,"Unable to quota: can not open ",dir,": ",error_str(errno),". (LDAP-ERR #2.4.2)");
-   else
-     return 0;
+   if ( (dirp = opendir(dir)) == 0 )
+     if ( errno != error_noent )
+       strerr_die5x(111,"Unable to quota: can not open ",dir,": ",error_str(errno),". (LDAP-ERR #2.4.2)");
+     else
+       return 0;
    while ((dp = readdir(dirp)) != 0) {
      if (!stralloc_copys(&file,dir)) temp_nomem();
      if (!stralloc_cats(&file,dp->d_name)) temp_nomem();
@@ -607,8 +608,8 @@ int len;
 unsigned int replace(s, len, f, r)
 char *s;
 register unsigned int len;
-char f;
-char r;
+register char f;
+register char r;
 {
    register char *t;
    register int count = 0;
@@ -695,27 +696,41 @@ char **argv;
 
  if (homedir[0] != '/') usage();
  if (chdir(homedir) == -1) {
-   if (!env_get("QLDAPAUTOMAILDIRMAKE")) {
+#ifdef AUTOHOMEDIRMAKE
+   if (! (s = env_get("QLDAPAUTOHOMEDIRMAKE")) ) {
      strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
-     } else {
+   } else {
      if (errno == error_noent) {
-       umask(077);
-       if (mkdir(homedir,0700) == -1)
-         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-       if (chdir(homedir) == -1)
-         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-       if (mkdir("tmp",0700) == -1)
-         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-       if (mkdir("new",0700) == -1)
-         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-       if (mkdir("cur",0700) == -1)
-         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-       if (chdir(homedir) == -1)
-         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
+       /* do the auto homedir creation */
+       int child;
+       char *(dirargs[4]);
+       int wstat;
+
+       switch(child = fork()) {
+       case -1:
+         temp_fork();
+       case 0:
+         dirargs[0] = s; dirargs[1] = homedir;
+         dirargs[2] = aliasempty; dirargs[3] = 0;
+         execv(*dirargs,dirargs);
+         strerr_die5x(111,"Unable to run ",s,": ",error_str(errno),". (LDAP-ERR #2.3.0)");
+       }
+
+       wait_pid(&wstat,child);
+       if (wait_crashed(wstat))
+          temp_childcrashed();
+       switch(wait_exitcode(wstat)) {
+       case 0: break;
+       default:
+         strerr_die3x(111,s,": exited non zero",". (LDAP-ERR #2.3.0)");
+       }
      } else {
-       strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
+       strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
      }
    }
+#else
+   strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
+#endif
  }
  checkhome();
 

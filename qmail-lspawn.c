@@ -56,7 +56,9 @@ stralloc    qldap_password = {0};
 stralloc    qldap_defdotmode = {0};
 stralloc    qldap_defaultquota = {0};
 stralloc    qldap_quotawarning = {0};
-stralloc    qldap_automaildirmake = {0};
+#ifdef AUTOHOMEDIRMAKE
+stralloc    qldap_dirmaker = {0};
+#endif
 
 stralloc    qldap_messagestore = {0};
 stralloc    qldap_username = {0};
@@ -97,43 +99,52 @@ void get_qldap_controls()
    }
    if (!stralloc_0(&qldap_server)) _exit(QLX_NOMEM);
    
-   if (control_rldef(&qldap_basedn,"../../control/ldapbasedn",0,"") != 1);
+   if (control_rldef(&qldap_basedn,"../../control/ldapbasedn",0,"") == -1) _exit(222);
    if (!stralloc_0(&qldap_basedn)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_user,"../../control/ldaplogin",0,"") != 1);
+   if (control_rldef(&qldap_user,"../../control/ldaplogin",0,"") == -1) _exit(222);
    if (!stralloc_0(&qldap_user)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_password,"../../control/ldappassword",0,"") != 1);
+   if (control_rldef(&qldap_password,"../../control/ldappassword",0,"") == -1) _exit(222);
    if (!stralloc_0(&qldap_password)) _exit(QLX_NOMEM);
 
-   if (control_readint(&qldap_localdelivery,"../../control/ldaplocaldelivery") != 1);
+   if (control_readint(&qldap_localdelivery,"../../control/ldaplocaldelivery") == -1) _exit(222);
 
-   if (control_rldef(&qldap_defaultquota,"../../control/ldapdefaultquota",0,"0") != 1);
+   if (control_rldef(&qldap_defaultquota,"../../control/ldapdefaultquota",0,"0") == -1) _exit(222);
    if (!stralloc_0(&qldap_defaultquota)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_defdotmode,"../../control/ldapdefaultdotmode",0,"ldaponly") != 1);
+   if (control_rldef(&qldap_defdotmode,"../../control/ldapdefaultdotmode",0,"ldaponly") == -1) _exit(222);
    if (!stralloc_0(&qldap_defdotmode)) _exit(QLX_NOMEM);
 
-   if (control_rldef(&qldap_messagestore,"../../control/ldapmessagestore",0,"/home/") != 1);
+   if (control_rldef(&qldap_messagestore,"../../control/ldapmessagestore",0,"/home/") == -1) _exit(222);
 
-   if (control_rldef(&qldap_username,"../../control/ldapusername",0,"") != 1);
-   if (control_rldef(&qldap_uid,"../../control/ldapuid",0,"") != 1);
-   if (control_rldef(&qldap_gid,"../../control/ldapgid",0,"") != 1);
-   if (control_readfile(&qldap_quotawarning,"../../control/quotawarning",0) == 1 ) {
-      replace(qldap_quotawarning.s, qldap_quotawarning.len, '\0', '\n');
-      if (!stralloc_0(&qldap_quotawarning)) _exit(QLX_NOMEM);
-      if ( !env_put2("QMAILQUOTAWARNING", qldap_quotawarning.s )) _exit(QLX_NOMEM);
+   if (control_rldef(&qldap_basedn,"../../control/ldapbasedn",0,"") == -1) _exit(222);
+   if (!stralloc_0(&qldap_basedn)) _exit(QLX_NOMEM);
+
+   if (control_rldef(&qldap_user,"../../control/ldaplogin",0,"") == -1) _exit(222);
+   if (!stralloc_0(&qldap_user)) _exit(QLX_NOMEM);
+
+   if (control_rldef(&qldap_password,"../../control/ldappassword",0,"") == -1) _exit(222);
+   if (!stralloc_0(&qldap_password)) _exit(QLX_NOMEM);
+
+   if (control_readint(&qldap_localdelivery,"../../control/ldaplocaldelivery") == -1) _exit(222);
+
+   if (control_rldef(&qldap_defaultquota,"../../control/ldapdefaultquota",0,"0") == -1) _exit(222);
+   if (!stralloc_0(&qldap_defaultquota)) _exit(QLX_NOMEM);
+
+   if (control_rldef(&qldap_defdotmode,"../../control/ldapdefaultdotmode",0,"ldaponly") == -1) _exit(222);
+   if (!stralloc_0(&qldap_defdotmode)) _exit(QLX_NOMEM);
+
+   if (control_rldef(&qldap_messagestore,"../../control/ldapmessagestore",0,"/home/") == -1) _exit(222);
+
+#ifdef AUTOHOMEDIRMAKE
+   if (control_readfile(&qldap_dirmaker,"../../control/dirmaker",0) == 1 ) {
+      if (!stralloc_0(&qldap_dirmaker)) _exit(QLX_NOMEM);
+      if ( !env_put2("QLDAPAUTOHOMEDIRMAKE", qldap_dirmaker.s )) _exit(QLX_NOMEM);
    } else {
-      if ( !env_unset("QMAILQUOTAWARNING") ) _exit(QLX_NOMEM);
+      if ( !env_unset("QLDAPAUTOHOMEDIRMAKE") ) _exit(QLX_NOMEM);
    }
-
-   if (control_readfile(&qldap_automaildirmake,"../../control/automaildirmake",0) == 1 ) {
-      if (!stralloc_0(&qldap_automaildirmake)) _exit(QLX_NOMEM);
-      if ( !env_put2("QLDAPAUTOMAILDIRMAKE", qldap_automaildirmake.s )) _exit(QLX_NOMEM);
-   } else {
-      if ( !env_unset("QLDAPAUTOMAILDIRMAKE") ) _exit(QLX_NOMEM);
-   }
-
+#endif
 /* reading of the various LDAP control files done */
    
 #ifdef QLDAPDEBUG /* print the read values from the control files */
@@ -342,6 +353,10 @@ int len;
 
       case 221:
          substdio_puts(ss, "DLDAP attribute deliveryProgramPath contains illegal characters.\n");
+      return;
+
+      case 222:
+         substdio_puts(ss, "DError while reading ~control files.\n");
       return;
 
 #endif /* end -- report LDAP errors */

@@ -3,32 +3,39 @@
 # to enable qmail-ldap uncomment the next line
 LDAPON=-DQLDAP
 
+# Perhaps you have different ldap libraries, change them here
+#LDAPLIBS=-L/usr/local/lib -lldap -llber
+# and change the location of the include files here
+#LDAPINCLUDES=-I/usr/local/include
+# for example on my Linux box I use:
+LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
+# if you need a special include-directory for ldap headers enable this
+LDAPINCLUDES=-I/opt/OpenLDAP/include
+
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
 MNW=-DMAKE_NETSCAPE_WORK 
 
 # to enable the auto-maildir-make feature uncomment the next line
-#DIRMAKE=-DAUTOMAILDIRMAKE
+#MDIRMAKE=-DAUTOMAILDIRMAKE
 
-# Perhaps you have different ldap libraries, change them here
-LDAPLIBS=-L/usr/local/lib -lldap -llber
-# and change the location of the include files here
-LDAPINCLUDES=-I/usr/local/include
-# for example on my Linux box I use:
-#LDAPLIBS=-L/opt/OpenLDAP/lib -lpthread -lldap -llber -lresolv
-# if you need a special include-directory for ldap headers enable this
-#LDAPINCLUDES=-I/opt/OpenLDAP/include
+# to enable the auto-homedir-make feature uncomment the next line
+HDIRMAKE=-DAUTOHOMEDIRMAKE
+
+# to have pop3 passwords checked by binding to the ldap-server
+# uncomment the next line
+#QLDAPBIND=-DQLDAP_BIND
 
 # comment out the next line if you don't need local passwd lookups
 PWOPTS=-DLOOK_UP_PASSWD
 
 # To use shadow passwords under Linux, uncomment the next two lines.
 #SHADOWLIBS=-lshadow
-#SHADOWOPTS=-DPW_SHADOW
+SHADOWOPTS=-DPW_SHADOW
 # To use shadow passwords under Solaris, uncomment the SHADOWOPTS line.
 
 # checkpassword compiled with DEBUG endabled does now complete LDAP debugging
-#DEBUG=-DQLDAPDEBUG
+DEBUG=-DQLDAPDEBUG
 # WARNING: you need a NONE DEBUG checkpassword to run with qmail-pop3d
 
 # STOP editing HERE !!!
@@ -335,14 +342,14 @@ str.a base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o
 	./load checkpassword check.o control.o case.a getln.a fs.a open.a \
 	stralloc.a alloc.a substdio.a error.a env.a str.a wait.a auto_qmail.o \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-        $(LDAPLIBS) -lcrypt $(SHADOWLIBS)
+	$(LDAPLIBS) -lcrypt $(SHADOWLIBS)
 
 checkpassword.o: \
 compile checkpassword.c stralloc.h env.h control.h auto_usera.h auto_uids.h \
 auto_qmail.h fmt.h check.h qlx.h compatibility.h digest_md4.h digest_md5.h \
 digest_rmd160.h digest_sha1.h
-	./compile $(LDAPON) $(SHADOWOPTS) $(PWOPTS) $(DEBUG) $(LDAPINCLUDES) \
-	checkpassword.c
+	./compile $(LDAPON) $(SHADOWOPTS) $(PWOPTS) $(HDIRMAKE) $(QLDAPBIND) \
+	$(DEBUG) $(LDAPINCLUDES) checkpassword.c
 
 chkshsgr: \
 load chkshsgr.o
@@ -1286,7 +1293,7 @@ open.h wait.h lock.h seek.h substdio.h getln.h strerr.h subfd.h \
 substdio.h sgetopt.h subgetopt.h alloc.h error.h stralloc.h \
 gen_alloc.h fmt.h str.h now.h datetime.h case.h quote.h qmail.h \
 substdio.h slurpclose.h myctime.h gfrom.h auto_patrn.h auto_qmail.h
-	./compile $(LDAPON) $(DIRMAKE) qmail-local.c
+	./compile $(LDAPON) $(MDIRMAKE) $(HDIRMAKE) qmail-local.c
 
 qmail-log.0: \
 qmail-log.5
@@ -1312,7 +1319,7 @@ compile qmail-lspawn.c fd.h wait.h prot.h substdio.h stralloc.h \
 gen_alloc.h scan.h exit.h fork.h error.h cdb.h uint32.h case.h \
 slurpclose.h auto_qmail.h auto_uids.h qlx.h check.c check.h str.h \
 getln.c getln2.c
-	./compile $(LDAPON) $(LDAPINCLUDES) qmail-lspawn.c
+	./compile $(LDAPON) $(HDIRMAKE) $(LDAPINCLUDES) qmail-lspawn.c
 
 qmail-newmrh: \
 load qmail-newmrh.o cdbmss.o getln.a open.a cdbmake.a seek.a case.a \
@@ -1382,7 +1389,7 @@ compile qmail-pop3d.c commands.h sig.h getln.h stralloc.h gen_alloc.h \
 substdio.h alloc.h open.h prioq.h datetime.h gen_alloc.h scan.h fmt.h \
 str.h exit.h maildir.h strerr.h readwrite.h timeoutread.h \
 timeoutwrite.h
-	./compile $(LDAPON) $(MNW) $(DIRMAKE) qmail-pop3d.c
+	./compile $(LDAPON) $(MNW) $(MDIRMAKE) qmail-pop3d.c
 
 qmail-popup: \
 load qmail-popup.o commands.o timeoutread.o timeoutwrite.o now.o \
