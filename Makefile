@@ -45,7 +45,7 @@ MNW=-DMAKE_NETSCAPE_WORK
 #        ERROR_LEVEL   1 : error (no panic nessary)
 #LSPAWN_LOG=-DQLSPAWN_LOG -DLOG_LEVEL=2
 
-# Just for me, make a backup befor compiling
+# Just for me, make a backup before compiling
 BACKUPPATH=/backup/qmail-backup/qmail-ldap.`date "+%Y%m%d-%H%M"`.tar
 # STOP editing HERE !!!
 
