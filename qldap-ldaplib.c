@@ -334,7 +334,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 		debug(64, "%s (from server)\n", vals[0]);
 		str_copy( info->user, vals[0] );
 	} else {
-		debug(64, "undefined but NEEDED !!!!!!!\n", vals[0]);
+		debug(64, "undefined but NEEDED !!!!!!!\n");
 		qldap_errno = LDAP_NEEDED;
 		return -1;
 	}
@@ -350,7 +350,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 			info->status = STATUS_NOPOP;
 		else info->status = STATUS_OK;
 	} else {
-		debug(64, "undefined\n", vals[0]);
+		debug(64, "undefined\n");
 		info->status = STATUS_UNDEF;
 	}
 	ldap_value_free(vals);
@@ -364,7 +364,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 		debug(64, "%s (from server)\n", vals[0]);
 		str_copy( info->host, vals[0] );
 	} else {
-		debug(64, "undefined\n", vals[0]);
+		debug(64, "undefined\n");
 		info->host = 0;
 	}
 	ldap_value_free(vals);
@@ -390,7 +390,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 				qldap_errno = LDAP_ERRNO;
 				return -1;
 			}
-			str_copy( info->host, qldap_messagestore.s );
+			str_copy( info->mms, qldap_messagestore.s );
 			if ( s ) str_copy( info->mms, "/" );
 			str_copy( info->mms, vals[0] );
 		} else {
@@ -403,7 +403,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 		}
 		debug(64, "%s\n", info->mms);
 	} else {
-		debug(64, "unspecified but NEEDED !!!!!\n", vals[0]);
+		debug(64, "unspecified but NEEDED !!!!!\n");
 		qldap_errno = LDAP_NEEDED;
 		return -1;
 	}
