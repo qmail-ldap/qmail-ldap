@@ -10,7 +10,7 @@ ME=$(head -1 $QMAIL/control/me)
 PATH=$PATH:"$QMAIL/bin"
 
 # source the environemt in ./env
-eval `env - envdir ./env '\
+eval `env - envdir ./env awk '\
         BEGIN { for (i in ENVIRON) printf "%s=\"%s\"\n", i, ENVIRON[i] }'`
 
 exec envdir ./env \
