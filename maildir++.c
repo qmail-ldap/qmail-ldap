@@ -178,7 +178,18 @@ int quota_recalc(char *dir, int *fd, quota_t *q)
 					"Unable to fstat maildirsize: ", 
 					error_str(errno), " (QUOTA #1.5.1)");
 			tm = now();
-			if (tm < st.st_mtime + 900) return -1;
+			if (tm < st.st_mtime + 900) {
+				/*
+				   parsed quota of quota_calc() is still valid.
+				   It is important that the caller does not
+				   clear the quota struct.
+				 */
+				/*
+				   If this can not be granted quota_parsesize()
+				   needs to be called here.
+				 */
+				return 0;
+			}
 		}
 		/* need to recalculate the quota */
 		close(*fd);
@@ -632,7 +643,7 @@ static void calc_curnew(quota_t *q, time_t *maxtime)
 		}
 
 		/* the same thing with cur */
-		fmt_str("cur", path.s + path.len - 5);
+		fmt_str(path.s + path.len - 5, "cur");
 	}
 }
 
