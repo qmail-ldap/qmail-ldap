@@ -216,11 +216,11 @@ int main(int argc, char **argv)
 			info.status==STATUS_OK?ISACTIVE_ACTIVE:"undefined");
 
 	output( "\t\t%s: %s\n", LDAP_MAILSTORE, info.mms);
-	if ( !chck_paths(info.mms) ) {
+	if (info.mms) if ( !chck_paths(info.mms) ) {
 		output( "\tWARNING %s contains illegal chars!\n", LDAP_MAILSTORE);
 	}
 	output( "\t\t%s: %s\n", LDAP_HOMEDIR, info.homedir);
-	if ( !chck_paths(info.homedir) ) {
+	if (info.homedir) if ( !chck_paths(info.homedir) ) {
 		output( "\tWARNING %s contains illegal chars!\n", LDAP_HOMEDIR);
 	}
 
@@ -234,8 +234,8 @@ int main(int argc, char **argv)
 	alloc_free(info.user);
 	alloc_free(info.uid);
 	alloc_free(info.gid);
-	alloc_free(info.mms);
-	alloc_free(info.homedir);
+	if (info.mms) alloc_free(info.mms);
+	if (info.homedir) alloc_free(info.homedir);
 	alloc_free(info.host);
 	
 	for ( i = 0; extra[i].what != 0; i++ ) {

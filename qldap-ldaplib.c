@@ -290,7 +290,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 
 }
 
-static int ldap_get_mms(char **mmsval, char **hdval, char *mms, char *homedir);
+static int ldap_get_mms(char **mmsval, char **hdval, char **mms, char **homedir);
 
 static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 /* NOTE: all default qldap_* strallocs are 0-terminated */
@@ -394,10 +394,12 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 	}
 	ldap_value_free(vals);
 
-	debug(64, "ldap_get_userinfo: %s & %s: ", LDAP_MAILSTORE, LDAP_HOMEDIR);
+	debug(64, "ldap_get_userinfo: %s & %s: \n", LDAP_MAILSTORE, LDAP_HOMEDIR);
 	vals = ldap_get_values(ld,msg,LDAP_MAILSTORE);
 	vals2 = ldap_get_values(ld,msg,LDAP_HOMEDIR);
-	i = ldap_get_mms(vals, vals2, info->mms, info->homedir);  
+	i = ldap_get_mms(vals, vals2, &(info->mms), &(info->homedir));  
+	debug(64, "%s=%s & %s=%s\n", LDAP_HOMEDIR, info->homedir, 
+			LDAP_MAILSTORE, info->mms);
 	ldap_value_free(vals);
 	ldap_value_free(vals2);
 	if ( i == -1 ) {
@@ -423,7 +425,7 @@ static int ldap_get_extrainfo(LDAP *ld, LDAPMessage *msg, extrainfo *info)
 	return 0;
 }
 
-static int ldap_get_mms(char **mmsval, char **hdval, char *mms, char *homedir)
+static int ldap_get_mms(char **mmsval, char **hdval, char **mms, char **homedir)
 {
 	int i;
 	int s;
@@ -434,26 +436,29 @@ static int ldap_get_mms(char **mmsval, char **hdval, char *mms, char *homedir)
 			qldap_errno = LDAP_NEEDED;
 			return -1;
 		}
-		if ( (homedir = alloc( str_len( hdval[0] ) + 1 ) ) == 0 ) {
+		if ( (*homedir = alloc( str_len( hdval[0] ) + 1 ) ) == 0 ) {
 			qldap_errno = LDAP_ERRNO;
 			return -1;
 		}
 		debug(64, "%s=%s (from server)\n", LDAP_HOMEDIR, hdval[0]);
-		str_copy( homedir, hdval[0] );
+		str_copy( *homedir, hdval[0] );
 	} else {
-		homedir = 0;
+		debug(64, "%s=undefined\n", LDAP_HOMEDIR);
+		*homedir = 0;
 	}
 	if ( mmsval ) {
+		debug(64, "%s=%s (from server)\n", LDAP_MAILSTORE, mmsval[0]);
 		if ( mmsval[0][0] != '/' ) {
 			/* local path, use ldapmessagestore as prefix or return a error */
 			if ( (!qldap_messagestore.s || qldap_messagestore.s[0] != '/') 
-					&& homedir == 0 ) {
+					&& *homedir == 0 ) {
 				debug(64, "non absolute path but neither ctrl/ldapmessagestore nor homedir defined!\n");
 				qldap_errno = LDAP_NEEDED;
 				return -1;
 			}
 			i = 0; s = -1;
-			if ( homedir == 0 ) {
+			if ( *homedir == 0 ) {
+				debug(64, " using %s as prefix\n", qldap_messagestore.s);
 				/* XXX if both homedir and ldapmms are defined homedir has 
 				 * higher priority (ldapmms will be ignored (not prefixed ) ) */
 				if ( qldap_messagestore.s[qldap_messagestore.len - 1] != '/' ) {
@@ -464,28 +469,29 @@ static int ldap_get_mms(char **mmsval, char **hdval, char *mms, char *homedir)
 				/* qldap_mms is one char too long so reduce the length */
 			}
 			i += str_len( mmsval[0] ) + 1; 
-			if ( (mms = alloc( i ) ) == 0 ) {
+			if ( (*mms = alloc( i ) ) == 0 ) {
 				qldap_errno = LDAP_ERRNO;
 				return -1;
 			}
-			if ( homedir == 0) { 
-				str_copy( mms, qldap_messagestore.s );
-				if ( s == 0 ) str_copy( mms + str_len(mms), "/" );
+			if ( *homedir == 0) { 
+				str_copy( *mms, qldap_messagestore.s );
+				if ( s == 0 ) str_copy( *mms + str_len(*mms), "/" );
 				/* str_cat done with str_copy because djb has no str_cat :-( */
-				str_copy( mms + str_len(mms), mmsval[0] );
+				str_copy( *mms + str_len(*mms), mmsval[0] );
 			} else {
-				str_copy( mms, mmsval[0] );
+				str_copy( *mms, mmsval[0] );
 			}
 		} else {
 			i = str_len( mmsval[0] ) + 1;
-			if ( (mms = alloc( i ) ) == 0 ) {
+			if ( (*mms = alloc( i ) ) == 0 ) {
 				qldap_errno = LDAP_ERRNO;
 				return -1;
 			}
-			str_copy( mms, mmsval[0] );
+			str_copy( *mms, mmsval[0] );
 		}
 	} else {
-		mms = 0;
+		debug(64, "%s=undefined\n", LDAP_MAILSTORE);
+		*mms = 0;
 	}
 	return 0;
 }

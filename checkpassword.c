@@ -222,7 +222,8 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	alloc_free(info.user);
 	alloc_free(info.uid);
 	alloc_free(info.gid);
-	alloc_free(info.mms);
+	if (info.homedir) alloc_free(info.homedir);
+	if (info.mms) alloc_free(info.mms);
 	
 	if ( rebind && search.bind_ok ) {
 		debug(32, 
