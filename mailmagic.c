@@ -22,7 +22,7 @@ sa_init(stralloc *header)
 static int
 sa_read(int fd, void *buf, int len)
 {
-	int	t;
+	unsigned int	t;
 
 	t = mysa->len - mypos;
 	if (t == 0) return 0;
@@ -43,10 +43,10 @@ static stralloc line = {0};
 #define REPLY_SUBJ "Your Mail"
 #endif
 
-static int
+static unsigned int
 magicsubject(stralloc *l, stralloc *h, stralloc *s)
 {
-	int i, j;
+	unsigned int i, j;
 	
 	j = l->len;
 	for (i = 0; i < j; i++) {
@@ -74,8 +74,8 @@ headermagic(stralloc *mess, stralloc *header, stralloc *subj,
     struct mheader *h)
 {
 	substdio	ss;
-	int		pos;
-	int		i, match, w;
+	unsigned int	pos, i;
+	int		match, w;
 	
 	if (!stralloc_copys(header, "")) return -1;
 	for (i = 0; h[i].f != 0; i++) h[i].seen = 0;

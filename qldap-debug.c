@@ -52,12 +52,12 @@ log_init(int fd, unsigned long mask, int via_spawn)
 	loglevel &= mask;
 
 	substdio_fdbuf(&sslog, subwrite, fd, logbuffer, sizeof(logbuffer) );
-/*	log(4, "LOGLEVEL set to %i\n", loglevel);
+/*	logit(4, "LOGLEVEL set to %i\n", loglevel);
  */
 }
 
 void
-log(unsigned long level, const char *fmt, ...)
+logit(unsigned long level, const char *fmt, ...)
 /* see va_output (output.c) */
 {
 	va_list ap;
@@ -126,12 +126,12 @@ profile(const char *s)
 
 	taia_now(&t);
 	taia_pack(buf,&t);
-	log(LOG_PROFILE, "PROFILE: %s @%s\n", s, buf); 
+	logit(LOG_PROFILE, "PROFILE: %s @%s\n", s, buf); 
 #endif
 }
 #else /* DEBUG */
 void log_init(int fd, unsigned long mask, int via_spawn) {}
-void log(unsigned long level, const char *fmt, ...) {}
+void logit(unsigned long level, const char *fmt, ...) {}
 void logstart(unsigned long level, const char *fmt, ...) {}
 void logadd(unsigned long level, const char *fmt, ...) {}
 void logend(unsigned long level, const char *fmt, ...) {}

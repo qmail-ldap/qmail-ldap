@@ -17,7 +17,7 @@
 void badproto() { _exit(100); }
 void resources() { _exit(111); }
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+int safewrite(int fd, void *buf, int len)
 {
   int r;
   r = write(fd,buf,len);
@@ -28,7 +28,7 @@ int safewrite(fd,buf,len) int fd; char *buf; int len;
 char ssoutbuf[256];
 substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+int saferead(int fd, void *buf, int len)
 {
   int r;
   substdio_flush(&ssout);
@@ -40,7 +40,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
 char ssinbuf[512];
 substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
-unsigned long getlen()
+unsigned long getlen(void)
 {
   unsigned long len = 0;
   char ch;
@@ -59,8 +59,8 @@ void getcomma()
   if (ch != ',') badproto();
 }
 
-unsigned int databytes = 0;
-unsigned int bytestooverflow = 0;
+unsigned long databytes = 0;
+unsigned long bytestooverflow = 0;
 struct qmail qq;
 
 char buf[1000];
@@ -74,12 +74,12 @@ const char *local;
 stralloc failure = {0};
 
 char *relayclient;
-int relayclientlen;
+unsigned int relayclientlen;
 
 int main()
 {
   char ch;
-  int i;
+  unsigned int i;
   unsigned long biglen;
   unsigned long len;
   int flagdos;
@@ -88,7 +88,6 @@ int main()
   unsigned long qp;
   const char *result;
   char *x;
-  unsigned long u;
  
   sig_pipeignore();
   sig_alarmcatch(resources);
@@ -101,9 +100,9 @@ int main()
   relayclient = env_get("RELAYCLIENT");
   relayclientlen = relayclient ? str_len(relayclient) : 0;
  
-  if (control_readint(&databytes,"control/databytes") == -1) resources();
+  if (control_readulong(&databytes,"control/databytes") == -1) resources();
   x = env_get("DATABYTES");
-  if (x) { scan_ulong(x,&u); databytes = u; }
+  if (x) scan_ulong(x,&databytes);
   if (!(databytes + 1)) --databytes;
  
   remotehost = env_get("TCPREMOTEHOST");

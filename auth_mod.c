@@ -73,11 +73,11 @@ main(int argc, char **argv)
 		auth_error(AUTH_CONF);
 
 	auth_init(argc, argv, &loginstr, &authdatastr);
-	log(256, "auth_init: login=%s, authdata=%s\n",
+	logit(256, "auth_init: login=%s, authdata=%s\n",
 	    loginstr.s, authdatastr.s);
 
 	if (authdatastr.len <= 1) {
-		log(1, "alert: null password.\n");
+		logit(1, "alert: null password.\n");
 		auth_fail(loginstr.s, BADPASS);
 	}
 	
@@ -89,14 +89,6 @@ main(int argc, char **argv)
 		byte_zero(authdatastr.s, authdatastr.len);
 		change_uid(c.uid, c.gid);
 		setup_env(loginstr.s, &c);
-		if (c.maildir.s && *c.maildir.s) {
-			/* use default maildir aka aliasempty or
-			   in other words the last argv */
-			if (!stralloc_copys(&c.maildir, argv[argc-1]))
-				auth_error(ERRNO);
-			if (!stralloc_0(&c.maildir))
-				auth_error(ERRNO);
-		}
 		chdir_or_make(c.home.s, c.maildir.s);
 		auth_success(loginstr.s);
 	case FORWARD:
@@ -141,36 +133,36 @@ chdir_or_make(char *home, char *maildir)
 	/* ... go to home dir and create it if needed */
 	if (chdir(home) == -1) {
 #ifdef AUTOHOMEDIRMAKE
-		log(8, "makeing homedir for %s %s\n", home, md);
+		logit(8, "makeing homedir for %s %s\n", home, md);
 			
 		switch (dirmaker_make(home, md)) {
 		case OK:
 			break;
 		case MAILDIR_CRASHED:
-			log(2, "warning: dirmaker failed: program crashed\n");
+			logit(2, "warning: dirmaker failed: program crashed\n");
 			auth_error(MAILDIR_FAILED);
 		case MAILDIR_FAILED:
-			log(2, "warning: dirmaker failed: bad exit status\n");
+			logit(2, "warning: dirmaker failed: bad exit status\n");
 			auth_error(MAILDIR_FAILED);
 		case MAILDIR_UNCONF:
-			log(2, "warning: dirmaker failed: not configured\n");
+			logit(2, "warning: dirmaker failed: not configured\n");
 			auth_error(MAILDIR_NONEXIST);
 		case MAILDIR_HARD:
-			log(2, "warning: dirmaker failed: hard error\n");
+			logit(2, "warning: dirmaker failed: hard error\n");
 		case ERRNO:
 		default:
-			log(2, "warning: dirmaker failed (%s)\n",
+			logit(2, "warning: dirmaker failed (%s)\n",
 			    error_str(errno));
 			auth_error(MAILDIR_FAILED);
 		}
 		if (chdir(home) == -1) {
-			log(2, "warning: 2nd chdir failed: %s\n",
+			logit(2, "warning: 2nd chdir failed: %s\n",
 			    error_str(errno));
 			auth_error(MAILDIR_FAILED);
 		}
-		log(32, "homedir successfully made\n");
+		logit(32, "homedir successfully made\n");
 #else
-		log(2, "warning: chdir failed: %s\n", error_str(errno));
+		logit(2, "warning: chdir failed: %s\n", error_str(errno));
 		auth_error(MAILDIR_NONEXIST);
 #endif
 	}
@@ -179,12 +171,12 @@ chdir_or_make(char *home, char *maildir)
 	case OK:
 		break;
 	case MAILDIR_CORRUPT:
-		log(2, "warning: maildir_make failed (%s)\n",
+		logit(2, "warning: maildir_make failed (%s)\n",
 		    "maildir seems to be corrupt");
 		auth_error(MAILDIR_CORRUPT);
 	case ERRNO:
 	default:
-		log(2, "warning: maildir_make failed (%s)\n",
+		logit(2, "warning: maildir_make failed (%s)\n",
 		    error_str(errno));
 		auth_error(MAILDIR_FAILED);
 	}
@@ -192,12 +184,12 @@ chdir_or_make(char *home, char *maildir)
 }
 
 #ifdef QLDAP_CLUSTER
-static int allwrite(int (*)(),int, char *,int);
+static int allwrite(int (*)(),int, void *,int);
 static void copyloop(int, int, int);
 static char copybuf[4096];
 
 static int
-allwrite(int (*op)(),int fd, char *buf,int len)
+allwrite(int (*op)(),int fd, void *buf,int len)
 {
 	int	w;
 
@@ -240,24 +232,24 @@ copyloop(int infd, int outfd, int timeout)
 
 		ret = select(maxfd + 1, &iofds, (fd_set *)0, (fd_set *)0, &tv);
 		if (ret == -1) {
-			log(1, "copyloop: select failed %s\n",
+			logit(1, "copyloop: select failed %s\n",
 			    error_str(errno));
 			break;
 		} else if (ret == 0) {
-			log(32, "copyloop: select timeout\n");
+			logit(32, "copyloop: select timeout\n");
 			break;
 		}
 		if (FD_ISSET(infd, &iofds)) {
 			if ((bytes = read(infd, copybuf,
 					    sizeof(copybuf))) < 0) {
-				log(1, "copyloop: read failed: %s\n",
+				logit(1, "copyloop: read failed: %s\n",
 				    error_str(errno));
 				break;
 			}
 			if (bytes == 0)
 				break;
 			if (allwrite(subwrite, outfd, copybuf, bytes) != 0) {
-				log(1, "copyloop: write out failed: %s\n",
+				logit(1, "copyloop: write out failed: %s\n",
 				    error_str(errno));
 				break;
 			}
@@ -265,15 +257,15 @@ copyloop(int infd, int outfd, int timeout)
 		if (FD_ISSET(outfd, &iofds)) {
 			if ((bytes = read(outfd, copybuf,
 					    sizeof(copybuf))) < 0) {
-				log(1, "copyloop: read failed: %s\n",
+				logit(1, "copyloop: read failed: %s\n",
 				    error_str(errno));
 				break;
 			}
-			log(32, "copyloop: read in %i bytes read\n", bytes);
+			logit(32, "copyloop: read in %i bytes read\n", bytes);
 			if (bytes == 0)
 				break;
 			if (allwrite(subwrite, infd, copybuf, bytes) != 0) {
-				log(1, "copyloop: write in failed: %s\n",
+				logit(1, "copyloop: write in failed: %s\n",
 				    error_str(errno));
 				break;
 			}

@@ -93,7 +93,7 @@ auth_fail(const char *login, int reason)
 	/* in the qmail-pop3 chain it is not possible to have multiples 
 	 * authentication modules. So lets exit with the correct number ... */
 	/* In this case we can use auth_error() */
-	log(2, "warning: auth_fail: user %s failed\n", login);
+	logit(2, "warning: auth_fail: user %s failed\n", login);
 	auth_error(reason);
 }
 
@@ -115,7 +115,7 @@ void auth_error(int errnum)
 	/*
 	 * See qmail-popup.c for exit codes meanings.
 	 */
-	log(2, "warning: auth_error: authorization failed (%s)\n",
+	logit(2, "warning: auth_error: authorization failed (%s)\n",
 		   qldap_err_str(errnum));
 
 	if (errnum == AUTH_CONF) _exit(1);
@@ -171,7 +171,7 @@ static void get_ok(int fd)
 			*c = '\0';
 			if (str_diff(ok, "+OK") == 0)
 				return;
-			else if ( str_diffn(ok, "-ERR", 4) )
+			else if (str_diffn(ok, "-ERR", 4))
 				/* other server is not happy */
 				auth_error(BADCLUSTER);
 		}

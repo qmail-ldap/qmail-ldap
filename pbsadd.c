@@ -18,8 +18,8 @@
 #include "substdio.h"
 
 static void die(void);
-static void log(const char* );
-static void logs(const char *);
+static void logit(const char* );
+static void logits(const char *);
 static void die_badenv(void);
 static void die_control(void);
 static void die_dir(void);
@@ -34,8 +34,8 @@ static void log_envvar(char *);
 
 void setup(void);
 static void uint16_pack_big(char [], unsigned int);
-int sendrequest(int, char *, int, struct ip_address *);
-int addenv(char *, int);
+int sendrequest(int, char *, unsigned int, struct ip_address *);
+unsigned int addenv(char *, unsigned int);
 
 char sserrbuf[128];
 substdio sserr = SUBSTDIO_FDBUF(subwrite,2,sserrbuf,sizeof sserrbuf);
@@ -49,17 +49,16 @@ stralloc addresses = {0};
 stralloc envs = {0};
 stralloc secret = {0};
 struct ip_address *servers;
-int numservers = 0;
-int numenvs = 0;
+unsigned int numservers = 0;
+unsigned int numenvs = 0;
 unsigned int serverport = 2821;
 
 void
 setup(void)
 {
 	char* s;
-	int i;
+	unsigned int i, len;
 	int fdsourcedir;
-	int len;
 
 	fdsourcedir = open_read(".");
 	if (fdsourcedir == -1)
@@ -115,7 +114,7 @@ uint16_pack_big(char s[2], unsigned int u)
 }
 
 int
-sendrequest(int fd, char *buf, int len, struct ip_address *ip)
+sendrequest(int fd, char *buf, unsigned int len, struct ip_address *ip)
 {
 	struct sockaddr_in s;
 
@@ -128,14 +127,14 @@ sendrequest(int fd, char *buf, int len, struct ip_address *ip)
 }
 
 
-int
-addenv(char *buf, int len)
+unsigned int
+addenv(char *buf, unsigned int len)
 {
-	int i;
-	int vlen;	/* length of the envvar  */
-	int elen;	/* length of the envname */
-	int telen;	/* length of the envline (envname=rewritename) */
-	int olen;	/* old length of the packet buffer */
+	unsigned int i;
+	unsigned int vlen;	/* length of the envvar  */
+	unsigned int elen;	/* length of the envname */
+	unsigned int telen;	/* length of the envline envname=rewritename */
+	unsigned int olen;	/* old length of the packet buffer */
 	char *e;
 	char *v;
 
@@ -194,8 +193,7 @@ main(int argc, char** argv)
 	char *ipstr;
 	char *s;
 	int sfd;
-	int len;
-	int i;
+	unsigned int i, len;
 
 	childargs = argv + 1;
 
@@ -244,7 +242,7 @@ die(void)
 }
 
 static void
-log(const char* s)
+logit(const char* s)
 {
 	substdio_puts(&sserr,s);
 	substdio_puts(&sserr,"\n");
@@ -252,7 +250,7 @@ log(const char* s)
 }
 
 static void
-logs(const char *s)
+logits(const char *s)
 {
 	substdio_puts(&sserr,s);
 }
@@ -260,57 +258,57 @@ logs(const char *s)
 static void
 die_badenv(void)
 {
-	log("pbsadd unable to read $TCPREMOTEIP"); die();
+	logit("pbsadd unable to read $TCPREMOTEIP"); die();
 }
 
 static void
 die_control(void)
 {
-	log("pbsadd unable to read controls"); die();
+	logit("pbsadd unable to read controls"); die();
 }
 
 static void
 die_dir(void)
 {
-	log("pbsadd unable to open current directory"); die();
+	logit("pbsadd unable to open current directory"); die();
 }
 
 static void
 die_exec(void)
 {
-	log("pbsadd unable to start pop3 daemon"); die();
+	logit("pbsadd unable to start pop3 daemon"); die();
 }
 
 static void
 die_secret(void)
 {
-	log("pbsadd control/pbssecret is to long"); die();
+	logit("pbsadd control/pbssecret is to long"); die();
 }
 
 static void
 log_socket(void)
 {
-	log("pbsadd socket syscall failed");
+	logit("pbsadd socket syscall failed");
 }
 
 static void
 die_dirback(void)
 {
-	log("pbsadd unable to switch back to source directory");
+	logit("pbsadd unable to switch back to source directory");
 	die();
 }
 
 static void
 die_envs(void)
 {
-	log("pbsadd control/pbsenvs has to many entries");
+	logit("pbsadd control/pbsenvs has to many entries");
 	die();
 }
 
 static void
 log_nomem(void)
 {
-	log("pbsadd out of memory"); 
+	logit("pbsadd out of memory"); 
 	if (*childargs) _exit(111);
 	else execvp(*childargs,childargs);
 	/* should never reach this point */
@@ -320,12 +318,12 @@ log_nomem(void)
 static void
 log_envsize(void)
 {
-	log("pbsadd to many environment entries (pkg to small)");
+	logit("pbsadd to many environment entries (pkg to small)");
 }
 
 static void
 log_envvar(char *s)
 {
-	logs("pbsadd environment "); logs(s); log(" is to big"); 
+	logits("pbsadd environment "); logits(s); logit(" is to big"); 
 }
 

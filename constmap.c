@@ -4,7 +4,7 @@
 
 static constmap_hash hash(s,len)
 char *s;
-int len;
+unsigned int len;
 {
   unsigned char ch;
   constmap_hash h;
@@ -21,7 +21,7 @@ int len;
 const char *constmap(cm,s,len)
 struct constmap *cm;
 const char *s;
-int len;
+unsigned int len;
 {
   constmap_hash h;
   int pos;
@@ -40,12 +40,12 @@ int len;
 int constmap_init(cm,s,len,flagcolon)
 struct constmap *cm;
 const char *s;
-int len;
+unsigned int len;
 int flagcolon;
 {
-  int i;
-  int j;
-  int k;
+  unsigned int i;
+  unsigned int j;
+  unsigned int k;
   int pos;
   constmap_hash h;
  
@@ -56,15 +56,15 @@ int flagcolon;
   while (h && (h < cm->num)) h += h;
   cm->mask = h - 1;
  
-  cm->first = (int *) alloc(sizeof(int) * h);
+  cm->first = (unsigned int *) alloc(sizeof(unsigned int) * h);
   if (cm->first) {
     cm->input = (const char **) alloc(sizeof(char *) * cm->num);
     if (cm->input) {
-      cm->inputlen = (int *) alloc(sizeof(int) * cm->num);
+      cm->inputlen = (unsigned int *) alloc(sizeof(unsigned int) * cm->num);
       if (cm->inputlen) {
         cm->hash = (constmap_hash *) alloc(sizeof(constmap_hash) * cm->num);
         if (cm->hash) {
-	  cm->next = (int *) alloc(sizeof(int) * cm->num);
+	  cm->next = (unsigned int *) alloc(sizeof(unsigned int) * cm->num);
 	  if (cm->next) {
 	    for (h = 0;h <= cm->mask;++h)
 	      cm->first[h] = -1;

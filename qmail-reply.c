@@ -120,7 +120,7 @@ stralloc dtline={0};
 void get_env(void)
 {
 	char *s;
-	int i;
+	unsigned int i;
 
 	if ((s = env_get("DTLINE")) == (char *)0)
 		strerr_die2x(100, FATAL, "Environment DTLINE not present.");
@@ -154,8 +154,8 @@ void junkread(char *path)
 
 int junksender(char *addr, int len)
 {
-	int	at, dash, i;
-	static const char *(junkignore[]) = {
+	unsigned int		at, dash, i;
+	static const char	*(junkignore[]) = {
 		/* don't reply to bots */
 		"-request",
 		"daemon",
@@ -250,13 +250,13 @@ datetime_sec timeout;
 #endif
 #define MAX_SIZE (32 * 1024) /* 32kB */
 
-int checkstamp(char *, int);
+int checkstamp(char *, unsigned int);
 
-int recent_lookup(char *buf, int len)
+int recent_lookup(char *buf, unsigned int len)
 {
 	char *s;
 	datetime_sec last;
-	int i, slen;
+	unsigned int i, slen;
 	
 	switch (control_readfile(&rs,"qmail-reply.db",1)) {
 		case 1:
@@ -337,7 +337,7 @@ void unlock(void)
 stralloc sfs = {0};
 stralloc spath = {0};
 
-int checkstamp(char *buf, int len)
+int checkstamp(char *buf, unsigned int len)
 {
 	struct stat st;
 	
@@ -415,7 +415,7 @@ void sigalrm(void)
 	strerr_die2x(111, FATAL, "Timeout while writing db file");
 }
 
-void recent_update(char *buf, int len)
+void recent_update(char *buf, unsigned int len)
 {
 	struct stat st;
 	substdio ss;
@@ -504,7 +504,7 @@ fail:
 	return;
 }
 
-void touchstamp(char *buf, int len)
+void touchstamp(char *buf, unsigned int len)
 {
 	int fd;
 
@@ -518,7 +518,7 @@ void touchstamp(char *buf, int len)
 	close(fd);
 }
 
-int recent(char *buf, int len, char *dir)
+int recent(char *buf, unsigned int len, char *dir)
 {
 	if (dir == 0) return 0;
 
@@ -550,25 +550,25 @@ int recent(char *buf, int len, char *dir)
 	}
 }
 
-int getfield(char *s, int len)
+unsigned int getfield(char *s, unsigned int len)
 {
-	int l;
+	unsigned int l;
 
 	l = len;
 	for(;;) {
-		if (l-- <= 0) break; if (*s++ == ':') break;
-		if (l-- <= 0) break; if (*s++ == ':') break;
-		if (l-- <= 0) break; if (*s++ == ':') break;
-		if (l-- <= 0) break; if (*s++ == ':') break;
+		if (l-- == 0) break; if (*s++ == ':') break;
+		if (l-- == 0) break; if (*s++ == ':') break;
+		if (l-- == 0) break; if (*s++ == ':') break;
+		if (l-- == 0) break; if (*s++ == ':') break;
 	}
 	for(;;) {
-		if (l <= 0) break; if (*s != ' ' && *s != '\t') break;
+		if (l == 0) break; if (*s != ' ' && *s != '\t') break;
 		l--; s++;
-		if (l <= 0) break; if (*s != ' ' && *s != '\t') break;
+		if (l == 0) break; if (*s != ' ' && *s != '\t') break;
 		l--; s++;
-		if (l <= 0) break; if (*s != ' ' && *s != '\t') break;
+		if (l == 0) break; if (*s != ' ' && *s != '\t') break;
 		l--; s++;
-		if (l <= 0) break; if (*s != ' ' && *s != '\t') break;
+		if (l == 0) break; if (*s != ' ' && *s != '\t') break;
 		l--; s++;
 	}
 	return len - l;
@@ -584,7 +584,8 @@ int parseheader(/* TODO names for to/cc checking */ void)
 {
 	substdio ss;
 	char *s;
-	int match, len, subj_set, i;
+	int match, subj_set;
+	unsigned int len, i;
 
 	subj_set = 0;
 	if (seek_begin(0) == -1) temp_rewind();

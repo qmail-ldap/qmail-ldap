@@ -35,12 +35,12 @@ pbsexec(void)
 
 	wait_pid(&wstat,child);
 	if (wait_crashed(wstat))
-		log(2, "pbsexec: %s crashed\n", pbstool);
+		logit(2, "pbsexec: %s crashed\n", pbstool);
 	else if (wait_exitcode(wstat))
-		log(2, "pbsexec: %s failed, exit code %d\n",
+		logit(2, "pbsexec: %s failed, exit code %d\n",
 		    pbstool, wait_exitcode(wstat));
 	else
-		log(64, "pbsexec: %s OK\n", pbstool);
+		logit(64, "pbsexec: %s OK\n", pbstool);
 
 	return;
 }

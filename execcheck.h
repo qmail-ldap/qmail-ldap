@@ -7,6 +7,6 @@ void execcheck_setup(void);
 void execcheck_start(void);
 int execcheck_on(void);
 int execcheck_flag(void);
-void execcheck_put(struct qmail *qqt, char *ch);
+void execcheck_put(struct qmail *, const char *);
 
 #endif

@@ -28,6 +28,7 @@
 #include "commands.h"
 #include "dns.h"
 #include "smtpcall.h"
+#include "limit.h"
 #ifdef SMTPEXECCHECK
 #include "execcheck.h"
 #endif
@@ -41,7 +42,7 @@ SSL *ssl = NULL;
 #endif
 
 #define MAXHOPS 100
-unsigned int databytes = 0;
+unsigned long databytes = 0;
 int timeout = 1200;
 
 #ifdef TLS_SMTPD
@@ -50,7 +51,7 @@ void sigalrm()
 {
  flagtimedout = 1;
 }
-int ssl_timeoutread(int tout, int fd, char *buf, int n)
+int ssl_timeoutread(int tout, int fd, void *buf, int n)
 {
  int r; int saveerrno;
  if (flagtimedout) { errno = error_timeout; return -1; }
@@ -62,7 +63,7 @@ int ssl_timeoutread(int tout, int fd, char *buf, int n)
  errno = saveerrno;
  return r;
 }
-int ssl_timeoutwrite(int tout, int fd, char *buf, int n)
+int ssl_timeoutwrite(int tout, int fd, const void *buf, int n)
 {
  int r; int saveerrno;
  if (flagtimedout) { errno = error_timeout; return -1; }
@@ -76,9 +77,9 @@ int ssl_timeoutwrite(int tout, int fd, char *buf, int n)
 }
 #endif
 
-void die_write();
+void die_write(void);
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+int safewrite(int fd, void *buf, int len)
 {
   int r;
 #ifdef TLS_SMTPD
@@ -94,8 +95,8 @@ int safewrite(fd,buf,len) int fd; char *buf; int len;
 char ssoutbuf[512];
 substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 
-void flush() { substdio_flush(&ssout); }
-void out(s) char *s; { substdio_puts(&ssout,s); }
+void flush(void) { substdio_flush(&ssout); }
+void out(const char *s) { substdio_puts(&ssout,s); }
 
 /* level 0 = no logging
          1 = fatal errors
@@ -104,17 +105,17 @@ void out(s) char *s; { substdio_puts(&ssout,s); }
 
 int loglevel = 0;
 
-void logpid(level) int level;
+void logpid(int level)
 {
   char pidstring[FMT_ULONG];
   if (level > loglevel) return;
   substdio_puts(subfderr,"qmail-smtpd ");
-  pidstring[fmt_ulong(pidstring,(unsigned long) getpid())] = 0;
+  pidstring[fmt_uint(pidstring, getpid())] = 0;
   substdio_puts(subfderr,pidstring);
   substdio_puts(subfderr,": ");
 }
 
-void logline(level,string) int level; char *string;
+void logline(int level, const char *string)
 {
   if (level > loglevel) return;
   logpid(level);
@@ -123,13 +124,13 @@ void logline(level,string) int level; char *string;
   substdio_flush(subfderr);
 }
 
-void logstring(level,string) int level; char *string;
+void logstring(int level, const char *string)
 {
   if (level > loglevel) return;
   substdio_puts(subfderr,string);
 }
 
-void logflush(level) int level;
+void logflush(int level)
 {
   if (level > loglevel) return;
   substdio_puts(subfderr,"\n");
@@ -138,34 +139,34 @@ void logflush(level) int level;
 
 void cleanup(void);
 
-void die_read() { logline(1,"read error, connection closed"); cleanup(); _exit(1); }
-void die_write() { logline(1,"write error, connection closed"); cleanup(); _exit(1); }
-void die_alarm() { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); cleanup(); _exit(1); }
-void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); logline(1,"out of memory, closing connection"); flush(); cleanup(); _exit(1); }
-void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); logline(1,"unable to read controls, closing connection"); flush(); _exit(1); }
-void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); logline(1,"unable to figure out my IP address, closing connection"); flush(); _exit(1); }
-void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
-void err_qqt() { out("451 qqt failure (#4.3.0)\r\n"); }
-void err_dns() { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
-void err_ldapsoft() { out("451 temporary ldap lookup failure, try again later\r\n"); logline(1,"temporary ldap lookup failure"); }
-void err_bmf() { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
-void err_bmfunknown() { out("553 sorry, your mail from a host without valid reverse DNS was administratively denied (#5.7.1)\r\n"); }
-void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
+void die_read(void) { logline(1,"read error, connection closed"); cleanup(); _exit(1); }
+void die_write(void) { logline(1,"write error, connection closed"); cleanup(); _exit(1); }
+void die_alarm(void) { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); cleanup(); _exit(1); }
+void die_nomem(void) { out("421 out of memory (#4.3.0)\r\n"); logline(1,"out of memory, closing connection"); flush(); cleanup(); _exit(1); }
+void die_control(void) { out("421 unable to read controls (#4.3.0)\r\n"); logline(1,"unable to read controls, closing connection"); flush(); _exit(1); }
+void die_ipme(void) { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); logline(1,"unable to figure out my IP address, closing connection"); flush(); _exit(1); }
+void straynewline(void) { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
+void err_qqt(void) { out("451 qqt failure (#4.3.0)\r\n"); }
+void err_dns(void) { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
+void err_ldapsoft(void) { out("451 temporary ldap lookup failure, try again later\r\n"); logline(1,"temporary ldap lookup failure"); }
+void err_bmf(void) { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
+void err_bmfunknown(void) { out("553 sorry, your mail from a host without valid reverse DNS was administratively denied (#5.7.1)\r\n"); }
+void err_maxrcpt(void) { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway(const char *arg) { out("553 sorry, relaying denied from your location ["); out(arg); out("] (#5.7.1)\r\n"); }
-void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
-void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command: "); logstring(3,arg); logflush(3); }
-void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because: 'SMTP SIZE' too big"); }
-void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
-void err_relay() { out("553 we don't relay (#5.7.1)\r\n"); }
-void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
-void err_wantrcpt() { out("503 RCPT first (#5.5.1)\r\n"); logline(3,"'rcpt to' first"); }
+void err_badbounce(void) { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
+void err_unimpl(char *arg) { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command: "); logstring(3,arg); logflush(3); }
+void err_size(void) { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because: 'SMTP SIZE' too big"); }
+void err_syntax(void) { out("555 syntax error (#5.5.4)\r\n"); }
+void err_relay(void) { out("553 we don't relay (#5.7.1)\r\n"); }
+void err_wantmail(void) { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
+void err_wantrcpt(void) { out("503 RCPT first (#5.5.1)\r\n"); logline(3,"'rcpt to' first"); }
 
-void err_noop() { out("250 ok\r\n"); logline(3,"'noop'"); }
-void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n"); logpid(3); logstring(3,"vrfy for: "); logstring(3,arg); logflush(3); }
+void err_noop(char *arg) { out("250 ok\r\n"); logline(3,"'noop'"); }
+void err_vrfy(char *arg) { out("252 send some mail, i'll try my best\r\n"); logpid(3); logstring(3,"vrfy for: "); logstring(3,arg); logflush(3); }
 
-void err_rbl(arg) char *arg; { out("553 sorry, your mailserver is rejected by "); out(arg); out("\r\n"); }
-void err_deny() { out("553 sorry, mail from your location is administratively denied (#5.7.1)\r\n"); }
-void err_badrcptto() { out("553 sorry, mail to that recipient is not accepted (#5.7.1)\r\n"); }
+void err_rbl(char *arg) { out("553 sorry, your mailserver is rejected by "); out(arg); out("\r\n"); }
+void err_deny(void) { out("553 sorry, mail from your location is administratively denied (#5.7.1)\r\n"); }
+void err_badrcptto(void) { out("553 sorry, mail to that recipient is not accepted (#5.7.1)\r\n"); }
 void err_554msg(const char *arg)
 {
 	out("554 "); out(arg); out("\r\n");
@@ -179,7 +180,7 @@ stralloc me = {0};
 stralloc greeting = {0};
 stralloc cookie = {0};
 
-void smtp_greet(code) char *code;
+void smtp_greet(const char *code)
 {
   substdio_puts(&ssout,code);
   substdio_puts(&ssout,me.s);
@@ -191,7 +192,7 @@ void smtp_greet(code) char *code;
   }
   out("\r\n");
 }
-void smtp_line(code) char *code;
+void smtp_line(const char *code)
 {
   substdio_puts(&ssout,code);
   substdio_puts(&ssout,me.s);
@@ -199,13 +200,13 @@ void smtp_line(code) char *code;
   substdio_put(&ssout,greeting.s,greeting.len);
   out("\r\n");
 }
-void smtp_help()
+void smtp_help(char *arg)
 {
   out("214-qmail home page: http://pobox.com/~djb/qmail.html\r\n");
   out("214 qmail-ldap patch home page: http://www.nrg4u.com\r\n");
   logline(3,"help requested");
 }
-void smtp_quit()
+void smtp_quit(char *arg)
 {
   smtp_line("221 ");
   logline(3,"quit, closing connection");
@@ -213,7 +214,7 @@ void smtp_quit()
   cleanup();
   _exit(0);
 }
-void err_quit()
+void err_quit(void)
 {
   logline(3,"force closing connection");
   flush();
@@ -233,7 +234,8 @@ int  spamflag = 0;
 stralloc helohost = {0};
 char *fakehelo; /* pointer into helohost, or 0 */
 
-void dohelo(arg) char *arg; {
+void dohelo(const char *arg)
+{
   if (!stralloc_copys(&helohost,arg)) die_nomem(); 
   if (!stralloc_0(&helohost)) die_nomem(); 
   fakehelo = case_diffs(remotehost,helohost.s) ? helohost.s : 0;
@@ -263,9 +265,9 @@ int nobounce = 0;
 int sanitycheck = 0;
 int returnmxcheck = 0;
 int blockrelayprobe = 0;
-int tarpitcount = 0;
-int tarpitdelay = 5;
-int maxrcptcount = 0;
+unsigned int tarpitcount = 0;
+unsigned int tarpitdelay = 5;
+unsigned int maxrcptcount = 0;
 int sendercheck = 0;
 int rcptcheck = 0;
 int ldapsoftok = 0;
@@ -276,13 +278,13 @@ int flagauthok = 0;
 const char *authprepend;
 int sslenabled = 0;
 
-void setup()
+void setup(void)
 {
   char *x, *l;
-  unsigned long u, v;
+  unsigned long u;
 
   l = env_get("LOGLEVEL");
-  if (l) { scan_ulong(l,&v); loglevel = v; };
+  if (l) { scan_ulong(l,&u); loglevel = u > 3 ? 3 : u; }
 
   if (control_init() == -1) die_control();
 
@@ -309,16 +311,13 @@ void setup()
     sslenabled = 1;
 
   x = env_get("TARPITCOUNT");
-  if (x) { scan_ulong(x,&u); tarpitcount = u; };
-  if (tarpitcount < 0) tarpitcount = 0;
+  if (x) { scan_ulong(x,&u); tarpitcount = u >= UINT_MAX ? UINT_MAX - 1 : u; }
 
   x = env_get("TARPITDELAY");
-  if (x) { scan_ulong(x,&u); tarpitdelay = u; };
-  if (tarpitdelay < 0) tarpitdelay = 0;
+  if (x) { scan_ulong(x,&u); tarpitdelay = u > INT_MAX ? INT_MAX : u; }
 
   x = env_get("MAXRCPTCOUNT");
-  if (x) { scan_ulong(x,&u); maxrcptcount = u; };
-  if (maxrcptcount < 0) maxrcptcount = 0;
+  if (x) { scan_ulong(x,&u); maxrcptcount = u >= UINT_MAX ? UINT_MAX - 1 : u; };
 
   if (rcpthosts_init() == -1) die_control();
 
@@ -380,10 +379,10 @@ void setup()
   execcheck_setup();
 #endif
 
-  if (control_readint(&databytes,"control/databytes") == -1) die_control();
+  if (control_readulong(&databytes,"control/databytes") == -1) die_control();
   x = env_get("DATABYTES");
-  if (x) { scan_ulong(x,&u); databytes = u; }
-  if (!(databytes + 1)) --databytes;
+  if (x) scan_ulong(x,&databytes);
+  if (!(databytes + 1)) --databytes; /* poor man overflow detection */
  
   remoteip = env_get("TCPREMOTEIP");
   if (!remoteip) remoteip = "unknown";
@@ -441,10 +440,9 @@ void setup()
 
 stralloc addr = {0}; /* will be 0-terminated, if addrparse returns 1 */
 
-int addrparse(arg)
-char *arg;
+int addrparse(char *arg)
 {
-  int i;
+  unsigned int i;
   char ch;
   char terminator;
   struct ip_address ip;
@@ -505,8 +503,7 @@ char *arg;
 stralloc checkhost = {0};
 ipalloc checkip = {0};
 
-int badmxcheck(dom)
-char *dom;
+int badmxcheck(char *dom)
 {
   int ret = 0;
   unsigned long r;
@@ -536,11 +533,9 @@ char *dom;
 
 stralloc parameter = {0};
 
-char *getparameter(arg, name)
-char *arg;
-char *name;
+char *getparameter(char *arg, const char *name)
 {
-  int i;
+  unsigned int i;
   char ch;
   char terminator;
   int flagesc;
@@ -588,8 +583,7 @@ char *name;
   } while (1);
 }
 
-int sizelimit(arg)
-char *arg;
+int sizelimit(char *arg)
 {
   char *size;
   unsigned long sizebytes = 0;
@@ -598,13 +592,14 @@ char *arg;
   if (!size) return 1;
 
   scan_ulong(size, &sizebytes);
-  return (unsigned long)databytes >= sizebytes;
+  return databytes >= sizebytes;
 }
 
 
 int bmfcheck(void)
 {
-  int j;
+  unsigned int j;
+
   if (!bmfok) return 0;
   if (constmap(&mapbmf,addr.s,addr.len - 1)) return 1;
   j = byte_rchr(addr.s,addr.len,'@');
@@ -618,7 +613,8 @@ int bmfcheck(void)
 
 int bmfunknowncheck(void)
 {
-  int j;
+  unsigned int j;
+
   if (!bmfunknownok) return 0;
   if (case_diffs(remotehost,"unknown")) return 0;
   if (constmap(&mapbmfunknown,addr.s,addr.len - 1)) return 1;
@@ -631,11 +627,12 @@ int bmfunknowncheck(void)
 int seenmail = 0;
 stralloc mailfrom = {0};
 stralloc rcptto = {0};
-int rcptcount;
+unsigned int rcptcount;
 
 int rmfcheck(void)
 {
-  int j;
+  unsigned int j;
+
   if (!rmfok) return 0;
   if (constmap(&maprmf,addr.s,addr.len - 1)) return 1;
   j = byte_rchr(addr.s,addr.len,'@');
@@ -647,6 +644,7 @@ int rmfcheck(void)
 int addrallowed(void)
 {
   int r;
+
   r = rcpthosts(addr.s,addr.len - 1);
   if (r == -1) die_control();
   return r;
@@ -655,6 +653,7 @@ int addrallowed(void)
 int addrlocals(void)
 {
   int r;
+
   r = localhosts(addr.s, addr.len - 1);
   if (r == -1) die_control();
   return r;
@@ -662,7 +661,8 @@ int addrlocals(void)
 
 int rcptdenied(void)
 {
-  int j;
+  unsigned int j;
+
   if (!brtok) return 0;
   if (constmap(&mapbadrcptto, addr.s, addr.len - 1)) return 1;
   j = byte_rchr(addr.s,addr.len,'@');
@@ -674,7 +674,8 @@ int rcptdenied(void)
 
 int goodmailaddr(void)
 {
-  int j;
+  unsigned int j;
+
   if (!gmaok) return 0;
   if (constmap(&mapgma, addr.s, addr.len - 1)) return 1;
   j = byte_rchr(addr.s,addr.len,'@');
@@ -737,12 +738,8 @@ fail:
 
 int relayprobe(void) /* relay probes trying stupid old sendwhale bugs */
 {
-  int j;
-  j = addr.len;
-  while(--j >= 0)
-    if (addr.s[j] == '@') break;
-  if (j < 0) j = addr.len;
-  while(--j >= 0) {
+  unsigned int j;
+  for (j = byte_rchr(addr.s, addr.len, '@'); j-- > 0; ) {
     if (addr.s[j] == '@') return 1; /* double @ */
     if (addr.s[j] == '%') return 1; /* percent relaying */
     if (addr.s[j] == '!') return 1; /* UUCP bang path */
@@ -751,7 +748,7 @@ int relayprobe(void) /* relay probes trying stupid old sendwhale bugs */
 }
 
 
-void smtp_helo(arg) char *arg;
+void smtp_helo(char *arg)
 {
   smtp_line("250 ");
   seenmail = 0; dohelo(arg);
@@ -759,11 +756,11 @@ void smtp_helo(arg) char *arg;
 }
 
 char smtpsize[FMT_ULONG];
-void smtp_ehlo(arg) char *arg;
+void smtp_ehlo(char *arg)
 {
   smtp_line("250-");
   out("250-PIPELINING\r\n");
-  smtpsize[fmt_ulong(smtpsize,(unsigned long) databytes)] = 0;
+  smtpsize[fmt_ulong(smtpsize, databytes)] = 0;
   out("250-SIZE "); out(smtpsize); out("\r\n");
 #ifdef DATA_COMPRESS
   out("250-DATAZ\r\n");
@@ -784,7 +781,7 @@ void smtp_ehlo(arg) char *arg;
   logpid(3); logstring(3,"max msg size: "); logstring(3,smtpsize); logflush(3);
 }
 
-void smtp_rset()
+void smtp_rset(char *arg)
 {
   seenmail = 0;
   relayclient = relayok; /* restore original relayclient setting */
@@ -794,9 +791,9 @@ void smtp_rset()
 
 struct qmail qqt;
 
-void smtp_mail(arg) char *arg;
+void smtp_mail(char *arg)
 {
-  int i,j;
+  unsigned int i,j;
   char *rblname;
   int bounceflag = 0;
 
@@ -871,7 +868,7 @@ void smtp_mail(arg) char *arg;
       if (errdisconnect) err_quit();
       return;
     }
-    if ( i == 0 || addr.s[i+1] == '\0' ) {
+    if (i == 0 || addr.s[i+1] == '\0') {
       err_554msg("mailfrom without user or domain part is administratively denied");
       if (errdisconnect) err_quit();
       return;
@@ -996,7 +993,8 @@ void smtp_mail(arg) char *arg;
   out("250 ok\r\n");
 }
 
-void smtp_rcpt(arg) char *arg; {
+void smtp_rcpt(char *arg)
+{
   if (!seenmail)
   {
     err_wantmail();
@@ -1152,15 +1150,15 @@ int compression_done(void)
     r *= -1;
   } else
     num[0] = ' ';
-  num[fmt_ulong(num+1,r)+1] = 0;
+  num[fmt_uint(num+1,r)+1] = 0;
   logpid(1);
-  logstring(1,"Dynamic data compression saved ");
-  logstring(1,num); logstring(1,"%"); logflush(1);
+  logstring(1,"DDC saved ");
+  logstring(1,num); logstring(1," percent"); logflush(1);
   return 0;
 }
 #endif
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+int saferead(int fd,void *buf,int len)
 {
   int r;
   flush();
@@ -1215,11 +1213,10 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
 char ssinbuf[1024];
 substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
-unsigned int bytestooverflow = 0;
-unsigned int bytesreceived = 0;
+unsigned long bytestooverflow = 0;
+unsigned long bytesreceived = 0;
 
-void put(ch)
-char *ch;
+void put(const char *ch)
 {
 #ifdef SMTPEXECCHECK
   execcheck_put(&qqt, ch);
@@ -1231,13 +1228,12 @@ char *ch;
   ++bytesreceived;
 }
 
-void blast(hops)
-int *hops;
+void blast(unsigned int *hops)
 {
   char ch;
   int state;
   int flaginheader;
-  int pos; /* number of bytes since most recent \n, if fih */
+  unsigned int pos; /* number of bytes since most recent \n, if fih */
   int flagmaybex; /* 1 if this line might match RECEIVED, if fih */
   int flagmaybey; /* 1 if this line might match \r\n, if fih */
   int flagmaybez; /* 1 if this line might match DELIVERED, if fih */
@@ -1293,7 +1289,7 @@ int *hops;
 }
 
 char accept_buf[FMT_ULONG];
-void acceptmessage(qp) unsigned long qp;
+void acceptmessage(unsigned long qp)
 {
   datetime_sec when;
   when = now();
@@ -1315,8 +1311,8 @@ stralloc protocolinfo = {0};
 #endif
 
 char receivedbytes[FMT_ULONG];
-void smtp_data() {
-  int hops;
+void smtp_data(char *arg) {
+  unsigned int hops;
   unsigned long qp;
   const char *qqx;
 
@@ -1389,7 +1385,7 @@ void smtp_data() {
   if (wantcomp) { if (compression_done() != 0) return; }
 #endif
 
-  receivedbytes[fmt_ulong(receivedbytes,(unsigned long) bytesreceived)] = 0;
+  receivedbytes[fmt_ulong(receivedbytes, bytesreceived)] = 0;
   logpid(3); logstring(3,"data bytes received: "); logstring(3,receivedbytes); logflush(3);
 
   hops = (hops >= MAXHOPS);
@@ -1432,10 +1428,10 @@ void smtp_data() {
 }
 
 #ifdef DATA_COMPRESS
-void smtp_dataz()
+void smtp_dataz(char *arg)
 {
   wantcomp = 1;
-  smtp_data();
+  smtp_data((char *)0);
 }
 #endif
 
@@ -1448,7 +1444,7 @@ void smtp_auth(char *arg)
   const char *status;
 
   if (!flagauth) {
-    err_unimpl();
+    err_unimpl((char *)0);
     return;
   }
   logline(3,"smtp auth");
@@ -1522,7 +1518,7 @@ fail:
     out(status); flush();
     logstring(2, "authentication failed: ");
     logstring(2, status + 4);
-    logflush();
+    logflush(2);
     sleep(4);
     if (errdisconnect) err_quit();
     break;
@@ -1530,7 +1526,7 @@ fail:
 }
 
 #ifdef TLS_SMTPD
-RSA *tmp_rsa_cb(s,export,keylength) SSL *s; int export; int keylength; 
+RSA *tmp_rsa_cb(SSL *s,int export,int keylength) 
 {
   RSA* rsa;
   BIO* in;
@@ -1543,12 +1539,12 @@ RSA *tmp_rsa_cb(s,export,keylength) SSL *s; int export; int keylength;
   return (RSA_generate_key(export?keylength:512,RSA_F4,NULL,NULL));
 }
 
-void smtp_tls(arg) char *arg; 
+void smtp_tls(char *arg) 
 {
   SSL_CTX *ctx;
 
   if (!sslenabled) {
-    err_unimpl();
+    err_unimpl((char *)0);
     return;
   }
 
@@ -1627,7 +1623,7 @@ struct commands smtpcommands[] = {
 , { 0, err_unimpl, flush }
 } ;
 
-int main()
+int main(int argc, char **argv)
 {
 #ifdef TLS_SMTPD
   sig_alarmcatch(sigalrm);

@@ -10,7 +10,7 @@
 #include "fmt.h"
 
 char buf[800]; /* syslog truncates long lines (or crashes); GPACIC */
-int bufpos = 0; /* 0 <= bufpos < sizeof(buf) */
+unsigned int bufpos = 0; /* 0 <= bufpos < sizeof(buf) */
 int flagcont = 0;
 int priority; /* defined if flagcont */
 char stamp[FMT_ULONG + FMT_ULONG + 3]; /* defined if flagcont */

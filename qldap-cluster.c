@@ -22,14 +22,14 @@ cluster_init(void)
 		return -1;
 	if (control_readint(&clusteron, "control/ldapcluster") == -1)
 		return -1;
-	log(64, "init: control/ldapcluster: %i\n", clusteron);
+	logit(64, "init: control/ldapcluster: %i\n", clusteron);
 
 	if (clusteron == 0)
 		return 0;
 	
 	if (control_readfile(&mh,"control/ldapclusterhosts",0) == -1)
 		return -1;
-	log(64, "init_ldap: control/ldapclusterhosts: read\n");
+	logit(64, "init_ldap: control/ldapclusterhosts: read\n");
 	if (!stralloc_cat(&mh, &me) || !stralloc_0(&mh))
 		return -1;
 	if (mailhosts_map.num != 0) constmap_free(&mailhosts_map);

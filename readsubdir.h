@@ -6,7 +6,7 @@
 typedef struct readsubdir
  {
   DIR *dir;
-  int pos;
+  unsigned int pos;
   const char *name;
   void (*pause)();
  }

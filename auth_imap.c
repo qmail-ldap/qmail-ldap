@@ -31,7 +31,7 @@ const unsigned int auth_port = PORT_IMAP;
 
 #define UP_LEN 1024
 static char auth_up[UP_LEN];
-static int  auth_uplen;
+static unsigned int auth_uplen;
 static int auth_argc;
 static char **auth_argv;
 
@@ -58,7 +58,7 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 
 	a = env_get("AUTHENTICATED");
 	if (a && *a) {  /* Already a good guy */
-		log(8, "auth_init: allready authenticated\n");
+		logit(8, "auth_init: allready authenticated\n");
 		execvp(*argv, argv);
 		auth_error(AUTH_EXEC);
 	}
@@ -142,9 +142,9 @@ auth_fail(const char *login, int reason)
 	char *t;
 	t = auth_up;
 	
-	log(2, "warning: auth_fail: user %s failed\n", login);
+	logit(2, "warning: auth_fail: user %s failed\n", login);
 	if (reason == NOSUCH || reason == AUTH_TYPE) {
-		log(4, "warning: auth_fail: %s\n", qldap_err_str(reason));
+		logit(4, "warning: auth_fail: %s\n", qldap_err_str(reason));
 		if (!env_unset("AUTHENTICATED"))
 			auth_error(ERRNO);
 		for (i=0; i<auth_uplen; i++) if (!auth_up[i]) auth_up[i] = '\n';
@@ -210,7 +210,7 @@ void auth_error(int errnum)
 
 	byte_zero(auth_up, sizeof(auth_up));
 	
-	log(2, "warning: auth_error: authorization failed (%s)\n",
+	logit(2, "warning: auth_error: authorization failed (%s)\n",
 		   qldap_err_str(errnum));
 	if (!(env = env_get("AUTHARGC")))
 		_exit(111);

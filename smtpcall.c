@@ -41,7 +41,7 @@ call_getc(struct call *cc, char *c)
 }
 
 int
-call_put(struct call *cc, const char *s, int len)
+call_put(struct call *cc, const char *s, unsigned int len)
 {
 	if (cc->flagerr || cc->flagabort) return -1;
 	if (cc->flagstar && str_diffn(s, "*", len) == 0) {
@@ -82,7 +82,7 @@ call_flush(struct call *cc)
 
 }
 int
-call_putflush(struct call *cc, const char *s, int len)
+call_putflush(struct call *cc, const char *s, unsigned int len)
 {
 	if (call_put(cc, s, len) == -1) return -1;
         if (call_flush(cc) == -1) return -1;

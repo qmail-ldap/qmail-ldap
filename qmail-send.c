@@ -124,11 +124,11 @@ stralloc rwline = {0};
 int rewrite(recip)
 char *recip;
 {
-  int i;
-  int j;
+  unsigned int i;
+  unsigned int j;
   const char *x;
   static stralloc addr = {0};
-  int at;
+  unsigned int at;
 
   if (!stralloc_copys(&rwline,"T")) return 0;
   if (!stralloc_copys(&addr,recip)) return 0;
@@ -194,9 +194,9 @@ stralloc *sa;
 char *sender;
 char *recip;
 {
- int i;
- int j;
- int k;
+ unsigned int i;
+ unsigned int j;
+ unsigned int k;
 
  i = str_len(sender);
  if (i >= 4)
@@ -503,15 +503,16 @@ void pqfinish()
 {
  int c;
  struct prioq_elt pe;
- time_t ut[2]; /* XXX: more portable than utimbuf, but still worrisome */
+ struct timeval tvv[2];
 
  for (c = 0;c < CHANNELS;++c)
    while (prioq_min(&pqchan[c],&pe))
     {
      prioq_delmin(&pqchan[c]);
      fnmake_chanaddr(pe.id,c);
-     ut[0] = ut[1] = pe.dt;
-     if (utime(fn.s,ut) == -1)
+     tvv[0].tv_sec = tvv[1].tv_sec = pe.dt;
+     tvv[0].tv_usec = tvv[1].tv_usec = 0;
+     if (utimes(fn.s,tvv) == -1)
        log3("warning: unable to utime ",fn.s,"; message will be retried too soon\n");
     }
 }
@@ -519,7 +520,7 @@ void pqfinish()
 void pqrun()
 {
  int c;
- int i;
+ unsigned int i;
  for (c = 0;c < CHANNELS;++c)
    if (pqchan[c].p)
      if (pqchan[c].len)
@@ -543,12 +544,12 @@ struct job
  }
 ;
 
-int numjobs;
+unsigned int numjobs;
 struct job *jo;
 
 void job_init()
 {
- int j;
+ unsigned int j;
  while (!(jo = (struct job *) alloc(numjobs * sizeof(struct job)))) nomem();
  for (j = 0;j < numjobs;++j)
   {
@@ -559,7 +560,7 @@ void job_init()
 
 int job_avail()
 {
- int j;
+ unsigned int j;
  for (j = 0;j < numjobs;++j) if (!jo[j].refs) return 1;
  return 0;
 }
@@ -568,7 +569,7 @@ int job_open(id,channel)
 unsigned long id;
 int channel;
 {
- int j;
+ unsigned int j;
  for (j = 0;j < numjobs;++j) if (!jo[j].refs) break;
  if (j == numjobs) return -1;
  jo[j].refs = 1;
@@ -625,9 +626,9 @@ int j;
 char *stripvdomprepend(recip)
 char *recip;
 {
- int i;
+ unsigned int i;
  char *domain;
- int domainlen;
+ unsigned int domainlen;
  const char *prepend;
 
  i = str_rchr(recip,'@');
@@ -649,7 +650,7 @@ char *recip;
 }
 
 stralloc bouncetext = {0};
-int bouncemaxbytes = 0;
+unsigned int bouncemaxbytes = 0;
 
 void addbounce(id,recip,report)
 unsigned long id;
@@ -657,7 +658,7 @@ char *recip;
 char *report;
 {
  int fd;
- int pos;
+ unsigned int pos;
  int w;
  while (!stralloc_copys(&bouncetext,"<")) nomem();
  while (!stralloc_cats(&bouncetext,stripvdomprepend(recip))) nomem();
@@ -768,11 +769,9 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
 
    if (custombouncetext.len > 1)
    {
-//     qmail_puts(&qqt,"-\n");
      qmail_puts(&qqt,custombouncetext.s);
      if (custombouncetext.s[custombouncetext.len-2] != '\n')
        qmail_puts(&qqt,"\n"); /* I don't think we get here but anyway */
-//     qmail_puts(&qqt,"-\n");
    }
 
    qmail_puts(&qqt,"\n");
@@ -801,8 +800,8 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
      qmail_fail(&qqt);
    else
     {
-     int bytestogo;
-     int bytestoget;
+     unsigned int bytestogo;
+     unsigned int bytestoget;
      bytestogo = bouncemaxbytes;
      bytestoget = (bytestogo < sizeof(buf) && bouncemaxbytes != 0) ? bytestogo : sizeof(buf);
      substdio_fdbuf(&ssread,subread,fd,inbuf,sizeof(inbuf));
@@ -876,7 +875,7 @@ void del_status()
 void del_init()
 {
  int c;
- int i;
+ unsigned int i;
  for (c = 0;c < CHANNELS;++c)
   {
    flagspawnalive[c] = 1;
@@ -906,11 +905,11 @@ int c;
 }
 
 void del_start(j,mpos,recip)
-int j;
+unsigned int j;
 seek_pos mpos;
 char *recip;
 {
- int i;
+ unsigned int i;
  int c;
 
  c = jo[j].channel;
@@ -966,7 +965,7 @@ int c;
  int r;
  char ch;
  int i;
- int delnum;
+ unsigned int delnum;
  r = read(chanfdin[c],delbuf,sizeof(delbuf));
  if (r == -1) return;
  if (r == 0) { spawndied(c); return; }
@@ -1134,7 +1133,7 @@ datetime_sec nextretry(birth,c)
 datetime_sec birth;
 int c;
 {
- int n;
+ unsigned int n;
 
  if (birth > recent) n = 0;
  else n = squareroot(recent - birth); /* no need to add fuzz to recent */
@@ -1849,7 +1848,7 @@ int main()
  for (c = 0;c < CHANNELS;++c)
   {
    char ch, ch1;
-   int u;
+   unsigned int u;
    int r;
    do
      r = read(chanfdin[c],&ch,1);

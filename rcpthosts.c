@@ -40,9 +40,9 @@ int rcpthosts_init(void)
 
 static stralloc host = {0};
 
-int localhosts(char *buf, int len)
+int localhosts(char *buf, unsigned int len)
 {
-  int j;
+  unsigned int j;
   uint32 dlen;
  
   if (flagrh < 0) return 0;
@@ -63,11 +63,9 @@ int localhosts(char *buf, int len)
   return 0;
 }
 
-int rcpthosts(buf,len)
-char *buf;
-int len;
+int rcpthosts(char *buf, unsigned int len)
 {
-  int j;
+  unsigned int j;
   int r;
   uint32 dlen;
 

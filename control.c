@@ -8,6 +8,7 @@
 #include "control.h"
 #include "alloc.h"
 #include "scan.h"
+#include "limit.h"
 
 static char inbuf[64];
 static stralloc line = {0};
@@ -82,6 +83,10 @@ const char *fn;
   }
  if (!stralloc_0(&line)) return -1;
  if (!scan_ulong(line.s,&u)) return 0;
+ if (u > INT_MAX) {
+   errno = error_range;
+   return -1;
+ }
  *i = u;
  return 1;
 }

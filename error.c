@@ -92,3 +92,10 @@ EACCES;
 #else
 -13;
 #endif
+
+int error_range =
+#ifdef ERANGE
+ERANGE;
+#else
+-14;
+#endif

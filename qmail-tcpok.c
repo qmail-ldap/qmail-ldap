@@ -15,7 +15,7 @@ substdio ss;
 int main()
 {
   int fd;
-  int i;
+  unsigned int i;
 
   if (chdir(auto_qmail) == -1)
     strerr_die4sys(111,FATAL,"unable to chdir to ",auto_qmail,": ");

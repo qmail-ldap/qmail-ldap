@@ -29,7 +29,7 @@ void out(const char *s1, const char *s2, const char *s3)
   len = str_len(s1);
   if (s2) len += str_len(s2);
   if (s3) len += str_len(s3);
-  substdio_put(&ssout,strnum,fmt_ulong(strnum,(unsigned long)len));
+  substdio_put(&ssout,strnum,fmt_ulong(strnum,len));
   substdio_puts(&ssout,":");
   substdio_puts(&ssout,s1);
   substdio_puts(subfderr,s1+1);
@@ -67,14 +67,14 @@ void compression_done(void)
 
 void resources() { _exit(111); }
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+int safewrite(int fd, void *buf, int len)
 {
   int r;
   r = write(fd,buf,len);
   if (r <= 0) _exit(0);
   return r;
 }
-int saferead(fd,buf,len) int fd; char *buf; int len;
+int saferead(int fd, void *buf,int len)
 {
   int r;
 #ifdef QMQP_COMPRESS
@@ -194,10 +194,10 @@ void identify()
 char buf[1000 + 20 + FMT_ULONG];
 char strnum[FMT_ULONG];
 
-int getbuf()
+int getbuf(void)
 {
   unsigned long len;
-  int i;
+  unsigned long i;
 
   len = getlen();
   if (len >= 1000) {
@@ -215,7 +215,7 @@ int getbuf()
 
 int flagok = 1;
 
-int main()
+int main(int argc, char **argv)
 {
   const char *result;
   unsigned long qp;
@@ -274,12 +274,12 @@ int main()
     len += fmt_ulong(buf + len,qp);
 #ifdef QMQP_COMPRESS
     if (compressed > 0) {
-      len += fmt_str(buf + len, " ddc saved ");
+      len += fmt_str(buf + len, " DDC saved ");
       if (percent < 0) {
         len += fmt_str(buf + len, "-");
         percent *= -1;
       }
-      len += fmt_ulong(buf + len, percent);
+      len += fmt_uint(buf + len, percent);
       len += fmt_str(buf + len, " percent");
     }
 #endif
@@ -290,7 +290,7 @@ int main()
   if (!flagok)
     result = "Dsorry, I can't accept addresses like that (#5.1.3)";
 
-  substdio_put(&ssout,strnum,fmt_ulong(strnum,(unsigned long) str_len(result)));
+  substdio_put(&ssout,strnum,fmt_uint(strnum,str_len(result)));
   substdio_puts(&ssout,":");
   substdio_puts(&ssout,result);
   substdio_puts(subfderr,result + 1);

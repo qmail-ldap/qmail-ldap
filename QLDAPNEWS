@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/01/26 22:42:47 $ ($Revision: 1.165 $)
+RELEASE: $Date: 2004/01/29 15:03:11 $ ($Revision: 1.166 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,13 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Yet another cleanup round through the whole code. Fix many issues with integer
+ overflows inclusive the qmail-smtpd crash found by Georgi Guninski.
+ While doing that rename puts and log to putstr and logit so that it does not
+ conflict with gcc internals.
+
+ Bugfix in auth_mod.c reported by em (at) cmla.ens-cachan.fr
 
  Yet another run script update. $ALIASEMPTY fix from Jo Geraerts and correct
  $QMAIL idea from Ace Suares.

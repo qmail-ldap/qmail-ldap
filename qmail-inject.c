@@ -54,9 +54,9 @@ int flagrh;
 int flagqueue;
 struct qmail qqt;
 
-void put(s,len) char *s; int len;
+void put(const char *s, unsigned int len)
 { if (flagqueue) qmail_put(&qqt,s,len); else substdio_put(subfdout,s,len); }
-void puts(s) char *s; { put(s,str_len(s)); }
+void puts(const char *s) { put(s,str_len(s)); }
 
 void perm() { _exit(100); }
 void temp() { _exit(111); }
@@ -97,7 +97,7 @@ void exitnicely()
 
  if (flagqueue)
   {
-   int i;
+   unsigned int i;
 
    if (!stralloc_0(&sender)) die_nomem();
    qmail_from(&qqt,sender.s);
@@ -154,7 +154,7 @@ stralloc *h;
 
 void savedh_print()
 {
- int i;
+ unsigned int i;
 
  for (i = 0;i < savedh.len;++i)
    put(savedh.sa[i].s,savedh.sa[i].len);
@@ -179,7 +179,7 @@ token822_alloc *addr;
 void rwextraat(addr)
 token822_alloc *addr;
 {
- int i;
+ unsigned int i;
  if (addr->t[0].type == TOKEN822_AT)
   {
    --addr->len;
@@ -191,7 +191,7 @@ token822_alloc *addr;
 void rwextradot(addr)
 token822_alloc *addr;
 {
- int i;
+ unsigned int i;
  if (addr->t[0].type == TOKEN822_DOT)
   {
    --addr->len;
@@ -203,17 +203,17 @@ token822_alloc *addr;
 void rwnoat(addr)
 token822_alloc *addr;
 {
- int i;
- int shift;
+ unsigned int i;
+ unsigned int shift;
 
  for (i = 0;i < addr->len;++i)
    if (addr->t[i].type == TOKEN822_AT)
      return;
  shift = defaulthost.len;
  if (!token822_readyplus(addr,shift)) die_nomem();
- for (i = addr->len - 1;i >= 0;--i)
-   addr->t[i + shift] = addr->t[i];
  addr->len += shift;
+ for (i = addr->len - 1;i >= shift;--i)
+   addr->t[i] = addr->t[i - shift];
  for (i = 0;i < shift;++i)
    addr->t[i] = defaulthost.t[shift - 1 - i];
 }
@@ -221,8 +221,8 @@ token822_alloc *addr;
 void rwnodot(addr)
 token822_alloc *addr;
 {
- int i;
- int shift;
+ unsigned int i;
+ unsigned int shift;
  for (i = 0;i < addr->len;++i)
   {
    if (addr->t[i].type == TOKEN822_DOT)
@@ -239,9 +239,9 @@ token822_alloc *addr;
   }
  shift = defaultdomain.len;
  if (!token822_readyplus(addr,shift)) die_nomem();
- for (i = addr->len - 1;i >= 0;--i)
-   addr->t[i + shift] = addr->t[i];
  addr->len += shift;
+ for (i = addr->len - 1;i >= shift;--i)
+   addr->t[i] = addr->t[i - shift];
  for (i = 0;i < shift;++i)
    addr->t[i] = defaultdomain.t[shift - 1 - i];
 }
@@ -249,8 +249,8 @@ token822_alloc *addr;
 void rwplus(addr)
 token822_alloc *addr;
 {
- int i;
- int shift;
+ unsigned int i;
+ unsigned int shift;
 
  if (addr->t[0].type != TOKEN822_ATOM) return;
  if (!addr->t[0].slen) return;
@@ -260,9 +260,9 @@ token822_alloc *addr;
 
  shift = plusdomain.len;
  if (!token822_readyplus(addr,shift)) die_nomem();
- for (i = addr->len - 1;i >= 0;--i)
-   addr->t[i + shift] = addr->t[i];
  addr->len += shift;
+ for (i = addr->len - 1;i >= shift;--i)
+   addr->t[i] = addr->t[i - shift];
  for (i = 0;i < shift;++i)
    addr->t[i] = plusdomain.t[shift - 1 - i];
 }
@@ -538,7 +538,7 @@ void mft_init()
 
 void finishmft()
 {
-  int i;
+  unsigned int i;
   static stralloc sa = {0};
   static stralloc sa2 = {0};
 
@@ -688,7 +688,7 @@ int main(argc,argv)
 int argc;
 char **argv;
 {
- int i;
+ unsigned int i;
  int opt;
  int recipstrategy;
 

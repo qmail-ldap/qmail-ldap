@@ -30,7 +30,7 @@ char **argv;
   scan_ulong(value,&num);
   strnum[fmt_ulong(strnum,num)] = 0;
 
-  puts("int ");
+  puts("unsigned int ");
   puts(name);
   puts(" = ");
   puts(strnum);

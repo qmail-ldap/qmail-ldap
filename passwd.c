@@ -32,8 +32,8 @@ static int do_rmd160(char *, char *);
 
 static struct func {
 	const char	*scheme;
-	int	slen;
-	int	(*func)(char *, char *);
+	unsigned int	slen;
+	int		(*func)(char *, char *);
 } algo[] = {
 	{ "{crypt}",	7, do_crypt },
 	{ "{md4}",	5, do_md4 },
@@ -57,7 +57,7 @@ cmp_passwd(char *clear, char *encrypted)
 			encrypted += algo[i].slen;
 			r = algo[i].func(clear, encrypted);
 			if (r != OK) return r;
-			log(256, "cpm_passwd: comparing hashed %s"
+			logit(256, "cpm_passwd: comparing hashed %s"
 			    "passwd (%S == %s)\n", 
 			    algo[i].scheme, hashed, encrypted);
 			if (str_diffn(hashed.s, encrypted, hashed.len) == 0 &&
@@ -67,7 +67,7 @@ cmp_passwd(char *clear, char *encrypted)
 			return BADPASS;
 		}
 	}
-	log(256, "cpm_passwd: comparing crypt(3) passwd (%s == %s)\n", 
+	logit(256, "cpm_passwd: comparing crypt(3) passwd (%s == %s)\n", 
 	    crypt(clear,encrypted), encrypted);
 	if (str_diff(encrypted, crypt(clear,encrypted)) == 0)
 		return OK;
@@ -107,7 +107,7 @@ feed_salt(char *b, int l)
 void
 feed_crypt(const char *format)
 {
-	int len, slen;
+	unsigned int len, slen;
 	
 	len = str_chr(format, 'X');
 	if (format[len] != 'X') goto fail;

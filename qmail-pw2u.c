@@ -95,7 +95,7 @@ stralloc line = {0};
 void doaccount()
 {
   struct stat st;
-  int i;
+  unsigned int i;
   const char *mailnames;
   char *x;
   unsigned int xlen;
@@ -196,7 +196,7 @@ stralloc sub = {0};
 
 void dosubuser()
 {
-  int i;
+  unsigned int i;
   char *x;
   unsigned int xlen;
   const char *uughs;

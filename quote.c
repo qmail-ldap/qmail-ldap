@@ -21,8 +21,8 @@ stralloc *saout;
 stralloc *sain;
 {
  char ch;
- int i;
- int j;
+ unsigned int i;
+ unsigned int j;
 
  if (!stralloc_ready(saout,sain->len * 2 + 2)) return 0;
  j = 0;
@@ -44,7 +44,7 @@ const char *s;
 unsigned int n;
 {
  unsigned char uch;
- int i;
+ unsigned int i;
  if (!n) return 1;
  for (i = 0;i < n;++i)
   {
@@ -72,7 +72,7 @@ int quote2(sa,s)
 stralloc *sa;
 const char *s;
 {
- int j;
+ unsigned int j;
  if (!*s) return stralloc_copys(sa,s);
  j = str_rchr(s,'@');
  if (!stralloc_copys(&foo,s)) return 0;

@@ -21,10 +21,10 @@
 
 static void die(void);
 static int safewrite(int, void *, int);
-static void puts(const char *);
+static void putstr(const char *);
 static void flush(void);
-static void err(const char *);
-static void log(const char *);
+static void errstr(const char *);
+static void logit(const char *);
 static void die_usage(void);
 static void die_exec(void);
 static void die_badenv(void);
@@ -35,10 +35,10 @@ static void die_dir(void);
 static void die_dirback(void);
 void setup(void);
 static void uint16_pack_big(char [], unsigned int);
-int sendrequest(int, char *, int, struct ip_address *);
+int sendrequest(int, char *, unsigned int, struct ip_address *);
 int env_snap(void);
 void env_rewrite(char**, char**);
-void setenv(char *, int);
+void setenv(char *, unsigned int);
 
 char ssoutbuf[128];
 substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
@@ -52,8 +52,8 @@ char packet[MAX_PACKET_SIZE];
 stralloc addresses = {0};
 stralloc envs = {0};
 struct ip_address *servers;
-int numservers = 0;
-int numenvs = 0;
+unsigned int numservers = 0;
+unsigned int numenvs = 0;
 unsigned int serverport = 2821;
 
 
@@ -61,9 +61,8 @@ void
 setup(void)
 {
 	char* s;
-	int i;
+	unsigned int i, len;
 	int fdsourcedir;
-	int len;
 
 	fdsourcedir = open_read(".");
 	if (fdsourcedir == -1)
@@ -114,7 +113,7 @@ uint16_pack_big(char s[2], unsigned int u)
 }
 
 int
-sendrequest(int fd, char *buf, int len, struct ip_address *ip)
+sendrequest(int fd, char *buf, unsigned int len, struct ip_address *ip)
 {
 	struct sockaddr_in s;
 
@@ -131,15 +130,15 @@ char **envsnap;
 int
 env_snap(void)
 {
-	int i;
-	int en;
+	unsigned int en, i;
+	
 	for (en = 0;environ[en];++en) ;
 	envsnap = (char **) alloc((en + 1) * sizeof(char *));
 	if (!envsnap) return 0;
 	for (en = 0;environ[en];++en) {
 		envsnap[en] = alloc(str_len(environ[en]) + 1);
 		if (!envsnap[en]) {
-			for (i = 0;i < en;++i) alloc_free(envsnap[i]);
+			for (i = 0; i < en; ++i) alloc_free(envsnap[i]);
 			alloc_free(envsnap);
 			return 0;
 		}
@@ -155,10 +154,10 @@ void
 env_rewrite(char** name, char** value)
 {
 	char *e;
-	int i;
-	int llen;
-	int nlen;
-	int elen;
+	unsigned int i;
+	unsigned int llen;
+	unsigned int nlen;
+	unsigned int elen;
 
 	e = envs.s;
 	nlen = str_len(*name);
@@ -185,15 +184,15 @@ env_rewrite(char** name, char** value)
 	}
 }
 
-void setenv(char *env, int envlen)
+void setenv(char *env, unsigned int envlen)
 {
 	char *v;
 	char *e;
-	int numenv;
-	int elen;
-	int nlen;
-	int tlen;
-	int i;
+	unsigned int numenv;
+	unsigned int elen;
+	unsigned int nlen;
+	unsigned int tlen;
+	unsigned int i;
 
 	if (!env_snap()) die_nomem();
 
@@ -226,7 +225,7 @@ int main (int argc, char** argv)
 	char *s;
 	unsigned long t;
 	int sfd = -1;
-	int len;
+	unsigned int len;
 	int i;
 
 	childargs = argv + 1;
@@ -264,7 +263,7 @@ int main (int argc, char** argv)
 		if (i == -1 && errno != error_timeout) goto start_daemon;
 
 		if (t >= numservers) {
-			log("pbscheck: no response from server");
+			logit("pbscheck: no response from server");
 			goto start_daemon; /* no response */
 		}
 
@@ -307,7 +306,7 @@ static int safewrite(int fd, void *buf, int len)
 	return r;
 }
 
-static void puts(const char *s)
+static void putstr(const char *s)
 {
 	substdio_puts(&ssout,s);
 }
@@ -317,14 +316,14 @@ static void flush(void)
 	substdio_flush(&ssout);
 }
 
-static void err(const char *s)
+static void errstr(const char *s)
 {
-	puts(s);
-	puts("\r\n");
+	putstr(s);
+	putstr("\r\n");
 	flush();
 }
 
-static void log(const char *s)
+static void logit(const char *s)
 {
 	substdio_puts(&sserr,s);
 	substdio_puts(&sserr,"\n");
@@ -333,57 +332,57 @@ static void log(const char *s)
 
 static void die_usage(void)
 {
-	err("554 pop before smtp subprogram uncorrectly installed (#5.3.5)");
-	log("usage: pbscheck subprogram ...");
+	errstr("554 pop before smtp subprogram uncorrectly installed (#5.3.5)");
+	logit("usage: pbscheck subprogram ...");
 	die();
 }
 
 static void die_exec(void)
 {
-	err("554 unable to start smtp daemon (#5.3.5)");
-	log("pbscheck: unable to start smtp daemon");
+	errstr("554 unable to start smtp daemon (#5.3.5)");
+	logit("pbscheck: unable to start smtp daemon");
 	die();
 }
 
 static void die_badenv(void)
 {
-	err("554 unable to read $TCPREMOTEIP (#5.3.5)");
-	log("pbscheck: unable to read $TCPREMOTEIP");
+	errstr("554 unable to read $TCPREMOTEIP (#5.3.5)");
+	logit("pbscheck: unable to read $TCPREMOTEIP");
 	die();
 }
 
 static void die_control(void)
 {
-	err("554 unable to read controls (#5.3.5)");
-	log("pbscheck unable to read controls");
+	errstr("554 unable to read controls (#5.3.5)");
+	logit("pbscheck unable to read controls");
 	die();
 }
 
 static void die_nomem(void)
 {
-	err("421 out of memory (#4.3.0)");
-	log("pbscheck out of memory");
+	errstr("421 out of memory (#4.3.0)");
+	logit("pbscheck out of memory");
 	die();
 }
 
 static void die_envs(void)
 {
-	err("554 to many additional environments defined (#5.3.5)");
-	log("pbscheck control/pbsenvs has to many entries");
+	errstr("554 to many additional environments defined (#5.3.5)");
+	logit("pbscheck control/pbsenvs has to many entries");
 	die();
 }
 
 static void die_dir(void)
 {
-	err("421 chdir failed (#4.3.0)");
-	log("pbscheck unable to open current directory");
+	errstr("421 chdir failed (#4.3.0)");
+	logit("pbscheck unable to open current directory");
 	die();
 }
 
 static void die_dirback(void)
 {
-	err("421 chdir failed (#4.3.0)");
-	log("pbscheck unable to switch back to source directory");
+	errstr("421 chdir failed (#4.3.0)");
+	logit("pbscheck unable to switch back to source directory");
 	die();
 }
 

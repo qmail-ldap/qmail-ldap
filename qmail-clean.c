@@ -52,9 +52,9 @@ void respond(s) char *s; { if (substdio_putflush(subfdoutsmall,s,1) == -1) _exit
 
 int main()
 {
- int i;
+ unsigned int i;
  int match;
- int cleanuploop;
+ unsigned int cleanuploop;
  unsigned long id;
 
  if (chdir(auto_qmail) == -1) _exit(111);

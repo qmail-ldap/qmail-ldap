@@ -46,7 +46,7 @@ check_passwd(stralloc *login, stralloc *authdata,
 	pw = getpwnam(login->s);
 	if (!pw) {
 		/* XXX: unfortunately getpwnam() hides temporary errors */
-		log(32, "check_passwd: user %s not found in passwd db\n",
+		logit(32, "check_passwd: user %s not found in passwd db\n",
 		    login->s);
 		return NOSUCH;
 	}
@@ -67,7 +67,7 @@ check_passwd(stralloc *login, stralloc *authdata,
 		ret = get_local_maildir(&c->home, &c->maildir);
 		if (ret != 0)
 			return ret;
-		log(32, "get_local_maildir: maildir=%s\n", c->maildir.s);
+		logit(32, "get_local_maildir: maildir=%s\n", c->maildir.s);
 	}
 
 #ifdef PW_SHADOW
@@ -87,7 +87,7 @@ check_passwd(stralloc *login, stralloc *authdata,
 	ret = cmp_passwd((unsigned char*) authdata->s, pw->pw_passwd);
 #endif /* END AIX */
 #endif /* END PW_SHADOW */
-	log(32, "check_pw: password compare was %s\n", 
+	logit(32, "check_pw: password compare was %s\n", 
 	    ret==OK?"successful":"not successful");
 	return ret;
 }
@@ -137,5 +137,4 @@ tryclose:
 	return ERRNO;
 
 }
-
 

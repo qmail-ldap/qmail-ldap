@@ -24,7 +24,7 @@ dirmaker_init(void)
 		return -1;
 	if (!stralloc_0(&dirmaker))
 		return -1;
-	log(64, "init: control/dirmaker: %s\n", dirmaker.s);
+	logit(64, "init: control/dirmaker: %s\n", dirmaker.s);
 	return 0;
 }
 

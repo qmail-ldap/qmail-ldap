@@ -22,8 +22,8 @@ union endian_t {
 int main()
 {
 
-   endian.c[0]=128; endian.c[1]=0; endian.c[2]=0; endian.c[3]=0;
-   endian.c[4]=0;   endian.c[5]=0; endian.c[6]=0; endian.c[7]=0;
+	endian.c[0]=0x80; endian.c[1]=0; endian.c[2]=0; endian.c[3]=0;
+	endian.c[4]=0;    endian.c[5]=0; endian.c[6]=0; endian.c[7]=0;
    
 	if( endian.l < 0 )
 		printf( "-D__BIG_ENDIAN__" );

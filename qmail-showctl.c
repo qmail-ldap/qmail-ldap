@@ -73,6 +73,36 @@ char *post;
   }
 }
 
+void do_ulong(fn,def,pre,post)
+char *fn;
+char *def;
+char *pre;
+char *post;
+{
+  unsigned long i;
+  substdio_puts(subfdout,"\n");
+  substdio_puts(subfdout,fn);
+  substdio_puts(subfdout,": ");
+  switch(control_readulong(&i,fn)) {
+    case 0:
+      substdio_puts(subfdout,"(Default.) ");
+      substdio_puts(subfdout,pre);
+      substdio_puts(subfdout,def);
+      substdio_puts(subfdout,post);
+      substdio_puts(subfdout,".\n");
+      break;
+    case 1:
+      substdio_puts(subfdout,pre);
+      substdio_put(subfdout,num,fmt_ulong(num,i));
+      substdio_puts(subfdout,post);
+      substdio_puts(subfdout,".\n");
+      break;
+    default:
+      substdio_puts(subfdout,"Oops! Trouble reading this file.\n");
+      break;
+  }
+}
+
 void do_str(fn,flagme,def,pre)
 char *fn;
 int flagme;
@@ -111,8 +141,8 @@ char *def;
 char *pre;
 char *post;
 {
-  int i;
-  int j;
+  unsigned int i;
+  unsigned int j;
 
   substdio_puts(subfdout,"\n");
   substdio_puts(subfdout,fn);
@@ -157,39 +187,39 @@ int main()
   substdio_puts(subfdout,".\n");
 
   substdio_puts(subfdout,"paternalism (in decimal): ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_patrn));
+  substdio_put(subfdout,num,fmt_uint(num, auto_patrn));
   substdio_puts(subfdout,".\n");
 
   substdio_puts(subfdout,"silent concurrency limit: ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_spawn));
+  substdio_put(subfdout,num,fmt_uint(num, auto_spawn));
   substdio_puts(subfdout,".\n");
 
   substdio_puts(subfdout,"subdirectory split: ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_split));
+  substdio_put(subfdout,num,fmt_uint(num, auto_split));
   substdio_puts(subfdout,".\n");
 
   substdio_puts(subfdout,"user ids: ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_uida));
+  substdio_put(subfdout,num,fmt_uint(num, auto_uida));
   substdio_puts(subfdout,", ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_uidd));
+  substdio_put(subfdout,num,fmt_uint(num, auto_uidd));
   substdio_puts(subfdout,", ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_uidl));
+  substdio_put(subfdout,num,fmt_uint(num, auto_uidl));
   substdio_puts(subfdout,", ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_uido));
+  substdio_put(subfdout,num,fmt_uint(num, auto_uido));
   substdio_puts(subfdout,", ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_uidp));
+  substdio_put(subfdout,num,fmt_uint(num, auto_uidp));
   substdio_puts(subfdout,", ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_uidq));
+  substdio_put(subfdout,num,fmt_uint(num, auto_uidq));
   substdio_puts(subfdout,", ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_uidr));
+  substdio_put(subfdout,num,fmt_uint(num, auto_uidr));
   substdio_puts(subfdout,", ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_uids));
+  substdio_put(subfdout,num,fmt_uint(num, auto_uids));
   substdio_puts(subfdout,".\n");
 
   substdio_puts(subfdout,"group ids: ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_gidn));
+  substdio_put(subfdout,num,fmt_uint(num, auto_gidn));
   substdio_puts(subfdout,", ");
-  substdio_put(subfdout,num,fmt_ulong(num,(unsigned long) auto_gidq));
+  substdio_put(subfdout,num,fmt_uint(num, auto_gidq));
   substdio_puts(subfdout,".\n");
 
   if (chdir(auto_qmail) == -1) {
@@ -240,11 +270,11 @@ int main()
     do_lst("bigbrother","No mail addresses are observed.","Observed mail address: ","");
   do_str("bouncefrom",0,"MAILER-DAEMON","Bounce user name is ");
   do_str("bouncehost",1,"bouncehost","Bounce host name is ");
-  do_int("bouncemaxbytes","0","Bounce data limit is "," bytes");
+  do_ulong("bouncemaxbytes","0","Bounce data limit is "," bytes");
   do_int("concurrencylocal","10","Local concurrency is ","");
   do_int("concurrencyremote","20","Remote concurrency is ","");
   do_lst("custombouncetext","No custombouncetext.","","");
-  do_int("databytes","0","SMTP DATA limit is "," bytes");
+  do_ulong("databytes","0","SMTP DATA limit is "," bytes");
   do_str("defaultdomain",1,"defaultdomain","Default domain name is ");
   do_str("defaulthost",1,"defaulthost","Default host name is ");
   do_str("dirmaker",0,"not defined","Program to create homedirs ");
@@ -258,7 +288,7 @@ int main()
   do_lst("locals","Messages for me are delivered locally.","Messages for "," are delivered locally.");
   do_str("me",0,"undefined! Uh-oh","My name is ");
   do_str("outgoingip",0,"0.0.0.0","Bind qmail-remote to ");
-  do_int("pbscachesize","1048576","PBS cachesize is "," bytes");
+  do_ulong("pbscachesize","1048576","PBS cachesize is "," bytes");
   do_lst("pbsenv","No environment variables will be passed.","Environment Variable: ","");
   do_str("pbsip",0,"0.0.0.0","Bind PBS daemon to ");
   do_int("pbsport","2821","PBS deamon listens on port ","");
@@ -313,8 +343,8 @@ int main()
   do_str("ldapobjectclass",0,"not defined","The objectclass to limit ldap filter is ");
   do_str("ldapmessagestore",0,"not defined","Prefix for non absolute paths is ");
   do_str("ldapdefaultdotmode",0,"ldaponly","Default dot mode for ldap users is ");
-  do_int("defaultquotasize","0","Mailbox size quota is "," bytes (0 is unlimited)");
-  do_int("defaultquotacount","0","Mailbox count quota is "," messages (0 is unlimited)");
+  do_ulong("defaultquotasize","0","Mailbox size quota is "," bytes (0 is unlimited)");
+  do_ulong("defaultquotacount","0","Mailbox count quota is "," messages (0 is unlimited)");
   do_int("ldaplocaldelivery","1","Local passwd lookup is "," (1 = on, 0 = off)");
   do_int("ldaprebind","0","Ldap rebinding is "," (1 = on, 0 = off)");
   do_int("ldapcluster","0","Clustering is "," (1 = on, 0 = off)");

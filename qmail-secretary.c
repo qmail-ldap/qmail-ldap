@@ -77,7 +77,7 @@ temp_nomem(void)
 	strerr_die2x(111, FATAL, "Out of memory.");
 }
 void
-temp_qmail(char *fn)
+temp_qmail(const char *fn)
 {
 	strerr_die4sys(111, FATAL, "Unable to open ", fn, ": ");
 }
@@ -159,10 +159,11 @@ void clean(const char *);
 int
 main(int argc, char **argv)
 {
-	char	*ezmlmdir;
-	char	*maildir;
-	char	*modfile;
-	int	opt, i;
+	char		*ezmlmdir;
+	char		*maildir;
+	char		*modfile;
+	int		opt;
+	unsigned int	i;
 	
 	sender = env_get("SENDER");
 	if (!sender) strerr_die2x(100, FATAL, "SENDER not set");
@@ -357,8 +358,8 @@ ezmlminit(char *dir)
 void
 extractrcpt(stralloc *a, stralloc *h)
 {
-	char	*s;
-	int	i;
+	char		*s;
+	unsigned int	i;
 
 	if (!stralloc_copys(a, "")) temp_nomem();
 	if (!stralloc_copys(h, "")) temp_nomem();
@@ -589,7 +590,8 @@ sendmail(struct qmail *qq, int fd, int maxsize,
     stralloc *head, stralloc *message, stralloc *hash)
 {
 	datetime_sec starttime;
-	int offset, len, i, j;
+	int offset;
+	unsigned int len, i, j;
 	
 	/* mail header */
 	qmail_put(qq, dtline.s, dtline.len);
@@ -981,7 +983,7 @@ clean_child(void)
 	DIR *folder;
 	struct dirent *entry;
 	datetime_sec t;
-	int i;
+	unsigned int i;
 
 	t = now();
 

@@ -87,7 +87,8 @@ main (int argc, char **argv)
 	const char *qqx;
 	unsigned long qp;
 	datetime_sec when;
-	int match, i;
+	int match;
+	unsigned int i;
 	
 	if (!(remote = argv[1])) usage();
 	if (!(from = argv[2])) usage();

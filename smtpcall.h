@@ -19,10 +19,10 @@ struct call {
 
 int call_getln(substdio *, stralloc *);
 int call_getc(struct call *, char *);
-int call_put(struct call *, const char *, int);
+int call_put(struct call *, const char *, unsigned int);
 int call_puts(struct call *, const char *);
 int call_flush(struct call *);
-int call_putflush(struct call *, const char *, int);
+int call_putflush(struct call *, const char *, unsigned int);
 int call_putsflush(struct call *, const char *);
 int call_open(struct call *, const char *, int, int);
 void call_close(struct call *);

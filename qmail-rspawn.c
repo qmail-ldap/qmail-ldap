@@ -20,16 +20,16 @@ char **argv;
  tcpto_clean();
 }
 
-int truncreport = 0;
+unsigned int truncreport = 0;
 
 void report(ss,wstat,s,len)
 substdio *ss;
 int wstat;
 char *s;
-int len;
+unsigned int len;
 {
- int j;
- int k;
+ unsigned int j;
+ unsigned int k;
  int result;
  int orr;
 
@@ -86,7 +86,7 @@ int len;
 
 int spawn(fdmess,fdout,s,r,at)
 int fdmess; int fdout;
-char *s; char *r; int at;
+char *s; char *r; unsigned int at;
 {
  int f;
  char *(args[5]);

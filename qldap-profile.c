@@ -9,9 +9,9 @@ struct profile_t {
 	
 static struct profile_t profile_list[PROFILES_MAX];
 
-void start_timing(int profile, char *function)
+void start_timing(unsigned int profile, char *function)
 {
-	if ( profile >= PROFILES_MAX ) {
+	if (profile >= PROFILES_MAX) {
 		debug(0x400, "Max Number of profiles exceeded\n");
 		return;
 	}
@@ -20,14 +20,14 @@ void start_timing(int profile, char *function)
 
 }
 
-void stop_timing(int profile) 
+void stop_timing(unsigned int profile) 
 {
 	struct taia stop;
 	struct taia diff;
 	char nano[TAIA_FMTFRAC];
 	unsigned long sec;
 	
-	if ( profile >= PROFILES_MAX ) {
+	if (profile >= PROFILES_MAX) {
 		debug(0x400, "Max Number of profiles exceeded\n");
 		return;
 	}

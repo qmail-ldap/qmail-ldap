@@ -20,6 +20,7 @@ int i;
   X(error_pipe,"broken pipe")
   X(error_perm,"permission denied")
   X(error_acces,"access denied")
+  X(error_range,"numerical result out of range")
 #ifdef ESRCH
   X(ESRCH,"no such process")
 #endif
@@ -91,9 +92,6 @@ int i;
 #endif
 #ifdef EDOM
   X(EDOM,"input out of range")
-#endif
-#ifdef ERANGE
-  X(ERANGE,"output out of range")
 #endif
 #ifdef EALREADY
   X(EALREADY,"operation already in progress")

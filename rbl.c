@@ -35,7 +35,7 @@ struct rbl {
   char *message;
 } *rbl;
 
-int numrbl;
+unsigned int numrbl;
 
 static stralloc ip_reverse = {0};
 static stralloc rbl_tmp = {0};
@@ -70,7 +70,7 @@ static char ipstr[IPFMT];
 static int rbl_lookup(char *base, char *matchon)
 {
   ipalloc rblsa = {0};
-  int i;
+  unsigned int i;
 
   if (!*base) return 2;
 
@@ -117,7 +117,7 @@ void rbladdheader(char *base, char *matchon, char *message)
 int rblcheck(const char *remoteip, char** rblname, int rbloh)
 {
   int r = 1;
-  int i;
+  unsigned int i;
 
   if(!stralloc_copys(&rblmessage, "")) die_nomem();
   if(!rbl_start(remoteip)) return 0;
@@ -160,10 +160,10 @@ int rblinit(void)
 {
   char** x;
   int on;
-  int i;
-  int j;
-  int k;
-  int n;
+  unsigned int i;
+  unsigned int j;
+  unsigned int k;
+  unsigned int n;
 
   on = control_readfile(&rbldata,"control/rbllist",0);
   if (on == -1) return on;

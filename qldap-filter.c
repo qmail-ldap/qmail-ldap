@@ -71,16 +71,16 @@ filter_uid(char *uid)
 	return filter_objectclass(filter.s);
 }
 
-static int extcnt;
+static unsigned int extcnt;
 
 
 char *
 filter_mail(char *mail, int *done)
 {
-	static char	*escaped;
-	static int	at, ext, len = 0;
+	static char		*escaped;
+	static unsigned int	at, ext, len = 0;
 #ifdef DASH_EXT
-	int i;
+	unsigned int 		i;
 #endif
 
 	if (mail == (char *)0) {
@@ -170,7 +170,7 @@ filter_mail(char *mail, int *done)
 	return filter_objectclass(filter.s);
 }
 
-int
+unsigned int
 filter_mail_ext(void)
 {
 	return extcnt;

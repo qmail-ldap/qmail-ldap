@@ -37,7 +37,7 @@ int ipme_init()
   struct ifconf ifc;
   char *x;
   struct ifreq *ifr;
-  struct sockaddr_in *sin;
+  struct sockaddr_in *s_in;
   int len;
   int s;
   struct ip_mx ix;
@@ -77,8 +77,8 @@ int ipme_init()
     if (len < sizeof(*ifr))
       len = sizeof(*ifr);
     if (ifr->ifr_addr.sa_family == AF_INET) {
-      sin = (struct sockaddr_in *) &ifr->ifr_addr;
-      byte_copy(&ix.ip,4,&sin->sin_addr);
+      s_in = (struct sockaddr_in *) &ifr->ifr_addr;
+      byte_copy(&ix.ip,4,&s_in->sin_addr);
       if (ioctl(s,SIOCGIFFLAGS,x) == 0)
         if (ifr->ifr_flags & IFF_UP)
           if (!ipalloc_append(&ipme,&ix)) { close(s); return 0; }
@@ -89,8 +89,8 @@ int ipme_init()
       if (ifr->ifr_flags & IFF_UP)
         if (ioctl(s,SIOCGIFADDR,x) == 0)
 	  if (ifr->ifr_addr.sa_family == AF_INET) {
-	    sin = (struct sockaddr_in *) &ifr->ifr_addr;
-	    byte_copy(&ix.ip,4,&sin->sin_addr);
+	    s_in = (struct sockaddr_in *) &ifr->ifr_addr;
+	    byte_copy(&ix.ip,4,&s_in->sin_addr);
 	    if (!ipalloc_append(&ipme,&ix)) { close(s); return 0; }
 	  }
 #endif

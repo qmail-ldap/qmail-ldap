@@ -86,7 +86,7 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 void
 auth_fail(const char *login, int reason)
 {
-	log(2, "warning: auth_fail: user %s failed\n", login);
+	logit(2, "warning: auth_fail: user %s failed\n", login);
 
 	if (substdio_putflush(subfdout, "D", 1) == -1) auth_error(ERRNO);
 	_exit(0);
@@ -103,7 +103,7 @@ auth_success(const char *login)
 
 void auth_error(int errnum)
 {
-	log(2, "warning: auth_error: authorization failed (%s)\n",
+	logit(2, "warning: auth_error: authorization failed (%s)\n",
 		   qldap_err_str(errnum));
 	if (errnum == BADVAL || errnum == NEEDED || errnum == ILLVAL) {
 		if (substdio_putflush(subfdout, "Z", 1) == -1)
@@ -141,11 +141,11 @@ main(int argc, char **argv)
 		auth_error(AUTH_CONF);
 
 	auth_init(argc, argv, &loginstr, &authdatastr);
-	log(256, "auth_init: login=%s, authdata=%s\n",
+	logit(256, "auth_init: login=%s, authdata=%s\n",
 	    loginstr.s, authdatastr.s);
 
 	if (authdatastr.len <= 1) {
-		log(1, "alert: null password.\n");
+		logit(1, "alert: null password.\n");
 		auth_fail(loginstr.s, BADPASS);
 	}
 	

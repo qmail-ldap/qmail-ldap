@@ -42,7 +42,7 @@ stralloc	ldap_login = {0};
 stralloc	ldap_password = {0};
 stralloc	default_messagestore = {0};
 stralloc	dotmode = {0};
-int		ldap_timeout = QLDAP_TIMEOUT;	/* default timeout is 30 secs */
+unsigned int	ldap_timeout = QLDAP_TIMEOUT;	/* default timeout is 30 secs */
 int		rebind = 0;			/* default off */
 int		default_uid = 0;
 int		default_gid = 0;
@@ -59,7 +59,7 @@ static int check_next_state(qldap *, int);
 #define CHECK(x, y)							\
 	do {								\
 		if (check_next_state((x), (y)) == 0) {			\
-			log(128, "qldap: bad state transition %i -> %i",\
+			logit(128, "qldap: bad state transition %i -> %i",\
 			    (x)->state, y);				\
 			(x)->state = ERROR;				\
 			return FAILED;					\
@@ -82,45 +82,45 @@ qldap_controls(void)
 		return -1; /* ... the errno should be set by control_* */
 	byte_repl(ldap_server.s, ldap_server.len, '\0', ' ');
 	if (!stralloc_0(&ldap_server)) return -1;
-	log(64, "init_ldap: control/ldapserver: %s\n", ldap_server.s);
+	logit(64, "init_ldap: control/ldapserver: %s\n", ldap_server.s);
 
 	if (control_rldef(&basedn, "control/ldapbasedn", 0, "") == -1)
 		return -1;
 	if (!stralloc_0(&basedn)) return -1;
-	log(64, "init_ldap: control/ldapbasedn: %s\n", basedn.s);
+	logit(64, "init_ldap: control/ldapbasedn: %s\n", basedn.s);
 
 	if (control_rldef(&objectclass, "control/ldapobjectclass", 0, "") == -1)
 		return -1;
-	log(64, "init_ldap: control/ldapobjectclass: %S\n", &objectclass);
+	logit(64, "init_ldap: control/ldapobjectclass: %S\n", &objectclass);
 
 	if (control_rldef(&ldap_login, "control/ldaplogin", 0, "") == -1)
 		return -1;
 	if (!stralloc_0(&ldap_login)) return -1;
-	log(64, "init_ldap: control/ldaplogin: %s\n", ldap_login.s);
+	logit(64, "init_ldap: control/ldaplogin: %s\n", ldap_login.s);
 
 	if (control_rldef(&ldap_password, "control/ldappassword", 0, "") == -1)
 		return -1;
 	if (!stralloc_0(&ldap_password)) return -1;
-	log(64, "init_ldap: control/ldappassword: %s\n", ldap_password.s);
+	logit(64, "init_ldap: control/ldappassword: %s\n", ldap_password.s);
 
 	if (control_readint(&ldap_timeout, "control/ldaptimeout") == -1)
 		return -1;
-	log(64, "init_ldap: control/ldaptimeout: %i\n", ldap_timeout);
+	logit(64, "init_ldap: control/ldaptimeout: %i\n", ldap_timeout);
 
 	if (control_readint(&rebind, "control/ldaprebind") == -1) return -1;
-	log(64, "init_ldap: control/ldaprebind: %i\n", rebind);
+	logit(64, "init_ldap: control/ldaprebind: %i\n", rebind);
 
 	
 	/* defaults */
 	if (control_readint(&default_uid, "control/ldapuid") == -1)
 		return -1;
 	if (default_uid != 0)
-		log(64, "init_ldap: control/ldapuid: %i\n", default_uid);
+		logit(64, "init_ldap: control/ldapuid: %i\n", default_uid);
 
 	if (control_readint(&default_gid, "control/ldapgid") == -1)
 		return -1;
 	if (default_gid != 0)
-		log(64, "init_ldap: control/ldapgid: %i\n", default_gid);
+		logit(64, "init_ldap: control/ldapgid: %i\n", default_gid);
 
 	if (control_rldef(&default_messagestore,
 		    "control/ldapmessagestore", 0, "") == -1)
@@ -129,7 +129,7 @@ qldap_controls(void)
 		if (default_messagestore.s[default_messagestore.len-1] != '/')
 			if (!stralloc_append(&default_messagestore, "/"))
 				return -1;
-		log(64, "init_ldap: control/ldapmessagestore: %S\n", 
+		logit(64, "init_ldap: control/ldapmessagestore: %S\n", 
 		    &default_messagestore);
 	} else
 		if (!stralloc_copys(&default_messagestore, "")) return -1;
@@ -137,14 +137,14 @@ qldap_controls(void)
 	if (control_rldef(&dotmode, "control/ldapdefaultdotmode",
 		    0, "ldaponly") == -1) return -1;
 	if (!stralloc_0(&dotmode)) return -1;
-	log(64, "init_ldap: control/ldapdefaultdotmode: %s\n", dotmode.s);
+	logit(64, "init_ldap: control/ldapdefaultdotmode: %s\n", dotmode.s);
 
 	if (control_readulong(&quotasize, "control/defaultquotasize") == -1) 
 		return -1;
 	if (control_readulong(&quotacount, "control/defaultquotacount") == -1) 
 		return -1;
-	log(64, "init_ldap: control/defaultquotasize: %u\n", quotasize);
-	log(64, "init_ldap: control/defaultquotacount: %u\n", quotacount);
+	logit(64, "init_ldap: control/defaultquotasize: %u\n", quotasize);
+	logit(64, "init_ldap: control/defaultquotacount: %u\n", quotacount);
 
 	return 0;
 }
@@ -183,14 +183,14 @@ qldap_open(qldap *q)
 	
 	/* allocate the connection */
 	if ((q->ld = ldap_init(ldap_server.s,LDAP_PORT)) == 0) {
-		log(128, "qldap_open: init failed\n");
+		logit(128, "qldap_open: init failed\n");
 		return ERRNO;
 	}
-	log(128, "qldap_open: init successful\n");
+	logit(128, "qldap_open: init successful\n");
 
 	rc = qldap_set_option(q, 0);
 	if (rc != OK)
-		log(128, "qldap_open: qldap_set_option failed\n");
+		logit(128, "qldap_open: qldap_set_option failed\n");
 	q->state = rc==OK?OPEN:ERROR;
 	return rc;
 }
@@ -221,33 +221,33 @@ retry:
 	 */
 	switch (rc) {
 	case LDAP_SUCCESS:
-		log(128, "qldap_bind: successful\n");
+		logit(128, "qldap_bind: successful\n");
 		q->state = BIND;
 		return OK;
 	case LDAP_TIMELIMIT_EXCEEDED:
 	case LDAP_SERVER_DOWN:
-		log(128, "qldap_bind: failed (%s)\n", ldap_err2string(rc));
+		logit(128, "qldap_bind: failed (%s)\n", ldap_err2string(rc));
 		q->state = ERROR;
 		return LDAP_BIND_UNREACH;
 	case LDAP_INVALID_CREDENTIALS:
-		log(128, "qldap_bind: failed (%s)\n", ldap_err2string(rc));
+		logit(128, "qldap_bind: failed (%s)\n", ldap_err2string(rc));
 		q->state = ERROR;
 		return LDAP_BIND_AUTH;
 	case LDAP_PROTOCOL_ERROR:
-		log(128, "qldap_bind: failed wrong protocol (%s)\n",
+		logit(128, "qldap_bind: failed wrong protocol (%s)\n",
 		    ldap_err2string(rc));
 		/* bind failed try Version 2 */
 		if (try > 1) break;
-		log(128, "qldap_bind: retrying bind with Version 1\n");
+		logit(128, "qldap_bind: retrying bind with Version 1\n");
 		qldap_close(q);
 		rc = qldap_open(q);
-		log(128, "qldap_bind: opened conection for Version 1\n");
+		logit(128, "qldap_bind: opened conection for Version 1\n");
 		qldap_set_option(q, 1);
-		log(128, "qldap_bind: set options for Version 1\n");
+		logit(128, "qldap_bind: set options for Version 1\n");
 		if (rc != OK) break;
 		goto retry;
 	default:
-		log(128, "qldap_bind: failed (%s)\n", ldap_err2string(rc));
+		logit(128, "qldap_bind: failed (%s)\n", ldap_err2string(rc));
 		break;
 	}
 	q->state = ERROR;
@@ -309,8 +309,9 @@ int
 qldap_lookup(qldap *q, const char *filter, const char *attrs[])
 {
 	/* search a unique entry */
-	struct	timeval tv;
-	int	rc, num_entries;
+	struct timeval	tv;
+	int		rc;
+	unsigned int	num_entries;
 	
 	CHECK(q, SEARCH);
 	
@@ -333,21 +334,21 @@ qldap_lookup(qldap *q, const char *filter, const char *attrs[])
 	 */
 
 	case LDAP_SUCCESS:
-		log(128, "qldap_lookup: search for %s succeeded\n",
+		logit(128, "qldap_lookup: search for %s succeeded\n",
 		    filter);
 		break;
 	case LDAP_TIMEOUT:
 	case LDAP_TIMELIMIT_EXCEEDED:
 	case LDAP_BUSY:
-		log(64, "qldap_lookup: search for %s failed (%s)\n", 
+		logit(64, "qldap_lookup: search for %s failed (%s)\n", 
 		    filter, ldap_err2string(rc) );
 		return TIMEOUT;
 	case LDAP_NO_SUCH_OBJECT:
-		log(64, "qldap_filter: search for %s failed (%s)\n", 
+		logit(64, "qldap_filter: search for %s failed (%s)\n", 
 		    filter, ldap_err2string(rc) );
 		return NOSUCH;
 	default:
-		log(64, "qldap_lookup: search for %s failed (%s)\n", 
+		logit(64, "qldap_lookup: search for %s failed (%s)\n", 
 		    filter, ldap_err2string(rc) );
 		return FAILED;
 	}
@@ -356,11 +357,11 @@ qldap_lookup(qldap *q, const char *filter, const char *attrs[])
 	num_entries = ldap_count_entries(q->ld, q->res);
 	if (num_entries != 1) {
 		if (num_entries > 1) {
-			log(64, "qldap_lookup: Too many entries found (%i)\n", 
+			logit(64, "qldap_lookup: Too many entries found (%i)\n", 
 			    num_entries);
 			return TOOMANY;
 		} else {
-			log(64, "qldap_lookup: Nothing found\n"); 
+			logit(64, "qldap_lookup: Nothing found\n"); 
 			return NOSUCH;
 		}
 	}
@@ -420,21 +421,21 @@ qldap_filter(qldap *q, const char *filter, const char *attrs[],
 	 */
 
 	case LDAP_SUCCESS:
-		log(128, "qldap_filter: search for %s succeeded\n",
+		logit(128, "qldap_filter: search for %s succeeded\n",
 		    filter);
 		break;
 	case LDAP_TIMEOUT:
 	case LDAP_TIMELIMIT_EXCEEDED:
 	case LDAP_BUSY:
-		log(64, "qldap_filter: search for %s failed (%s)\n", 
+		logit(64, "qldap_filter: search for %s failed (%s)\n", 
 		    filter, ldap_err2string(rc) );
 		return TIMEOUT;
 	case LDAP_NO_SUCH_OBJECT:
-		log(64, "qldap_filter: search for %s failed (%s)\n", 
+		logit(64, "qldap_filter: search for %s failed (%s)\n", 
 		    filter, ldap_err2string(rc) );
 		return NOSUCH;
 	default:
-		log(64, "qldap_filter: search for %s failed (%s)\n", 
+		logit(64, "qldap_filter: search for %s failed (%s)\n", 
 		    filter, ldap_err2string(rc) );
 		return FAILED;
 	}
@@ -489,7 +490,7 @@ int
 qldap_get_uid(qldap *q, int *uid)
 {
 	unsigned long	ul;
-	int	r;
+	int		r;
 
 	/* get and check the uid */
 	r = qldap_get_attr(q, LDAP_QMAILUID, &ldap_attr, SINGLE_VALUE);
@@ -512,7 +513,7 @@ int
 qldap_get_gid(qldap *q, int *gid)
 {
 	unsigned long	ul;
-	int	r;
+	int		r;
 
 	/* get and check the gid */
 	r = qldap_get_attr(q, LDAP_QMAILGID, &ldap_attr, SINGLE_VALUE);
@@ -548,7 +549,7 @@ qldap_get_mailstore(qldap *q, stralloc *hd, stralloc *ms)
 		if (!stralloc_copys(hd, "")) return ERRNO;
 	} else if (r != OK)
 		return r;
-	log(128, "qldap_get_mailstore: hd \"%S\" len %i\n", hd, hd->len);
+	logit(128, "qldap_get_mailstore: hd \"%S\" len %i\n", hd, hd->len);
 	if (0 < hd->len) {
 		if (hd->s[0] != '/' || check_paths(hd->s) == 0) {
 			/* probably some log warning would be good */
@@ -561,7 +562,7 @@ qldap_get_mailstore(qldap *q, stralloc *hd, stralloc *ms)
 		if (!stralloc_copys(ms, "")) return ERRNO;
 	} else if (r != OK)
 		return r;
-	log(128, "qldap_get_mailstore: ms \"%S\" len %i\n", ms, ms->len);
+	logit(128, "qldap_get_mailstore: ms \"%S\" len %i\n", ms, ms->len);
 	if (ms->len > 0)
 		if (check_paths(ms->s) == 0) {
 			/* probably some log warning would be good */
@@ -709,8 +710,8 @@ qldap_get_dn(qldap *q, stralloc *dn)
 int
 qldap_get_ulong(qldap *q, const char *attr, unsigned long *ul)
 {
-	unsigned long ulval;
-	int	r;
+	unsigned long	ulval;
+	int		r;
 
 	r = qldap_get_attr(q, attr, &ldap_attr, SINGLE_VALUE);
 	if (r == OK) {
@@ -765,16 +766,16 @@ qldap_get_attr(qldap *q, const char *attr, stralloc *val, int multi)
 		r = ldap_result2error(q->ld, q->msg, 0);
 		switch (r) {
 		case LDAP_NO_SUCH_ATTRIBUTE:
-			log(128, "qldap_get_attr: %s\n",
+			logit(128, "qldap_get_attr: %s\n",
 			    ldap_err2string(r));
 			return NOSUCH;
 		default:
-			log(128, "qldap_get_attr: %s\n",
+			logit(128, "qldap_get_attr: %s\n",
 			    ldap_err2string(r));
 			return FAILED;
 		}
 #endif
-		log(128, "qldap_get_attr(%s): no such attribute\n", attr);
+		logit(128, "qldap_get_attr(%s): no such attribute\n", attr);
 		return NOSUCH;
 	}
 	nvals = ldap_count_values(vals);
@@ -821,7 +822,7 @@ qldap_get_attr(qldap *q, const char *attr, stralloc *val, int multi)
 	}
 	ldap_value_free(vals);
 
-	log(128, "qldap_get_attr(%s): %s\n", attr, val->s);
+	logit(128, "qldap_get_attr(%s): %s\n", attr, val->s);
 	return r;
 
 fail:
@@ -859,19 +860,19 @@ dorebind(LDAP *ld, LDAP_CONST char *url, int request, ber_int_t msgid)
 
 	/* the url parse is just for debugging */
 	if( (r = ldap_url_parse(url, &srv)) != LDAP_SUCCESS) {
-		log(64, "dorebind: parse url failed: %s\n",
+		logit(64, "dorebind: parse url failed: %s\n",
 		    ldap_err2string(r));
 		return r;
 	}
 	/* Not request is defined in ldap.h - one of LDAP_REQ_XXXXX */
-	log(64, "dorebind: referral - host %s:%d, dn \"%s\", "
+	logit(64, "dorebind: referral - host %s:%d, dn \"%s\", "
 	    "request %d, msgid %d\n",
 	    srv->lud_host, srv->lud_port, srv->lud_dn, request, msgid);
 	ldap_free_urldesc(srv);
 
 	r = ldap_simple_bind_s(ld, ldap_login.s, ldap_password.s);
 	if (r != LDAP_SUCCESS) {
-		log(64, "dorebind: ldap_simple_bind_s: %s\n",
+		logit(64, "dorebind: ldap_simple_bind_s: %s\n",
 		    ldap_err2string(r));
 	}
 	return r;
@@ -895,10 +896,10 @@ qldap_set_option(qldap *q, int forceV2)
 		rc = ldap_set_option(q->ld,
 		    LDAP_OPT_PROTOCOL_VERSION, &version);
 		if (rc == LDAP_OPT_SUCCESS) {
-			log(128, "qldap_set_option: LDAPv2 successful\n");
+			logit(128, "qldap_set_option: LDAPv2 successful\n");
 			return OK;
 		} else {
-			log(128, "qldap_set_option: LDAPv2 failed (%s)\n",
+			logit(128, "qldap_set_option: LDAPv2 failed (%s)\n",
 			    ldap_err2string(rc));
 			return FAILED;
 		}
@@ -907,7 +908,7 @@ qldap_set_option(qldap *q, int forceV2)
 		rc = ldap_set_option(q->ld,
 		    LDAP_OPT_PROTOCOL_VERSION, &version);
 		if (rc != LDAP_OPT_SUCCESS) {
-			log(128, "qldap_set_option: failed (%s)\n",
+			logit(128, "qldap_set_option: failed (%s)\n",
 			    ldap_err2string(rc));
 			return qldap_set_option(q, 1);
 		}
@@ -928,11 +929,11 @@ qldap_set_option(qldap *q, int forceV2)
 			    LDAP_OPT_ON);
 		}
 		if (rc != LDAP_OPT_SUCCESS)
-			log(128, "qldap_set_option: "
+			logit(128, "qldap_set_option: "
 			    "enabling referrals failed (%s)\n",
 			    ldap_err2string(rc));
 		else 
-			log(128, "qldap_set_option: "
+			logit(128, "qldap_set_option: "
 			    "set referrals successful\n");
 		/* referral errors are ignored */
 #endif

@@ -1,6 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
-/* XXX unable to include stdio.h for rename because of puts() */
+#include <stdio.h>
 #include <unistd.h>
 #include "commands.h"
 #include "sig.h"
@@ -36,27 +36,32 @@ int loglevel = 0;
 stralloc logs_pidhostinfo = {0};
 unsigned long log_bytes = 0;
 
-void log(int l, const char *s) { if(l <= loglevel) substdio_puts(subfderr,s);}
-void logf(int l, const char *s) {
+void logit(int l, const char *s)
+{
+	if(l <= loglevel)
+		substdio_puts(subfderr,s);
+}
+void logitf(int l, const char *s)
+{
 	if(l > loglevel) return;
 	substdio_puts(subfderr,s);
 	substdio_putsflush(subfderr,"\n");
 }
 
-void log_quit()
+void log_quit(void)
 {
   char strnum[FMT_ULONG];
 
-  log(2, "acct:");
-  log(2, logs_pidhostinfo.s);
-  log(2, "logout ");
+  logit(2, "acct:");
+  logit(2, logs_pidhostinfo.s);
+  logit(2, "logout ");
   strnum[fmt_ulong(strnum,log_bytes)] = 0;
-  log(2, strnum); logf(2, " bytes transferred");
+  logit(2, strnum); logitf(2, " bytes transferred");
 }
 
-void die() { log_quit(); _exit(0); }
+void die(void) { log_quit(); _exit(0); }
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+int saferead(int fd, void *buf, int len)
 {
   int r;
   r = timeoutread(1200,fd,buf,len);
@@ -64,7 +69,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
   return r;
 }
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+int safewrite(int fd, void *buf, int len)
 {
   int r;
   r = timeoutwrite(1200,fd,buf,len);
@@ -78,50 +83,50 @@ substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 char ssinbuf[128];
 substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
-void put(buf,len) char *buf; int len;
+void put(const char *buf, int len)
 {
   substdio_put(&ssout,buf,len);
 }
-void puts(s) char *s;
+void putstr(const char *s)
 {
   substdio_puts(&ssout,s);
 }
-void flush()
+void flush(void)
 {
   substdio_flush(&ssout);
 }
-void err(s) char *s;
+void err(const char *s)
 {
-  puts("-ERR ");
-  puts(s);
-  puts("\r\n");
+  putstr("-ERR ");
+  putstr(s);
+  putstr("\r\n");
   flush();
 }
 
-void die_nomem() { err("out of memory");
-	logf(1, "panic: out of memory"); die(); }
-void die_nomaildir() { err("this user has no $HOME/Maildir");
-	logf(1, "panic: this user has no $HOME/Maildir"); die(); }
-void die_scan() { err("unable to scan $HOME/Maildir");
-	logf(1, "unable to scan $HOME/Maildir"); die(); }
+void die_nomem(void) { err("out of memory");
+	logitf(1, "panic: out of memory"); die(); }
+void die_nomaildir(void) { err("this user has no $HOME/Maildir");
+	logitf(1, "panic: this user has no $HOME/Maildir"); die(); }
+void die_scan(void) { err("unable to scan $HOME/Maildir");
+	logitf(1, "unable to scan $HOME/Maildir"); die(); }
 
-void err_syntax() { err("syntax error"); logf(3, "error: syntax error"); }
-void err_unimpl() { err("unimplemented"); logf(3, "error: unimplemented"); }
-void err_deleted() { err("already deleted"); logf(3, "already deleted"); }
-void err_nozero() { err("messages are counted from 1"); logf(3, "messages are counted from 1"); }
-void err_toobig() { err("not that many messages"); logf(3, "not that many messages"); }
-void err_nosuch() { err("unable to open that message"); logf(3, "unable to open that message"); }
-void err_nounlink() { err("unable to unlink all deleted messages"); logf(3, "unable to unlink all deleted messages"); }
+void err_syntax(void) { err("syntax error"); logitf(3, "error: syntax error"); }
+void err_unimpl(void) { err("unimplemented"); logitf(3, "error: unimplemented"); }
+void err_deleted(void) { err("already deleted"); logitf(3, "already deleted"); }
+void err_nozero(void) { err("messages are counted from 1"); logitf(3, "messages are counted from 1"); }
+void err_toobig(void) { err("not that many messages"); logitf(3, "not that many messages"); }
+void err_nosuch(void) { err("unable to open that message"); logitf(3, "unable to open that message"); }
+void err_nounlink(void) { err("unable to unlink all deleted messages"); logitf(3, "unable to unlink all deleted messages"); }
 
-void okay() { puts("+OK \r\n"); flush(); }
+void okay(void) { putstr("+OK \r\n"); flush(); }
 
-void printfn(fn) char *fn;
+void printfn(const char *fn)
 {
   fn += 4;
   put(fn,str_chr(fn,':'));
 }
 
-void log_init()
+void log_init(void)
 {
   char strnum[FMT_ULONG];
   const char *remotehost;
@@ -158,16 +163,14 @@ void log_init()
   if (!stralloc_cats(&logs_pidhostinfo, " ")) die_nomem();
   if (!stralloc_0(&logs_pidhostinfo)) die_nomem();
 
-  log(2, "acct:"); log(2, logs_pidhostinfo.s); logf(2, "login");
+  logit(2, "acct:"); logit(2, logs_pidhostinfo.s); logitf(2, "login");
 }
 
 
 char strnum[FMT_ULONG];
 stralloc line = {0};
 
-void blast(ssfrom,limit)
-substdio *ssfrom;
-unsigned long limit;
+void blast(substdio *ssfrom, unsigned long limit)
 {
   int match;
   int inheaders = 1;
@@ -199,15 +202,15 @@ struct message {
   unsigned long size;
   char *fn;
 } *m;
-int numm;
+unsigned int numm;
 
-int last = 0;
+unsigned int last = 0;
 
-void getlist()
+void getlist(void)
 {
   struct prioq_elt pe;
   struct stat st;
-  int i;
+  unsigned int i;
  
   maildir_clean(&line);
   if (maildir_scan(&pq,&filenames,1,1) == -1) die_scan();
@@ -228,52 +231,52 @@ void getlist()
   }
 }
 
-void pop3_stat()
+void pop3_stat(char *arg)
 {
-  int i;
+  unsigned int i;
   unsigned long total;
   unsigned int count;
  
-  logf(4, "comm: stat");
+  logitf(4, "comm: stat");
   total = 0;
   count = 0;
   for (i = 0;i < numm;++i) if (!m[i].flagdeleted) {
     total += m[i].size;
     count += 1;
   }
-  puts("+OK ");
+  putstr("+OK ");
   put(strnum,fmt_uint(strnum,count));
-  puts(" ");
+  putstr(" ");
   put(strnum,fmt_ulong(strnum,total));
-  puts("\r\n");
+  putstr("\r\n");
   flush();
 }
 
-void pop3_rset()
+void pop3_rset(char *arg)
 {
-  int i;
+  unsigned int i;
 
-  logf(4, "comm: rset");
+  logitf(4, "comm: rset");
   for (i = 0;i < numm;++i) m[i].flagdeleted = 0;
   last = 0;
   okay();
 }
 
-void pop3_last()
+void pop3_last(char *arg)
 {
-  logf(4, "comm: last");
-  puts("+OK ");
+  logitf(4, "comm: last");
+  putstr("+OK ");
   put(strnum,fmt_uint(strnum,last));
-  puts("\r\n");
+  putstr("\r\n");
   flush();
 }
 
-void pop3_quit()
+void pop3_quit(char *arg)
 {
-  int i;
+  unsigned int i;
   quota_t q;
   
-  logf(4, "comm: quit");
+  logitf(4, "comm: quit");
 /* qmail-ldap stuff */
 /* this is just minimal support, because pop3 can not produce new mail */
   quota_get(&q, env_get(ENV_QUOTA));
@@ -301,7 +304,7 @@ void pop3_quit()
   die();
 }
 
-int msgno(arg) char *arg;
+unsigned int msgno(char *arg)
 {
   unsigned long u;
   if (!scan_ulong(arg,&u)) { err_syntax(); return -1; }
@@ -312,11 +315,11 @@ int msgno(arg) char *arg;
   return u;
 }
 
-void pop3_dele(arg) char *arg;
+void pop3_dele(char *arg)
 {
-  int i;
+  unsigned int i;
 
-  log(4, "comm: dele: "); logf(4, arg);
+  logit(4, "comm: dele: "); logitf(4, arg);
   i = msgno(arg);
   if (i == -1) return;
   m[i].flagdeleted = 1;
@@ -324,24 +327,22 @@ void pop3_dele(arg) char *arg;
   okay();
 }
 
-void list(i,flaguidl)
-int i;
-int flaguidl;
+void list(unsigned int i, int flaguidl)
 {
   put(strnum,fmt_uint(strnum,i + 1));
-  puts(" ");
+  putstr(" ");
   if (flaguidl) printfn(m[i].fn);
   else put(strnum,fmt_ulong(strnum,m[i].size));
-  puts("\r\n");
+  putstr("\r\n");
 }
 
-void dolisting(arg,flaguidl) char *arg; int flaguidl;
+void dolisting(char *arg, int flaguidl)
 {
   unsigned int i;
   if (*arg) {
     i = msgno(arg);
     if (i == -1) return;
-    puts("+OK ");
+    putstr("+OK ");
     list(i,flaguidl);
   }
   else {
@@ -349,28 +350,28 @@ void dolisting(arg,flaguidl) char *arg; int flaguidl;
     for (i = 0;i < numm;++i)
       if (!m[i].flagdeleted)
 	list(i,flaguidl);
-    puts(".\r\n");
+    putstr(".\r\n");
   }
   flush();
 }
 
-void pop3_uidl(arg) char *arg; { 
-  log(4, "comm: uidl: "); logf(4, arg); dolisting(arg,1); }
-void pop3_list(arg) char *arg; {
-  log(4, "comm: list: "); logf(4, arg); dolisting(arg,0); }
+void pop3_uidl(char *arg) { 
+  logit(4, "comm: uidl: "); logitf(4, arg); dolisting(arg,1); }
+void pop3_list(char *arg) {
+  logit(4, "comm: list: "); logitf(4, arg); dolisting(arg,0); }
 
 substdio ssmsg; char ssmsgbuf[1024];
 
-void pop3_top(arg) char *arg;
+void pop3_top(char *arg)
 {
-  int i;
+  unsigned int i;
   unsigned long limit;
   int fd;
 #ifdef MAKE_NETSCAPE_WORK /* Based on a patch by sven@megabit.net */
   char foo[FMT_ULONG];
 #endif
  
-  log(4, "comm: retr/top: "); logf(4, arg);
+  logit(4, "comm: retr/top: "); logitf(4, arg);
   i = msgno(arg);
   if (i == -1) return;
  
@@ -382,11 +383,11 @@ void pop3_top(arg) char *arg;
   if (fd == -1) { err_nosuch(); return; }
 
 #ifdef MAKE_NETSCAPE_WORK /* Based on a patch by sven@megabit.net */
-  puts("+OK ");
+  putstr("+OK ");
   foo[fmt_uint(foo,m[i].size)] = 0;
-  puts(foo);
+  putstr(foo);
 
-  puts(" octets \r\n");
+  putstr(" octets \r\n");
   flush();
 #else
   okay();
@@ -411,9 +412,7 @@ struct commands pop3commands[] = {
 , { 0, err_unimpl, 0 }
 } ;
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 /* qmail-ldap stuff */
   char *env;

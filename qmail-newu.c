@@ -75,8 +75,8 @@ stralloc wildchars = {0};
 
 int main()
 {
-  int i;
-  int numcolons;
+  unsigned int i;
+  unsigned int numcolons;
 
   umask(033);
   if (chdir(auto_qmail) == -1) die_chdir();

@@ -314,7 +314,7 @@ char *fn;
 
  /* quota handling mbox */
  struct stat filest, mailst;
- long int totalsize;
+ long totalsize;
  quota_t q;
 
  if( quotastring && *quotastring ) {
@@ -606,7 +606,7 @@ void count_print()
 void sayit(type,cmd,len)
 char *type;
 char *cmd;
-int len;
+unsigned int len;
 {
  substdio_puts(subfdoutsmall,type);
  substdio_put(subfdoutsmall,cmd,len);
@@ -631,18 +631,18 @@ int argc;
 char **argv;
 {
  int opt;
- int i;
- int j;
- int k;
+ unsigned int i;
+ unsigned int j;
+ unsigned int k;
  int fd;
- int numforward;
+ unsigned int numforward;
  char **recips;
  datetime_sec starttime;
  int flagforwardonly;
  char *x;
 
  /* set up the variables for qmail-ldap */
- int slen;
+ unsigned int slen;
  int qmode;
  int flagforwardonly2;
  int flagnoforward;
@@ -724,7 +724,7 @@ char **argv;
  if (!stralloc_copys(&ufline,"From ")) temp_nomem();
  if (*sender)
   {
-   int len; char ch;
+   unsigned int len; char ch;
 
    len = str_len(sender);
    if (!stralloc_readyplus(&ufline,len)) temp_nomem();

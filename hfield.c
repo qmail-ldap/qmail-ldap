@@ -35,10 +35,10 @@ static const char *(hname[]) = {
 
 static int hmatch(s,len,t)
 char *s;
-int len;
+unsigned int len;
 const char *t;
 {
- int i;
+ unsigned int i;
  char ch;
 
  for (i = 0;(ch = t[i]);++i)
@@ -62,9 +62,9 @@ const char *t;
 
 int hfield_known(s,len)
 char *s;
-int len;
+unsigned int len;
 {
- int i;
+ unsigned int i;
  const char *t;
 
  for (i = 1;(t = hname[i]);++i)
@@ -75,10 +75,10 @@ int len;
 
 int hfield_valid(s,len)
 char *s;
-int len;
+unsigned int len;
 {
- int i;
- int j;
+ unsigned int i;
+ unsigned int j;
  char ch;
 
  for (j = 0;j < len;++j)
@@ -105,9 +105,9 @@ int len;
 
 unsigned int hfield_skipname(s,len)
 char *s;
-int len;
+unsigned int len;
 {
- int i;
+ unsigned int i;
  char ch;
 
  for (i = 0;i < len;++i)

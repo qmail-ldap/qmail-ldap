@@ -10,7 +10,7 @@ int commands(ss,c)
 substdio *ss;
 struct commands *c;
 {
-  int i;
+  unsigned int i;
   char *arg;
 
   for (;;) {

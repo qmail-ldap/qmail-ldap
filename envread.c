@@ -4,7 +4,7 @@
 extern /*@null@*/char *env_get(s)
 const char *s;
 {
-  int i;
+  unsigned int i;
   unsigned int slen;
   char *envi;
  

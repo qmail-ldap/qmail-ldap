@@ -46,6 +46,38 @@ void mailq()
   _exit(111);
 }
 
+void do_sender(s)
+const char *s;
+{
+  char *x;
+  unsigned int n;
+  unsigned int a;
+  unsigned int i;
+  
+  env_unset("QMAILNAME");
+  env_unset("MAILNAME");
+  env_unset("NAME");
+  env_unset("QMAILHOST");
+  env_unset("MAILHOST");
+
+  n = str_len(s);
+  a = str_rchr(s, '@');
+  if (a == n)
+  {
+    env_put2("QMAILUSER", s);
+    return;
+  }
+  env_put2("QMAILHOST", s + a + 1);
+
+  x = alloc((a + 1) * sizeof(char));
+  if (!x) nomem();
+  for (i = 0; i < a; i++)
+    x[i] = s[i];
+  x[i] = 0;
+  env_put2("QMAILUSER", x);
+  alloc_free(x);
+}
+
 int flagh;
 char *sender;
 
@@ -119,6 +151,7 @@ char **argv;
   if (sender) {
     *arg++ = "-f";
     *arg++ = sender;
+    do_sender(sender);
   }
   *arg++ = "--";
   for (i = 0;i < argc;++i) *arg++ = argv[i];

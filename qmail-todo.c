@@ -106,8 +106,8 @@ stralloc rwline = {0};
 /* may trash recip. must set up rwline, between a T and a \0. */
 int rewrite(char *recip)
 {
-  int i;
-  int j;
+  unsigned int i;
+  unsigned int j;
   const char *x;
   static stralloc addr = {0};
   int at;
@@ -205,7 +205,7 @@ int comm_canwrite(void)
 
 void log1(const char* x)
 {
-  int pos;
+  unsigned int pos;
   
   pos = comm_buf.len;
   if (!stralloc_cats(&comm_buf,"L")) goto fail;
@@ -220,7 +220,7 @@ fail:
 
 void log3(const char *x, const char *y, const char *z)
 {
-  int pos;
+  unsigned int pos;
   
   pos = comm_buf.len;
   if (!stralloc_cats(&comm_buf,"L")) goto fail;
@@ -237,7 +237,7 @@ fail:
 
 void comm_write(unsigned long id, int local, int remote)
 {
-  int pos;
+  unsigned int pos;
   const char *s;
   
   if (local && remote) s="B";
@@ -268,8 +268,8 @@ static int issafe(char ch)
 
 void comm_info(unsigned long id, unsigned long size, char* from, unsigned long pid, unsigned long uid)
 {
-  int pos;
-  int i;
+  unsigned int pos;
+  unsigned int i;
   
   pos = comm_buf.len;
   if (!stralloc_cats(&comm_buf,"Linfo msg ")) goto fail;
@@ -332,7 +332,7 @@ void comm_do(fd_set *wfds, fd_set *rfds)
     if (comm_canwrite())
       if (FD_ISSET(fdout,wfds)) {
 	int w;
-	int len;
+	unsigned int len;
 	len = comm_buf.len;
 	w = write(fdout,comm_buf.s + comm_pos,len - comm_pos);
 	if (w <= 0) {

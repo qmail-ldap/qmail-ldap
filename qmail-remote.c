@@ -71,51 +71,51 @@ saa reciplist = {0};
 struct ip_address partner;
 struct ip_address outip;
 
-void out(s) char *s; { if (substdio_puts(subfdoutsmall,s) == -1) _exit(0); }
-void zero() { if (substdio_put(subfdoutsmall,"\0",1) == -1) _exit(0); }
-void zerodie() { zero(); substdio_flush(subfdoutsmall); _exit(0); }
-void outsafe(sa) stralloc *sa; { int i; char ch;
+void out(const char *s) { if (substdio_puts(subfdoutsmall,s) == -1) _exit(0); }
+void zero(void) { if (substdio_put(subfdoutsmall,"\0",1) == -1) _exit(0); }
+void zerodie(void) { zero(); substdio_flush(subfdoutsmall); _exit(0); }
+void outsafe(stralloc *sa) { int i; char ch;
 for (i = 0;i < sa->len;++i) {
 ch = sa->s[i]; if (ch < 33) ch = '?'; if (ch > 126) ch = '?';
 if (substdio_put(subfdoutsmall,&ch,1) == -1) _exit(0); } }
 
-void temp_noip() { out("Zinvalid ipaddr in control/outgoingip (#4.3.0)\n"); zerodie(); }
-void temp_nomem() { out("ZOut of memory. (#4.3.0)\n"); zerodie(); }
-void temp_oserr() { out("Z\
+void temp_noip(void) { out("Zinvalid ipaddr in control/outgoingip (#4.3.0)\n"); zerodie(); }
+void temp_nomem(void) { out("ZOut of memory. (#4.3.0)\n"); zerodie(); }
+void temp_oserr(void) { out("Z\
 System resources temporarily unavailable. (#4.3.0)\n"); zerodie(); }
-void temp_noconn() { out("Z\
+void temp_noconn(void) { out("Z\
 Sorry, I wasn't able to establish an SMTP connection. (#4.4.1)\n"); zerodie(); }
-void temp_read() { out("ZUnable to read message. (#4.3.0)\n"); zerodie(); }
-void temp_dnscanon() { out("Z\
+void temp_read(void) { out("ZUnable to read message. (#4.3.0)\n"); zerodie(); }
+void temp_dnscanon(void) { out("Z\
 CNAME lookup failed temporarily. (#4.4.3)\n"); zerodie(); }
-void temp_dns() { out("Z\
+void temp_dns(void) { out("Z\
 Sorry, I couldn't find any host by that name. (#4.1.2)\n"); zerodie(); }
-void temp_chdir() { out("Z\
+void temp_chdir(void) { out("Z\
 Unable to switch to home directory. (#4.3.0)\n"); zerodie(); }
-void temp_control() { out("Z\
+void temp_control(void) { out("Z\
 Unable to read control files. (#4.3.0)\n"); zerodie(); }
-void temp_proto() { out("Z\
+void temp_proto(void) { out("Z\
 recipient did not talk proper QMTP (#4.3.0)\n"); zerodie(); }
-void perm_partialline() { out("D\
+void perm_partialline(void) { out("D\
 SMTP cannot transfer messages with partial final lines. (#5.6.2)\n"); zerodie(); }
-void perm_usage() { out("D\
+void perm_usage(void) { out("D\
 I (qmail-remote) was invoked improperly. (#5.3.5)\n"); zerodie(); }
-void perm_dns() { out("D\
+void perm_dns(void) { out("D\
 Sorry, I couldn't find any host named ");
 outsafe(&host);
 out(". (#5.1.2)\n"); zerodie(); }
-void perm_nomx() { out("D\
+void perm_nomx(void) { out("D\
 Sorry, I couldn't find a mail exchanger or IP address. (#5.4.4)\n");
 zerodie(); }
-void perm_ambigmx() { out("D\
+void perm_ambigmx(void) { out("D\
 Sorry. Although I'm listed as a best-preference MX or A for that host,\n\
 it isn't in my control/locals file, so I don't treat it as local. (#5.4.6)\n");
 zerodie(); }
-void perm_looping() { out("D\
+void perm_looping(void) { out("D\
 Sorry. Message is looping within cluster, giving up. (#5.4.6)\n");
 zerodie(); }
 
-void outhost()
+void outhost(void)
 {
   char x[IPFMT];
   if (substdio_put(subfdoutsmall,x,ip_fmt(x,&partner)) == -1) _exit(0);
@@ -123,7 +123,7 @@ void outhost()
 
 int flagcritical = 0;
 
-void dropped() {
+void dropped(void) {
   out("ZConnected to ");
   outhost();
   out(" but connection died. ");
@@ -138,11 +138,11 @@ int timeout = 1200;
 
 #ifdef TLS_REMOTE
 int flagtimedout = 0;
-void sigalrm()
+void sigalrm(int sig)
 {
  flagtimedout = 1;
 }
-int ssl_timeoutread(tout,fd,buf,n) int tout; int fd; char *buf; int n;
+int ssl_timeoutread(int tout, int fd, void *buf, int n)
 {
  int r; int saveerrno;
  if (flagtimedout) { errno = error_timeout; return -1; }
@@ -154,7 +154,7 @@ int ssl_timeoutread(tout,fd,buf,n) int tout; int fd; char *buf; int n;
  errno = saveerrno;
  return r;
 }
-int ssl_timeoutwrite(tout,fd,buf,n) int tout; int fd; char *buf; int n;
+int ssl_timeoutwrite(int tout, int fd, void *buf, int n)
 {
  int r; int saveerrno;
  if (flagtimedout) { errno = error_timeout; return -1; }
@@ -239,7 +239,7 @@ void compression_done(void)
 }
 #endif
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+int saferead(int fd, void *buf, int len)
 {
   int r;
 #ifdef TLS_REMOTE
@@ -251,7 +251,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
   if (r <= 0) dropped();
   return r;
 }
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+int safewrite(int fd, void *buf, int len)
 {
   int r;
 #ifdef DATA_COMPRESS
@@ -303,8 +303,7 @@ substdio smtpfrom = SUBSTDIO_FDBUF(saferead,-1,smtpfrombuf,sizeof smtpfrombuf);
 
 stralloc smtptext = {0};
 
-void get(ch)
-char *ch;
+void get(char *ch)
 {
   substdio_get(&smtpfrom,ch,1);
   if (*ch != '\r')
@@ -312,7 +311,7 @@ char *ch;
      if (!stralloc_append(&smtptext,ch)) temp_nomem();
 }
 
-unsigned long smtpcode()
+unsigned long smtpcode(void)
 {
   unsigned char ch;
   unsigned long code;
@@ -335,9 +334,9 @@ unsigned long smtpcode()
   return code;
 }
 
-void outsmtptext()
+void outsmtptext(void)
 {
-  int i; 
+  unsigned int i; 
   if (smtptext.s) if (smtptext.len) {
     out("Remote host said: ");
     for (i = 0;i < smtptext.len;++i)
@@ -347,9 +346,7 @@ void outsmtptext()
   }
 }
 
-void quit(prepend,append)
-char *prepend;
-char *append;
+void quit(const char *prepend, const char *append)
 {
 #ifdef DATA_COMPRESS
   int r;
@@ -395,16 +392,16 @@ char *append;
 	    num[0] = '-'; r*= -1;
 	  } else
 	    num[0] = ' ';
-	  num[fmt_ulong(num+1,r)+1] = 0;
-	  out("Dynamic data compression saved ");
-	  out(num); out("%.\n");
+	  num[fmt_uint(num+1,r) + 1] = 0;
+	  out("DDC saved ");
+	  out(num); out(" percent.\n");
   }
 #endif
   outsmtptext();
   zerodie();
 }
 
-void blast()
+void blast(void)
 {
   int r;
   char ch;
@@ -432,14 +429,14 @@ void blast()
 stralloc cookie = {0};
 stralloc recip = {0};
 
-void smtp()
+void smtp(void)
 {
   struct stat st;
   unsigned long len;
   unsigned long code;
   int flagbother;
   int flagsize;
-  int i;
+  unsigned int i;
   char num[FMT_ULONG];
 #ifdef TLS_REMOTE
   int flagtls;
@@ -645,12 +642,12 @@ int qmtp_priority(int pref)
   return 0;
 }
 
-void qmtp()
+void qmtp(void)
 {
   struct stat st;
   unsigned long len;
   char *x;
-  int i;
+  unsigned int i;
   int n;
   unsigned char ch;
   unsigned char rv;
@@ -752,7 +749,7 @@ char *s;
 int *flagalias;
 int flagcname;
 {
-  int j;
+  unsigned int j;
  
   *flagalias = flagcname;
  
@@ -778,7 +775,7 @@ int flagcname;
   if (!stralloc_cat(saout,&canonhost)) temp_nomem();
 }
 
-void getcontrols()
+void getcontrols(void)
 {
   if (control_init() == -1) temp_control();
   if (control_rldef(&cookie,"control/smtpclustercookie",0,"") == -1)
@@ -803,12 +800,10 @@ void getcontrols()
   if (!ip_scan(outgoingip.s, &outip)) temp_noip();
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   static ipalloc ip = {0};
-  int i;
+  unsigned int i;
   unsigned long randm;
   char **recips;
   unsigned long prefme;

@@ -3,6 +3,6 @@
 
 #include "stralloc.h"
 
-extern int slurpclose(int, stralloc *, int);
+extern int slurpclose(int, stralloc *, unsigned int);
 
 #endif

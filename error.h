@@ -16,6 +16,7 @@ extern int error_again;
 extern int error_pipe;
 extern int error_perm;
 extern int error_acces;
+extern int error_range;
 
 extern const char *error_str(int);
 extern int error_temp(int);

@@ -31,7 +31,7 @@ char **argv;
   struct datetime dt;
   datetime_sec utc;
   datetime_sec local;
-  int minutes;
+  unsigned int minutes;
   int pi[2];
   substdio ss;
   int wstat;

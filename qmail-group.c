@@ -147,7 +147,7 @@ void
 init(void)
 {
 	char *t;
-	int i;
+	unsigned int i;
 
 	/* read some control files */
 	if (read_controls(ctrls) == -1)
@@ -281,7 +281,7 @@ trydelete(void)
 		unlink(fname.s);
 }
 
-int nummoderators;
+unsigned int nummoderators;
 stralloc moderators = {0};
 
 void
@@ -290,9 +290,9 @@ secretary(char *maildir, int flagmoderate)
 	const char **args;
 	char *s, *smax;
 	int child, wstat;
-	int numargs;
+	unsigned int i, numargs;
 	int pi[2];
-	int i, r;
+	int r;
 
 	if (!stralloc_copys(&fname, "")) temp_nomem();
 
@@ -381,11 +381,12 @@ stralloc ldapval = {0};
 stralloc tmpval = {0};
 
 static int getmoderators(qldap *);
-static int unescape(char *, stralloc *, int *);
-static void extract_addrs822(qldap *, const char *, stralloc *, int *);
-static void extract_addrsdn(qldap *, qldap *, const char *, stralloc *, int *);
+static int unescape(char *, stralloc *, unsigned int *);
+static void extract_addrs822(qldap *, const char *, stralloc *, unsigned int *);
+static void extract_addrsdn(qldap *, qldap *, const char *, stralloc *,
+    unsigned int *);
 static void extract_addrsfilter(qldap *, qldap *, const char *, stralloc *,
-    int *);
+    unsigned int *);
 static int getentry(qldap *, char *);
 
 static int
@@ -640,7 +641,7 @@ fail:
 }
 
 static int
-unescape(char *s, stralloc *t, int *count)
+unescape(char *s, stralloc *t, unsigned int *count)
 {
 	do {
 		if (s[0] == '\\' && s[1] == ':') s++;
@@ -656,7 +657,8 @@ unescape(char *s, stralloc *t, int *count)
 }
 
 static void
-extract_addrs822(qldap *q, const char *attr, stralloc *list, int *numlist)
+extract_addrs822(qldap *q, const char *attr, stralloc *list,
+    unsigned int *numlist)
 {
 	int r;
 
@@ -682,7 +684,7 @@ fail:
 	
 static void
 extract_addrsdn(qldap *q, qldap *sq, const char *attr,
-    stralloc *list, int *numlist)
+    stralloc *list, unsigned int *numlist)
 {
 	const char *attrs[] = {
 		LDAP_MAIL,
@@ -748,7 +750,7 @@ fail:
 
 static void
 extract_addrsfilter(qldap *q, qldap *sq, const char *attr,
-    stralloc *list, int *numlist)
+    stralloc *list, unsigned int *numlist)
 {
 	const char *attrs[] = {
 		LDAP_MAIL,

@@ -34,7 +34,7 @@ stralloc woof = {0};
 stralloc tofrom = {0};
 stralloc text = {0};
 
-void doit(s,n) char *s; int n;
+void doit(s,n) char *s; unsigned int n;
 {
  if (!stralloc_catb(&text,s,n)) _exit(0);
  if (text.len > 78) text.len = 78;
@@ -42,7 +42,7 @@ void doit(s,n) char *s; int n;
 void dobody(h) stralloc *h; { doit(h->s,h->len); }
 void doheader(h) stralloc *h;
 {
- int i;
+ unsigned int i;
  if (hfield_known(h->s,h->len) == H_SUBJECT)
   {
    i = hfield_skipname(h->s,h->len);
@@ -57,7 +57,7 @@ int main()
  char *sender;
  char *userext;
  struct stat st;
- int i;
+ unsigned int i;
 
  if (chdir("/dev") == -1) _exit(0);
 

@@ -8,7 +8,7 @@
 char num[FMT_ULONG];
 fd_set fds;
 
-void main()
+int main(int argc, char **argv)
 {
   unsigned long hiddenlimit;
   unsigned long maxnumd;
@@ -44,5 +44,5 @@ limit in conf-spawn be at most ");
     substdio_flush(subfderr);
     _exit(1);
   }
-  _exit(0);
+  return 0;
 }

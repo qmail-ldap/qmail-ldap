@@ -134,7 +134,7 @@ lookup(stralloc *mail)
 		f = filter_mail(mail->s, &done);
 		if (f == (char *)0) die_nomem();
 
-		//log(16, "ldapfilter: '%s'\n", f);
+		//logit(16, "ldapfilter: '%s'\n", f);
 
 		/* do the search for the email address */
 		rv = qldap_lookup(q, f, attrs);

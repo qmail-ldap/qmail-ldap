@@ -199,7 +199,8 @@ b64_ntop(unsigned char const *src, size_t srclength,
 int
 b64_pton(char const *src, unsigned char *target, size_t targsize)
 {
-	int tarindex, state, ch;
+	size_t tarindex;
+	int state, ch;
 	unsigned int pos;
 
 	state = 0;
@@ -318,7 +319,7 @@ b64_ntops(unsigned char const *src, size_t srclength, stralloc *dest)
 {
 	unsigned char input[3];
 	unsigned char output[4];
-	int i;
+	size_t i;
 
 	if (!stralloc_copys(dest, "")) return -1;
 	while (2 < srclength) {
@@ -478,7 +479,7 @@ static const char HexBig[] = "0123456789ABCDEF";
 int
 hex_ntops(unsigned char const *src, size_t srclength, stralloc *dest)
 {
-	int	i;
+	size_t	i;
 	
 	if (!stralloc_copys(dest, "")) return -1;
 	for (i=0; i<srclength; i++) {

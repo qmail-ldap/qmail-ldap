@@ -86,14 +86,14 @@ void compression_done(void)
 }
 #endif
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+int saferead(int fd, void *buf, int len)
 {
   int r;
   r = timeoutread(60,qmqpfd,buf,len);
   if (r <= 0) die_conn();
   return r;
 }
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+int safewrite(int fd, void *buf, int len)
 {
   int r;
 #ifdef QMQP_COMPRESS
@@ -140,7 +140,7 @@ void getmess()
 
   if (slurpclose(0,&message,1024) == -1) die_read();
 
-  strnum[fmt_ulong(strnum,(unsigned long) message.len)] = 0;
+  strnum[fmt_uint(strnum,message.len)] = 0;
   if (!stralloc_copys(&beforemessage,strnum)) nomem();
   if (!stralloc_cats(&beforemessage,":")) nomem();
   if (!stralloc_copys(&aftermessage,",")) nomem();
@@ -150,7 +150,7 @@ void getmess()
   if (line.len < 2) die_format();
   if (line.s[0] != 'F') die_format();
 
-  strnum[fmt_ulong(strnum,(unsigned long) line.len - 2)] = 0;
+  strnum[fmt_uint(strnum,line.len - 2)] = 0;
   if (!stralloc_cats(&aftermessage,strnum)) nomem();
   if (!stralloc_cats(&aftermessage,":")) nomem();
   if (!stralloc_catb(&aftermessage,line.s + 1,line.len - 2)) nomem();
@@ -162,7 +162,7 @@ void getmess()
     if (line.len < 2) break;
     if (line.s[0] != 'T') die_format();
 
-    strnum[fmt_ulong(strnum,(unsigned long) line.len - 2)] = 0;
+    strnum[fmt_uint(strnum,line.len - 2)] = 0;
     if (!stralloc_cats(&aftermessage,strnum)) nomem();
     if (!stralloc_cats(&aftermessage,":")) nomem();
     if (!stralloc_catb(&aftermessage,line.s + 1,line.len - 2)) nomem();
@@ -193,7 +193,7 @@ char *server;
 #ifdef QMQP_COMPRESS
   compression_init();
 #endif
-  strnum[fmt_ulong(strnum, (unsigned long) 
+  strnum[fmt_uint(strnum, 
          (beforemessage.len + message.len + aftermessage.len))] = 0;
   substdio_puts(&to,strnum);
   substdio_puts(&to,":");
@@ -226,8 +226,8 @@ int main(argc,argv)
 int argc;
 char **argv;
 {
-  int i;
-  int j;
+  unsigned int i;
+  unsigned int j;
 
   sig_pipeignore();
 

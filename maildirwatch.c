@@ -29,7 +29,7 @@ void addtext(s,n) char *s; int n;
 void dobody(h) stralloc *h; { addtext(h->s,h->len); }
 void doheader(h) stralloc *h;
 {
- int i;
+ unsigned int i;
  switch(hfield_known(h->s,h->len))
   {
    case H_SUBJECT:
@@ -63,7 +63,7 @@ int main()
 {
  struct prioq_elt pe;
  int fd;
- int i;
+ unsigned int i;
 
  if (maildir_chdir() == -1)
    strerr_die1(111,FATAL,&maildir_chdir_err);

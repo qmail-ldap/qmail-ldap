@@ -9,7 +9,7 @@ char tcpto_cleanbuf[1024];
 void tcpto_clean(void) /* running from queue/mess */
 {
  int fd;
- int i;
+ unsigned int i;
  substdio ss;
 
  fd = open_write("../lock/tcpto");

@@ -33,8 +33,8 @@ execcheck_flag(void)
 }
 
 static int putinheader;
-static int linespastheader;	/* = 0 after boundary is found in body, until */
-				/* blank line then = 1 and 9 lines later = 2 */
+static int linespastheader;	/* = 0 after boundary is found in body, until
+			 	 * blank line then = 1 and 9 lines later = 2 */
 static char linetype;
 
 static stralloc line = {0};
@@ -53,7 +53,7 @@ execcheck_start(void)
 }
 
 void
-execcheck_put(struct qmail *qq, char *ch)
+execcheck_put(struct qmail *qq, const char *ch)
 {
 	char *cp, *cpstart, *cpafter;
 	unsigned int len;

@@ -81,7 +81,8 @@ int main(int argc, char **argv)
 	char	*passwd = 0, *value = 0;
 	char	*bindpw = 0, *binddn = 0;
 	char	*f, *s;
-	int	opt, r, done, j, slen, status, id;
+	int	opt, r, done, status, id;
+	unsigned int j, slen;
 	unsigned long size, count, maxsize;
 	
 	const char *attrs[] = { LDAP_MAIL,

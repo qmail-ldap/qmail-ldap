@@ -33,7 +33,7 @@ struct ip_address ip;
 unsigned int port = 2821;
 stralloc addr = {0};
 stralloc secret = {0};
-int timeout = 600; /* 10 Min */
+unsigned int timeout = 600; /* 10 Min */
 
 unsigned long cachesize = 1048576; /* 1 MB */
 unsigned char *cache;
@@ -44,7 +44,7 @@ unsigned long oldest;
 unsigned long unused;
 
 static unsigned char buf[1024];
-static int len;
+static unsigned int len;
 
 #define fatal "pbsdbd: fatal: "
 #define warning "pbsdbd: warning: "
@@ -65,7 +65,7 @@ die_nomem(void)
 static void
 init(void)
 {
-	int l;
+	unsigned int l;
 
 	if (chdir(auto_qmail) == -1) die_control();
 
@@ -427,7 +427,7 @@ static int doit(void)
 int main(int argc, char** argv)
 {
 	struct sockaddr_in sa;
-	int dummy;
+	unsigned int dummy;
 	int udp;
 
 	init();
