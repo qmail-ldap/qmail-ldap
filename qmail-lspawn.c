@@ -855,8 +855,8 @@ void forward_mail(char *remote, char *to, char *from, int fdmess, int fdout)
 
   args[0] = "bin/qmail-forward";
   args[1] = remote;
-  args[2] = to;
-  args[3] = from;
+  args[2] = from;
+  args[3] = to;
   args[4] = 0;
 
   execv(*args,args);

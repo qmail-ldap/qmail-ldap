@@ -19,7 +19,7 @@ void
 usage(void)
 {
 	strerr_die1x(100,
-	    "qmail-forward: usage: qmail-forward host recipient sender");
+	    "qmail-forward: usage: qmail-forward host sender recipient");
 }
 
 void
@@ -88,8 +88,8 @@ main (int argc, char **argv)
 	int match, i;
 	
 	if (!(remote = argv[1])) usage();
-	if (!(to = argv[2])) usage();
-	if (!(from = argv[3])) usage();
+	if (!(from = argv[2])) usage();
+	if (!(to = argv[3])) usage();
 	if (argv[4]) usage();
 	
 	if (chdir(auto_qmail) == -1)
