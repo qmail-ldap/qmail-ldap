@@ -157,7 +157,7 @@ main(int argc, char *argv[])
 		if (argc != 1) usage();
 		clear = argv[0];
 		if (salt.s == 0)
-			getsalt(&salt, 32);
+			getsalt(&salt, 16);
 		feed_salt(salt.s, salt.len);
 		feed_crypt(cformat);
 		for (i = 0; mode[i] != 0; i++) {
