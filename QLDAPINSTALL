@@ -17,12 +17,35 @@ done    - Implement some more ~control/ldap* files
 done    - Pass list of requested attributes to ldap_search_ext_s
 ongoing - Lot of code clean up (debugging code needs to be debugged :)
 done    - Make it work with OpenLDAP
-ongoing - Make qmail-lspawn debug messages work (again)
+done    - Make qmail-lspawn debug messages work (again)
 ongoing - Debugging and testing, testing, testing
 ongoing - The big qmail-ldap picture
-ongoing - better handling in qmail-local
+done    - better handling in qmail-local
+planned - support for mail clusters
 
 NEWS:
+
+ rewritten qmail-locals qldap code, now supports better support for different 
+ dotModes. There are also some new settings.
+
+ fixed some old bugs in qmail-local
+
+ fixed allready some bugs in new qmail-local code ;-)
+
+ added a log facility to qmail-lspawn.
+
+ added some experimental -extension support in qmail-lspawn.
+
+ Added a headerfile qmail-ldap.h where all parameters are set.
+ This includes some changes in qmail-local.c qmail-lspawn.c and checkpassword.c
+ (XXX have a look at qmail-quotawarn and qmail-reply)
+
+ qmail-lspawn checks no longer for "correct" mailaddresses, now the possibe mail-
+ address is escaped ('(', ')', '*') befor added to the search filter.
+
+ all the stuff that was fixed in the subpatches. (XXX double check that)
+ 
+OLDER NEWS:
 
  Added some compile options in the Makefile for easier configuration (see 5.)
 
@@ -60,7 +83,7 @@ NEWS:
  Added fix for qmail-pop3d stat command bug found by Aaron Nabil
  <nabil@spiritone.com>.
 
-OLDER NEWS:
+REALY OLD NEWS:
 
  checkpassword compiled with QLDAPDEBUG now does complete LDAP debugging.
   Usage: ./checkpassword POPLogin POPPassword
@@ -114,6 +137,12 @@ INSTALL:
      (Solaris, Linux) for local password lookups (just like the original
      djb-checkpassword)
    - DEBUG=-DQLDAPDEBUG (turns debugging of checkpassword on, see 5.3)
+   - LSPAWN_LOG=-DQLSPAWN_LOG -DLOG_LEVEL=3 (qmail-lspawn compiled with 
+     LSPAWN_LOG endabled does now some lspawn logging, only the Number after
+     -DLOG_LEVEL= has to be changed)
+     WARNING: this Infos are logged throught splogger to the syslog AND when a
+              message is bounced the same informations are also included.
+              Do not use DEBUG_LEVEL/INFO_LEVEL on production machines.
 
 5.1 Compile and install the stuff (it's the same as in standard qmail
    install)
@@ -262,7 +291,7 @@ CONFIG FILES:
  Default: 0 (which means no tarpitting)
  Example: 5
  Note: You can override tarpitcount by setting TARPITCOUNT in qmail-smtpd's
- environment (with tcpserver).
+       environment (with tcpserver).
 
 ~control/tarpitdelay
 
@@ -271,7 +300,7 @@ CONFIG FILES:
  Default: 5
  Example: 10
  Note: You can override tarpitdelay by setting TARPITDELAY in qmail-smtpd's
- environment (with tcpserver).
+       environment (with tcpserver).
 
 ~control/badrcptto
 
@@ -279,8 +308,8 @@ CONFIG FILES:
  Default: none
  Example: user@domain or @domain
  Note: This can be useful if a spammer sends lots of messages to a
- nonexistant user from an invalid address, as otherwise, postmaster
- will get lots of double bounces.
+       nonexistant user from an invalid address, as otherwise, postmaster
+       will get lots of double bounces.
 
 ~control/dirmaker
 
@@ -288,9 +317,20 @@ CONFIG FILES:
  Default: none (off)
  Example: /var/qmail/bin/create_homedir
  Note: the script is executeded after the setuid/gid, it isn't running
- under root for security reasons.
+       under root for security reasons.
+       The command is executed with execve not system 
+       (so mkdir --mode=700 -p does not work!) us a shell script. 
+       $1 is the homedir-path and $2 is aliasempty.
+       Possible very simple shell script:
+       #!/bin/sh
+
+       mkdir $1
+       cd $1
+       maildirmake $2
+       #EOF 
 
 LDAP PARAMETER FIELDS:
+NOTE: keywords have to match exactly, so pay attention.
 
 mail
 

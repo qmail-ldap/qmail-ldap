@@ -516,7 +516,7 @@ int qldap_get( stralloc *mail )
          if (r[ext - 1] == '-' ) {
             /* build the search string for the email address */
             if (!stralloc_copys(&filter,"(|(mail=" ) ) _exit(QLX_NOMEM);
-            if (!stralloc_copyb(&filter,r,ext)) _exit(QLX_NOMEM);
+            if (!stralloc_catb(&filter,r,ext)) _exit(QLX_NOMEM);
             if (!stralloc_cats(&filter,"default@")) _exit(QLX_NOMEM);
             if (!stralloc_catb(&filter,r+at+1, i-at-1)) _exit(QLX_NOMEM);
             if (!stralloc_cats(&filter,")(mailalternateaddress=")) _exit(QLX_NOMEM);
@@ -559,7 +559,7 @@ int qldap_get( stralloc *mail )
 
    /* get the username for delivery on the local system */
    if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILUSER)) != NULL ) {
-      DEBUG("qmailUser: ", vals[0], "\n", 0);
+//      DEBUG("qmailUser: ", vals[0], "\n", 0);
       if (!chck_users(vals[0]) ) return 20;
       /* set the value for qmail-local... */
       if (!stralloc_copys(&nughde, vals[0])) _exit(QLX_NOMEM);
@@ -575,7 +575,7 @@ int qldap_get( stralloc *mail )
 
    /* get the UID for delivery on the local system */
    if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILUID)) != NULL ) {
-      DEBUG("qmailUID: ", vals[0], "\n", 0);
+//      DEBUG("qmailUID: ", vals[0], "\n", 0);
       if (100 > chck_ids(vals[0]) ) return 21;
       if (!stralloc_cats(&nughde, vals[0])) _exit(QLX_NOMEM);
    } else {
@@ -589,7 +589,7 @@ int qldap_get( stralloc *mail )
 
    /* get the GID for delivery on the local system */
    if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILGID)) != NULL ) {
-      DEBUG("qmailGID: ", vals[0], "\n", 0);
+//      DEBUG("qmailGID: ", vals[0], "\n", 0);
       if ( 100 > chck_ids(vals[0]) ) return 22; 
       if (!stralloc_cats(&nughde, vals[0])) _exit(QLX_NOMEM);
    } else {
@@ -603,7 +603,7 @@ int qldap_get( stralloc *mail )
 
    /* get the path of the maildir or mbox */
    if ( (vals = ldap_get_values(ld,msg,LDAP_MAILSTORE)) != NULL ) {
-      DEBUG("mailMessageStore: ", vals[0], "\n", 0);
+//      DEBUG("mailMessageStore: ", vals[0], "\n", 0);
       if (vals[0][0] != '/') {
          if (qldap_messagestore.s[0] != '/') return 46;
          if (qldap_messagestore.s[qldap_messagestore.len -1] != '/') return 47;
@@ -651,9 +651,11 @@ int qldap_get( stralloc *mail )
       }
       if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
       if ( !env_put2(ENV_FORWARDS, foo.s) ) _exit(QLX_NOMEM);
+      DEBUG(ENV_FORWARDS,": ", foo.s, "\n");
    } else {
       /* default */
       if ( !env_unset(ENV_FORWARDS) ) _exit(QLX_NOMEM);
+      DEBUG("NO ", ENV_FORWARDS, "\n",0);
    }
    ldap_value_free(vals);
 
@@ -670,9 +672,11 @@ int qldap_get( stralloc *mail )
       }
       if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
       if ( !env_put2(ENV_PROGRAM, foo.s) ) _exit(QLX_NOMEM);
+      DEBUG(ENV_PROGRAM,": ", foo.s, "\n");
    } else {
       /* default */
       if ( !env_unset(ENV_PROGRAM) ) _exit(QLX_NOMEM);
+      DEBUG("NO ", ENV_PROGRAM, "\n",0);
    }
    ldap_value_free(vals);
 
@@ -688,16 +692,21 @@ int qldap_get( stralloc *mail )
          if (vals[i+1] == NULL ) break;
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
+      if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
+      if ( !env_put2(ENV_MODE, foo.s) ) _exit(QLX_NOMEM);
+      DEBUG(ENV_MODE,": ", foo.s, "\n");
    } else {
       /* default */
       if ( !env_unset(ENV_MODE) ) _exit(QLX_NOMEM);
       if ( !env_unset(ENV_REPLYTEXT) ) _exit(QLX_NOMEM);
+      DEBUG("NO ", ENV_MODE, "\n",0);
    }
    ldap_value_free(vals);
    
    if ( reply ) {
       if ( (vals = ldap_get_values(ld,msg,LDAP_REPLYTEXT)) != NULL ) {
           if ( !env_put2(ENV_REPLYTEXT, vals[0]) ) _exit(QLX_NOMEM);
+          DEBUG(ENV_REPLYTEXT,": ", vals[0], "\n");
       }
       ldap_value_free(vals);
    }
@@ -705,20 +714,27 @@ int qldap_get( stralloc *mail )
    /* get the mode of the .qmail interpretion: ldaponly, dotonly, both, none */
    if ( (vals = ldap_get_values(ld,msg,LDAP_DOTMODE)) != NULL ) {
       case_lowers(vals[0]);
+//      DEBUG(ENV_DOTMODE,"(from server): ", vals[0], "\n");
       if ( !str_diff(DOTMODE_LDAPONLY, vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_LDAPONLY) ) _exit(QLX_NOMEM);
+         DEBUG(ENV_DOTMODE,": ",DOTMODE_LDAPONLY, "\n");
       } else if ( !str_diff(DOTMODE_DOTONLY, vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_DOTONLY) ) _exit(QLX_NOMEM);
+         DEBUG(ENV_DOTMODE,": ",DOTMODE_DOTONLY, "\n");
       } else if ( !str_diff(DOTMODE_BOTH, vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_BOTH) ) _exit(QLX_NOMEM);
+         DEBUG(ENV_DOTMODE,": ",DOTMODE_BOTH, "\n");
       } else if ( !str_diff(DOTMODE_NONE, vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_NONE) ) _exit(QLX_NOMEM);
+         DEBUG(ENV_DOTMODE,": ",DOTMODE_NONE, "\n");
       } else {
          if ( !env_put2(ENV_DOTMODE, qldap_defdotmode.s) ) _exit(QLX_NOMEM);
+         DEBUG(ENV_DOTMODE,"(default): ",qldap_defdotmode.s, "\n");
       }
    } else {
       /* default */
       if ( !env_put2(ENV_DOTMODE, qldap_defdotmode.s) ) _exit(QLX_NOMEM);
+      DEBUG("NO ", ENV_DOTMODE, "\n",0);
    }
    ldap_value_free(vals);
 

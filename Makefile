@@ -44,7 +44,7 @@ PWOPTS=-DLOOK_UP_PASSWD
 #        INFO_LEVEL    3 : a lot of generic infos
 #        WARNING_LEVEL 2 : warning (not an error, but not OK)
 #        ERROR_LEVEL   1 : error (no panic nessary)
-#LSPAWN_LOG=-DQLSPAWN_LOG -DLOG_LEVEL=3
+#LSPAWN_LOG=-DQLSPAWN_LOG -DLOG_LEVEL=2
 
 # Just for me, make a backup befor compiling
 #DOBACKUP=backup # allways do a backup
