@@ -723,7 +723,7 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
    {
 //     qmail_puts(&qqt,"-\n");
      qmail_puts(&qqt,custombouncetext.s);
-     if (custombouncetext.s[custombouncetext.len-2] != '\n' )
+     if (custombouncetext.s[custombouncetext.len-2] != '\n')
        qmail_puts(&qqt,"\n"); /* I don't think we get here but anyway */
 //     qmail_puts(&qqt,"-\n");
    }
