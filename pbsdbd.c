@@ -14,8 +14,6 @@
 #include "substdio.h"
 #include "uint32.h"
 
-#include <stdio.h>
-
 struct ip_address ip;
 unsigned int port = 2821;
 stralloc addr = {0};
@@ -141,8 +139,6 @@ unsigned long hash(const unsigned char *key,unsigned int keylen)
   }
   result <<= 2;
   result &= hashsize - 4;
-  printf("hash: result %li %#lx hashsize %li %#lx\n", 
-      result, result, hashsize, hashsize);
   return result;
 }
 
@@ -153,8 +149,6 @@ void setaddr(const unsigned char *key,unsigned int keylen, unsigned long timenow
   unsigned int entrylen;
   unsigned int keyhash;
   unsigned long pos;
-
-  printf("setaddr:\ttimeout %lu, keylen %i, key %#lx\n", timenow, keylen, *(unsigned long*)key);
 
   if (!cache) return;
   if ( keylen > 255 ) return;
@@ -194,9 +188,6 @@ void setaddr(const unsigned char *key,unsigned int keylen, unsigned long timenow
 
   set4(keyhash,writer);
 
-  printf("setaddr: writer %li: %#lx %#lx %i %#lx\n", writer, 
-      get4(writer), get4(writer + 4), *(cache + writer + 8), get4(writer + 9) );
-
   writer += entrylen;
 }
 
@@ -207,8 +198,6 @@ int checkaddr(const unsigned char *key,unsigned int keylen,unsigned long timenow
   unsigned long nextpos;
   unsigned long u;
   unsigned int loop;
-
-  printf("checkaddr:\ttimeout %lu, keylen %i, key %#lx\n", timenow, keylen, *(unsigned long*)key);
 
   if (!cache) return 0;
 
