@@ -46,6 +46,7 @@ char  *MD5Data ();
 
 char  *MD5DataBase64 ();
 
+int    ns_mta_hash_alg();
 int    ns_mta_md5_cmp_pw();
 
 #endif /* _MD5_H_ */

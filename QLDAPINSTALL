@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/04/16 22:34:04 $)
+RELEASE: current ($Date: 2001/04/19 16:06:34 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -600,7 +600,8 @@ LDAP_ISACTIVE (default: "accountStatus")
  Values: active (no restrictions), 
          nopop (only mail delivery but no pop access), 
          disabled (bounce incoming messages)
-	 deleted (bounce incoming messages and mark for deletion, see LDAP_PURGE)
+         deleted (bounce incoming messages and mark for deletion, 
+                  see LDAP_PURGE)
  Default: no accountStatus is equal to active.
 
 
@@ -684,7 +685,7 @@ objectclass qmailUser
                 deliveryMode,
                 mailReplyText,
                 accountStatus,
-		qmailAccountPurge
+                qmailAccountPurge
 
 
 FOR OpenLDAP 2.x DO THIS INSTEAD:

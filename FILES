@@ -437,7 +437,6 @@ base64.h
 check.c
 check.h
 checkpassword.c
-compatibility.h
 digest.c
 digest_md4.c
 digest_md4.h

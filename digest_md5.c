@@ -424,7 +424,7 @@ ns_mta_hexify(char *buffer, char *str, int len)
   return;
 }
 
-static int
+int
 ns_mta_hash_alg(char *buffer, char *salt, char *passwd)
 {
   MD5_CTX context;

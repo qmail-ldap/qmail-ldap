@@ -52,7 +52,7 @@ SHADOWLIBS=-lcrypt
 # to enable the possibility to log and debug imap and pop uncoment the
 # next line
 #DEBUG=-DDEBUG
-# WARNING: you need NONE DEBUG auth_* to run with inetd
+# WARNING: you need a NONE DEBUG auth_* to run with inetd
 
 # for profiling ...
 #INCTAI=../libtai-0.60
@@ -99,8 +99,8 @@ dns.o timeoutconn.o ndelay.a ipalloc.o dns.lib socket.lib qldap-ldaplib.o \
 timeoutread.o qldap-mdm.o wait.a sig.a prot.o qldap-errno.o
 	./load auth_imap checkpassword.o check.o control.o qldap-ldaplib.o \
 	qldap-debug.o auto_qmail.o dns.o timeoutconn.o timeoutread.o ip.o \
-	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
+	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
 	qldap-mdm.o wait.a qldap-errno.o error.a fs.a ndelay.a sig.a prot.o \
 	$(LDAPLIBS) $(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
 
@@ -118,8 +118,8 @@ dns.o timeoutconn.o ndelay.a ipalloc.o dns.lib socket.lib qldap-ldaplib.o \
 timeoutread.o qldap-mdm.o wait.a prot.o qldap-errno.o
 	./load auth_pop checkpassword.o check.o control.o qldap-ldaplib.o \
 	qldap-debug.o auto_qmail.o dns.o timeoutconn.o timeoutread.o ip.o \
-	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
+	ipalloc.o getln.a open.a env.a stralloc.a alloc.a substdio.a str.a \
 	qldap-mdm.o wait.a qldap-errno.o error.a fs.a ndelay.a prot.o \
 	$(LDAPLIBS) $(SHADOWLIBS) `cat dns.lib` `cat socket.lib`
 
@@ -1389,8 +1389,8 @@ base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
 auto_qmail.o getln.a substdio.a strerr.a
 	./load qmail-ldaplookup qldap-ldaplib.o  control.o error.a \
 	getln.a stralloc.a qldap-debug.o qldap-errno.o check.o fs.a \
-	open.a env.a strerr.a substdio.a str.a alloc.a \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
+	open.a env.a strerr.a substdio.a str.a alloc.a \
 	auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS)
 
 qmail-ldaplookup.o: \

@@ -505,7 +505,10 @@ static int cmp_passwd(unsigned char *clear, char *encrypted)
 			} /* boom */
 			byte_copy(salt, 32, &encrypted[44]);
 			salt[32] = 0;
-			ns_mta_hash_alg(hashed, salt, (char *) clear);
+			if ( ns_mta_hash_alg(hashed, salt, (char *) clear) == -1 ) {
+				qldap_errno = ERRNO;
+				return -1;
+			}
 			byte_copy(&hashed[32], 33, salt);
 		} else if (!str_diffn("{SHA}", encrypted, 5) ) {
 			/* SHA */
