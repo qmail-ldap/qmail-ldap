@@ -51,12 +51,13 @@ int flagcolon;
  
   cm->num = 0;
   for (j = 0;j < len;++j) if (!s[j]) ++cm->num;
+  if (cm->num <= 0) return 0;
  
   h = 64;
   while (h && (h < cm->num)) h += h;
   cm->mask = h - 1;
  
-  cm->first = (unsigned int *) alloc(sizeof(unsigned int) * h);
+  cm->first = (int *) alloc(sizeof(int) * h);
   if (cm->first) {
     cm->input = (const char **) alloc(sizeof(char *) * cm->num);
     if (cm->input) {
@@ -64,7 +65,7 @@ int flagcolon;
       if (cm->inputlen) {
         cm->hash = (constmap_hash *) alloc(sizeof(constmap_hash) * cm->num);
         if (cm->hash) {
-	  cm->next = (unsigned int *) alloc(sizeof(unsigned int) * cm->num);
+	  cm->next = (int *) alloc(sizeof(int) * cm->num);
 	  if (cm->next) {
 	    for (h = 0;h <= cm->mask;++h)
 	      cm->first[h] = -1;

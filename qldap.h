@@ -77,5 +77,5 @@ char *filter_escape(char *);
 char *filter_objectclass(char *);
 char *filter_uid(char *);
 char *filter_mail(char *, int *);
-unsigned int filter_mail_ext(void);
+int filter_mail_ext(void);
 #endif

@@ -4,11 +4,11 @@
 typedef unsigned long constmap_hash;
 
 struct constmap {
-  unsigned int num;
+  int num;
   constmap_hash mask;
   constmap_hash *hash;
-  unsigned int *first;
-  unsigned int *next;
+  int *first;
+  int *next;
   const char **input;
   unsigned int *inputlen;
 } ;

@@ -54,7 +54,7 @@ int main()
 {
  unsigned int i;
  int match;
- unsigned int cleanuploop;
+ int cleanuploop;
  unsigned long id;
 
  if (chdir(auto_qmail) == -1) _exit(111);

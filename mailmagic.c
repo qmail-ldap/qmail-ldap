@@ -22,7 +22,7 @@ sa_init(stralloc *header)
 static int
 sa_read(int fd, void *buf, int len)
 {
-	unsigned int	t;
+	int	t;
 
 	t = mysa->len - mypos;
 	if (t == 0) return 0;

@@ -71,7 +71,7 @@ filter_uid(char *uid)
 	return filter_objectclass(filter.s);
 }
 
-static unsigned int extcnt;
+static int extcnt;
 
 
 char *
@@ -170,7 +170,7 @@ filter_mail(char *mail, int *done)
 	return filter_objectclass(filter.s);
 }
 
-unsigned int
+int
 filter_mail_ext(void)
 {
 	return extcnt;
