@@ -89,7 +89,7 @@ struct qmail *qqt;
 char *remoteip;
 char *rbl;
 {
-  qmail_puts(qqt,"X-RBL: ");
+  qmail_puts(qqt,"X-RBL-Check: ");
   if (*remoteip) safeput(qqt,remoteip);
   qmail_puts(qqt," is listed by ");
   if (*rbl) safeput(qqt,rbl);
