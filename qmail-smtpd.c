@@ -620,8 +620,8 @@ void smtp_mail(arg) char *arg;
     logpid(2); logstring(2,"RFC821 syntax error in mail from ="); logstring(2,arg); logflush(2);
     return;
   }
-  if (databytes && !sizelimit(arg)) { err_size(); return; }
   logpid(3); logstring(3,"mail from ="); logstring(3,addr.s); logflush(3);
+  if (databytes && !sizelimit(arg)) { err_size(); return; }
   flagbarf = bmfcheck();
   if (flagbarf)
   {
