@@ -118,7 +118,7 @@ void logstring(level,string) int level; char *string;
 {
   if (level > loglevel) return;
   substdio_puts(subfderr,string);
-  substdio_puts(subfderr," ");
+//  substdio_puts(subfderr," ");
 }
 
 void logflush(level) int level;
@@ -145,14 +145,14 @@ void err_badbounce() { out("550 sorry, I don't accept bounce messages with more 
 #ifdef TLS_SMTPD
 void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
 #endif
-void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command ="); logstring(3,arg); logflush(3); }
+void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command: "); logstring(3,arg); logflush(3); }
 void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because of 'SMTP SIZE' argument"); }
 void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
 void err_relay() { out("553 we don't relay (#5.7.1)\r\n"); }
 void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
 void err_wantrcpt() { out("503 RCPT first (#5.5.1)\r\n"); logline(3,"'rcpt to' first"); }
 void err_noop() { out("250 ok\r\n"); logline(3,"'noop'"); }
-void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n"); logpid(3); logstring(3,"vrfy for ="); logstring(3,arg); logflush(3); }
+void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n"); logpid(3); logstring(3,"vrfy for: "); logstring(3,arg); logflush(3); }
 
 void err_rbl(arg) char *arg; { out("553 sorry, your mailserver is rejected by "); out(arg); out("\r\n"); }
 void err_deny() { out("553 sorry, mail from your location is administratively denied (#5.7.1)\r\n"); }
@@ -298,26 +298,26 @@ void setup()
  
   remoteip = env_get("TCPREMOTEIP");
   if (!remoteip) remoteip = "unknown";
-  logpid(2); logstring(2,"connection from"); logstring(2,remoteip);
+  logpid(2); logstring(2,"connection from "); logstring(2,remoteip);
   remotehost = env_get("TCPREMOTEHOST");
   if (!remotehost) remotehost = "unknown";
-  logstring(2,"("); logstring(2,remotehost);
+  logstring(2," ("); logstring(2,remotehost);
   remoteinfo = env_get("TCPREMOTEINFO");
   if (remoteinfo) { logstring(2,","); logstring(2,remoteinfo); }
-  logstring(2,") to");
+  logstring(2,") to ");
 
   local = env_get("TCPLOCALHOST");
   if (!local) local = env_get("TCPLOCALIP");
   if (!local) local = "unknown";
   logstring(2,local);
 
-  logstring(2, ":");
-  if (errdisconnect) logstring(2,"smtp550disconnect");
-  if (nobounce) logstring(2,"nobounce");
-  if (sanitycheck) logstring(2,"sanitycheck");
-  if (returnmxcheck) logstring(2,"returnmxcheck");
-  if (blockrelayprobe) logstring(2,"blockrelayprobe");
-  if (relayclient) logstring(2,"relayclient");
+  logstring(2, ": ");
+  if (errdisconnect) logstring(2,"smtp550disconnect ");
+  if (nobounce) logstring(2,"nobounce ");
+  if (sanitycheck) logstring(2,"sanitycheck ");
+  if (returnmxcheck) logstring(2,"returnmxcheck ");
+  if (blockrelayprobe) logstring(2,"blockrelayprobe ");
+  if (relayclient) logstring(2,"relayclient ");
 
   logflush(2);
   dohelo(remotehost);
@@ -532,7 +532,7 @@ void smtp_helo(arg) char *arg;
 {
   smtp_greet("250 "); out("\r\n");
   seenmail = 0; dohelo(arg);
-  logpid(3); logstring(3,"remote helo ="); logstring(3,arg); logflush(3);
+  logpid(3); logstring(3,"remote helo: "); logstring(3,arg); logflush(3);
 }
 
 char smtpsize[FMT_ULONG];
@@ -558,8 +558,8 @@ void smtp_ehlo(arg) char *arg;
   }
 #endif
   seenmail = 0; dohelo(arg);
-  logpid(3); logstring(3,"remote ehlo ="); logstring(3,arg); logflush(3);
-  logpid(3); logstring(3,"max msg size ="); logstring(3,smtpsize); logflush(3);
+  logpid(3); logstring(3,"remote ehlo: "); logstring(3,arg); logflush(3);
+  logpid(3); logstring(3,"max msg size: "); logstring(3,smtpsize); logflush(3);
 }
 
 void smtp_rset()
@@ -578,17 +578,17 @@ void smtp_mail(arg) char *arg;
   char *rblname;
   int bounceflag = 0;
 
-  logpid(3); logstring(3,"remote sent 'mail from' ="); logstring(3,arg); logflush(3);
+  logpid(3); logstring(3,"remote sent 'mail from': "); logstring(3,arg); logflush(3);
 
   /* address syntax check */
   if (!addrparse(arg))
   {
     err_syntax(); 
-    logpid(2); logstring(2,"RFC821 syntax error in mail from ="); logstring(2,arg); logflush(2);
+    logpid(2); logstring(2,"RFC821 syntax error in mail from: "); logstring(2,arg); logflush(2);
     if (errdisconnect) err_quit();
     return;
   }
-  logpid(3); logstring(3,"mail from ="); logstring(3,addr.s); logflush(3);
+  logpid(3); logstring(3,"mail from: "); logstring(3,addr.s); logflush(3);
 
   /* smtp size check */
   if (databytes && !sizelimit(arg))
@@ -602,7 +602,7 @@ void smtp_mail(arg) char *arg;
   if (bmfcheck())
   {
     err_bmf();
-    logpid(2); logstring(2,"bad mailfrom ="); logstring(2,addr.s); logflush(2);
+    logpid(2); logstring(2,"bad mailfrom: "); logstring(2,addr.s); logflush(2);
     if (errdisconnect) err_quit();
     return;
   }
@@ -610,7 +610,7 @@ void smtp_mail(arg) char *arg;
   if (bmfunknowncheck())
   {
     err_bmfunknown();
-    logpid(2); logstring(2,"bad mailfrom unknown =");
+    logpid(2); logstring(2,"bad mailfrom unknown: ");
     logstring(2,addr.s); logflush(2);
     if (errdisconnect) err_quit();
     return;
@@ -730,15 +730,15 @@ void smtp_mail(arg) char *arg;
 
 void smtp_rcpt(arg) char *arg; {
   if (!seenmail) { err_wantmail(); return; }
-  logpid(3); logstring(3,"remote sent 'rcpt to' ="); logstring(3,arg); logflush(3);
+  logpid(3); logstring(3,"remote sent 'rcpt to': "); logstring(3,arg); logflush(3);
   if (!addrparse(arg))
   {
     err_syntax();
-    logpid(2); logstring(2,"syntax error in 'rcpt to' ="); logstring(2,arg); logflush(2);
+    logpid(2); logstring(2,"syntax error in 'rcpt to': "); logstring(2,arg); logflush(2);
     if (errdisconnect) err_quit();
     return;
   }
-  logpid(3); logstring(3,"rcpt to ="); logstring(3,addr.s); logflush(3);
+  logpid(3); logstring(3,"rcpt to: "); logstring(3,addr.s); logflush(3);
 
   /* blockrelay stupid sendwhale bug relay probing */
   if (blockrelayprobe) /* don't enable this if you use percenthack */
@@ -754,7 +754,7 @@ void smtp_rcpt(arg) char *arg; {
   if (rcptdenied())
   {
     err_badrcptto();
-    logpid(2); logstring(2,"'rcpt to' denied ="); logstring(2,arg); logflush(2);
+    logpid(2); logstring(2,"'rcpt to' denied: "); logstring(2,arg); logflush(2);
     if (errdisconnect) err_quit();
     return;
   }
@@ -768,7 +768,7 @@ void smtp_rcpt(arg) char *arg; {
     if (!addrallowed())
     { 
       err_nogateway(); 
-      logpid(2); logstring(2,"no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+      logpid(2); logstring(2,"no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
       if (errdisconnect) err_quit();
       return; 
     }
@@ -786,7 +786,7 @@ void smtp_rcpt(arg) char *arg; {
         if ((sk = SSL_load_client_CA_file("control/clientca.pem")) == NULL)
         {
            err_nogateway();
-           logpid(2); logstring(2,"unable to read ~control/clientca.pem, no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+           logpid(2); logstring(2,"unable to read ~control/clientca.pem, no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
            return;
         }
         SSL_set_client_CA_list(ssl, sk);
@@ -794,7 +794,7 @@ void smtp_rcpt(arg) char *arg; {
            !constmap_init(&maptlsclients,tlsclients.s,tlsclients.len,0))
         {
            err_nogateway();
-           logpid(2); logstring(2,"unable to read or process ~control/tlsclients, no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+           logpid(2); logstring(2,"unable to read or process ~control/tlsclients, no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
            return;
         }
 
@@ -808,7 +808,7 @@ void smtp_rcpt(arg) char *arg; {
            if (!constmap(&maptlsclients,clientcert.s,clientcert.len))
            {
               err_nogwcert();
-              logpid(2); logstring(2,"client cert no found, no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+              logpid(2); logstring(2,"client cert no found, no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
               return;
            }
            relayclient = 0;
@@ -816,14 +816,14 @@ void smtp_rcpt(arg) char *arg; {
         else
         {
            err_nogwcert();
-           logpid(2); logstring(2,"either not X509 or no certificate presented, no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+           logpid(2); logstring(2,"either not X509 or no certificate presented, no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
            return;
         }
       }
       else
       {
         err_nogateway();
-        logpid(2); logstring(2,"no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+        logpid(2); logstring(2,"no mail relay for 'rcpt to': "); logstring(2,arg); logflush(2);
         return;
       }
     }
@@ -956,7 +956,7 @@ void acceptmessage(qp) unsigned long qp;
   out("250 ok ");
   accept_buf[fmt_ulong(accept_buf,(unsigned long) when)] = 0;
   out(accept_buf);
-  logpid(2); logstring(2,"message queued ="); logstring(2,accept_buf);
+  logpid(2); logstring(2,"message queued: "); logstring(2,accept_buf);
   out(" qp ");
   accept_buf[fmt_ulong(accept_buf,qp)] = 0;
   out(accept_buf);
@@ -1002,7 +1002,7 @@ void smtp_data() {
   blast(&hops);
 
   receivedbytes[fmt_ulong(receivedbytes,(unsigned long) bytesreceived)] = 0;
-  logpid(3); logstring(3,"data bytes received ="); logstring(3,receivedbytes); logflush(3);
+  logpid(3); logstring(3,"data bytes received: "); logstring(3,receivedbytes); logflush(3);
 
   hops = (hops >= MAXHOPS);
   if (hops) { logline(2,"hop count exceeded"); qmail_fail(&qqt); }
@@ -1019,8 +1019,8 @@ void smtp_data() {
     return;
   }
   logpid(1);
-  if (*qqx == 'D') { out("554 "); logstring(1,"message not accepted because ="); }
-    else { out("451 "); logstring(1,"message not accepted because ="); }
+  if (*qqx == 'D') { out("554 "); logstring(1,"message not accepted because: "); }
+    else { out("451 "); logstring(1,"message not accepted because: "); }
   out(qqx + 1);
   logstring(1,qqx+1); logflush(1);
   out("\r\n");

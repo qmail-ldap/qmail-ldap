@@ -131,7 +131,7 @@ int rblcheck(char *remoteip, char** rblname)
 	continue;
       }
       if (!str_diff("addheader", rbl[i].action)) {
-	logstring(2,"would tag header."); logflush(2);
+	logstring(2,"will tag header."); logflush(2);
 	rbladdheader(rbl[i].baseaddr, rbl[i].matchon, rbl[i].message);
 	continue;
       } else {
