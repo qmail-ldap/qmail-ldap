@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2003/02/25 13:01:21 $)
+RELEASE: current ($Date: 2003/02/27 17:59:51 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -458,6 +458,18 @@ CONFIG FILES:
  message.
  Default: 0 (off)
  Example: 102400 (equivalent to 10kB)
+
+~control/outgoingip
+
+ This file contains the IP qmail-remote should bind to.
+ Default: 0.0.0.0
+ Example: 192.168.12.88
+
+~control/qmqpcip
+
+ This file contains the IP qmail-qmqpc should bind to.
+ Default: 0.0.0.0
+ Example: 192.168.12.88
 
 ~control/dirmaker
 

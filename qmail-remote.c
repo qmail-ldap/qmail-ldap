@@ -60,6 +60,7 @@ GEN_ALLOC_readyplus(saa,stralloc,sa,len,a,i,n,x,10,saa_readyplus)
 static stralloc sauninit = {0};
 
 stralloc helohost = {0};
+stralloc outgoingip = {0};
 stralloc routes = {0};
 struct constmap maproutes;
 stralloc host = {0};
@@ -68,6 +69,7 @@ stralloc sender = {0};
 saa reciplist = {0};
 
 struct ip_address partner;
+struct ip_address outip;
 
 void out(s) char *s; { if (substdio_puts(subfdoutsmall,s) == -1) _exit(0); }
 void zero() { if (substdio_put(subfdoutsmall,"\0",1) == -1) _exit(0); }
@@ -77,6 +79,7 @@ for (i = 0;i < sa->len;++i) {
 ch = sa->s[i]; if (ch < 33) ch = '?'; if (ch > 126) ch = '?';
 if (substdio_put(subfdoutsmall,&ch,1) == -1) _exit(0); } }
 
+void temp_noip() { out("Zinvalid ipaddr in control/outgoingip (#4.3.0)\n"); zerodie(); }
 void temp_nomem() { out("ZOut of memory. (#4.3.0)\n"); zerodie(); }
 void temp_oserr() { out("Z\
 System resources temporarily unavailable. (#4.3.0)\n"); zerodie(); }
@@ -666,6 +669,10 @@ void getcontrols()
     case 1:
       if (!constmap_init(&maproutes,routes.s,routes.len,1)) temp_nomem(); break;
   }
+  if (control_rldef(&outgoingip, "control/outgoingip", 0, "0.0.0.0") == -1)
+    temp_control();
+  if (!stralloc_0(&outgoingip)) temp_nomem();
+  if (!ip_scan(outgoingip.s, &outip)) temp_noip();
 }
 
 void main(argc,argv)
@@ -764,7 +771,7 @@ char **argv;
     setsockopt(smtpfd, IPPROTO_TCP, TCP_NODELAY, &tcpnodelay, sizeof(tcpnodelay));
  
     if (qmtp_priority(ip.ix[i].pref)) {
-      if (timeoutconn(smtpfd,&ip.ix[i].ip,(unsigned int) qmtp_port,timeoutconnect) == 0) {
+      if (timeoutconn(smtpfd,&ip.ix[i].ip,&outip,(unsigned int) qmtp_port,timeoutconnect) == 0) {
 	tcpto_err(&ip.ix[i].ip,0);
 	partner = ip.ix[i].ip;
 	qmtp(); /* does not return */
@@ -776,7 +783,7 @@ char **argv;
       /* performace hack to send TCP ACK's without delay */
       setsockopt(smtpfd, IPPROTO_TCP, TCP_NODELAY, &tcpnodelay, sizeof(tcpnodelay));
     }
-    if (timeoutconn(smtpfd,&ip.ix[i].ip,(unsigned int) smtp_port,timeoutconnect) == 0) {
+    if (timeoutconn(smtpfd,&ip.ix[i].ip,&outip,(unsigned int) smtp_port,timeoutconnect) == 0) {
       tcpto_err(&ip.ix[i].ip,0);
       partner = ip.ix[i].ip;
 #ifdef TLS

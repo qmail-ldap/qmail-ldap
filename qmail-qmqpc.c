@@ -126,6 +126,8 @@ void getmess()
 
 }
 
+struct ip_address outip;
+
 void doit(server)
 char *server;
 {
@@ -137,7 +139,7 @@ char *server;
   qmqpfd = socket(AF_INET,SOCK_STREAM,0);
   if (qmqpfd == -1) die_socket();
 
-  if (timeoutconn(qmqpfd,&ip,PORT_QMQP,10) != 0) {
+  if (timeoutconn(qmqpfd,&ip,&outip,PORT_QMQP,10) != 0) {
     lasterror = 73;
     if (errno == error_timeout) lasterror = 72;
     close(qmqpfd);
@@ -164,6 +166,7 @@ char *server;
 }
 
 stralloc servers = {0};
+stralloc outgoingip = {0};
 
 #include "dns.h"
 #include "ipalloc.h"
@@ -196,6 +199,11 @@ char **argv;
     if (!stralloc_0(&servers)) nomem();
   } else
   if (control_readfile(&servers,"control/qmqpservers",0) != 1) die_control();
+
+  if (control_rldef(&outgoingip, "control/qmqpcip", 0, "0.0.0.0") == -1)
+	  die_control();
+  if (!stralloc_0(&outgoingip)) nomem();
+  if (ip_scan(outgoingip.s,&outip)) die_control();
 
   getmess();
 
