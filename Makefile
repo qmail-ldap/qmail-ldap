@@ -10,8 +10,9 @@
 # systems)
 # -DEXTERNAL_TODO to use the external high-performance todo processing (this
 # avoids the silly qmail syndrome with high injection rates)
+# -DBIGBROTHER to use the control/bigbrother file to forward all mails comming
+# from a specified account to another (swiss bigbrother law)
 #LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO
-LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
@@ -1703,7 +1704,7 @@ qmail-queue.o: \
 compile qmail-queue.c readwrite.h sig.h exit.h open.h seek.h fmt.h \
 alloc.h substdio.h datetime.h now.h datetime.h triggerpull.h extra.h \
 auto_qmail.h auto_uids.h date822fmt.h fmtqfn.h
-	./compile qmail-queue.c
+	./compile ${LDAPFLAGS} qmail-queue.c
 
 qmail-quotawarn: \
 load qmail-quotawarn.o newfield.o now.o date822fmt.o case.a fd.a wait.a \
