@@ -218,24 +218,20 @@ copyloop(int infd, int outfd, int timeout)
 	fd_set	iofds;
 	struct	timeval tv;
 	int	maxfd;	/* Maximum numbered fd used */
-	int	bytes, ret, in, out;
+	int	bytes, ret;
 
-	in = 1; out = 1;
 	ndelay_off(infd); ndelay_off(outfd);
-	while (in || out) {
+	while (1) {
 		/* file descriptor bits */
 		FD_ZERO(&iofds);
 		maxfd = -1;
-		if (in) {
-			FD_SET(infd, &iofds);
-			if (infd > maxfd)
-				maxfd = infd;
-		}
-		if (out) {
-			FD_SET(outfd, &iofds);
-			if (outfd > maxfd)
-				maxfd = outfd;
-		}
+		FD_SET(infd, &iofds);
+		if (infd > maxfd)
+			maxfd = infd;
+		FD_SET(outfd, &iofds);
+		if (outfd > maxfd)
+			maxfd = outfd;
+
 		/* Set up timeout */
 		tv.tv_sec = timeout;
 		tv.tv_usec = 0;
@@ -249,40 +245,32 @@ copyloop(int infd, int outfd, int timeout)
 			log(32, "copyloop: select timeout\n");
 			break;
 		}
-		if(in && FD_ISSET(infd, &iofds)) {
-			if((bytes = read(infd, copybuf,
+		if (FD_ISSET(infd, &iofds)) {
+			if ((bytes = read(infd, copybuf,
 					    sizeof(copybuf))) < 0) {
 				log(1, "copyloop: read failed: %s\n",
 				    error_str(errno));
 				break;
 			}
-			if (bytes == 0) {
-				/* close recv end on in and ...
-				   close send 'end' on out */
-				shutdown(infd, 0);
-				shutdown(outfd, 1);
-				in = 0; /* do no longer select on infd */
-			} else if(allwrite(write, outfd, copybuf, bytes) != 0) {
+			if (bytes == 0)
+				break;
+			if (allwrite(write, outfd, copybuf, bytes) != 0) {
 				log(1, "copyloop: write out failed: %s\n",
 				    error_str(errno));
 				break;
 			}
 		}
-		if(out && FD_ISSET(outfd, &iofds)) {
-			if((bytes = read(outfd, copybuf,
+		if (FD_ISSET(outfd, &iofds)) {
+			if ((bytes = read(outfd, copybuf,
 					    sizeof(copybuf))) < 0) {
 				log(1, "copyloop: read failed: %s\n",
 				    error_str(errno));
 				break;
 			}
 			log(32, "copyloop: read in %i bytes read\n", bytes);
-			if (bytes == 0) {
-				/* close recv end on out and ...
-				   close send 'end' on in */
-				shutdown(outfd, 0);
-				shutdown(infd, 1);
-				out = 0; /* do no longer select on outfd */
-			} else if(allwrite(write, infd, copybuf, bytes) != 0) {
+			if (bytes == 0)
+				break;
+			if (allwrite(write, infd, copybuf, bytes) != 0) {
 				log(1, "copyloop: write in failed: %s\n",
 				    error_str(errno));
 				break;
