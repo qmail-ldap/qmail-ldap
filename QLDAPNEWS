@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/12/01 14:19:50 $ ($Revision: 1.208 $)
+RELEASE: $Date: 2005/03/12 11:36:05 $ ($Revision: 1.209 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,16 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Fix bug in the EHLO response parser of qmail-remote. Looks like authentication
+ only worked on TLS encrypted sessions. Reported by Amol Kulkarni.
+
+ Use SSL_CTX_use_certificate_chain_file() instead of
+ SSL_CTX_use_certificate_file() to load the TLS certificates. With this it
+ is possible to load the complete certificate chain instead of just the first
+ one. Idea and patch by Michel Minsoul.
+
+NEWS for 20041201 stuff:
 
  Introduce a better extension handling to qmail-group. Qmail-group will now
  only deliver mails if they are sent to the main address. This should fix
@@ -45,7 +55,7 @@ NEWS for current stuff:
  so it is possible to define more than just a simple ./Maildir/ delivery
  as default. Found by Michel H.
 
-NEWS for current 20041101:
+NEWS for 20041101 stuff:
 
  Don't forget to check also for accountStatus deleted in the auth tools and
  deny access in this case.
@@ -53,7 +63,7 @@ NEWS for current 20041101:
  Only send the AUTH option in MAIL FROM: if the session is authenticated.
  Fixes a problem seen with some obscure mail server.
 
-NEWS for current 20040801:
+NEWS for 20040801 stuff:
 
  In qmail-smtpd if SSLCERT is set use this as the path to the certificate and
  not as the path to a file containing the path to the certificate. Noticed by
