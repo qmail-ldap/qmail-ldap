@@ -94,7 +94,8 @@ ldap: qmail-quotawarn qmail-reply auth_pop auth_imap auth_smtp digest \
 qmail-ldaplookup pbsadd pbscheck pbsdbd qmail-todo qmail-forward \
 qmail-secretary qmail-group qmail-verify condwrite qmail-cdb \
 qmail-imapd.run qmail-pbsdbd.run qmail-pop3d.run qmail-qmqpd.run \
-qmail-smtpd.run qmail.run Makefile.cdb-p
+qmail-smtpd.run qmail.run qmail-imapd-ssl.run qmail-pop3d-ssl.run \
+Makefile.cdb-p
 
 addresses.0: \
 addresses.5
@@ -1549,6 +1550,13 @@ qmail-header.0: \
 qmail-header.5
 	nroff -man qmail-header.5 > qmail-header.0
 
+qmail-imapd-ssl.run: \
+qmail-imapd-ssl.sh conf-qmail
+	cat qmail-imapd-ssl.sh \
+	| sed s}%QMAIL%}"`head -1 conf-qmail`"}g \
+	> qmail-imapd-ssl.run
+	chmod 755 qmail-imapd-ssl.run
+
 qmail-imapd.run: \
 qmail-imapd.sh conf-qmail
 	cat qmail-imapd.sh \
@@ -1743,6 +1751,13 @@ substdio.h alloc.h open.h prioq.h datetime.h gen_alloc.h scan.h fmt.h \
 str.h exit.h maildir.h strerr.h readwrite.h timeoutread.h \
 timeoutwrite.h maildir++.h
 	./compile $(LDAPFLAGS) $(MNW) qmail-pop3d.c
+
+qmail-pop3d-ssl.run: \
+qmail-pop3d-ssl.sh conf-qmail
+	cat qmail-pop3d-ssl.sh \
+	| sed s}%QMAIL%}"`head -1 conf-qmail`"}g \
+	> qmail-pop3d-ssl.run
+	chmod 755 qmail-pop3d-ssl.run
 
 qmail-pop3d.run: \
 qmail-pop3d.sh conf-qmail

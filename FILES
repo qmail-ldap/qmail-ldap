@@ -434,6 +434,7 @@ constmap.c
 EXTTODO
 Makefile.cdb
 POPBEFORESMTP
+QLDAPGROUP
 QLDAPINSTALL
 QLDAPNEWS
 QLDAPPICTURE
@@ -503,10 +504,12 @@ qldap.h
 qmail-cdb.c
 qmail-forward.c
 qmail-group.c
+qmail-imapd-ssl.sh
 qmail-imapd.rules
 qmail-imapd.sh
 qmail-ldap.h
 qmail-ldaplookup.c
+qmail-pop3d-ssl.sh
 qmail-pop3d.rules
 qmail-pop3d.sh
 qmail-qmqpd.rules

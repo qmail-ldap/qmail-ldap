@@ -439,10 +439,12 @@ qmail-forward
 qmail-forward.o
 qmail-group
 qmail-group.o
+qmail-imapd-ssl.run
 qmail-imapd.run
 qmail-ldaplookup
 qmail-ldaplookup.o
 qmail-pbsdbd.run
+qmail-pop3d-ssl.run
 qmail-pop3d.run
 qmail-qmqpd.run
 qmail-quotawarn
