@@ -652,9 +652,12 @@ void smtp_mail(arg) char *arg;
           }
 
           j = addr.len-(i+1+j+1);
-          if (j < 2 || j > 3)
+          if (j < 2 || j > 6)
           {
-             /* XXX: This needs adjustment when new TLD's are constituded */
+             /* XXX: This needs adjustment when new TLD's are constituded.
+              * OK, now after the candidates are nominated we know new TLD's
+              * may contain up to six characters.
+              */
              why = "refused 'mail from' without country or top level domain";
              flagbarf=1;
           }
