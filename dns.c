@@ -18,6 +18,8 @@ extern int h_errno;
 #include "dns.h"
 #include "case.h"
 
+#define FUCKVERISIGN 1
+
 static unsigned short getshort(c) unsigned char *c;
 { unsigned short u; u = c[0]; return (u << 8) + c[1]; }
 
@@ -309,10 +311,10 @@ int pref;
  }
 
 #ifdef FUCKVERISIGN
-   j = byte_rchr(sa.s,sa.len,'.');
-   if (j+2 < sa.len) {
+   j = byte_rchr(sa->s,sa->len,'.');
+   if (j+2 < sa->len) {
      if(!stralloc_copys(&tld, "*")) return DNS_MEM;
-     if(!stralloc_catb(&tld, sa.s+j, sa.len-j)) return DNS_MEM;
+     if(!stralloc_catb(&tld, sa->s+j, sa->len-j)) return DNS_MEM;
      switch(resolve(&tld,T_A))
      {
        case DNS_HARD: byte_zero(&tldip, sizeof(tldip)); break;
@@ -341,7 +343,7 @@ int pref;
    if (r == DNS_SOFT) return DNS_SOFT;
    if (r == 1) {
 #ifdef FUCKVERISIGN
-     if (byte_diff(&ip, &tldip, sizeof(tldip)) == 0) continue;
+     if (byte_diff(&tldip, sizeof(tldip), &ip) == 0) continue;
 #endif
      if (!ipalloc_append(ia,&ix)) return DNS_MEM;
    }
