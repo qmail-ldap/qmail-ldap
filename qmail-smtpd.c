@@ -143,8 +143,8 @@ void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n")
 void err_qqt() { out("451 qqt failure (#4.3.0)\r\n"); }
 void err_ldapsoft() { out("451 temporary ldap lookup failure, try again later\r\n"); logline(1,"temporary ldap lookup failure"); }
 
-void err_bmf() { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
-void err_bmfunknown() { out("553 sorry, your mail from a host without RR DNS was administratively denied. (#5.7.1)\r\n"); }
+void err_bmf() { out("553 sorry, your mail was administratively denied (#5.7.1)\r\n"); }
+void err_bmfunknown() { out("553 sorry, your mail from a host without valid reverse DNS was administratively denied (#5.7.1)\r\n"); }
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway(char *arg) { out("553 sorry, relaying denied from your location ["); out(arg); out("] (#5.7.1)\r\n"); }
 void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
@@ -488,17 +488,20 @@ char *arg;
   return 1;
 }
 
+stralloc checkhost = {0};
+
 int badmxcheck(dom)
 char *dom;
 {
   ipalloc checkip = {0};
   int ret = 0;
-  stralloc checkhost = {0};
+  unsigned long random;
 
   if (!*dom) return (DNS_HARD);
   if (!stralloc_copys(&checkhost,dom)) return (DNS_SOFT);
-  
-  switch (dns_mxip(&checkip,&checkhost,1))
+
+  random = now() + (getpid() << 16);
+  switch (dns_mxip(&checkip,&checkhost,random))
   {
     case DNS_MEM:
     case DNS_SOFT:
