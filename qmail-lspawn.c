@@ -182,7 +182,7 @@ int len;
       REPORT_RETURN;
 
    case 199:
-         substdio_puts(ss, "DMissing ~control/ldapserver. (LDAP-ERR #199)\n");
+         substdio_puts(ss, "ZMissing ~control/ldapserver. (LDAP-ERR #199)\n");
       REPORT_RETURN;
 
    case 200:
@@ -194,7 +194,7 @@ int len;
       REPORT_RETURN;
       
    case 202:
-         substdio_puts(ss, "ZInternal error in ldap_set_option. (LDAP-ERR #202)\n");
+         substdio_puts(ss, "DInternal error in ldap_set_option. (LDAP-ERR #202)\n");
       REPORT_RETURN;
 
    case 203:
@@ -222,7 +222,7 @@ int len;
       REPORT_RETURN;
 
    case 214:
-         substdio_puts(ss, "DLDAP attribute mailMessageStore with ~control/ldapmessagestore contains illegal characters. (LDAP-ERR #214)\n");
+         substdio_puts(ss, "ZLDAP attribute mailMessageStore in ~control/ldapmessagestore contains illegal characters. (LDAP-ERR #214)\n");
       REPORT_RETURN;
 
    case 215:
@@ -238,7 +238,7 @@ int len;
       REPORT_RETURN;
 
    case 222:
-         substdio_puts(ss, "DError while reading ~control files. (LDAP-ERR #222)\n");
+         substdio_puts(ss, "ZError while reading ~control files. (LDAP-ERR #222)\n");
       REPORT_RETURN;
 
    case 225:
@@ -250,7 +250,7 @@ int len;
       REPORT_RETURN;
 
    case 231:
-         substdio_puts(ss, "DConfiguration file ~control/ldapusername contains illegal characters. (LDAP-ERR #231)\n");
+         substdio_puts(ss, "ZConfiguration file ~control/ldapusername contains illegal characters. (LDAP-ERR #231)\n");
       REPORT_RETURN;
 
    case 232:
@@ -258,7 +258,7 @@ int len;
       REPORT_RETURN;
 
    case 233:
-         substdio_puts(ss, "DConfiguration file ~control/ldapuid is too high/low or not numeric. (LDAP-ERR #233)\n");
+         substdio_puts(ss, "ZConfiguration file ~control/ldapuid is too high/low or not numeric. (LDAP-ERR #233)\n");
       REPORT_RETURN;
 
    case 234:
@@ -266,7 +266,7 @@ int len;
       REPORT_RETURN;
 
    case 235:
-         substdio_puts(ss, "DConfiguration file ~control/ldapgid is too high/low or not numeric. (LDAP-ERR #235)\n");
+         substdio_puts(ss, "ZConfiguration file ~control/ldapgid is too high/low or not numeric. (LDAP-ERR #235)\n");
       REPORT_RETURN;
 
    case 236:
