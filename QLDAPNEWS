@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/10/25 17:29:03 $ ($Revision: 1.70 $)
+RELEASE: $Date: 2002/10/28 23:26:59 $ ($Revision: 1.71 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,18 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ New ldap fields added:
+ -  mailQuotaSize and mailQuotaCount replace the cryptic mailQuota string.
+   mailQuotaSize specifies the maximum size in bytes and mailQuotaCount
+   is the maximum number of messages aloowed.
+   Note: the old mailQuota string is still valid and used if neither 
+         mailQuotaSize nor mailQuotaCount are defined.
+ - mailSizeMax specifies the maximum size of a single message the user may
+   receiv. Dial-up customer prefer a small mailSizeMax.
+   Note: mailSizeMax is used in qmail-lspawn whereas databytes sets the
+         SMTP DATA limit. Therefor having a mailSizeMax bigger than databytes
+         does not make much sens.
 
  Fixed some bugs and cleand up maildir++.c. The maildirsize parser is now
  rock solid and does no longer freak out when lines start with spaces.

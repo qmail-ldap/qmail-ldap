@@ -87,27 +87,30 @@ int main(int argc, char **argv)
 {
 	mode_d mode = unset;
 	userinfo	info;
-	extrainfo	extra[10];
+	extrainfo	extra[13];
 	searchinfo	search;
 	int			ret, i, j;
 	unsigned long tid;
 	char		*attrs[] = { 
-							LDAP_UID, /* the first 6 attrs are default */
-							LDAP_QMAILUID,
-							LDAP_QMAILGID,
-							LDAP_ISACTIVE,
-							LDAP_MAILHOST,
-							LDAP_MAILSTORE,
-							LDAP_HOMEDIR,
-							LDAP_QUOTA, /* the last 6 are extra infos */
-							LDAP_MAIL,
-							LDAP_MAILALTERNATE,
-							LDAP_FORWARDS,
-							LDAP_PROGRAM,
-							LDAP_MODE,
-							LDAP_REPLYTEXT,
-							LDAP_DOTMODE,
-							LDAP_PASSWD, 0 }; /* passwd is extra */
+					LDAP_UID, /* the first 7 attrs are default */
+					LDAP_QMAILUID,
+					LDAP_QMAILGID,
+					LDAP_ISACTIVE,
+					LDAP_MAILHOST,
+					LDAP_MAILSTORE,
+					LDAP_HOMEDIR,
+					LDAP_QUOTA_SIZE,  /* the last 8 are aditional infos */
+					LDAP_QUOTA_COUNT,
+					LDAP_QUOTA,
+					LDAP_MAIL,
+					LDAP_MAILALTERNATE,
+					LDAP_FORWARDS,
+					LDAP_PROGRAM,
+					LDAP_MODE,
+					LDAP_REPLYTEXT,
+					LDAP_DOTMODE,
+					LDAP_MAXMSIZE,
+					LDAP_PASSWD, 0 }; /* passwd is extra */
 	char* passwd = 0;
 	int opt;
 	int done;
@@ -157,28 +160,31 @@ int main(int argc, char **argv)
 			quotawarning.len?quotawarning.s:"undefined");
 
 	/* initalize the different objects */
-	extra[9].what = 0; /* end marker for extra info */
+	extra[12].what = 0; /* end marker for extra info */
 	extra[0].what = LDAP_MAIL;
 	extra[1].what = LDAP_MAILALTERNATE;
-	extra[2].what = LDAP_QUOTA;
-	extra[3].what = LDAP_FORWARDS;
-	extra[4].what = LDAP_PROGRAM;
-	extra[5].what = LDAP_DOTMODE;
-	extra[6].what = LDAP_MODE;
-	extra[7].what = LDAP_REPLYTEXT;
+	extra[2].what = LDAP_QUOTA_SIZE;
+	extra[3].what = LDAP_QUOTA_COUNT;
+	extra[4].what = LDAP_QUOTA;
+	extra[5].what = LDAP_FORWARDS;
+	extra[6].what = LDAP_PROGRAM;
+	extra[7].what = LDAP_DOTMODE;
+	extra[8].what = LDAP_MODE;
+	extra[9].what = LDAP_REPLYTEXT;
+	extra[10].what= LDAP_MAXMSIZE;
 	if ( mode == mail ) {
-		extra[8].what = 0; /* under mail lookups no passwords are compared */
-		attrs[15] = 0;
+		extra[11].what = 0; /* under mail lookups no passwords are compared */
+		attrs[18] = 0;
 		search.bindpw = 0; /* rebind off */
 	} else if (!passwd || rebind ) {
-		extra[8].what = 0; /* passwd lookup not needed */
-		attrs[15] = 0;
+		extra[11].what = 0; /* passwd lookup not needed */
+		attrs[18] = 0;
 		search.bindpw = 0; /* rebind off */
 		if (rebind) {
 			search.bindpw = argv[3];
 		}
 	} else {
-		extra[8].what = LDAP_PASSWD; /* need to get the crypted password */
+		extra[11].what = LDAP_PASSWD; /* need to get the crypted password */
 		search.bindpw = 0; 	/* rebind off */
 	}
 	if ( !escape_forldap(&value) ) {
@@ -292,8 +298,8 @@ int main(int argc, char **argv)
 	}
 
 	if ( mode == uid && passwd && !rebind && 
-			extra[8].vals && extra[8].vals[0] ) {
-		ret = cmp_passwd((unsigned char *) passwd, extra[8].vals[0] );
+			extra[10].vals && extra[10].vals[0] ) {
+		ret = cmp_passwd((unsigned char *) passwd, extra[10].vals[0] );
 		output(&ssout, "qldap_lookup:\tpassword compare was %s\n", 
 				ret==0?"successful":"not successful");
 	}

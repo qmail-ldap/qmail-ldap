@@ -14,6 +14,9 @@
 #include "auto_uids.h"
 #include "qlx.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <pwd.h>
 #include "qmail-ldap.h"
 #include "qldap-ldaplib.h"
 #include "qldap-errno.h"
@@ -30,8 +33,6 @@
 #include "open.h"
 #include "readwrite.h"
 #include "str.h"
-#include <pwd.h>
-#include <sys/types.h>
 #ifdef QLDAP_CLUSTER
 #include "constmap.h"
 #include "seek.h"
@@ -225,6 +226,14 @@ int len;
          substdio_puts(ss, "DLDAP attribute mailMessageStore is not given but mandatory. (LDAP-ERR #215)\n");
       REPORT_RETURN;
 
+   case 216: /* XXX */
+	substdio_puts(ss, "DThe message exeeded the maximum size the user accepts. (LDAP-ERR #216)\n");
+      REPORT_RETURN;
+
+   case 217: /* XXX */
+	substdio_puts(ss, "ZUnable to stat mail. (LDAP-ERR #217)\n");
+      REPORT_RETURN;
+
    case 220: /* XXX */
          substdio_puts(ss, "DLDAP attribute mailForwardingAddress contains illegal characters. (LDAP-ERR #220)\n");
       REPORT_RETURN;
@@ -313,18 +322,20 @@ stralloc nughde = {0};
 int qldap_get( stralloc *mail, char *from, int fdmess)
 {
    userinfo   info;
-   extrainfo  extra[7];
+   extrainfo  extra[10];
    searchinfo search;
    char *attrs[] = {  /* LDAP_MAIL, */ /* not needed */
                       /* LDAP_MAILALTERNATE, */
-                      LDAP_UID, /* the first 6 attrs are the default ones */
+                      LDAP_UID, /* the first 7 attrs are the default ones */
                       LDAP_QMAILUID,
                       LDAP_QMAILGID,
                       LDAP_ISACTIVE,
                       LDAP_MAILHOST,
                       LDAP_MAILSTORE,
                       LDAP_HOMEDIR,
-                      LDAP_QUOTA, /* the last 6 are extra infos */
+		      LDAP_QUOTA_SIZE,  /* the last 8 are aditional infos */
+		      LDAP_QUOTA_COUNT,
+                      LDAP_QUOTA,
                       LDAP_FORWARDS,
                       LDAP_PROGRAM,
                       LDAP_MODE,
@@ -337,6 +348,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    int  force_forward;
    char *s;
    stralloc filter = {0};
+   struct stat st;
    unsigned long tid;
 
    /* check the mailaddress for illegal characters       *
@@ -413,13 +425,16 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
      search.bindpw = 0;    /* rebind off */
   
      /* initalize the different objects */
-     extra[0].what = LDAP_QUOTA;
-     extra[1].what = LDAP_FORWARDS;
-     extra[2].what = LDAP_PROGRAM;
-     extra[3].what = LDAP_MODE;
-     extra[4].what = LDAP_REPLYTEXT;
-     extra[5].what = LDAP_DOTMODE;
-     extra[6].what = 0;
+     extra[0].what = LDAP_QUOTA_SIZE;
+     extra[1].what = LDAP_QUOTA_COUNT;
+     extra[2].what = LDAP_QUOTA;
+     extra[3].what = LDAP_FORWARDS;
+     extra[4].what = LDAP_PROGRAM;
+     extra[5].what = LDAP_MODE;
+     extra[6].what = LDAP_REPLYTEXT;
+     extra[7].what = LDAP_DOTMODE;
+     extra[8].what = LDAP_MAXMSIZE;
+     extra[9].what = 0;
   
      /* do the search for the email address */
      ret = qldap_lookup(&search, attrs, &info, extra);
@@ -476,6 +491,21 @@ ldap_fail:
       _exit(225); 
    }
 
+   /* check if incomming mail is smaller than max mail size */
+   if (extra[8].vals != 0) {
+     scan_ulong(extra[8].vals[0], &tid);
+     if (fstat(fdmess, &st) != 0) {
+       log(2, "warning: can not stat mail: %s\n", error_str(errno));
+       _exit(217);
+     }
+     if ((unsigned long)st.st_size > tid) {
+       log(2, "message is over maximum mail size limit\n");
+       _exit(216);
+     }
+   }
+   ldap_value_free(extra[8].vals);
+   
+   
 #ifdef QLDAP_CLUSTER
    /* check if the I'm the right host */
    if ( qldap_cluster && info.host && 
@@ -545,10 +575,28 @@ ldap_fail:
    }
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
 
-   /* get the quota for the user of that maildir mbox */
-   if ( extra[0].vals != 0 ) {
-      log(32, "%s: %s\n", ENV_QUOTA, extra[0].vals[0]);
-      if ( !env_put2(ENV_QUOTA, extra[0].vals[0] ) ) _exit(QLX_NOMEM);
+   /* get the quota for the user of that maildir mbox (0 size, 1 count, 2 old) */
+   if (extra[0].vals != 0 || extra[1].vals != 0 || extra[2].vals != 0) {
+      if (extra[0].vals != 0 || extra[1].vals != 0) {
+	if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
+	if (extra[0].vals != 0) {
+	  log(32, "%s: %s\n", LDAP_QUOTA_SIZE, extra[0].vals[0]);
+	  if (!stralloc_cats(&foo, extra[0].vals[0])) _exit(QLX_NOMEM);
+	  if (!stralloc_catb(&foo, "S", 1)) _exit(QLX_NOMEM);
+	  if (extra[1].vals != 0)
+	    if (!stralloc_catb(&foo, ",", 1)) _exit(QLX_NOMEM);
+	}
+	if (extra[1].vals != 0) {
+	  log(32, "%s: %s\n", LDAP_QUOTA_COUNT, extra[1].vals[0]);
+	  if (!stralloc_cats(&foo, extra[1].vals[0])) _exit(QLX_NOMEM);
+	  if (!stralloc_catb(&foo, "C", 1)) _exit(QLX_NOMEM);
+	}
+	if (!stralloc_0(&foo)) _exit(QLX_NOMEM);
+	if (!env_put2(ENV_QUOTA, foo.s)) _exit(QLX_NOMEM);
+      } else {
+        log(32, "%s: %s\n", LDAP_QUOTA, extra[2].vals[0]);
+        if (!env_put2(ENV_QUOTA, extra[2].vals[0])) _exit(QLX_NOMEM);
+      }
    } else {
       if ( qldap_defaultquota.s ) {
          log(32, "%s: %s\n", ENV_QUOTA, qldap_defaultquota.s);
@@ -559,14 +607,16 @@ ldap_fail:
       }
    }
    ldap_value_free(extra[0].vals);
+   ldap_value_free(extra[1].vals);
+   ldap_value_free(extra[2].vals);
 
    /* get the forwarding addresses and build a list *
     * equals to &jdoe@heaven.af.mil in .qmail       */
-   if ( extra[1].vals != 0 ) {
+   if ( extra[3].vals != 0 ) {
       if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
-      for ( i = 0; extra[1].vals[i] != 0; i++ ) {
-         if (!stralloc_cats(&foo, extra[1].vals[i])) _exit(QLX_NOMEM);
-         if (extra[1].vals[i+1] == 0 ) break;
+      for ( i = 0; extra[3].vals[i] != 0; i++ ) {
+         if (!stralloc_cats(&foo, extra[3].vals[i])) _exit(QLX_NOMEM);
+         if (extra[3].vals[i+1] == 0 ) break;
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
       if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
@@ -576,17 +626,17 @@ ldap_fail:
       /* default */
       if ( !env_unset(ENV_FORWARDS) ) _exit(QLX_NOMEM);
    }
-   ldap_value_free(extra[1].vals);
+   ldap_value_free(extra[3].vals);
 
    /* get the path of the local delivery program *
     * equals to |/usr/bin/program in .qmail      */
-   if ( extra[2].vals != 0 ) {
+   if ( extra[4].vals != 0 ) {
       if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
-      for ( i = 0; extra[2].vals[i] != 0; i++ ) {
+      for ( i = 0; extra[4].vals[i] != 0; i++ ) {
          /* append */
-         if (!chck_progs(extra[2].vals[i]) ) return 31; /* XXX */
-         if (!stralloc_cats(&foo, extra[2].vals[i])) _exit(QLX_NOMEM);
-         if (extra[2].vals[i+1] == 0 ) break;
+         if (!chck_progs(extra[4].vals[i]) ) return 31; /* XXX */
+         if (!stralloc_cats(&foo, extra[4].vals[i])) _exit(QLX_NOMEM);
+         if (extra[4].vals[i+1] == 0 ) break;
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
       if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
@@ -596,27 +646,27 @@ ldap_fail:
       /* default */
       if ( !env_unset(ENV_PROGRAM) ) _exit(QLX_NOMEM);
    }
-   ldap_value_free(extra[2].vals);
+   ldap_value_free(extra[4].vals);
 
    /* prefetch the reply text so we can remove it if no deliverymode
     * is set. */
-   if ( extra[4].vals != 0 ) {
-      log(32, "%s: %s\n", ENV_REPLYTEXT, extra[4].vals[0] );
-      if ( !env_put2(ENV_REPLYTEXT, extra[4].vals[0]) ) _exit(QLX_NOMEM);
+   if ( extra[6].vals != 0 ) {
+      log(32, "%s: %s\n", ENV_REPLYTEXT, extra[6].vals[0] );
+      if ( !env_put2(ENV_REPLYTEXT, extra[6].vals[0]) ) _exit(QLX_NOMEM);
    } else {
       if ( !env_unset(ENV_REPLYTEXT) ) _exit(QLX_NOMEM);
    }
-   ldap_value_free(extra[4].vals);
+   ldap_value_free(extra[6].vals);
 
    /* get the deliverymode of the mailbox:                    *
     * reply, echo, forwardonly, normal, nombox, localdelivery */
-   if ( extra[3].vals != 0 ) {
+   if ( extra[5].vals != 0 ) {
       if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
-      for ( i = 0; extra[3].vals[i] != 0; i++ ) {
+      for ( i = 0; extra[5].vals[i] != 0; i++ ) {
          /* append */
-         case_lowers(extra[3].vals[i]);
-         if (!stralloc_cats(&foo, extra[3].vals[i])) _exit(QLX_NOMEM);
-         if (extra[3].vals[i+1] == 0 ) break;
+         case_lowers(extra[5].vals[i]);
+         if (!stralloc_cats(&foo, extra[5].vals[i])) _exit(QLX_NOMEM);
+         if (extra[5].vals[i+1] == 0 ) break;
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
       }
       if (!stralloc_0(&foo) ) _exit(QLX_NOMEM);
@@ -627,20 +677,20 @@ ldap_fail:
       if ( !env_unset(ENV_MODE) ) _exit(QLX_NOMEM);
       if ( !env_unset(ENV_REPLYTEXT) ) _exit(QLX_NOMEM);
    }
-   ldap_value_free(extra[3].vals);
+   ldap_value_free(extra[5].vals);
    
    /* get the mode of the .qmail interpretion: ldaponly, dotonly, both, none */
-   if ( extra[5].vals != 0 ) {
-      case_lowers(extra[5].vals[0]);
-      if ( !str_diff(DOTMODE_LDAPONLY, extra[5].vals[0]) ) {
+   if ( extra[7].vals != 0 ) {
+      case_lowers(extra[7].vals[0]);
+      if ( !str_diff(DOTMODE_LDAPONLY, extra[7].vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_LDAPONLY) ) _exit(QLX_NOMEM);
-      } else if ( !str_diff(DOTMODE_LDAPWITHPROG, extra[5].vals[0]) ) {
+      } else if ( !str_diff(DOTMODE_LDAPWITHPROG, extra[7].vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_LDAPWITHPROG) ) _exit(QLX_NOMEM);
-      } else if ( !str_diff(DOTMODE_DOTONLY, extra[5].vals[0]) ) {
+      } else if ( !str_diff(DOTMODE_DOTONLY, extra[7].vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_DOTONLY) ) _exit(QLX_NOMEM);
-      } else if ( !str_diff(DOTMODE_BOTH, extra[5].vals[0]) ) {
+      } else if ( !str_diff(DOTMODE_BOTH, extra[7].vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_BOTH) ) _exit(QLX_NOMEM);
-      } else if ( !str_diff(DOTMODE_NONE, extra[5].vals[0]) ) {
+      } else if ( !str_diff(DOTMODE_NONE, extra[7].vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_NONE) ) _exit(QLX_NOMEM);
       } else {
          if ( !env_put2(ENV_DOTMODE, qldap_defdotmode.s) ) _exit(QLX_NOMEM);
@@ -650,7 +700,7 @@ ldap_fail:
       if ( !env_put2(ENV_DOTMODE, qldap_defdotmode.s) ) _exit(QLX_NOMEM);
    }
    log(32, "%s: %s\n", ENV_DOTMODE, env_get(ENV_DOTMODE) );
-   ldap_value_free(extra[5].vals);
+   ldap_value_free(extra[7].vals);
 
    if ( force_forward ) {
      /* XXX forcing forward only for useres with no homedir */
@@ -669,12 +719,12 @@ void nughde_get(local)
 char *local;
 {
  char *(args[3]);
-   int   pi[2],
-         gpwpid,
-         gpwstat,
-         r,
-         fd,
-         flagwild;
+ int	pi[2],
+	gpwpid,
+	gpwstat,
+	r,
+	fd,
+	flagwild;
 
  if (!stralloc_copys(&lower,"!")) _exit(QLX_NOMEM);
  if (!stralloc_cats(&lower,local)) _exit(QLX_NOMEM);

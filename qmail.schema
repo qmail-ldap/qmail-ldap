@@ -91,6 +91,18 @@ attributetype ( 1.3.6.1.4.1.7914.1.2.1.14 NAME 'qmailAccountPurge'
         EQUALITY numericStringMatch
         SYNTAX 1.3.6.1.4.1.1466.115.121.1.36 SINGLE-VALUE )
 
+attributetype ( 1.3.6.1.4.1.7914.1.2.1.15 NAME 'mailQuotaSize'
+	DESC 'The size of space the user can use until further messages get bounced.'
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.7914.1.2.1.16 NAME 'mailQuotaCount'
+	DESC 'The number of messages the user can use until further messages get bounced.'
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.7914.1.2.1.16 NAME 'mailSizeMax'
+	DESC 'The maximum size of a single messages the user accepts.'
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+
 # Object Class Definitions
 
 objectclass ( 1.3.6.1.4.1.7914.1.2.2.1 NAME 'qmailUser'
@@ -100,5 +112,6 @@ objectclass ( 1.3.6.1.4.1.7914.1.2.2.1 NAME 'qmailUser'
 	      mailAlternateAddress $ qmailUID $ qmailGID $ mailQuota $
 	      mailHost $ mailForwardingAddress $ deliveryProgramPath $
 	      qmailDotMode $ deliveryMode $ mailReplyText $
-	      accountStatus $ qmailAccountPurge ) )
+	      accountStatus $ qmailAccountPurge $ 
+	      mailQuotaSize $ mailQuotaCount $ mailSizeMax ) )
 
