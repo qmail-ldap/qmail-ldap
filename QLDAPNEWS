@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/10/30 14:29:05 $ ($Revision: 1.144 $)
+RELEASE: $Date: 2003/11/04 10:45:39 $ ($Revision: 1.145 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -30,7 +30,7 @@ NEWS for current stuff:
  is no longer neccesary. If locals.cdb is present locals is ignored respectively
  if rcpthosts.cdb is present rcpthosts and morercpthosts.cdb are ignored.
 
- Important bug fix: if you removed rcpthost, qmail-ldap became a open relay.
+ Important bug fix: if you removed rcpthosts, qmail-ldap became a open relay.
  This is stock qmail behaviour but since we include locals in our rcpthost
  check this old assumption is wrong. We also consider the stock qmail behaviour
  as a design flaw because a mta should never be a open relay unless the 
