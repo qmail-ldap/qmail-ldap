@@ -136,7 +136,7 @@ qldap_controls(void)
 			if (!stralloc_append(&default_messagestore, "/"))
 				return -1;
 		log(64, "init_ldap: control/ldapmessagestore: %S\n", 
-		    default_messagestore);
+		    &default_messagestore);
 	} else
 		if (!stralloc_copys(&default_messagestore, "")) return -1;
 
