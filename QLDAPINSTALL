@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20001201 ($Date: 2000/11/28 12:59:32 $)
+RELEASE: current ($Date: 2000/12/07 22:02:57 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -29,11 +29,12 @@ IMPORTANT NEWS:
 
  new mailMessageStore/homedirectory handling (see QLDAPNEWS)
 
---------------------------------------------------------------------------------
+================================================================================
 
 INSTALL:
 
 1. Make sure you have fairly good knowledge of qmail and LDAP
+   READ THEIR FAQs. PLEASE.
 
 2. Read this document. THIS IS IMPORTANT, this is no 
    ./configure; make; make install software.
@@ -47,6 +48,7 @@ INSTALL:
 
    If you have problems with OpenLDAP look into their FAQ. The same for
    Netscape and OpenSSL.
+   You NEED knowledge of LDAP so READ their FAQ and/or man pages.
 
 4. Apply the qmail-ldap patches to a clean qmail-1.03 source tree
    normaly "cd qmail-1.03_source_tree; patch -p1 < location_of_patch"
@@ -66,6 +68,9 @@ INSTALL:
 
    - LDAPLIBS: the libraries you need for ldap, e.g. -lldap -llber
      NOTE: on Solaris Systems you probably need also -lnsl -lsocket
+           newer OpenLDAP libs my need also -lresolv (DNS support).
+           It is also good to set the ld runpath with the -R switch
+           for more info man ld or man gcc.
    - LDAPINCLUDES: perhaps you need a special include-path for ldap
 
    - MNW=-DMAKE_NETSCAPE_WORK (turns on the patch that fixes the problem 
@@ -76,7 +81,7 @@ INSTALL:
      into the release, you need the ~control/dirmaker file to turn the 
      patch on, see CONFIG FILES)
 
-   - SHADOWLIBS=-lcrypt is needed on most systems (except my OpenBSD box)
+   - SHADOWLIBS=-lcrypt is needed on most systems (except my OpenBSD box :-) )
      SHADOWLIBS=-lcrypt -lshadow , SHADOWOPTS=-DPW_SHADOW are needed on some 
      Systems (Solaris, Linux) for local password lookups 
      (just like the original djb-checkpassword)
@@ -96,7 +101,7 @@ INSTALL:
      NOTE: have a look at QLDAPNEWS for more info
 
 6.  Compile and install the stuff (it's the same as in standard qmail
-    install -> read the INSTALL and the FAQ file!!!).
+    install -> HINT: read the INSTALL and the FAQ file!!! :) ).
     Now everything should be installed with correct permissions.
 
 6.1 If using TLS you can use 'make cert' or 'make cert-req' to create TLS 
@@ -133,9 +138,11 @@ INSTALL:
               incredible huge logfiles.
      NOTE: too high debuglevels are reduced to the maximum allowed debug level
            if the level parameter in init_debug() is smaler.
-           Perhaps a compare with a bit mask will be added somewhen, so that
+           The DEBUGLEVEL is compare with a bit mask, so that
            DEBUGLEVEL=3 will report warnings and errors but DEBUGLEVEL=2 will
            only report warnings.
+
+================================================================================
 
 CONFIG FILES:
 
@@ -143,12 +150,12 @@ CONFIG FILES:
 
  Space separated list of Hostnames or IP addresses of LDAP servers
  Required
- Example: ldap.nrg4u.com
+ Example: ldap.nrg4u.com ldap2.nrg4u.com
 
 ~control/ldapbasedn
 
  The base DN from where the search in the LDAP tree begins
- Required
+ Normaly required
  Default: NULL
  Example: o=Internet Pipeline, c=CH
  Note: Referrals are ignored
@@ -170,7 +177,7 @@ CONFIG FILES:
 ~control/ldaplocaldelivery
 
  To lookup the local passwd file if the LDAP lookup finds no match. This
- affects qmail-lspawn and checkpassword if the LDAP lookup returns nothing.
+ affects qmail-lspawn and auth_* if the LDAP lookup returns nothing.
  Default: enabled
  Example: 1
  Note: boolean, use 0 (zero) or 1 (one)
@@ -202,7 +209,7 @@ CONFIG FILES:
  Default: unlimited
  Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
  Note: is overridden by mailQuota, make sure to have set ~control/quotowarning
-       otherwise you wont quota warning messages
+       otherwise you will not get quota warning messages
 
 ~control/ldapdefaultdotmode
 
@@ -331,7 +338,34 @@ CONFIG FILES:
  Now the auth modules extract the Maildir out of the .qmail file, but only
  on local (/etc/passwd) lookups.
 
+================================================================================
+
 Environment variables without control file:
+
+DEBUGLEVEL
+
+ Level of log verbosity in qmail-lspawn, auth_*
+ Default: none (0)
+ LEVELS:
+    DEBUGLEVEL=1   -> Errors
+    DEBUGLEVEL=2   -> Warnings
+    DEBUGLEVEL=4   -> Info
+    DEBUGLEVEL=8   -> Info^2
+    DEBUGLEVEL=16  -> Debug
+    DEBUGLEVEL=32  -> Debug^2
+    DEBUGLEVEL=64  -> LDAP Debug
+    DEBUGLEVEL=128 -> LDAP Debug^2
+    DEBUGLEVEL=256 -> PASSWD, this level is normaly off because it shows
+                      critical data (unencrypted and crypted passwords). To
+                      turn it on edit checkpassword.c and increase the level
+                      for init_debug().
+ WARNING: on production machines don't use levels higher 3 or you will get 
+          incredible huge logfiles.
+ NOTE: too high debuglevels are reduced to the maximum allowed debug level
+       if the level parameter in init_debug() is smaler.
+       The DEBUGLEVEL is compare with a bit mask, so that
+       DEBUGLEVEL=3 will report warnings and errors but DEBUGLEVEL=2 will
+       only report warnings.
 
 LOGLEVEL
 
@@ -353,6 +387,7 @@ DENYMAIL
         DNSCHECK -> validate that envelope senders domain has an MX or A record
                     plus check for other invalid envelope sender constructs
 
+================================================================================
 
 DEFAULT LDAP PARAMETER FIELDS:
 NOTE: keywords have to match exactly, so pay attention.
@@ -377,7 +412,7 @@ LDAP_UID (default: "uid")
 
  The username for POP3 and IMAP delivery
  Example: jdoe
- Note: this name will also be set as $USER for qmail-local.
+ Note: this name will also be set as $USER for qmail-local and program delivery.
 
 
 LDAP_QMAILUID (default: "qmailUID")
@@ -414,12 +449,13 @@ LDAP_HOMEDIR (default: "homeDirectory")
 
  Path to the maildir/mbox on the mail system is extracted from those fields.
  If LDAP_HOMEDIR is found this field is used as $HOME, using aliasempty or
- mailMessagestore as default delivery method.
+ mailMessagestore if defined as default delivery method.
  If only LDAP_MAILSTORE is defined this will be used as $HOME and aliasempty
  as default delivery method.
  If neither LDAP_MAILSTORE nor LDAP_HOMEDIR is defined, ~alias (qmails alias 
  user homedir) will be used as $HOME and ALIASDEVNULL (defined in qmail-ldap.h)
- as default delivery method.
+ as default delivery method. Also the delivery mode is set to ldap only and 
+ forward only (LDAP_DOTMODE and LDAP_MODE).
  Example: /home/jdoe/
  Note: LDAP_MAILSTORE can be written relative in a virtual users environment
        ldapmailstore will be prefixed to make the path absolute.
@@ -432,8 +468,8 @@ LDAP_QUOTA (default: "mailQuota")
 
  The amount of space the user can use until all further messages get bounced.
  There are two possible limits, size (a byte count) and count (a file count).
- The mailQuota is a string of the form figures type (S or C) and a ',' separating
- multiple entries.
+ The mailQuota is a string of the form figures type (S or C) and a ',' 
+ separating multiple entries.
  Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
  Note: overrides ldapdefaultquota, the old format (only a number representing
        the amount of bytes allowed) is still supported
@@ -478,13 +514,23 @@ LDAP_MODE (default: "deliveryMode")
        delivery).
        There are some strange behavior when localdelivery and nombox or
        forwardonly are set, so handle them with care.
-        
+       
 
 LDAP_REPLYTEXT (default: "mailReplyText")
 
  A reply text for every incoming message (multiline)
  Example: I'm on vacation until next monday
+ Example2: multiline base64
+   SGkgcW1haWwtbGRhcCBmYW5zLAoKaWYgSSBjb3VsZCBJIHdvdWxkIGJlIGlu
+   IHRoZSBtb3VudGFpbnMgc2tpaW5nIGJ1dCBJJ20gYXQgaG9tZQp3cml0aW5n
+   IHRoaXMgbWVzc2FnZSBmb3IgdGhlIFFMREFQSU5TVEFMTCBmaWxlLgpUbyBi
+   ZSBob25lc3QsIHRoZXJlIGlzIG5vdCBlbm91Z2ggc25vdyBhcm91bmQgdG8g
+   ZW5qb3kgc2tpaW5nLgoKdGhhbmtzIGZvciByZWFkaW5nIHRoZSBRTERBUElO
+   U1RBTEwgZmlsZQoKLS0KOndxIENsYXVkaW8K
  Note: used only if deliveryMode is set to reply.
+       To use multiline text in ldap it has to be base64 in ldif.
+       GUI tools like GQ are doing this correct, ldapadd can handle base64
+       inputs or a path to a file containing the reply text (man ldapadd).
 
 
 LDAP_DOTMODE (default: "qmailDotMode")
@@ -517,7 +563,7 @@ LDAP_QMAILUSER (default: "qmailUser")
  NO LONGER USED, REMOVE IT SOMEWHEN FROM YOUR DATABASE
  Replaced by LDAP_UID
 
-
+================================================================================
 
 EXAMPLE QLDAP LDIF FILE:
 
@@ -537,6 +583,7 @@ qmailGID: 1001
 uid: opi
 userPassword: {MD5}b28a87511da157f147ed4766b0474a8a
 
+================================================================================
 
 EXAMPLE SLAPD.CONF FILE:
 
@@ -557,6 +604,7 @@ rootpw          secret
 index           mail,mailAlternateAddress,uid
 index           default none
 
+================================================================================
 
 ADD THIS SCHEMA TO SLAPD.OC.CONF
 
@@ -581,7 +629,7 @@ objectclass qmailUser
                 mailReplyText,
                 accountStatus
 
-
+================================================================================
 
 BUGS & PROBLEMS
 
@@ -595,4 +643,8 @@ It is impossible to know where the problem is when somebody writes a mail like:
 I have a problem with the patch. No mail gets send to the user in the ldap db.
 
 Normaly you get also a better response if you specify your problem in detail.
+It seems that often a "RTFM" is enough, but when you read until here you 
+are probably not such a candidate.
+
+END :-)
 
