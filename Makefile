@@ -71,7 +71,7 @@ SHELL=/bin/sh
 default: it qldap
 
 qldap: qmail-quotawarn qmail-reply auth_pop auth_imap digest qmail-ldaplookup \
-pbsadd pbscheck pbsdbd
+pbsadd pbscheck pbsdbd qmail-todo
 
 addresses.0: \
 addresses.5
@@ -1862,7 +1862,7 @@ qmail-start.9 conf-break conf-spawn
 
 qmail-start.o: \
 compile qmail-start.c fd.h prot.h exit.h fork.h auto_uids.h
-	./compile qmail-start.c
+	./compile $(LDAPFLAGS) qmail-start.c
 
 qmail-tcpok: \
 load qmail-tcpok.o open.a lock.a strerr.a substdio.a error.a str.a \
@@ -1893,6 +1893,20 @@ qmail-tcpto.o: \
 compile qmail-tcpto.c substdio.h subfd.h substdio.h auto_qmail.h \
 fmt.h ip.h lock.h error.h exit.h datetime.h now.h datetime.h
 	./compile qmail-tcpto.c
+
+qmail-todo: \
+load qmail-todo.o control.o constmap.o trigger.o fmtqfn.o now.o \
+readsubdir.o case.a ndelay.a getln.a sig.a open.a stralloc.a alloc.a \
+substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
+	./load qmail-todo control.o constmap.o trigger.o fmtqfn.o now.o \
+	readsubdir.o case.a ndelay.a getln.a sig.a open.a stralloc.a \
+	alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
+
+qmail-todo.o: \
+compile alloc.h auto_qmail.h byte.h constmap.h control.h direntry.h error.h \
+exit.h fmt.h fmtqfn.h getln.h open.h ndelay.h now.h readsubdir.h readwrite.h \
+scan.h select.h str.h stralloc.h substdio.h trigger.h
+	./compile qmail-todo.c
 
 qmail-upq: \
 warn-auto.sh qmail-upq.sh conf-qmail conf-break conf-split

@@ -420,3 +420,5 @@ pbsadd.o
 pbscheck
 pbsadd
 pbsdbd
+qmail-todo.o
+qmail-todo
