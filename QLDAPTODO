@@ -1,12 +1,12 @@
 QMAIL-LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
-(c) 1998,1999,2000,2001,2002 Internet Business Solutions Ltd.
+(c) 1998,1999,2000,2001,2002,2003 Internet Business Solutions AG
 
 This LDAP patches for qmail come with NO WARRANTY.
 
-These patches are under the BSD license.
+These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/01 18:08:22 $ ($Revision: 1.30 $)
+RELEASE: $Date: 2003/09/02 18:05:51 $ ($Revision: 1.31 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -23,15 +23,17 @@ ongoing - full code review by a third person
 planned - splitting the patch into smaller separate pieces
 planned - make it possible to have locals and rcpthosts in ldap
           and perhaps also the rules for the tcpserver (certs?)
+          some people refer to this as ldap-control
 
 PS: planned means we see the use of the idea but there are a lot more
     important things that need to be done first.
 
 ALSO ON THE LIST: (priority list)
-- update qmail-ldaplookup (manly ldap login, passwd check and group handling)
+- update qmail-ldaplookup (mainly ldap login, passwd check and group handling)
 - cleanup the debug code, unify the debug levels
-- SMTP_AUTH (low priority because of POP before SMTP, Hennings patch and the
-  f*#&ing SASL stuff)
+- SMTP_AUTH (Hennings patch and the f*#&ing SASL stuff)
+- SMTP recipient verify (only if recipientdomain is in locals, with ldap)
+- SMTP sender verify (only if senderdomain is in locals, with ldap)
 - use pbstools for enhanced tarpit idea
 - docu cleanup
 
