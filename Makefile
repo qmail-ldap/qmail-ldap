@@ -27,8 +27,10 @@ LDAPINCLUDES=-I/usr/local/include
 
 # TLS (SMTP encryption) in qmail-smtpd and qmail-remote, see TLS.readme
 # You need OpenSSL for this
-# TLS enable
-#TLSON=-DTLS
+# use -DTLS_REMOTE to enable tls support in qmail-remote
+# use -DTLS_SMTPD to enable tls support in qmail-smtpd
+# use -DTLSDEBUG to enable additional tls debug information in qmail-remote
+#TLS=-DTLS_REMOTE -DTLS_SMTPD
 # Path to OpenSSL includes
 #TLSINCLUDES=-I/usr/local/include
 # Path to OpenSSL libraries
@@ -415,7 +417,8 @@ compile checkpassword.c qmail-ldap.h stralloc.h auth_mod.h qldap-ldaplib.h \
 qldap-errno.h readwrite.h error.h str.h open.h substdio.h getln.h select.h \
 digest_md4.h digest_md5.h digest_rmd160.h digest_sha1.h dns.h \
 ipalloc.h timeoutconn.h byte.h scan.h fmt.h alloc.h qldap-debug.h
-	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(LDAPINCLUDES) $(DEBUG) checkpassword.c
+	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(LDAPINCLUDES) $(DEBUG) \
+	$(TLS) checkpassword.c
 
 chkshsgr: \
 load chkshsgr.o
@@ -565,7 +568,7 @@ alloc.a error.a fs.a str.a
 dns.o: \
 compile dns.c ip.h ipalloc.h ip.h gen_alloc.h fmt.h alloc.h str.h \
 stralloc.h gen_alloc.h dns.h case.h
-	./compile ${TLSON} dns.c
+	./compile $(TLS) dns.c
 
 dnscname: \
 load dnscname.o dns.o dnsdoe.o ip.o ipalloc.o stralloc.a alloc.a \
@@ -593,7 +596,7 @@ substdio.a error.a str.a fs.a dns.lib socket.lib
 dnsfq.o: \
 compile dnsfq.c substdio.h subfd.h substdio.h stralloc.h gen_alloc.h \
 dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h exit.h
-	./compile ${TLSON} dnsfq.c
+	./compile $(TLS) dnsfq.c
 
 dnsip: \
 load dnsip.o dns.o dnsdoe.o ip.o ipalloc.o stralloc.a alloc.a \
@@ -605,7 +608,7 @@ substdio.a error.a str.a fs.a dns.lib socket.lib
 dnsip.o: \
 compile dnsip.c substdio.h subfd.h substdio.h stralloc.h gen_alloc.h \
 dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h exit.h
-	./compile ${TLSON} dnsip.c
+	./compile $(TLS) dnsip.c
 
 dnsmxip: \
 load dnsmxip.o dns.o dnsdoe.o ip.o ipalloc.o now.o stralloc.a alloc.a \
@@ -618,7 +621,7 @@ dnsmxip.o: \
 compile dnsmxip.c substdio.h subfd.h substdio.h stralloc.h \
 gen_alloc.h fmt.h dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h \
 now.h datetime.h exit.h
-	./compile ${TLSON} dnsmxip.c
+	./compile $(TLS) dnsmxip.c
 
 dnsptr: \
 load dnsptr.o dns.o dnsdoe.o ip.o ipalloc.o stralloc.a alloc.a \
@@ -948,12 +951,12 @@ compile ip.c fmt.h scan.h ip.h
 ipalloc.o: \
 compile ipalloc.c alloc.h gen_allocdefs.h ip.h ipalloc.h ip.h \
 gen_alloc.h
-	./compile ${TLSON} ipalloc.c
+	./compile $(TLS) ipalloc.c
 
 ipme.o: \
 compile ipme.c hassalen.h byte.h ip.h ipalloc.h ip.h gen_alloc.h \
-stralloc.h gen_alloc.h ipme.h ip.h ipalloc.h
-	./compile ${TLSON} ipme.c
+stralloc.h gen_alloc.h ipme.h ip.h
+	./compile $(TLS) ipme.c
 
 ipmeprint: \
 load ipmeprint.o ipme.o ip.o ipalloc.o stralloc.a alloc.a substdio.a \
@@ -963,8 +966,8 @@ error.a str.a fs.a socket.lib
 
 ipmeprint.o: \
 compile ipmeprint.c subfd.h substdio.h substdio.h ip.h ipme.h ip.h \
-ipalloc.h ip.h gen_alloc.h exit.h
-	./compile ${TLSON} ipmeprint.c
+ip.h gen_alloc.h exit.h
+	./compile $(TLS) ipmeprint.c
 
 it: \
 qmail-local qmail-lspawn qmail-getpw qmail-remote qmail-rspawn \
@@ -1314,7 +1317,7 @@ profile: qldap-profile.o
 
 qldap-profile.o: \
 compile qldap-profile.c qldap-profile.h qldap-debug.h
-	./compile ${INCTAI} $(DEBUG) qldap-profile.c 
+	./compile $(INCTAI) $(DEBUG) qldap-profile.c 
 
 qmail-clean: \
 load qmail-clean.o fmtqfn.o now.o getln.a sig.a stralloc.a alloc.a \
@@ -1616,8 +1619,8 @@ qmail-qmqpc.8
 qmail-qmqpc.o: \
 compile qmail-qmqpc.c substdio.h getln.h readwrite.h exit.h \
 stralloc.h gen_alloc.h slurpclose.h error.h sig.h ip.h timeoutconn.h \
-timeoutread.h timeoutwrite.h auto_qmail.h control.h fmt.h
-	./compile $(LDAPFLAGS) qmail-qmqpc.c
+timeoutread.h timeoutwrite.h auto_qmail.h control.h fmt.h ipalloc.h
+	./compile $(LDAPFLAGS) $(TLS) qmail-qmqpc.c
 
 qmail-qmqpd: \
 load qmail-qmqpd.o received.o now.o date822fmt.o qmail.o auto_qmail.o \
@@ -1705,7 +1708,7 @@ qmail-queue.o: \
 compile qmail-queue.c readwrite.h sig.h exit.h open.h seek.h fmt.h \
 alloc.h substdio.h datetime.h now.h datetime.h triggerpull.h extra.h \
 auto_qmail.h auto_uids.h date822fmt.h fmtqfn.h
-	./compile ${LDAPFLAGS} qmail-queue.c
+	./compile $(LDAPFLAGS) qmail-queue.c
 
 qmail-quotawarn: \
 load qmail-quotawarn.o newfield.o now.o date822fmt.o case.a fd.a wait.a \
@@ -1731,7 +1734,7 @@ substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
 	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
 	ipalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
 	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
-	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib` ${TLSLIBS}
+	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib` $(TLSLIBS)
 
 qmail-remote.0: \
 qmail-remote.8
@@ -1743,7 +1746,7 @@ subfd.h substdio.h scan.h case.h error.h auto_qmail.h control.h dns.h \
 alloc.h quote.h ip.h ipalloc.h ip.h gen_alloc.h ipme.h ip.h ipalloc.h \
 gen_alloc.h gen_allocdefs.h str.h now.h datetime.h exit.h constmap.h \
 tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
-	./compile ${TLSON} ${TLSINCLUDES} qmail-remote.c
+	./compile $(TLS) $(TLSINCLUDES) qmail-remote.c
 
 qmail-reply: \
 load qmail-reply.o case.a control.o constmap.o getln.a sig.a newfield.o \
@@ -1842,7 +1845,7 @@ fs.a auto_qmail.o dns.lib socket.lib
 	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
 	alloc.a substdio.a error.a fs.a auto_qmail.o dns.o str.a \
-	`cat dns.lib` `cat socket.lib` ${TLSLIBS}
+	`cat dns.lib` `cat socket.lib` $(TLSLIBS)
 
 qmail-smtpd.0: \
 qmail-smtpd.8
@@ -1854,7 +1857,7 @@ substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
 exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h rbl.h
-	./compile ${TLSON} ${TLSINCLUDES} qmail-smtpd.c
+	./compile $(TLS) $(TLSINCLUDES) qmail-smtpd.c
 
 qmail-start: \
 load qmail-start.o prot.o fd.a auto_uids.o
@@ -1992,7 +1995,7 @@ compile quote.c stralloc.h gen_alloc.h str.h quote.h
 
 rbl.o: \
 compile rbl.c dns.h env.h ipalloc.h qmail.h rbl.h stralloc.h
-	./compile rbl.c
+	./compile $(TLS) rbl.c
 
 rcpthosts.o: \
 compile rcpthosts.c cdb.h uint32.h byte.h open.h error.h control.h \
@@ -2459,14 +2462,14 @@ compile wait_pid.c error.h haswaitp.h
 	./compile wait_pid.c
 
 cert:
-	${OPENSSLBIN} req -new -x509 -nodes \
+	$(OPENSSLBIN) req -new -x509 -nodes \
 	-out `head -1 conf-qmail`/control/cert.pem -days 366 \
 	-keyout `head -1 conf-qmail`/control/cert.pem
 	chmod 640 `head -1 conf-qmail`/control/cert.pem
 	chown qmaild:qmail `head -1 conf-qmail`/control/cert.pem
 
 cert-req:
-	${OPENSSLBIN} req -new -nodes \
+	$(OPENSSLBIN) req -new -nodes \
 	-out req.pem \
 	-keyout `head -1 conf-qmail`/control/cert.pem
 	chmod 640 `head -1 conf-qmail`/control/cert.pem

@@ -22,13 +22,13 @@
 #include "exit.h"
 #include "rcpthosts.h"
 #include "rbl.h"
-#ifndef TLS
+#ifndef TLS_SMTPD
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 #endif
 #include "commands.h"
 #include "dns.h"
-#ifdef TLS
+#ifdef TLS_SMTPD
 #include <openssl/ssl.h>
 SSL *ssl = NULL;
 stralloc clientcert = {0};
@@ -38,7 +38,7 @@ stralloc clientcert = {0};
 unsigned int databytes = 0;
 int timeout = 1200;
 
-#ifdef TLS
+#ifdef TLS_SMTPD
 int flagtimedout = 0;
 void sigalrm()
 {
@@ -73,7 +73,7 @@ int ssl_timeoutwrite(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
 int safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
-#ifdef TLS
+#ifdef TLS_SMTPD
   r = ssl_timeoutwrite(timeout,fd,buf,len);
 #else
   r = timeoutwrite(timeout,fd,buf,len);
@@ -142,7 +142,7 @@ void err_bmfunknown() { out("553 sorry, your mail from a host without RR DNS was
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
 void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
-#ifdef TLS
+#ifdef TLS_SMTPD
 void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
 #endif
 void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command ="); logstring(3,arg); logflush(3); }
@@ -540,7 +540,7 @@ void smtp_ehlo(arg) char *arg;
 {
   smtp_greet("250-"); 
   smtpsize[fmt_ulong(smtpsize,(unsigned long) databytes)] = 0;
-#ifdef TLS
+#ifdef TLS_SMTPD
   if (ssl) {
    out("\r\n250-PIPELINING\r\n");
    out("250-SIZE "); out(smtpsize); out("\r\n");
@@ -549,12 +549,12 @@ void smtp_ehlo(arg) char *arg;
   else {
 #endif
   out("\r\n250-PIPELINING\r\n");
-#ifdef TLS
+#ifdef TLS_SMTPD
   out("250-STARTTLS\r\n");
 #endif
   out("250-SIZE "); out(smtpsize); out("\r\n");
   out("250 8BITMIME\r\n");
-#ifdef TLS
+#ifdef TLS_SMTPD
   }
 #endif
   seenmail = 0; dohelo(arg);
@@ -764,7 +764,7 @@ void smtp_rcpt(arg) char *arg; {
     if (!stralloc_cats(&addr,relayclient)) die_nomem();
     if (!stralloc_0(&addr)) die_nomem();
   } else {
-#ifndef TLS
+#ifndef TLS_SMTPD
     if (!addrallowed())
     { 
       err_nogateway(); 
@@ -861,7 +861,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   flush();
-#ifdef TLS
+#ifdef TLS_SMTPD
   r = ssl_timeoutread(timeout,fd,buf,len);
 #else
   r = timeoutread(timeout,fd,buf,len);
@@ -970,7 +970,7 @@ void smtp_data() {
   unsigned long qp;
   char *qqx;
 /*  char buf[FMT_ULONG]; */
-#ifdef TLS
+#ifdef TLS_SMTPD
   stralloc protocolinfo = {0};
 #endif
  
@@ -984,7 +984,7 @@ void smtp_data() {
   out("354 go ahead\r\n"); logline(3,"go ahead");
   rblheader(&qqt);
 
-#ifdef TLS
+#ifdef TLS_SMTPD
   if(ssl){
    if (!stralloc_copys(&protocolinfo, SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
    if (!stralloc_catb(&protocolinfo, " encrypted SMTP", 15)) die_nomem();
@@ -1025,7 +1025,7 @@ void smtp_data() {
   out("\r\n");
 }
 
-#ifdef TLS
+#ifdef TLS_SMTPD
 RSA *tmp_rsa_cb(ssl,export,keylength) SSL *ssl; int export; int keylength; 
 {
   RSA* rsa;
@@ -1102,7 +1102,7 @@ struct commands smtpcommands[] = {
 , { "ehlo", smtp_ehlo, flush }
 , { "rset", smtp_rset, 0 }
 , { "help", smtp_help, flush }
-#ifdef TLS
+#ifdef TLS_SMTPD
 , { "starttls", smtp_tls, flush }
 #endif
 , { "noop", err_noop, flush }
@@ -1112,7 +1112,7 @@ struct commands smtpcommands[] = {
 
 void main()
 {
-#ifdef TLS
+#ifdef TLS_SMTPD
   sig_alarmcatch(sigalrm);
 #endif
   sig_pipeignore();

@@ -29,12 +29,12 @@
 #include "tcpto.h"
 #include "readwrite.h"
 #include "timeoutconn.h"
-#ifndef TLS
+#ifndef TLS_REMOTE
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 #endif
 
-#ifdef TLS
+#ifdef TLS_REMOTE
 #include <sys/stat.h>
 #include <openssl/ssl.h>
 
@@ -133,7 +133,7 @@ int timeoutconnect = 60;
 int smtpfd;
 int timeout = 1200;
 
-#ifdef TLS
+#ifdef TLS_REMOTE
 int flagtimedout = 0;
 void sigalrm()
 {
@@ -168,7 +168,7 @@ int ssl_timeoutwrite(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
 int saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
-#ifdef TLS
+#ifdef TLS_REMOTE
   r = ssl_timeoutread(timeout,smtpfd,buf,len);
 #else
   r = timeoutread(timeout,smtpfd,buf,len);
@@ -179,7 +179,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
 int safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
-#ifdef TLS
+#ifdef TLS_REMOTE
   r = ssl_timeoutwrite(timeout,smtpfd,buf,len);
 #else
   r = timeoutwrite(timeout,smtpfd,buf,len);
@@ -246,7 +246,7 @@ char *prepend;
 char *append;
 {
 /* TAG */
-#if defined(TLS) && defined(TLSDEBUG)
+#if defined(TLS_REMOTE) && defined(TLSDEBUG)
 #define ONELINE_NAME(X) X509_NAME_oneline(X,NULL,0)
 
  if(ssl){
@@ -318,7 +318,7 @@ void smtp()
   int flagsize;
   int i;
   char num[FMT_ULONG];
-#ifdef TLS
+#ifdef TLS_REMOTE
   int flagtls;
   int needtlsauth = 0;
   SSL_CTX *ctx;
@@ -364,13 +364,13 @@ void smtp()
   for (i = 0; i < smtptext.len; i += str_chr(smtptext.s+i,'\n') + 1) {
     if (i+8 < smtptext.len && !case_diffb("SIZE", 4, smtptext.s+i+4) )
       flagsize = 1;
-#ifdef TLS
+#ifdef TLS_REMOTE
     else if (i+12 < smtptext.len && !case_diffb("STARTTLS", 8, smtptext.s+i+4) )
       flagtls = 1;
 #endif
   }
 
-#ifdef TLS
+#ifdef TLS_REMOTE
   if (flagtls)
    {
     substdio_puts(&smtpto,"STARTTLS\r\n");
@@ -696,7 +696,7 @@ char **argv;
   int flagalias;
   char *relayhost;
 
-#ifdef TLS
+#ifdef TLS_REMOTE
   sig_alarmcatch(sigalrm);
 #endif
   sig_pipeignore();
@@ -793,7 +793,7 @@ char **argv;
     if (timeoutconn(smtpfd,&ip.ix[i].ip,&outip,(unsigned int) smtp_port,timeoutconnect) == 0) {
       tcpto_err(&ip.ix[i].ip,0);
       partner = ip.ix[i].ip;
-#ifdef TLS
+#ifdef TLS_REMOTE
 	  fqdn = ip.ix[i].fqdn;
 #endif
       smtp(); /* does not return */

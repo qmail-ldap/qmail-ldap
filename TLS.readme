@@ -22,7 +22,7 @@ Usage: - install OpenSSL-0.9.4 http://www.openssl.org/
          by sending mail to ping@linux.student.kuleuven.ac.be,
          which will bounce your mail.
 
-Optional: - when DEBUG is defined, some extra SSL info will be logged
+Optional: - when TLSDEBUG is defined, some extra SSL info will be logged
           - when a 512 RSA key is provided in /var/qmail/control/rsa512.pem,
             this key will be used instead of on-the-fly generation by
        	    qmail-smtpd. Daily replacement can be done by crontab:
