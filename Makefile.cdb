@@ -2,7 +2,7 @@
 # This Makefile assumes that tcprules and qmail-cdb are in your $PATH
 # if not edit the next two lines.
 TCPRULES=tcprules
-QMAILRULES=qmail-cdb
+QMAILRULES="%QMAIL%/bin/qmail-cdb"
 
 FILES=	locals.cdb rcpthosts.cdb qmail-smtpd.cdb qmail-qmqpd.cdb \
 	qmail-pop3d.cdb qmail-imapd.cdb

@@ -386,6 +386,7 @@ man
 setup
 check
 auth_imap
+Makefile.cdb-p
 auth_imap.o
 auth_mod.o
 auth_pop

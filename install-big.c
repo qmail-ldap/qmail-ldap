@@ -119,7 +119,7 @@ void hier()
   C(auto_qmail,"control","qmail-imapd.rules","qmail-imapd.rules",auto_uido,auto_gidq,0644);
   
   /* Makefile for cdb creation */
-  C(auto_qmail,"control","Makefile","Makefile.cdb",auto_uido,auto_gidq,0644);
+  C(auto_qmail,"control","Makefile","Makefile.cdb-p",auto_uido,auto_gidq,0644);
   
   /* run files for boot/supervise scripts */
   C(auto_qmail,"boot/qmail", "run", "qmail.run",auto_uido,auto_gidq,0755);

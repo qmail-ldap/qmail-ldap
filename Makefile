@@ -92,7 +92,7 @@ ldap: qmail-quotawarn qmail-reply auth_pop auth_imap auth_smtp digest \
 qmail-ldaplookup pbsadd pbscheck pbsdbd qmail-todo qmail-forward \
 qmail-secretary qmail-group qmail-verify condwrite qmail-cdb \
 qmail-imapd.run qmail-pbsdbd.run qmail-pop3d.run qmail-qmqpd.run \
-qmail-smtpd.run qmail.run
+qmail-smtpd.run qmail.run Makefile.cdb-p
 
 addresses.0: \
 addresses.5
@@ -1195,6 +1195,13 @@ make-makelib: \
 make-makelib.sh auto-ccld.sh
 	cat auto-ccld.sh make-makelib.sh > make-makelib
 	chmod 755 make-makelib
+
+Makefile.cdb-p: \
+Makefile.cdb conf-qmail
+	cat Makefile.cdb \
+	| sed s}%QMAIL%}"`head -1 conf-qmail`"}g \
+	> Makefile.cdb-p
+	chmod 644 Makefile.cdb-p
 
 makelib: \
 make-makelib warn-auto.sh systype
