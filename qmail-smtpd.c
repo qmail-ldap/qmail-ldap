@@ -913,6 +913,7 @@ void smtp_rcpt(arg) char *arg; {
 #ifdef DATA_COMPRESS
 z_stream stream;
 char zbuf[4096];
+int wantcomp = 0;
 int compdata = 0;
 
 int compression_init(void)
@@ -1116,9 +1117,13 @@ void smtp_data() {
   int hops;
   unsigned long qp;
   char *qqx;
-/*  char buf[FMT_ULONG]; */
- 
-  logline(3,"smtp data");
+
+#ifdef DATA_COMPRESS
+  if (wantcomp) logline(3,"smtp dataz");
+  else
+#endif
+    logline(3,"smtp data");
+
   if (!seenmail) {
     err_wantmail();
     if (errdisconnect) err_quit();
@@ -1136,7 +1141,7 @@ void smtp_data() {
 #endif
   if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
   qp = qmail_qp(&qqt);
-  out("354 go ahead\r\n"); logline(3,"go ahead");
+  out("354 go ahead punk, make my day\r\n"); logline(3,"go ahead");
   rblheader(&qqt);
 
 #ifdef TLS_SMTPD
@@ -1151,9 +1156,21 @@ void smtp_data() {
   } else if (!stralloc_copyb(&protocolinfo,"SMTP",5)) die_nomem();
   received(&qqt,protocolinfo.s,local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
 #else 
-  received(&qqt,"SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
+#ifdef DATA_COMPRESS
+  if (wantcomp)
+    received(&qqt,"compressed SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
+  else
+#endif
+    received(&qqt,"SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
+#endif
+
+#ifdef DATA_COMPRESS
+  if (wantcomp) { if (compression_init() != 0) return; }
 #endif
   blast(&hops);
+#ifdef DATA_COMPRESS
+  if (wantcomp) { if (compression_done() != 0) return; }
+#endif
 
   receivedbytes[fmt_ulong(receivedbytes,(unsigned long) bytesreceived)] = 0;
   logpid(3); logstring(3,"data bytes received: "); logstring(3,receivedbytes); logflush(3);
@@ -1198,94 +1215,12 @@ void smtp_data() {
 }
 
 #ifdef DATA_COMPRESS
-void smtp_compress() {
-  int hops;
-  unsigned long qp;
-  char *qqx;
-
-  logline(3,"smtp dataz");
-  if (!seenmail) {
-    err_wantmail();
-    if (errdisconnect) err_quit();
-    return;
-  }
-  if (!rcptto.len) {
-    err_wantrcpt();
-    if (errdisconnect) err_quit();
-    return;
-  }
-  seenmail = 0;
-  if (databytes) bytestooverflow = databytes + 1;
-#ifdef SMTPEXECCHECK
-  execcheck_start();
-#endif
-  if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
-  qp = qmail_qp(&qqt);
-  out("354 go ahead punk, make my day\r\n");
-  logline(3,"go ahead punk, make my day");
-  rblheader(&qqt);
-
-#ifdef TLS_SMTPD
-  if(ssl){
-   if (!stralloc_copys(&protocolinfo, SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
-   if (!stralloc_cats(&protocolinfo, " encrypted compressed SMTP"))
-     die_nomem();
-   if (clientcert.len){
-     if (!stralloc_cats(&protocolinfo," cert ")) die_nomem();
-     if (!stralloc_catb(&protocolinfo,clientcert.s, clientcert.len)) die_nomem();
-   }
-  } else if (!stralloc_copys(&protocolinfo,"compressed SMTP")) die_nomem();
-  if (!stralloc_0(&protocolinfo)) die_nomem();
-  received(&qqt,protocolinfo.s,local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
-#else 
-  received(&qqt,"compressed SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
-#endif
-  if (compression_init() != 0) return;
-  blast(&hops);
-  if (compression_done() != 0) return;
-
-  receivedbytes[fmt_ulong(receivedbytes,(unsigned long) bytesreceived)] = 0;
-  logpid(3); logstring(3,"data bytes received: "); logstring(3,receivedbytes); logflush(3);
-
-  hops = (hops >= MAXHOPS);
-  if (hops)
-    qmail_fail(&qqt);
-  qmail_from(&qqt,mailfrom.s);
-  qmail_put(&qqt,rcptto.s,rcptto.len);
- 
-  qqx = qmail_close(&qqt);
-  if (!*qqx) { acceptmessage(qp); return; }
-  if (hops) {
-    out("554 too many hops, this message is looping (#5.4.6)\r\n");
-    logline(2,"too many hops, message is looping");
-    if (errdisconnect) err_quit();
-    return;
-  }
-  if (databytes) if (!bytestooverflow) {
-    out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n");
-    logline(2,"datasize limit exceeded");
-    if (errdisconnect) err_quit();
-    return;
-  }
-#ifdef SMTPEXECCHECK
-  if (execcheck_flag()) {
-    out("552 we don't accept email with executable content (#5.3.4)\r\n");
-    logline(2,"windows executable detected");
-    if (errdisconnect) err_quit();
-    return;
-  }
-#endif
-  logpid(1);
-  if (*qqx == 'D') {
-    out("554 "); logstring(1,"message permanently not accepted because: ");
-  } else {
-    out("451 "); logstring(1,"message temporarly not accepted because: ");
-  }
-  out(qqx + 1);
-  logstring(1,qqx + 1); logflush(1);
-  out("\r\n");
+void smtp_dataz() {
+  wantcomp = 1;
+  smtp_data();
 }
 #endif
+
 
 #ifdef TLS_SMTPD
 RSA *tmp_rsa_cb(ssl,export,keylength) SSL *ssl; int export; int keylength; 
