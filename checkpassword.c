@@ -558,14 +558,15 @@ static void forward_session(char *host, char *name, char *passwd)
 				auth_error();
 			}
 	}
-/*	if ( ip.len != 1 ) {
+	/*	
+	if ( ip.len != 1 ) {
 		qldap_errno = BADCLUSTER;
 		auth_error();
 	} */ /* 20010523 do not check if only one IP is returned, so it is
-			possible to have a cluster node consisting of multiple machines 
-			XXX if your mailhost is bad (bad entries in ldap) you will get
-			bad loops.
-		  */
+		possible to have a cluster node consisting of multiple machines 
+		XXX if your mailhost is bad (bad entries in ldap) you will get
+		bad loops.
+	  */
 	
 	ffd = socket(AF_INET,SOCK_STREAM,0);
 	if (ffd == -1) {
