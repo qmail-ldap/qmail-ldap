@@ -25,6 +25,7 @@ int call_flush(struct call *);
 int call_putflush(struct call *, const char *, int);
 int call_putsflush(struct call *, const char *);
 int call_open(struct call *, const char *, int, int);
+void call_close(struct call *);
 
 const char *auth_close(struct call *, stralloc *, const char *);
 

@@ -75,6 +75,8 @@ int ssl_timeoutwrite(int tout, int fd, char *buf, int n)
 }
 #endif
 
+void die_write();
+
 int safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
@@ -84,7 +86,7 @@ int safewrite(fd,buf,len) int fd; char *buf; int len;
   else
 #endif
   r = timeoutwrite(timeout,fd,buf,len);
-  if (r <= 0) _exit(1);
+  if (r <= 0) die_write();
   return r;
 }
 
@@ -133,17 +135,19 @@ void logflush(level) int level;
   substdio_flush(subfderr);
 }
 
-void die_read() { logline(1,"read error, connection closed"); _exit(1); }
-void die_alarm() { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); _exit(1); }
-void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); logline(1,"out of memory, closing connection"); flush(); _exit(1); }
+void cleanup(void);
+
+void die_read() { logline(1,"read error, connection closed"); cleanup(); _exit(1); }
+void die_write() { logline(1,"write error, connection closed"); cleanup(); _exit(1); }
+void die_alarm() { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); cleanup(); _exit(1); }
+void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); logline(1,"out of memory, closing connection"); flush(); cleanup(); _exit(1); }
 void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); logline(1,"unable to read controls, closing connection"); flush(); _exit(1); }
 void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); logline(1,"unable to figure out my IP address, closing connection"); flush(); _exit(1); }
-void err_dns() { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
 void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
 void err_qqt() { out("451 qqt failure (#4.3.0)\r\n"); }
+void err_dns() { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
 void err_ldapsoft() { out("451 temporary ldap lookup failure, try again later\r\n"); logline(1,"temporary ldap lookup failure"); }
-
-void err_bmf() { out("553 sorry, your mail was administratively denied (#5.7.1)\r\n"); }
+void err_bmf() { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
 void err_bmfunknown() { out("553 sorry, your mail from a host without valid reverse DNS was administratively denied (#5.7.1)\r\n"); }
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway(char *arg) { out("553 sorry, relaying denied from your location ["); out(arg); out("] (#5.7.1)\r\n"); }
@@ -161,7 +165,13 @@ void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n");
 void err_rbl(arg) char *arg; { out("553 sorry, your mailserver is rejected by "); out(arg); out("\r\n"); }
 void err_deny() { out("553 sorry, mail from your location is administratively denied (#5.7.1)\r\n"); }
 void err_badrcptto() { out("553 sorry, mail to that recipient is not accepted (#5.7.1)\r\n"); }
-void err_554msg(const char *arg) { out("554 sorry, "); out(arg); out("\r\n"); logstring(3,"message denied because: "); logstring(3,arg); logflush(3); }
+void err_554msg(const char *arg)
+{
+	out("554 "); out(arg); out("\r\n");
+	logpid(3);
+	logstring(3,"message denied because: "); logstring(3,arg);
+	logflush(3);
+}
 
 
 stralloc me = {0};
@@ -198,12 +208,16 @@ void smtp_quit()
 {
   smtp_line("221 ");
   logline(3,"quit, closing connection");
-  flush(); _exit(0);
+  flush();
+  cleanup();
+  _exit(0);
 }
 void err_quit()
 {
   logline(3,"force closing connection");
-  flush(); _exit(0);
+  flush();
+  cleanup();
+  _exit(0);
 }
 
 char *remoteip;
@@ -325,7 +339,7 @@ void setup()
   if (brtok)
     if (!constmap_init(&mapbadrcptto,brt.s,brt.len,0)) die_nomem();
 
-  localsok = control_readfile(&locals,"control/locals",0);
+  localsok = control_readfile(&locals,"control/locals",1);
   if (localsok == -1) die_control();
   if (localsok)
     if (!constmap_init(&maplocals,locals.s,locals.len,0)) die_nomem();
@@ -489,19 +503,19 @@ char *arg;
 }
 
 stralloc checkhost = {0};
+ipalloc checkip = {0};
 
 int badmxcheck(dom)
 char *dom;
 {
-  ipalloc checkip = {0};
   int ret = 0;
-  unsigned long random;
+  unsigned long r;
 
   if (!*dom) return (DNS_HARD);
   if (!stralloc_copys(&checkhost,dom)) return (DNS_SOFT);
 
-  random = now() + (getpid() << 16);
-  switch (dns_mxip(&checkip,&checkhost,random))
+  r = now() + (getpid() << 16);
+  switch (dns_mxip(&checkip,&checkhost,r))
   {
     case DNS_MEM:
     case DNS_SOFT:
@@ -588,7 +602,7 @@ char *arg;
 }
 
 
-int bmfcheck()
+int bmfcheck(void)
 {
   int j;
   if (!bmfok) return 0;
@@ -602,7 +616,7 @@ int bmfcheck()
   return 0;
 }
 
-int bmfunknowncheck()
+int bmfunknowncheck(void)
 {
   int j;
   if (!bmfunknownok) return 0;
@@ -619,7 +633,7 @@ stralloc mailfrom = {0};
 stralloc rcptto = {0};
 int rcptcount;
 
-int rmfcheck()
+int rmfcheck(void)
 {
   int j;
   if (!rmfok) return 0;
@@ -630,7 +644,7 @@ int rmfcheck()
   return 0;
 }
 
-int addrallowed()
+int addrallowed(void)
 {
   int r;
   int j;
@@ -645,7 +659,7 @@ int addrallowed()
   return r;
 }
 
-int rcptdenied()
+int rcptdenied(void)
 {
   int j;
   if (!brtok) return 0;
@@ -657,7 +671,7 @@ int rcptdenied()
   return 0;
 }
 
-int addrlocals()
+int addrlocals(void)
 {
   int j;
   if (!localsok) return 0;
@@ -668,7 +682,7 @@ int addrlocals()
   return 0;
 }
 
-int goodmailaddr()
+int goodmailaddr(void)
 {
   int j;
   if (!gmaok) return 0;
@@ -680,12 +694,58 @@ int goodmailaddr()
   return 0;
 }
 
-int ldaplookup()
+struct call ccverify;
+stralloc verifyresponse;
+int flagverify = 0;
+
+void ldaplookupdone(void)
 {
-  return 1;
+  if (flagverify != 1) return;
+  call_close(&ccverify);
+  flagverify = 0;
+  return;
 }
 
-int relayprobe() /* relay probes trying stupid old sendwhale bugs */
+int ldaplookup(char *address, char **s)
+{
+  char ch;
+  
+  if (flagverify == -1) return -1;
+  if (flagverify == 0) {
+    if (call_open(&ccverify, "bin/qmail-verify", 30, 0) == -1) {
+      flagverify = -1;
+      return -1;
+    }
+    flagverify = 1;
+  }
+  call_puts(&ccverify, address); call_putflush(&ccverify, "", 1);
+  if (call_getc(&ccverify, &ch) != 1)
+    goto fail;
+  switch (ch) {
+  case 'K':
+    return 1;
+  case 'D':
+    /* get response */
+    if (!stralloc_copys(&verifyresponse, "")) die_nomem();
+    while (call_getc(&ccverify, &ch) == 1) {
+      if (!stralloc_append(&verifyresponse, &ch)) die_nomem();
+      if (ch == 0) {
+	*s = verifyresponse.s;
+	return 0;
+      }
+    }
+    /* FALLTHROUGH */
+  case 'Z':
+  default:
+    break;
+  }
+fail:
+  flagverify = -1;
+  call_close(&ccverify);
+  return -1;
+}
+
+int relayprobe(void) /* relay probes trying stupid old sendwhale bugs */
 {
   int j;
   j = addr.len;
@@ -899,18 +959,15 @@ void smtp_mail(arg) char *arg;
   }
 
   /* check if sender exists in ldap */
-  if (sendercheck && !bounceflag)
-  {
-    if (!goodmailaddr()) /* good mail addrs go through anyway */
-    {
-      if (addrlocals())
-      {
-        switch (ldaplookup())
-        {
+  if (sendercheck && !bounceflag) {
+    if (!goodmailaddr()) { /* good mail addrs go through anyway */
+      if (addrlocals()) {
+	char *s;
+        switch (ldaplookup(addr.s, &s)) {
           case 1: /* valid */
             break;
           case 0: /* invalid */
-            err_554msg("refused mailfrom because sender address does not exist");
+            err_554msg(s);
             if (errdisconnect) err_quit();
             return;
           case -1:
@@ -925,15 +982,13 @@ void smtp_mail(arg) char *arg;
         /* not in addrlocals, ldap lookup is useless */
         /* normal mode: let through, it's just an external mail coming in */
         /* loose mode: see if sender is in rcpthosts, if no reject here */
-        if (sendercheck == 2 && !addrallowed())
-        {
+        if (sendercheck == 2 && !addrallowed()) {
           err_554msg("refused mailfrom because valid local sender address required");
           if (errdisconnect) err_quit();
           return;
         }
         /* strict mode: we require validated sender so reject here right out */
-        if (sendercheck == 3)
-        {
+        if (sendercheck == 3) {
           err_554msg("refused mailfrom because valid local sender address required");
           if (errdisconnect) err_quit();
           return;
@@ -1030,22 +1085,24 @@ void smtp_rcpt(arg) char *arg; {
   }
 
   /* check if recipient exists in ldap */
-  if (rcptcheck)
-  {
-    if (!goodmailaddr())
-    {
-      if (addrlocals())
-      {
-        switch (ldaplookup(&addr))
-        {
+  if (rcptcheck) {
+    if (!goodmailaddr()) {
+      logline(3,"recipient verify, recipient not in goodmailaddr");
+      if (addrlocals()) {
+	char *s;
+	logline(3,"recipient verify, recipient is local");
+        switch (ldaplookup(addr.s, &s)) {
           case 1: /* valid */
+	    logline(3,"recipient verify OK");
             break;
           case 0: /* invalid */
-            err_554msg("message rejected because recipient does not exist");
+	    logline(1,"message denied because of recipient verify");
+            err_554msg(s);
             if (errdisconnect) err_quit();
             return;
           case -1:
           default: /* other error, treat as soft 4xx */
+	    logline(2,"recipient verify soft error");
             if (ldapsoftok)
               break;
             err_ldapsoft();
@@ -1474,7 +1531,7 @@ fail:
   case '4':
   case '5':
     sleep(1);
-    out(status);
+    out(status); flush();
     logstring(2, "authentication failed: ");
     logstring(2, status + 4);
     logflush();
@@ -1551,6 +1608,11 @@ void smtp_tls(arg) char *arg;
 }
 #endif
 
+void cleanup(void)
+{
+	ldaplookupdone();
+}
+
 struct commands smtpcommands[] = {
   { "rcpt", smtp_rcpt, 0 }
 , { "mail", smtp_mail, 0 }
@@ -1585,7 +1647,7 @@ void main()
     stralloc_copys(&greeting,greeting550);
     if (greeting.len != 0)
       stralloc_copys(&greeting,"sorry, your mail was administratively denied. (#5.7.1)");
-    smtp_line("553 ");
+    smtp_line("554 ");
     err_quit();
   }
   smtp_greet("220 ");

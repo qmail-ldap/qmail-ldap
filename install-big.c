@@ -163,6 +163,7 @@ void hier()
   c(auto_qmail,"bin","auth_pop",auto_uido,auto_gidq,0700);
   c(auto_qmail,"bin","auth_imap",auto_uido,auto_gidq,0700);
   c(auto_qmail,"bin","auth_smtp",auto_uido,auto_gidq,0755);
+  c(auto_qmail,"bin","qmail-verify",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","qmail-ldaplookup",auto_uido,auto_gidq,0700);
   c(auto_qmail,"bin","digest",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","pbsadd",auto_uido,auto_gidq,0755);

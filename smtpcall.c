@@ -150,8 +150,21 @@ call_open(struct call *cc, const char *prog, int timeout, int flagstar)
       cc->tobuf, sizeof(cc->tobuf));
   substdio_fdbuf(&cc->ssfrom, read, cc->fromfd,
       cc->frombuf, sizeof(cc->frombuf));
-  cc->flagerr = 0;
   return 0;
+}
+
+void
+call_close(struct call *cc)
+{
+	int r;
+	char ch;
+	
+	if (cc->pid == -1) return; /* nothing running */
+	call_flush(cc);
+	close(cc->tofd);
+	while ((r = call_getc(cc, &ch)) == 1) ;
+	if (r == -1) ; /* bad thing happend */
+	close(cc->fromfd);
 }
 
 const char *
@@ -162,7 +175,7 @@ auth_close(struct call *cc, stralloc *user, const char *pre)
 	int exitcode;
 	char c;
 
-	s = NULL; c = 0;
+	s = 0; c = 0;
 	if (cc->pid == -1)
 		return "454 unable to start authentication process. "
 		    "(#4.3.0)\r\n";

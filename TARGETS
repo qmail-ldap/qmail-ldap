@@ -441,6 +441,8 @@ qmail-secretary
 qmail-secretary.o
 qmail-todo
 qmail-todo.o
+qmail-verify
+qmail-verify.o
 rbl.o
 read-ctrl.o
 smtpcall.o

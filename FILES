@@ -506,6 +506,7 @@ qmail-reply.c
 qmail-secretary
 qmail-secretary.c
 qmail-todo.c
+qmail-verify.c
 qmail.schema
 rbl.c
 rbl.h
