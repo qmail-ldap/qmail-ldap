@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/09/09 20:09:03 $)
+RELEASE: current ($Date: 2003/09/09 20:15:08 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -759,11 +759,15 @@ SENDERCHECK
  Affects: qmail-smtpd
  Example: "" or "LOOSE" or "STRICT"
  Note: Only applies to senders whose domain is listed in ~control/locals.
+       Everything else is assumed to be an external message with a foreign
+       sender coming in, so no check applied. This is normal mode.
        Setting to "LOOSE" will allow only senders which are listed either in
        ~control/locals or ~control/rcpthosts. Setting to "STRICT" will only
        allow senders which are listed in ~control/locals. With this you can
        enforce for example that people from certain ip ranges can only send
        if they have a valid existing email address with you.
+       Addresses or domains listed in ~control/goodmailaddr are unconditionally
+       allowed in all cases.
 
 
 ================================================================================
