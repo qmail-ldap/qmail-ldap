@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/03/25 09:12:56 $ ($Revision: 1.87 $)
+RELEASE: $Date: 2003/03/25 09:50:43 $ ($Revision: 1.88 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,10 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ qmail-remote has a better look at the return codes of the helo/ehlo command.
+ This gives a better error handling in case of server that refuse the
+ connection with a >500 error in the begining.
 
  qmail-local bug fix in .qmail parser (missing () around a ||).
 

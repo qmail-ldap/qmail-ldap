@@ -338,19 +338,26 @@ void smtp()
   flagtls = 0;
 #endif
 
-  if (smtpcode() != 220) quit("ZConnected to "," but greeting failed");
+  code = smtpcode();
+  if (code >= 500) quit("DConnected to "," but greeting failed");
+  if (code != 220) quit("ZConnected to "," but greeting failed");
  
   flagsize = 0;
   substdio_puts(&smtpto,"EHLO ");
   substdio_put(&smtpto,helohost.s,helohost.len);
   substdio_puts(&smtpto,"\r\n");
   substdio_flush(&smtpto);
-  if (smtpcode() != 250){
+
+  code = smtpcode();
+  if (code >= 500) quit("DConnected to "," but my name was rejected");
+  if (code() != 250){
    substdio_puts(&smtpto,"HELO ");
    substdio_put(&smtpto,helohost.s,helohost.len);
    substdio_puts(&smtpto,"\r\n");
    substdio_flush(&smtpto);
-   if (smtpcode() != 250) quit("ZConnected to "," but my name was rejected");
+   code = smtpcode();
+   if (code >= 500) quit("DConnected to "," but my name was rejected");
+   if (code != 250) quit("ZConnected to "," but my name was rejected");
   }
 
   /* extension handling */
