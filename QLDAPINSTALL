@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20000701 ($Date: 2000/09/29 12:15:30 $)
+RELEASE: 20001010 ($Date: 2000/10/10 14:05:09 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -24,6 +24,8 @@ NEWS:
  see QLDAPNEWS
 
 IMPORTANT NEWS:
+
+ enhancement for cluster support (loop detection)
 
  added new tool qmail-ldaplookup: with this program you can check the ldap
  db entries. Similar to the old checkpassword with debug support.

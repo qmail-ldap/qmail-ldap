@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/09/27 15:11:19 $ ($Revision: 1.19 $)
+RELEASE: $Date: 2000/10/10 14:05:10 $ ($Revision: 1.20 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,6 +18,9 @@ TODO:
 
 
 NEWS for current stuff:
+
+ possible fix for newer gcc. Problems with va_arg and unsigned chars. 
+ I don't have such a new gcc, so I don't know if this fixes the problem.
 
  bug fix for the problem mentioned by Aleksander Dzierzanowski (mail to deleted
  mailfiles bounce if there is a quota set).
