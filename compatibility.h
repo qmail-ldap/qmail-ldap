@@ -1,16 +1,16 @@
 #ifndef __COMPATIBILITY_H__
 #define __COMPATIBILITY_H__
 
-/* compatibility.h a compatibility include for the qmail-ldap checkpasword    *
- * implementation. These nasty little differences of U*NXes a driving me nuts */
+/* compatibility.h a compatibility include for the qmail-ldap checkpasword      *
+ * implementation. These nasty little differences of U*NXes are driving me nuts */
 
 
 #ifndef __P
- #ifdef __STDC__
- #define __P(p)  p
- #else
- #define __P(p)  ()
- #endif
+# ifdef __STDC__
+#  define __P(p)  p
+# else
+#  define __P(p)  ()
+# endif
 #endif
 
 
