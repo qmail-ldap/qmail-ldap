@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/04/30 09:28:13 $)
+RELEASE: current ($Date: 2002/04/30 09:45:01 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -411,10 +411,10 @@ CONFIG FILES:
    message: message to be included in X-RBL: headers and 553 errors.
 
  Example:
-   basedomain       action     matchon     message
-   ================================================================
-   relays.ordb.org  reject     any         go home
-   block.blars.org  addheader  127.1.0.16  has no abuse address
+   basedomain            action     matchon    message
+   ========================================================================
+   relays.ordb.org       reject     any        go home
+   spamguard.leadmon.net addheader  127.0.0.2  address is a dialup address
 
  NOTE: for readability we replaced the tabs between the four fields basedoamin,
        action, matchon and message with spaces (so you can not copy paste the
