@@ -50,7 +50,8 @@ void log_init(int fd, unsigned long mask, int via_spawn)
 	loglevel &= mask;
 
 	substdio_fdbuf(&sslog, write, fd, logbuffer, sizeof(logbuffer) );
-	log(1, "LOGLEVEL set to %i\n", loglevel);
+/*	log(4, "LOGLEVEL set to %i\n", loglevel);
+ */
 }
 
 void log(unsigned long level, char *fmt, ...)
