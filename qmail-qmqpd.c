@@ -164,7 +164,11 @@ void identify()
   if (!local) local = env_get("TCPLOCALIP");
   if (!local) local = "unknown";
  
+#ifdef QMQP_COMPRESS
+  received(&qq,"compressed QMQP",local,remoteip,remotehost,remoteinfo,(char *) 0,(char *) 0,(char *) 0);
+#else
   received(&qq,"QMQP",local,remoteip,remotehost,remoteinfo,(char *) 0,(char *) 0,(char *) 0);
+#endif
 }
 
 char buf[1000 + 20 + FMT_ULONG];
