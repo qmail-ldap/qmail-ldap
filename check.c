@@ -7,27 +7,26 @@ extern unsigned char testvektor[128];
 /* XXX this is not a security checker, it just looks that no special chars 
  * XXX are in the string this is because the ldap server could send some 
  * XXX faked datas */
-int sanitycheckb(register char *s, register unsigned int len, 
-				 register unsigned char mask)
+int sanitycheckb(char *s, unsigned int len, unsigned char mask)
 {
-	register unsigned char *tv;
-	register char x;
+	unsigned char *tv;
+	unsigned int x;
 
 	tv = testvektor;
 	
-	x = *s++; if(!len--) return 1;
-	if ( x & 0x80 || !( *(tv + (unsigned long) x) & mask ) || 
-				( *(tv + (unsigned long) x) & 0x80 ) ) return 0;
-	/* is this char allowed as first char (normaly '-' is not) ??? */
+	x = (unsigned int)*s++; if (!len--) return 1;
+	/* is this char allowed as first char (normaly '-' is not) */
+	if (x > 0x7F || !(tv[x] & mask) || tv[x] & NOT_FIRST) return 0;
+
 	for (;;) {
-		x = *s++; if(!len--) return 1;
-		if ( x & 0x80 || !( *(tv + (unsigned long) x) & mask) ) return 0;
-		x = *s++; if(!len--) return 1;
-		if ( x & 0x80 || !( *(tv + (unsigned long) x) & mask) ) return 0;
-		x = *s++; if(!len--) return 1;
-		if ( x & 0x80 || !( *(tv + (unsigned long) x) & mask) ) return 0;
-		x = *s++; if(!len--) return 1;
-		if ( x & 0x80 || !( *(tv + (unsigned long) x) & mask) ) return 0;
+		x = (unsigned int)*s++; if (!len--) return 1;
+		if (x > 0x7F || !(tv[x] & mask)) return 0;
+		x = (unsigned int)*s++; if (!len--) return 1;
+		if (x > 0x7F || !(tv[x] & mask)) return 0;
+		x = (unsigned int)*s++; if (!len--) return 1;
+		if (x > 0x7F || !(tv[x] & mask)) return 0;
+		x = (unsigned int)*s++; if (!len--) return 1;
+		if (x > 0x7F || !(tv[x] & mask)) return 0;
 	}
 	return 0; /* paranoia */
 }
@@ -35,40 +34,43 @@ int sanitycheckb(register char *s, register unsigned int len,
 /* XXX this is not a security checker, it just looks that no special chars 
  * XXX are in the string this is because the ldap server could send some 
  * XXX faked datas */
-int sanitypathcheckb(register char *s, register unsigned int len, 
-				 register unsigned char mask)
+int sanitypathcheckb(char *s, unsigned int len, unsigned char mask)
 /* works like sanitycheckb but also looks that there is no '..' in the
  * string. This should be used for maildirpaths */
 {
-	register unsigned char *tv;
-	register char x;
-	register int  doubledot;
+	unsigned char *tv;
+	unsigned int x;
+	enum { NODOT, FIRST, SLASH, ONEDOT, TWODOT } state = FIRST;
 
 	tv = testvektor;
 	
-	x = *s++; if(!len--) return 1;
-	/* XXX is this char allowed as first char (normaly '-' is not) */
-	if ( x & 0x80 || !( *(tv + (unsigned long) x) & mask ) || 
-				( *(tv + (unsigned long) x) & 0x80 ) ) return 0;
-	if ( x == '.') doubledot = 1; else doubledot = 0;
-	for (;;) {
-		x = *s++; if(!len--) return 1;
-		if ( x & 0x80 || !( *(tv + (unsigned long) x) & mask) ) return 0;
-		if ( x == '.' ) { 
-			if ( doubledot++ ) return 0; 
-		} else doubledot = 0;
-		x = *s++; if(!len--) return 1;
-		if ( x & 0x80 || !( *(tv + (unsigned long) x) & mask) ) return 0;
-		if ( x == '.' ) { 
-			if ( doubledot++ ) return 0; 
-		} else doubledot = 0;
-		x = *s++; if(!len--) return 1;
-		if ( x & 0x80 || !( *(tv + (unsigned long) x) & mask) ) return 0;
-		if ( x == '.' ) { 
-			if ( doubledot++ ) return 0; 
-		} else doubledot = 0;
+	while (len--) {
+		x = (unsigned int)*s++;
+		if (x > 0x7F || !(tv[x] & mask)) return 0;
+		if (state == FIRST && tv[x] & NOT_FIRST) return 0;
+		switch (x) {
+		case '.':
+			switch (state) {
+			case ONEDOT:
+				state = TWODOT;
+				break;
+			case NODOT:
+				break;
+			default:
+				state = ONEDOT;
+			}
+			break;
+		case '/':
+			if (state == TWODOT)
+				return 0;
+			state = SLASH;
+			break;
+		default:
+			state = NODOT;
+			break;
+		}
 	}
-	return 0; /* paranoia */
+	return 1;
 }
 
 int sanitychecks(register char *s, register unsigned char mask) 
