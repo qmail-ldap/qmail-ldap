@@ -502,7 +502,7 @@ ldap_fail:
        log(2, "warning: can not stat mail: %s\n", error_str(errno));
        _exit(217);
      }
-     if ((unsigned long)st.st_size > tid) {
+     if (tid != 0 && (unsigned long)st.st_size > tid) {
        log(2, "message is over maximum mail size limit\n");
        _exit(216);
      }
