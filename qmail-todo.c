@@ -599,13 +599,13 @@ void reread(void)
 
 void main()
 {
- int fd;
  datetime_sec wakeup;
  fd_set rfds;
  fd_set wfds;
  int nfds;
  struct timeval tv;
- int c;
+ int r;
+ char c;
 
  if (chdir(auto_qmail) == -1)
   { log1("alert: qmail-todo: cannot start: unable to switch to home directory\n"); _exit(111); }
@@ -620,6 +620,12 @@ void main()
 
  todo_init();
  comm_init();
+ 
+ do {
+   r = read(fdin, &c, 1);
+   if ((r == -1) && (errno != error_intr))
+     _exit(100); /* read failed probably qmail-send died */
+ } while (r =! 1); /* we assume it is a 'S' */
  
  while (!flagexitasap || comm_canwrite())
   {

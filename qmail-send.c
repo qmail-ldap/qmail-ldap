@@ -1492,6 +1492,9 @@ void todo_init()
   todofdout = 7;
   todofdin = 8;
   flagtodoalive = 1;
+  /* sync with external todo */
+  if (write(todofdout, "S", 1) != 1) tododied();
+
   return;
 }
 
