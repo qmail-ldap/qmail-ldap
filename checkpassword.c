@@ -546,7 +546,9 @@ char **argv;
    } else if (!str_diffn("{NS-MTA-MD5}", password.s, 12) ) {
    /* NS-MTA-MD5 */
       shift = 12;
-      if (!strlen(password.s) == 76) _exit(1); /* boom */
+      if (!strlen(password.s) == 76) {
+      debug_msg(" comparing passwords \t: NS-MTA-MD5 password string length mismatch\n);
+      _exit(1); } /* boom */
       strncpy(salt,&password.s[44],32);
       salt[32] = 0;
       ns_mta_hash_alg(hashed,salt,entredpassword);
@@ -645,7 +647,7 @@ char **argv;
        debug_msg(" create homedir : %s's exitcode is not zero\n", qldap_dirmaker.s);
        _exit(11);
      }
-     debug_msg(" create homedir : all went fine\n");
+     debug_msg(" create homedir : so far everything went fine\n");
      if (chdir(homedir.s) == -1)
        debug_msg(" chdir(homedir) : chdir failed with '%s'; %s\n",homedir.s,error_str(errno));
      else
