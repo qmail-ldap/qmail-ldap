@@ -252,7 +252,7 @@ int main(int argc, char **argv)
 		for(;;) {
 			output(subfdout, "%s: %s\n",LDAP_OBJECTCLASS ,s);
 			j = byte_chr(s,slen,0);
-			if (j++ == slen) break;
+			if (j++ >= slen) break;
 			s += j; slen -= j;
 		}
 		
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
 				output(subfdout, "%s: %s\n",
 				    LDAP_MAILALTERNATE, s);
 				j = byte_chr(s,slen,0);
-				if (j++ == slen) break;
+				if (j++ >= slen) break;
 				s += j; slen -= j;
 			}
 		}
@@ -355,10 +355,10 @@ int main(int argc, char **argv)
 			for(;;) {
 				output(subfdout, "%s: %s\n", LDAP_FORWARDS, s);
 				j = byte_chr(s,slen,0);
-				if (j++ == slen) break;
+				if (j++ >= slen) break;
 				s += j; slen -= j;
 			}
-			continue;
+			goto next;
 		default:
 			fail(q, "qldap_get_mailstore", r);
 		}
@@ -412,7 +412,7 @@ int main(int argc, char **argv)
 					    "(used internally).", 0);
 				output(subfdout, "%s: %s\n", LDAP_MODE, s);
 				j = byte_chr(s,slen,0);
-				if (j++ == slen) break;
+				if (j++ >= slen) break;
 				s += j; slen -= j;
 			}
 		}
@@ -427,7 +427,7 @@ int main(int argc, char **argv)
 			for(;;) {
 				output(subfdout, "%s: %s\n", LDAP_FORWARDS, s);
 				j = byte_chr(s,slen,0);
-				if (j++ == slen) break;
+				if (j++ >= slen) break;
 				s += j; slen -= j;
 			}
 		}
@@ -442,7 +442,7 @@ int main(int argc, char **argv)
 			for(;;) {
 				output(subfdout, "%s: %s\n", LDAP_PROGRAM, s);
 				j = byte_chr(s,slen,0);
-				if (j++ == slen) break;
+				if (j++ >= slen) break;
 				s += j; slen -= j;
 			}
 		}
@@ -483,6 +483,7 @@ int main(int argc, char **argv)
 				    qldap_err_str(r));
 		}
 
+next:
 		r = qldap_next(q);
 		output(subfdout, "\n\n");
 	} while (r == OK);
