@@ -739,8 +739,11 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
 ");
 
 #ifdef QLDAP
-   qmail_put(&qqt,custombouncetext.s,custombouncetext.len);
-   qmail_puts(&qqt,"\n\n");
+   if (custombouncetext.len)
+   {
+     qmail_put(&qqt,custombouncetext.s,custombouncetext.len-1);
+     qmail_puts(&qqt,"\n\n");
+   }
 #endif
 
    fd = open_read(fn2.s);
