@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/10/01 09:14:16 $ ($Revision: 1.133 $)
+RELEASE: $Date: 2003/10/01 09:20:23 $ ($Revision: 1.134 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -116,6 +116,11 @@ NEWS for current stuff:
 
  Announce the EHLO STARTTLS option only if tls is compiled, enabled and
  we have found a valid certificate in ~control/cert.pem for encryption.
+
+ Modernize qmail startup infratructure. First step is to redo the ~boot
+ directory and to add ~log directory. Create subdirs for qmail, qmail-smtpd,
+ qmail-qmqpd, qmail-pop3d, qmail-imapd and qmail-pbsd for supervise and multilog.
+ Corresponding run files will come in the next release.
 
  Fix bug in qmail-smtp addrparse function. If "mail from" or "rcpt to" did
  neither contain a '<' nor a ':' the function returned a nullsender (bounce)

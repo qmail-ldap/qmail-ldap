@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/09/30 17:14:02 $)
+RELEASE: current ($Date: 2003/10/01 09:20:23 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -58,6 +58,9 @@ INSTALL:
       OpenLDAP releases < 2.0 should no longer be used (you have been warned).
    and
     - OpenSSL 0.9.4 or higher if you want TLS SMTP encrytion
+
+   We recommend also using Dan Bernstein's toolset daemontools-0.76,
+   ucspi-tcp-0.88 and djbdns-1.05 to run qmail.
 
    If you have problems with OpenLDAP look into their FAQ. The same for
    OpenSSL.
