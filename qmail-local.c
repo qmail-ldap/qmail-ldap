@@ -1005,7 +1005,7 @@ char **argv;
     {
      cmds.s[j] = 0;
      k = j;
-     while ((k > i) && (cmds.s[k - 1] == ' ') || (cmds.s[k - 1] == '\t'))
+     while ((k > i) && ((cmds.s[k - 1] == ' ') || (cmds.s[k - 1] == '\t')))
        cmds.s[--k] = 0;
      switch(cmds.s[i])
       {
