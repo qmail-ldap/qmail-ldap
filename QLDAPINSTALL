@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/06/11 13:42:53 $)
+RELEASE: current ($Date: 2004/06/11 14:17:25 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -624,6 +624,17 @@ OR
  conf-qmail.
  Default: none
  Example: control/cert.pem
+
+~control/remotecert
+
+ This file contains the location of the OPTIONAL SSL certificate used for
+ outgoing SMTP sessions. The path may be relative to /var/qmail or whatever
+ was specified in conf-qmail.
+ Default: none
+ Example: control/cert.pem
+ Note: Unlike ~control/smtpcert this file is completle optional for encrypion.
+       qmail-remote will use STARTTLS and SSL encryption even without a cert
+       file, as it is not neccessary for the client.
 
 ~control/tarpitcount
 ~control/tarpitdelay
