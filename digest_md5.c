@@ -456,7 +456,7 @@ ns_mta_md5_cmp_pw(char * clear, char *mangled)
   char mta_hash[33];
   char mta_salt[33];
   char buffer[65];
-  int  gaga;
+  int  match;
 
   if ( str_len(mangled) != 64 ) return -1; /* XXX is this correct ??? */
   
@@ -465,8 +465,8 @@ ns_mta_md5_cmp_pw(char * clear, char *mangled)
 
   mta_hash[32] = mta_salt[32] = 0;
   if ( ns_mta_hash_alg(buffer,mta_salt,clear) ) return -1;
-  gaga = str_diffn(mta_hash,buffer, 32);
+  match = str_diffn(mta_hash,buffer, 32);
 
-  return(gaga);
+  return(match);
 }
 
