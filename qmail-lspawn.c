@@ -691,8 +691,9 @@ char *s; char *r; int at;
    init_debug(fdout, -1); /* here are no critical data handled 
                            * so debuglevel is free */
    
-   /* copy the whole email address before the @ gets destroyed */
    sig_hangupdefault(); /* clear the hup sig handler for the child */
+
+   /* copy the whole email address before the @ gets destroyed */
    if (!stralloc_copys(&ra,r)) _exit(QLX_NOMEM);
    debug(16, "mailaddr: %S\n", &ra);
    /* end -- save the @ */
