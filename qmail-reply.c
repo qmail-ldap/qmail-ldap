@@ -46,6 +46,7 @@ stralloc from={0};
 stralloc dtline={0};
 stralloc prog={0};
 stralloc line = {0};
+stralloc foo = {0};
 
 /* a match function */
 static int wild_matchb(register char* pattern, register unsigned int pat_len, \
@@ -101,6 +102,20 @@ int main()
 		strerr_die1x(111,"RECIPIENT not present (LDAP-ERR #4.1.4)");
 	}
 
+	i = byte_chr(from.s, from.len, '@');
+	if ( i == 0 || i >= from.len )
+	  strerr_die1x(111,"Bad RECIPIENT address (LDAP-ERR #4.1.5)");
+
+	if (!stralloc_copys(&foo,"QMAILSUSER=")) temp_nomem();
+	if (!stralloc_catb(&foo,from.s, i)) temp_nomem();
+	if (!stralloc_0(&foo)) temp_nomem();
+	if (!env_put(foo.s)) temp_nomem();
+
+	if (!stralloc_copys(&foo,"QMAILSHOST=")) temp_nomem();
+	if (!stralloc_catb(&foo,from.s+i+1, from.len - i - 1)) temp_nomem();
+	if (!stralloc_0(&foo)) temp_nomem();
+	if (!env_put(foo.s)) temp_nomem();
+	
 	check_header_and_get_subject();
 
 	send_reply();

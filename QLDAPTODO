@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/05/01 21:25:41 $ ($Revision: 1.24 $)
+RELEASE: $Date: 2002/06/20 13:52:01 $ ($Revision: 1.25 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -45,7 +45,7 @@ status unclear:
   cases (seems to be no problem, or?)
 
 low priority:
-- SMTP_AUTH (low priority because of POP before SMTP)
+- SMTP_AUTH (low priority because of POP before SMTP and Hennings patch)
 - make the complete lookup code modular so that it should be possible to add 
   diffrent backends.
   It should also be so flexible that other auth services (smtp-auth/SASL) 

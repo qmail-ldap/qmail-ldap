@@ -34,7 +34,7 @@ LDAPINCLUDES=-I/usr/local/include
 #TLSLIBS=-L/usr/local/lib -lssl -lcrypto
 # Path to OpenSSL binary
 #OPENSSLBIN=/usr/local/bin/openssl
-#OPENSSLBIN=/usr/bin/openssl
+#OPENSSLBIN=openssl
 
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
