@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/04/28 10:30:53 $ ($Revision: 1.94 $)
+RELEASE: $Date: 2003/04/29 12:57:09 $ ($Revision: 1.95 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,8 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ gcc bug fix for OpenBSD sparc64 in digest_sha.c
 
  Better copy loop in checkpasswords imap/pop3 forwarding this should solve
  problems with large file downloads over imap.
