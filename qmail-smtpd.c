@@ -540,15 +540,15 @@ void smtp_mail(arg) char *arg;
   }
 
   /* Check RBL only if relayclient is not set */
-	switch(rblcheck(remoteip, &why)) {
-		case 2: /* soft error lookup */
-			err_dns();
-			return;
-		case 1: /* host is listed in RBL */
-        err_rbl(why);
-				return;
-		default: /* ok, go ahead */
-			logline(3,"RBL checking completed without match or listed in header");
+  switch(rblcheck(remoteip, &why)) {
+    case 2: /* soft error lookup */
+      err_dns();
+      return;
+    case 1: /* host is listed in RBL */
+      err_rbl(why);
+      return;
+    default: /* ok, go ahead */
+      logline(3,"RBL checking completed");
   }
 	
   /* DENYMAIL is set for this session from this client, so heavy checking
