@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/10/28 23:26:59 $ ($Revision: 1.71 $)
+RELEASE: $Date: 2002/10/30 10:13:45 $ ($Revision: 1.72 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -19,25 +19,26 @@ TODO:
 NEWS for current stuff:
 
  New ldap fields added:
- -  mailQuotaSize and mailQuotaCount replace the cryptic mailQuota string.
+ - mailQuotaSize and mailQuotaCount replace the cryptic mailQuota string.
    mailQuotaSize specifies the maximum size in bytes and mailQuotaCount
-   is the maximum number of messages aloowed.
+   is the maximum number of messages allowed.
    Note: the old mailQuota string is still valid and used if neither 
-         mailQuotaSize nor mailQuotaCount are defined.
+         mailQuotaSize nor mailQuotaCount are set.
  - mailSizeMax specifies the maximum size of a single message the user may
-   receiv. Dial-up customer prefer a small mailSizeMax.
+   receive. e.g. Dial-up customer prefer a small mailSizeMax.
    Note: mailSizeMax is used in qmail-lspawn whereas databytes sets the
          SMTP DATA limit. Therefor having a mailSizeMax bigger than databytes
-         does not make much sens.
+         does not make much sense.
 
  Fixed some bugs and cleand up maildir++.c. The maildirsize parser is now
- rock solid and does no longer freak out when lines start with spaces.
+ rock solid and does no longer freak out when lines start with spaces as in
+ the newer courier-imap releases.
 
  quota_check() returns now also percentages over 100% (if over quota) and
  the percentages calculation does not overflow with sizes over 40MB.
  NOTE: quotas with sizes of around 4GB may overflow if large mails are
  delivered and so the maildir size may get far over quota. This is a bug
- and will get fixed.
+ and will get fixed somewhen (switch to 64bit quota numbers).
 
  maildir++ quota API cleanup. quota_recalc() works now exactly like
  quota_calc().

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/06/20 13:52:01 $ ($Revision: 1.25 $)
+RELEASE: $Date: 2002/10/30 10:13:45 $ ($Revision: 1.26 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -30,27 +30,26 @@ ALSO ON THE LIST: (priority list ???)
 - add smtp-after-pop functionality (done)
 
 - add logging to pop3 (similiar to smtpd)
-    what should be logged?
+    what should be logged? (login name, all comandos after auth?)
 
 - add mailGroup handling
-- check the enhanced debug code (one bug fix done)
+- check the enhanced debug code (one bug fix, done)
 - benchmarking the code
 - make the current code rock solid (even if it is not perfect)
 - better TLS support (better written??) (tls for pop???)
 - add more and clearer documentation.
+- 64bit counters for quota handling code.
 
 status unclear:
-- force to alias if only mail and mailforwardingaddress is set (no uid).
+- force to alias if only mail and mailforwardingaddress is set (no uid). (done)
 - test what happens if only uid and mail is defiend in ldap or similar uncommon
   cases (seems to be no problem, or?)
 
 low priority:
 - SMTP_AUTH (low priority because of POP before SMTP and Hennings patch)
-- make the complete lookup code modular so that it should be possible to add 
-  diffrent backends.
-  It should also be so flexible that other auth services (smtp-auth/SASL) 
-  are possible without rewriting to much.
+- make the complete lookup code modular so that it should be possible to use
+  it with other auth services (smtp-auth/SASL).
 - use connectionless ldap for lookups (done some work but it seems that the
   udp support of slapd is just unusable, have to wait). Other possibility is
-  ldap over a local socket...
+  ldap over a local/unix socket...
 

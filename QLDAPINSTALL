@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/08/29 12:10:45 $)
+RELEASE: current ($Date: 2002/10/30 10:13:45 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -25,15 +25,9 @@ NEWS:
 
 IMPORTANT NEWS:
 
- rework of qmail-smtpd with more options for spam protection, etc.
+ - new ldap fields mailQuotaSize, mailQuotaCount and mailSizeMax
 
- added pop-before-smtp tools (see POPBEFORESMTP for more info).
-
- Add an external TODO processor program. This moves the queue todo processing
- out of qmail-send to avoid the silly qmail syndrome with high injection rates
- (see EXTTODO for more info). Enable with -DEXTERNAL_TODO in Makefile.
-
- a lot of smaller patches see QLDAPNEWS
+ - and as always a lot of smaller patches see QLDAPNEWS
 
 ================================================================================
 
@@ -301,7 +295,7 @@ CONFIG FILES:
  count 'S') and count (a file count 'C')
  Default: unlimited
  Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
- Note: is overridden by mailQuota, make sure to have set ~control/quotowarning
+ Note: is overridden by mailQuota*, make sure to have set ~control/quotowarning
        otherwise you will not get quota warning messages
 
 ~control/ldapdefaultdotmode
@@ -664,15 +658,35 @@ LDAP_HOMEDIR (default: "homeDirectory")
        qldap-ldap.h to something not used, like "noHomeDirectory".
 
 
+LDAP_QUOTA_SIZE (default: "mailQuotaSize")
+LDAP_QUOTA_COUNT (default: "mailQuotaCount")
 LDAP_QUOTA (default: "mailQuota")
 
  The amount of space the user can use until all further messages get bounced.
  There are two possible limits, size (a byte count) and count (a file count).
- The mailQuota is a string of the form figures type (S or C) and a ',' 
- separating multiple entries.
- Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
+ You can either use mailQuotaSize and mailQuotaCount to specify the quota or
+ the mailQuota string. The mailQuota is a string of the form figures type (S 
+ or C) and a ',' separating multiple entries.
+ If both versions are present the mailQuotaSize and mailQuotaCount pair has
+ precedence over mailQuota.
+ Example: max 1000000 bytes size and max 1000 Mails
+            mailQuota: 1000000S,1000C
+         or
+            mailQuotaSize: 1000000
+            mailQuotaCount: 1000
  Note: overrides ldapdefaultquota, the old format (only a number representing
-       the amount of bytes allowed) is still supported
+       the amount of bytes allowed) is still supported but shouldn't be used
+       any longer.
+
+
+LDAP_MAXMSIZE (default: "mailSizeMax")
+
+ The maximum size (in bytes) that a single message may have. Everything over
+ this size gets bounced.
+ Example: 102400 (100kB)
+ Note: mailSizeMax has no influence on the datasize control file for the
+       smtp daemon. The mailSizeMax decision is not take until the mail is
+       delivered localy (by qmail-lspawn).
 
 
 LDAP_FORWARDS (default: "mailForwardingAddress")
