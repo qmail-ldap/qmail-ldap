@@ -58,21 +58,6 @@ stralloc doublebouncehost = {0};
 
 stralloc custombouncetext = {0};
 
-/* char replacement */
-unsigned int replace(char *s, register unsigned int len, char f, char r)
-{
-   register char *t;
-   register int count = 0;
-
-   t=s;
-   for(;;) {
-      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
-      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
-      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
-      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
-   }
-}
-
 char strnum2[FMT_ULONG];
 char strnum3[FMT_ULONG];
 
@@ -1617,7 +1602,7 @@ int getcontrols() { if (control_init() == -1) return 0;
  if (!stralloc_cat(&doublebounceto,&doublebouncehost)) return 0;
  if (!stralloc_0(&doublebounceto)) return 0;
  if (control_readfile(&custombouncetext,"control/custombouncetext",0) == -1) return 0;
- replace(custombouncetext.s, custombouncetext.len, '\0', '\n');
+ byte_repl(custombouncetext.s, custombouncetext.len, '\0', '\n');
  if (!stralloc_0(&custombouncetext) ) return 0;
  if (control_readfile(&locals,"control/locals",1) != 1) return 0;
  if (!constmap_init(&maplocals,locals.s,locals.len,0)) return 0;

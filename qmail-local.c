@@ -617,25 +617,6 @@ int len;
  substdio_putsflush(subfdoutsmall,"\n");
 }
 
-/* char replacement */
-unsigned int replace(s, len, f, r)
-char *s;
-register unsigned int len;
-register char f;
-register char r;
-{
-   register char *t;
-   register int count = 0;
-   
-   t=s;
-   for(;;) {
-      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
-      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
-      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
-      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
-   }
-}
-
 void main(argc,argv)
 int argc;
 char **argv;
@@ -872,7 +853,7 @@ char **argv;
      if (!stralloc_copys(&foo, s)) temp_nomem();
      if (!stralloc_0(&foo)) temp_nomem();
 
-     i = replace(foo.s, foo.len, ',', '\0') + 1;
+     i = byte_repl(foo.s, foo.len, ',', '\0') + 1;
      s = foo.s;
      slen = foo.len-1;
      for( ; i > 0; i--) {
@@ -897,6 +878,7 @@ char **argv;
          if (*sender) {
            ++count_forward;
            recips = (char **) alloc(2 * sizeof(char *));
+           if (!recips) temp_nomem();
            recips[0] = sender;
            recips[1] = 0;
            if (flagdoit) {
@@ -929,7 +911,7 @@ char **argv;
    if ( s = env_get(ENV_FORWARDS) ) {
      if (!stralloc_copys(&foo, s)) temp_nomem();
      if (!stralloc_0(&foo)) temp_nomem();
-     replace(foo.s, foo.len, ',', '\0');
+     byte_repl(foo.s, foo.len, ',', '\0');
      s = foo.s;
      slen = foo.len-1;
      for (;;) {
@@ -942,7 +924,7 @@ char **argv;
    if ( ldapprogdelivery && (s = env_get(ENV_PROGRAM)) ) {
      if (!stralloc_copys(&foo, s)) temp_nomem();
      if (!stralloc_0(&foo)) temp_nomem();
-     replace(foo.s, foo.len, ',', '\0');
+     byte_repl(foo.s, foo.len, ',', '\0');
      s = foo.s;
      slen = foo.len-1;
      for (;;) {

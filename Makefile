@@ -11,6 +11,7 @@
 # -DEXTERNAL_TODO to use the external high-performance todo processing (this
 # avoids the silly qmail syndrome with high injection rates)
 #LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO
+#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
@@ -33,6 +34,7 @@ LDAPINCLUDES=-I/usr/local/include
 #TLSLIBS=-L/usr/local/lib -lssl -lcrypto
 # Path to OpenSSL binary
 #OPENSSLBIN=/usr/local/bin/openssl
+#OPENSSLBIN=/usr/bin/openssl
 
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
@@ -326,6 +328,10 @@ compile byte_diff.c byte.h
 byte_rchr.o: \
 compile byte_rchr.c byte.h
 	./compile byte_rchr.c
+
+byte_repl.o: \
+compile byte_repl.c byte.h
+	./compile byte_repl.c
 
 byte_zero.o: \
 compile byte_zero.c byte.h
@@ -1822,12 +1828,12 @@ auto_split.h
 	./compile qmail-showctl.c
 
 qmail-smtpd: \
-load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o \
+load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o rbl.o \
 timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
 date822fmt.o now.o qmail.o cdb.a fd.a wait.a datetime.a getln.a \
 open.a sig.a case.a env.a stralloc.a alloc.a substdio.a error.a str.a \
 fs.a auto_qmail.o dns.lib socket.lib
-	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o \
+	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o rbl.o \
 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
 	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
@@ -1843,7 +1849,7 @@ compile qmail-smtpd.c sig.h readwrite.h stralloc.h gen_alloc.h \
 substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
-exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h
+exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h rbl.h
 	./compile ${TLSON} ${TLSINCLUDES} qmail-smtpd.c
 
 qmail-start: \
@@ -1979,6 +1985,10 @@ qsutil.h
 quote.o: \
 compile quote.c stralloc.h gen_alloc.h str.h quote.h
 	./compile quote.c
+
+rbl.o: \
+compile rbl.c dns.h env.h ipalloc.h qmail.h rbl.h stralloc.h
+	./compile rbl.c
 
 rcpthosts.o: \
 compile rcpthosts.c cdb.h uint32.h byte.h open.h error.h control.h \
@@ -2218,10 +2228,10 @@ scan.h fmt.h
 str.a: \
 makelib str_len.o str_diff.o str_diffn.o str_cpy.o str_chr.o \
 str_rchr.o str_start.o byte_chr.o byte_rchr.o byte_diff.o byte_copy.o \
-byte_cr.o byte_zero.o
+byte_cr.o byte_zero.o byte_repl.o
 	./makelib str.a str_len.o str_diff.o str_diffn.o str_cpy.o \
 	str_chr.o str_rchr.o str_start.o byte_chr.o byte_rchr.o \
-	byte_diff.o byte_copy.o byte_cr.o byte_zero.o
+	byte_diff.o byte_copy.o byte_cr.o byte_zero.o byte_repl.o
 
 str_chr.o: \
 compile str_chr.c str.h
