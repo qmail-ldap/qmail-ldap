@@ -1,4 +1,3 @@
-#ifdef PROFILE
 #ifndef __QLDAP_PROFILE_H__
 #define __QLDAP_PROFILE_H__
 
@@ -10,5 +9,4 @@ void start_timing(int profile, char *function);
 void stop_timing(int profile);
 /* stop the timing of a function and print the difference */
 
-#endif
 #endif

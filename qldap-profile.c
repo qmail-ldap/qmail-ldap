@@ -1,4 +1,3 @@
-#ifdef PROFILE
 #include "taia.h"
 #include "qldap-profile.h"
 #include "qldap-debug.h"
@@ -43,4 +42,3 @@ void stop_timing(int profile)
 
 }
 
-#endif
