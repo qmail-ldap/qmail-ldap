@@ -40,6 +40,9 @@ NEWS:
  Fixed the bugs in qmail-lspawn. Changed starlloc_catb to stralloc_cat. 
  Thanks to Franky Van Liedekerke <franky.van.liedekerke@telenet.be>
 
+ Added Christopher K. Davis' patch to handle oversized dns packets.
+
+ Added Chris Johnson's <cjohnson-qmail@palomine.net> tarpitting patch.
 
 INSTALL:
 
@@ -199,6 +202,23 @@ CONFIG FILES:
  Example: ./Maildir/
  Note: Only needed if you start qmail with something other and overwrite
        this with a .qmail file in every homedir
+
+~control/tarpitcount
+
+ Tarpitcount is the number of RCPT TOs you accept before you start tarpitting
+ Default: 0 (which means no tarpitting)
+ Example: 5
+ Note: You can override tarpitcount by setting TARPITCOUNT in qmail-smtpd's
+ environment (with tcpserver).
+
+~control/tarpitdelay
+
+ Tarpitdelay is the number of seconds of delay to introduce after each
+ subsequent RCPT TO.
+ Default: 5
+ Example: 10
+ Note: You can override tarpitdelay by setting TARPITDELAY in qmail-smtpd's
+ environment (with tcpserver).
 
 LDAP PARAMETER FIELDS:
 
