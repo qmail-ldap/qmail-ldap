@@ -234,7 +234,7 @@ void main()
 	 " not accepted in MAIL FROM from host without PTR.");
   do_lst("badrcptto","Any RCPT TO is allowed.",""," not accepted in RCPT TO");
   if (stat("bigbrother",&stmrh) == 0)
-    do_lst("bigbrother","No mail addresses are observed.","Observed mail addresses: ","");
+    do_lst("bigbrother","No mail addresses are observed.","Observed mail address: ","");
   do_str("bouncefrom",0,"MAILER-DAEMON","Bounce user name is ");
   do_str("bouncehost",1,"bouncehost","Bounce host name is ");
   do_int("bouncemaxbytes","0","Bounce data limit is "," bytes");
@@ -244,7 +244,7 @@ void main()
   do_int("databytes","0","SMTP DATA limit is "," bytes");
   do_str("defaultdomain",1,"defaultdomain","Default domain name is ");
   do_str("defaulthost",1,"defaulthost","Default host name is ");
-  do_str("dirmaker",0,"not defined","Location of program to create homedirs: ");
+  do_str("dirmaker",0,"not defined","Program to create homedirs ");
   do_str("doublebouncehost",1,"doublebouncehost","2B recipient host: ");
   do_str("doublebounceto",0,"postmaster","2B recipient user: ");
   do_str("envnoathost",1,"envnoathost","Presumed domain name is ");
@@ -254,22 +254,22 @@ void main()
   do_lst("locals","Messages for me are delivered locally.","Messages for "," are delivered locally.");
   do_int("maxrcptcount","0",""," RCPT TOs are accepted before sending 553 (0 = off)");
   do_str("me",0,"undefined! Uh-oh","My name is ");
-  do_str("outgoingip",0,"0.0.0.0","Bind qmail-remote to: ");
+  do_str("outgoingip",0,"0.0.0.0","Bind qmail-remote to ");
   do_int("pbscachesize","1048576","PBS cachesize is "," bytes");
   do_lst("pbsenv","No environment variables will be passed.","Environment Variable: ","");
-  do_str("pbsip",0,"0.0.0.0","Bind PBS daemon to: ");
+  do_str("pbsip",0,"0.0.0.0","Bind PBS daemon to ");
   do_int("pbsport","2821","PBS deamon listens on port ","");
   do_str("pbssecret",0,"undefined! Uh-oh","PBS shared secret is ");
-  do_lst("pbsservers","No PBS servers.","PBS server: ",".");
+  do_lst("pbsservers","No PBS servers.","PBS server ",".");
   do_int("pbstimeout","600","PBS entries will be valid for "," seconds");  
   do_lst("percenthack","The percent hack is not allowed.","The percent hack is allowed for user%host@",".");
   do_str("plusdomain",1,"plusdomain","Plus domain name is ");
-  do_str("qmqpcip",0,"Bind QMQP client to ","Don't bind QMQP client to a specific ip.");
+  do_str("qmqpcip",0,"0.0.0.0","Bind qmail-qmqpc to ");
   do_lst("qmqpservers","No QMQP servers.","QMQP server: ",".");
   do_int("queuelifetime","604800","Message lifetime in the queue is "," seconds");
   do_lst("quotawarning","No quotawarning.","","");
   do_lst("rbllist","No RBL listed.","RBL to check: ",".");
-  do_int("rblonlyheader","0","Only tag RBLs in mail header "," (1 = on, 0 = off)");
+  do_int("rblonlyheader","0","Only tag RBLs in mail header: "," (1 = on, 0 = off)");
 
   if (do_lst("rcpthosts","SMTP clients may send messages to any recipient.","SMTP clients may send messages to recipients at ","."))
     do_lst("morercpthosts","No effect.","SMTP clients may send messages to recipients at ",".");
@@ -302,7 +302,7 @@ void main()
   do_lst("virtualdomains","No virtual domains.","Virtual domain: ","");
 
 
-  substdio_puts(subfdout,"\nnow the qmail-ldap specific files\n");
+  substdio_puts(subfdout,"\n\n\nNow the qmail-ldap specific files:\n");
   do_str("ldapserver",0,"undefined! Uh-oh","My LDAP Server is ");
   do_str("ldapbasedn",0,"NULL","LDAP basedn: ");
   do_str("ldaplogin",0,"NULL","LDAP login: ");
@@ -316,8 +316,8 @@ void main()
   do_int("ldaplocaldelivery","1","Local passwd lookup is "," (1 = on, 0 = off)");
   do_int("ldaprebind","0","Ldap rebinding is "," (1 = on, 0 = off)");
   do_int("ldapcluster","0","Clustering is "," (1 = on, 0 = off)");
-  do_lst("ldapclusterhosts","No alternate MailHosts for clustering listed.",
-	 "Alternate MailHost for clustering: ", "");
+  do_lst("ldapclusterhosts","Messages for me are not redirected.",
+	 "Messages for "," are not redirected.");
 
   substdio_puts(subfdout,"\n");
   

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/02/27 17:59:51 $ ($Revision: 1.83 $)
+RELEASE: $Date: 2003/03/01 14:10:37 $ ($Revision: 1.84 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,8 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ qmail-showctl updated so that all new control files are listed.
 
  qmail-remote and qmail-qmqpc are now capable to bind to a specified port
  for outgoing connections. You can use control/outgoingip and control/qmqpcip
