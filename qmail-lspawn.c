@@ -31,6 +31,7 @@
 #include "check.h"
 #include <pwd.h>
 #include <sys/types.h>
+#include "readwrite.h"
 
 #ifndef NULL
 #define NULL 0L
@@ -38,7 +39,6 @@
 
 #endif /* end -- Includes needed to make LDAP work */
 #ifdef QLSPAWN_LOG
-#include "readwrite.h"
 /* for logging */
 /*
  * There are these log levels:  
