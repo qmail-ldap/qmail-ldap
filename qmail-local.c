@@ -70,7 +70,6 @@ stralloc ufline = {0};
 stralloc rpline = {0};
 stralloc envrecip = {0};
 stralloc dtline = {0};
-stralloc ftline = {0};
 stralloc qme = {0};
 stralloc ueo = {0};
 stralloc cmds = {0};
