@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/11/03 14:40:54 $ ($Revision: 1.205 $)
+RELEASE: $Date: 2004/11/17 13:20:23 $ ($Revision: 1.206 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,20 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Bugfix in qmail-group to make filtermember/filtersender work when
+ membersonly is turned on. Previously users specified via a filter where
+ always considered not member of the group. Reported by Flavio Fonseca.
+
+ Fix qmail-group so that senderconfirm and moderation can be used togehter.
+ This fixes a problem where qmail-secretary detected a mail loop when both
+ options where used.  Reported by George Lekatsas.
+
+ Source ~control/{aliasempty,defaultdelivery} with cat instead of head -1
+ so it is possible to define more than just a simple ./Maildir/ delivery
+ as default. Found by Michel H.
+
+NEWS for current 20041101:
 
  Don't forget to check also for accountStatus deleted in the auth tools and
  deny access in this case.
