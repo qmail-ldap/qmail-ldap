@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/12/22 09:30:15 $ ($Revision: 1.160 $)
+RELEASE: $Date: 2004/01/04 21:52:45 $ ($Revision: 1.161 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -39,7 +39,8 @@ NEWS for current stuff:
  The envdir parsing in the runscripts was absolutly broken. First of
  all I used a C-Style comentary in a shell script and then the simple
  eval `env - envdir ./env env` does not work with environments with
- spaces. So this was exchanged through a simple awk script.
+ spaces. So this was exchanged through a simple awk script. Fixed some
+ other runscript bogons too.
  To install the new run scripts the old ones need to be removed `rm
  /var/qmail/boot/*/run`
 
