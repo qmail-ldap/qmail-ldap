@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20001010 ($Date: 2000/10/10 14:05:09 $)
+RELEASE: 20001010 ($Date: 2000/11/14 21:55:34 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -279,6 +279,23 @@ CONFIG FILES:
  Default: 5
  Example: 10
  Note: You can override tarpitdelay by setting TARPITDELAY in qmail-smtpd's
+       environment (with tcpserver).
+
+~control/maxrcptcount
+
+ Maxrcptcount is the maximum number of RCPT TOs you accept before permanently
+ rejecting this delivery attempt.
+ Default: 0 (which means no maxrcptcount)
+ Example: 5
+ Note: You can override maxrcptcount by setting MAXRCPTCOUNT in qmail-smtpd's
+       environment (with tcpserver).
+
+~control/rbllist
+
+ Rbllist contains a number of RBL's to check for the given senders IP address.
+ Default: none
+ Example: rbl.maps.vix.com
+ Note: Multiline. To activate RBL checks you have to set RBL in qmail-smtpd's
        environment (with tcpserver).
 
 ~control/badrcptto
