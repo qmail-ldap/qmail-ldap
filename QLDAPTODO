@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/06/25 01:05:44 $ ($Revision: 1.6 $)
+RELEASE: $Date: 2000/07/20 09:31:59 $ ($Revision: 1.7 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -27,11 +27,12 @@ planned - make it possible to have locals and rcpthosts in ldap
 
 ALSO ON THE LIST: (priority list)
 - force forward-only and ldaponly when neither LDAP_MAILSTORE nor LDAP_HOMEDIR 
-  defined (done untested) 
+  defined (done untested 20000701) 
 - looping of messages in cluster mode, there is no loop count!
   Have to fix that!
-- use connectionless ldap for lookups
-- benchmarking the code
+- use connectionless ldap for lookups (code is added but slapd does not support
+  connectionless ldap)
+- benchmarking the code 
 - enhancement to debug code
 - test what happens if only uid and mail is defiend in ldap or similar uncommon
   cases
