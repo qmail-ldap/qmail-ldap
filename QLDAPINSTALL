@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2000/12/19 12:02:49 $)
+RELEASE: current ($Date: 2000/12/23 08:34:37 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -160,7 +160,10 @@ INSTALL:
 
 
     Same goes for the command 'auth_imap' if you IMAP server can use a external
-    program for authentication.
+    program for authentication. auth_imap was designed for courier-IMAP and
+    should work with it out of the box. There is also a auth_ldap modul in 
+    courier-imap that should work.
+    You can get courier-imap from http://www.inter7.com
 
     auth_pop and auth_imap are part of this patch and will be installed with the
     other qmail programs.
