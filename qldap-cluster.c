@@ -42,9 +42,9 @@ cluster(char *mailhost)
 	if (clusteron == 0 || mailhost == (char *)0)
 		return 0;
 	if (constmap(&mailhosts_map, mailhost, str_len(mailhost)) == 0)
-		return 0;
-	else
 		return 1;
+	else
+		return 0;
 }
 
 stralloc *

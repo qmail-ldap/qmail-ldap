@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/26 14:38:04 $ ($Revision: 1.122 $)
+RELEASE: $Date: 2003/09/28 08:09:10 $ ($Revision: 1.123 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,8 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+ 
+ Fixing clustering. This was terribly broken since the rewrite (20030901).
 
  Bug fix in qldap_get_status reported by <krits at home dot pl>
 

@@ -369,6 +369,7 @@ int qldap_get(stralloc *mail, int at, int fdmess)
 
    /* check if the I'm the right host */
    if (rv == OK && cluster(host.s) == 1) {
+     log(8, "cluster: forwarding session to %s\n", host.s);
      /* hostname is different, so I reconnect */
      return 2;
    }

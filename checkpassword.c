@@ -111,6 +111,7 @@ check_ldap(stralloc *login, stralloc *authdata,
 			log(8, "check_ldap: forwarding session to %s\n",
 			    c->forwarder.s);
 			pwok = FORWARD;
+			goto done;
 		}
 #endif
 
@@ -172,7 +173,7 @@ check_ldap(stralloc *login, stralloc *authdata,
 			break;
 		}
 	}
-
+done:
 	log(32, "check_ldap: password compare was %s\n", 
 	    pwok == OK || pwok == FORWARD ?
 	    "successful":"not successful");
@@ -226,8 +227,9 @@ setup_env(char *user, struct credentials *c)
 	if (!env_put2("AUTHENTICATED", user))
 		auth_error(ERRNO);
 	
-	if (!env_put2("HOME", c->home.s))
-		auth_error(ERRNO);
+	if (c->home.s != 0 && c->home.len > 0)
+		if (!env_put2("HOME", c->home.s))
+			auth_error(ERRNO);
 	
 	if (c->maildir.s != 0 && c->maildir.len > 0) {
 		if (!env_put2("MAILDIR", c->maildir.s))
@@ -238,7 +240,8 @@ setup_env(char *user, struct credentials *c)
 	}
 	log(32, "environment successfully set: "
 	    "USER %s, HOME %s, MAILDIR %s\n",
-	    user, c->home.s,
+	    user, c->home.s != 0 && c->home.len > 0?
+	    c->home.s:"unset, forwarding",
 	    c->maildir.s != 0 && c->maildir.len > 0?
 	    c->maildir.s:"unset, using aliasempty"); 
 }
