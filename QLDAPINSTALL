@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/11/17 15:47:37 $)
+RELEASE: current ($Date: 2003/11/26 22:02:03 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -608,6 +608,27 @@ CONFIG FILES:
 
 Environment variables setable via tcpserver, envdir or plain old env/sh:
 
+AUTHPREPEND
+
+ String that is prepended to the login in the received line.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "Authenticated user: "
+ Note: Just for additional information in the received line. You can use this
+       to make tracking of (ab)users easier.
+
+AUTHREQUIRED
+
+ Allow sending of messages (for this host and relaying) only to authenticated
+ senders.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Use this only if all clients support AMTP-AUTH. Be careful not to block
+       remote mail servers sending messages for local users. This is only useful
+       if you want to restrict certain IP ranges (for example you dial-up or
+       other customers) to be able to send only as existing and valid users.
+
 BLOCKRELAYPROBE
 
  Rejects recipients with and "!", "%" or double-"@"
@@ -622,6 +643,19 @@ BLOCKRELAYPROBE
        hack and double-"@" a sendwhale bug.
        Beware if you actually use the qmail percent-hack! Then this can't
        be used obviously!
+
+LDAPSOFTOK
+
+ Treat ldap soft errors (ldap server unavailable, etc) as if the check was
+ successful and continue.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Normally qmail-smtp will give a 450 temporary error if the ldap server
+       could not be successfuly queried. This changes to treat such errors as
+       if they had been successful. This is useful when it is more important
+       to keep the service available, even if the ldap server can't be queried
+       for some reason (down, unreachable, insufficient query rights, etc).
 
 LOGLEVEL
 
@@ -700,6 +734,13 @@ NOBOUNCE
        get all the bounces. Otherwise don't enable this! You want to get
        bounces!
 
+NOCOMPRESS
+
+ Disables the dynamoc data compression in qmail-qmqpd.
+ Default: off
+ Affects: qmail-qmqpd
+ Example: "" (any value will do)
+
 NOPBS
 
  Disable adding of pbs data. NOPBS disables the execution of pbsadd in auth_*.
@@ -738,6 +779,19 @@ RBLONLYHEADER
        "X-RBL: (relays.ordb.org) matches with 127.0.0.2 and tells us go home"
        header to the message for later filtering.
 
+RCPTCHECK
+
+ Check if the recipient (envelope "rcpt to:") of a message really exists. If not
+ give a 550 reject right now instead of bouncing later in qmail-lspawn.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Only applies to recipients whose domain is listed in ~control/locals.
+       Recipients domains listed in ~control/rcpthosts are allowed without
+       further checks. If RELAYCLIENT is set, all other recipients are allowed
+       as well. Addresses or domains listed in ~control/goodmailaddr are
+       unconditionally allowed in all cases.
+
 REJECTEXEC
 
  Reject DOS/Windows executables in mail attachements.
@@ -771,17 +825,37 @@ SANITYCHECK
  Note: Rejects stuff which you probably don't want on your mailserver
        because it's highly likely that it'll bounce later.
 
-550GREETING
+SENDERCHECK
 
- Rejects a connection right away with an 550 in the greeting line and
- closes the connection.
+ Check if the sender (envelope "mail from:") of a message really exists (in the
+ ldap directory). If not give a 550 reject right now.
  Default: off
  Affects: qmail-smtpd
- Example: ""
- Example: "Go away!"
- Note: You can set this in tcpserver if you want to reject messages from
-       an ip address permanently. If no string is given it will default
-       to "your message has been administratively denied".
+ Example: "" or "LOOSE" or "STRICT"
+ Note: Only applies to senders whose domain is listed in ~control/locals.
+       Everything else is assumed to be an external message with a foreign
+       sender coming in, so no check applied. This is normal mode.
+       Setting to "LOOSE" will allow only senders which are listed either in
+       ~control/locals or ~control/rcpthosts. Setting to "STRICT" will only
+       allow senders which are listed in ~control/locals. With this you can
+       enforce for example that people from certain ip ranges can only send
+       if they have a valid existing email address with you.
+       Addresses or domains listed in ~control/goodmailaddr are unconditionally
+       allowed in all cases.
+
+SMTPAUTH
+
+ Enables SMTP-AUTH for remote clients. Authenticated clients are allowed to
+ relay through this server and their login is being recorded in the received
+ line.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "TLSREQUIRED" or "" (any value will do)
+ Note: With SMTP-AUTH remote users can use this mail server for relaying.
+       SMTP is unencrypted and auth passwords are in clear text equivalent
+       base64 encoding. With TLSREQUIRED enabled SMTP-AUTH is only accepted
+       when the SMTP session is TLS encrypted to prevent password sniffing.
+       TLSREQUIRED requires TLS option to be compiled into qmail-ldap.
 
 SMTP550DISCONNECT
 
@@ -811,84 +885,17 @@ TARPITDELAY
        that this ties up the available qmail-smtpd slots. Raise connection
        limits with tcpserver if neccessary.
 
-RCPTCHECK
+550GREETING
 
- Check if the recipient (envelope "rcpt to:") of a message really exists. If not
- give a 550 reject right now instead of bouncing later in qmail-lspawn.
+ Rejects a connection right away with an 550 in the greeting line and
+ closes the connection.
  Default: off
  Affects: qmail-smtpd
- Example: "" (any value will do)
- Note: Only applies to recipients whose domain is listed in ~control/locals.
-       Recipients domains listed in ~control/rcpthosts are allowed without
-       further checks. If RELAYCLIENT is set, all other recipients are allowed
-       as well. Addresses or domains listed in ~control/goodmailaddr are
-       unconditionally allowed in all cases.
-
-SENDERCHECK
-
- Check if the sender (envelope "mail from:") of a message really exists (in the
- ldap directory). If not give a 550 reject right now.
- Default: off
- Affects: qmail-smtpd
- Example: "" or "LOOSE" or "STRICT"
- Note: Only applies to senders whose domain is listed in ~control/locals.
-       Everything else is assumed to be an external message with a foreign
-       sender coming in, so no check applied. This is normal mode.
-       Setting to "LOOSE" will allow only senders which are listed either in
-       ~control/locals or ~control/rcpthosts. Setting to "STRICT" will only
-       allow senders which are listed in ~control/locals. With this you can
-       enforce for example that people from certain ip ranges can only send
-       if they have a valid existing email address with you.
-       Addresses or domains listed in ~control/goodmailaddr are unconditionally
-       allowed in all cases.
-
-LDAPSOFTOK
-
- Treat ldap soft errors (ldap server unavailable, etc) as if the check was
- successful and continue.
- Default: off
- Affects: qmail-smtpd
- Example: "" (any value will do)
- Note: Normally qmail-smtp will give a 450 temporary error if the ldap server
-       could not be successfuly queried. This changes to treat such errors as
-       if they had been successful. This is useful when it is more important
-       to keep the service available, even if the ldap server can't be queried
-       for some reason (down, unreachable, insufficient query rights, etc).
-
-SMTPAUTH
-
- Enables SMTP-AUTH for remote clients. Authenticated clients are allowed to
- relay through this server and their login is being recorded in the received
- line.
- Default: off
- Affects: qmail-smtpd
- Example: "TLSREQUIRED" or "" (any value will do)
- Note: With SMTP-AUTH remote users can use this mail server for relaying.
-       SMTP is unencrypted and auth passwords are in clear text equivalent
-       base64 encoding. With TLSREQUIRED enabled SMTP-AUTH is only accepted
-       when the SMTP session is TLS encrypted to prevent password sniffing.
-       TLSREQUIRED requires TLS option to be compiled into qmail-ldap.
-
-AUTHREQUIRED
-
- Allow sending of messages (for this host and relaying) only to authenticated
- senders.
- Default: off
- Affects: qmail-smtpd
- Example: "" (any value will do)
- Note: Use this only if all clients support AMTP-AUTH. Be careful not to block
-       remote mail servers sending messages for local users. This is only useful
-       if you want to restrict certain IP ranges (for example you dial-up or
-       other customers) to be able to send only as existing and valid users.
-
-AUTHPREPEND
-
- String that is prepended to the login in the received line.
- Default: off
- Affects: qmail-smtpd
- Example: "Authenticated user: "
- Note: Just for additional information in the received line. You can use this
-       to make tracking of (ab)users easier.
+ Example: ""
+ Example: "Go away!"
+ Note: You can set this in tcpserver if you want to reject messages from
+       an ip address permanently. If no string is given it will default
+       to "your message has been administratively denied".
 
 
 ================================================================================
