@@ -398,7 +398,7 @@ qldap_get_uid(qldap *q, int *uid)
 	if (r == OK) {
 		if (ldap_attr.s[scan_ulong(ldap_attr.s, &ul)] != '\0')
 			r = BADVAL;
-		else if (UID_MIN > ul || ul > UID_MAX)
+		else if (UID_MIN <= ul && ul <= UID_MAX)
 			*uid = ul;
 		else
 			r = ILLVAL;
@@ -421,7 +421,7 @@ qldap_get_gid(qldap *q, int *gid)
 	if (r == OK) {
 		if (ldap_attr.s[scan_ulong(ldap_attr.s, &ul)] != '\0')
 			r = BADVAL;
-		else if (GID_MIN > ul || ul > GID_MAX)
+		else if (GID_MIN <= ul && ul <= GID_MAX)
 			*gid = ul;
 		else
 			r = ILLVAL;
@@ -685,11 +685,11 @@ qldap_get_attr(qldap *q, const char *attr, stralloc *val, int multi)
 	case MULTI_VALUE:
 		if (!stralloc_copys(val, "")) goto fail;
 		for (i = 0; i < nvals; i++) {
+			if (i != 0)
+				if (!stralloc_append(val, &sc))
+					goto fail;
 			l = str_len(vals[i]);
 			for (j = 0; j < l; j++) {
-				if (i != 0)
-					if (!stralloc_append(val, &sc))
-						goto fail;
 				if (vals[i][j] == sc)
 					if (!stralloc_append(val, "\\"))
 						goto fail;
