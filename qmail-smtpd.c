@@ -327,10 +327,12 @@ void setup(void)
 
 #ifdef TLS_SMTPD
   sslpath = env_get("SSLCERT");
-  if (!sslpath)
+  if (!sslpath) {
     sslpath = (char *)"control/smtpcert";
-  if (control_readline(&sslcert, sslpath) == -1)
-    die_control();
+    if (control_readline(&sslcert, sslpath) == -1)
+      die_control();
+  } else
+    if (!stralloc_copy(&sslcert, sslpath)) die_nomem();
   if (!stralloc_0(&sslcert)) die_nomem();
 #endif
 
