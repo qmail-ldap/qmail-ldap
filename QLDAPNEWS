@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/11/14 21:55:35 $ ($Revision: 1.22 $)
+RELEASE: $Date: 2000/11/25 16:33:56 $ ($Revision: 1.23 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -23,7 +23,13 @@ NEWS for current stuff:
 
  introduced MAXRCPTCOUNT to limit the maximum number of rcpt to's in one session.
 
- introduced RBL support to check the senders IP against a number of RBL's.
+ introduced RBL support to check the senders IP against a number of RBL's, see
+ ~control/rbllist.
+
+ documented ~control/relaymailfrom to allow relaying based on the senders
+ mail address.
+
+ documented LOGLEVEL and DENYMAIL environment variables to qmail-smtpd.
 
 NEWS for 20001013:
 
