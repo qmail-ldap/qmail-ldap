@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
 	log_init(STDERR, -1, 0);
 	
-	strerr_die1x(1, "ERROR: mail lookup not yet available");
+	strerr_die1x(1, "ERROR: qmail lookup not yet available");
 
 	return 0;
 }
