@@ -16,7 +16,7 @@ int len;
   int r;
   while (len > 0) {
     do
-      r = read(fd,buf,len);
+      r = subread(fd,buf,len);
     while ((r == -1) && (errno == EINTR));
     if (r == -1) return -1;
     if (r == 0) { errno = EIO; return -1; }

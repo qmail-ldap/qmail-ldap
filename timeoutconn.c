@@ -54,7 +54,7 @@ int timeout;
     int dummy;
     dummy = sizeof(sin);
     if (getpeername(s,(struct sockaddr *) &sin,&dummy) == -1) {
-      read(s,&ch,1);
+      subread(s,&ch,1);
       return -1;
     }
     ndelay_off(s);

@@ -6,12 +6,12 @@ typedef struct substdio {
   int p;
   int n;
   int fd;
-  int (*op)();
+  int (*op)(int, void *, int);
 } substdio;
 
 #define SUBSTDIO_FDBUF(op,fd,buf,len) { (buf), 0, (len), (fd), (op) }
 
-extern void substdio_fdbuf(substdio *, int (*)(), int, char *, int);
+extern void substdio_fdbuf(substdio *, int (*)(int, void *, int), int, char *, int);
 
 extern int substdio_flush(substdio *);
 extern int substdio_put(substdio *, const char *, int);
