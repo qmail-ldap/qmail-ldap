@@ -398,7 +398,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
          if (!stralloc_cats(&filter,auto_break)) _exit(QLX_NOMEM);
        if (!stralloc_cats(&filter,LDAP_CATCH_ALL)) _exit(QLX_NOMEM);
      }
-     /* @damin.com */
+     /* @domain.com */
      if (!stralloc_catb(&filter,s+at, len-at)) _exit(QLX_NOMEM);
      if (!stralloc_cats(&filter,"))")) _exit(QLX_NOMEM);
 
