@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/10/03 14:46:11 $ ($Revision: 1.137 $)
+RELEASE: $Date: 2003/10/09 20:42:10 $ ($Revision: 1.138 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,9 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Critical bugfix in auth_imap.c. A bug in the function that should invoke
+ the next authmodule caused auth_imap to end up in one infinit loop.
 
  Add DUPEALIAS feature.
 

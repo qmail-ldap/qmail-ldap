@@ -1,4 +1,6 @@
 /* auth_imap.c for courier-imap */
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <errno.h>
 #include <unistd.h>
 #include "alloc.h"
@@ -36,6 +38,7 @@ void
 auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 {
 	char	*a, *s, *t, *l, *p;
+	int	waitstat;
 	int	i;
 
 	if (argc < 2)
@@ -59,8 +62,11 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 		auth_error(AUTH_EXEC);
 	}
 	
-#if 0
-	/* remove all zombies, why should I do that ??? */
+#if 1
+	/*
+	 * remove all zombies, why should I do that?
+	 * Because courier makes zombies for breakfast
+	 */
 	sig_childdefault();
 	while (wait(&waitstat) >= 0) ;
 #endif
@@ -80,7 +86,9 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	close(3);
 	auth_up[auth_uplen] = '\0';
 	
-	/* get the different fields: service<NL>AUTHTYPE<NL>AUTHDATA */
+	/*
+	 * get the different fields: service<NL>AUTHTYPE<NL>AUTHDATA
+	 */
 	i = 0;
 	s = auth_up; /* ignore service field */
 	while (auth_up[i] && auth_up[i] != '\n' ) i++;
@@ -95,7 +103,7 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	if (str_diff("login", t)) {
 		/* 
 		 * this modul supports only "login"-type,
-		 * fail with AUTH_NOSUCH, so the 
+		 * fail with AUTH_TYPE, so the 
 		 * next modul is called, perhaps with greater success
 		 */
 		auth_fail("unknown", AUTH_TYPE);
@@ -148,14 +156,17 @@ auth_fail(const char *login, int reason)
 		case -1:
 			auth_error(ERRNO);
 		case 0:
+			break;
+		default: /* parent process */
 			close(pi[1]);
 			sig_pipedefault();
 			/* start next auth module */
 			execvp(*auth_argv, auth_argv);
 			auth_error(AUTH_EXEC);
 		}
+		/* child process */
 		close(pi[0]);
-		while (t) {
+		while (auth_uplen) {
 			i = write(pi[1],t,auth_uplen);
 			if (i == -1) {
 				if (errno == error_intr) continue;
@@ -215,7 +226,10 @@ void auth_error(int errnum)
 	}
 	argvs[i+1] = (char *)0;
 #if 0
-	/* can no longer find AUTHUSER in authlib(7) of courier-imap 1.7.2 */
+	/*
+	 * can no longer find AUTHUSER in authlib(7) of courier-imap 1.7.2
+	 * but it still exists. So what should I do? Drop my pants?
+	 */
 	if (!(env = env_get("AUTHUSER")))
 		_exit(100);
 #endif
