@@ -34,6 +34,7 @@ void out(const char *s1, const char *s2, const char *s3)
   if (s2) { substdio_puts(&ssout,s2); substdio_puts(subfderr,s2); }
   if (s3) { substdio_puts(&ssout,s3); substdio_puts(subfderr,s3); }
   substdio_puts(subfderr, "\n");
+  substdio_flush(subfderr);
   substdio_puts(&ssout,",");
   substdio_flush(&ssout);
 }
@@ -269,6 +270,7 @@ main()
   substdio_puts(&ssout,result);
   substdio_puts(subfderr,result + 1);
   substdio_puts(subfderr, "\n");
+  substdio_flush(subfderr);
   substdio_puts(&ssout,",");
   substdio_flush(&ssout);
   _exit(0);
