@@ -128,9 +128,6 @@ void hier()
   C(auto_qmail,"boot/qmail-pop3d", "run", "qmail-pop3d.run",auto_uido,auto_gidq,0755);
   C(auto_qmail,"boot/qmail-imapd", "run", "qmail-imapd.run",auto_uido,auto_gidq,0755);
   C(auto_qmail,"boot/qmail-pbsdbd", "run", "qmail-pbsdbd.run",auto_uido,auto_gidq,0755);
-  C(auto_qmail,"boot/qmail-imapd", "down", "/dev/null",auto_uido,auto_gidq,0644);
-  C(auto_qmail,"boot/qmail-qmqpd", "down", "/dev/null",auto_uido,auto_gidq,0644);
-  C(auto_qmail,"boot/qmail-pbsdbd", "down", "/dev/null",auto_uido,auto_gidq,0644);
 
   /* run files for logging process */
   l(auto_qmail,"boot/qmail/log","log/qmail",auto_userl,auto_uido,auto_gidq,0755);
