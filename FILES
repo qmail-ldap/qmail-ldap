@@ -452,3 +452,4 @@ qmail-reply.c
 qmail-quotawarn.c
 ANTISPAM
 qmail-ldap.h
+QLDAPNEWS

@@ -109,13 +109,14 @@ int escape_forldap(stralloc *toescape)
       if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
       if(!len) break; if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '\\' ; *t++ = *s++; len--;
 #else
+#warning __LDAP_ESCAPE_BUG__IS__ON__
       if(!len) break; 
 		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '_' ; 
-		else *t++ = *s++; 
+			else *t++ = *s++; 
 		len--;
       if(!len) break; 
 		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '_' ; 
-		else *t++ = *s++; 
+			else *t++ = *s++; 
 		len--;
 #endif
    }

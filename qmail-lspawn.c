@@ -459,8 +459,8 @@ int qldap_get( stralloc *mail )
                                 LDAP_MODE,
                                 LDAP_REPLYTEXT,
                                 LDAP_DOTMODE,
-                                LDAP_UID,
-                                LDAP_PASSWD, NULL };
+										  LDAP_MAILHOST,
+                                LDAP_ISACTIVE, NULL };
 
    int            version, at, ext,
                   rc, i, reply = 0,

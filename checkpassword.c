@@ -88,7 +88,7 @@ char* sa2s(stralloc *sa) { return 0; }
 
 #endif
 
-static void forward_session();
+static void forward_session(char *host, char *name, char *passwd);
 
 /* initialize the string arrays, this uses DJB's libs */
 stralloc    qldap_server = {0};
@@ -100,7 +100,7 @@ stralloc    qldap_uid = {0};
 stralloc    qldap_gid = {0};
 stralloc    qldap_messagestore = {0};
 stralloc    qldap_passwdappend = {0};
-stralloc    qldap_forwardhost = {0};
+stralloc    qldap_me = {0};
 #ifdef AUTOHOMEDIRMAKE
 stralloc    qldap_dirmaker = {0};
 #endif
@@ -144,6 +144,10 @@ void get_qldap_controls()
    if (control_rldef(&qldap_passwdappend,"control/ldappasswdappend",0,"./") == -1) 
    debug_msg(OUTPUT," control/ldappasswdappend: %s\n",sa2s(&qldap_passwdappend) );
 
+   if (control_rldef(&qldap_me,"control/me",0,"") == -1) _exit(1);
+   if (!stralloc_0(&qldap_me)) _exit(QLX_NOMEM);
+   debug_msg(OUTPUT," control/me \t: %s\n",qldap_me.s);
+
 #ifdef AUTOHOMEDIRMAKE
    if (control_rldef(&qldap_dirmaker,"control/dirmaker",0,(char *) 0) == -1) _exit(1);
    if (!stralloc_0(&qldap_dirmaker)) _exit(QLX_NOMEM);
@@ -153,11 +157,10 @@ void get_qldap_controls()
    debug_msg(OUTPUT,"\naction: reading control files done successful\n");
 }
 
-#ifdef QLDAP_BIND
-int qldap_get( char *login, char *passwd, unsigned int *uid, unsigned int *gid, stralloc *homedir )
-#else
-int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *gid, stralloc *homedir )
-#endif
+stralloc password={0};
+stralloc homedir={0};
+
+int qldap_get( char *login, char *passwd, unsigned int *uid, unsigned int *gid )
 {
    LDAP           *ld;
    LDAPMessage    *res, *msg;
@@ -167,6 +170,8 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
                                 LDAP_PASSWD,
                                 LDAP_QMAILUID,
                                 LDAP_QMAILGID,
+										  LDAP_ISACTIVE,
+										  LDAP_MAILHOST,
                                 LDAP_MAILSTORE, NULL };
 
    int            rc,
@@ -251,7 +256,21 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
       if ( !str_diff(ISACTIVE_BOUNCE, vals[0]) ) _exit(1);
       if ( !str_diff(ISACTIVE_NOPOP, vals[0]) ) _exit(1);
    }
-
+#if 0
+   /* check if the I'm the right host */
+   if ( (vals = ldap_get_values(ld,msg,LDAP_MAILHOST)) != NULL ) {
+      debug_msg(OUTPUT,"mailHost is: %s (I'm %s)\n", vals[0], qldap_me.s);
+      if ( str_diff(qldap_me.s, vals[0]) ) {
+		  	/* hostname is different, so I reconnect */
+#ifdef QLDAPDEBUG
+         debug_msg(OUTPUT, " would connect to new host %s\n", vals[0]);
+#else
+			forward_session(vals[0], login, passwd);
+#endif
+			/* that's it */
+		}
+   }
+#endif
    /* get the dn and free it (we dont need it, to prevent memory leaks) *
     * but first try to rebind with the password (only if compiled with  *
     * QLDAP_BIND.                                                       */
@@ -280,8 +299,8 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
    /* go through the attributes and set the proper args for qmail-pop3d */
    /* get the stored and (hopefully) encrypted password */
    if ( (vals = ldap_get_values(ld,msg,LDAP_PASSWD)) != NULL ) {
-      if (!stralloc_copys(passwd, vals[0])) _exit(QLX_NOMEM);
-      if (!stralloc_0(passwd)) _exit(QLX_NOMEM);
+      if (!stralloc_copys(&password, vals[0])) _exit(QLX_NOMEM);
+      if (!stralloc_0(&password)) _exit(QLX_NOMEM);
       debug_msg(OUTPUT," ldap search results \t: found password '%s'\n", vals[0]);
    } else {
       debug_msg(OUTPUT," ldap search results \t: no password\n");
@@ -363,21 +382,21 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
             debug_msg(OUTPUT," ldap search results \t: combined maildir path does not end with /\n");
             _exit(1);
          }
-         if (!stralloc_copy(homedir,&qldap_messagestore)) _exit(QLX_NOMEM);
+         if (!stralloc_copy(&homedir,&qldap_messagestore)) _exit(QLX_NOMEM);
       } else {                   /* absolute path */
          debug_msg(OUTPUT," ldap search results \t: maildir path is absolute\n");
          if (!chck_paths(vals[0]) ) {
             debug_msg(OUTPUT," ldap search results \t: maildir path contains illegal constructs\n");
             _exit(1);
          }
-         if (!stralloc_copys(homedir, vals[0])) _exit(QLX_NOMEM);
-         if (homedir->s[homedir->len -1] != '/') {
+         if (!stralloc_copys(&homedir, vals[0])) _exit(QLX_NOMEM);
+         if (homedir.s[homedir.len -1] != '/') {
             debug_msg(OUTPUT," ldap search results \t: maildir path does not end with /\n");
             _exit(1);
          }
       }
-   if (!stralloc_0(homedir)) _exit(QLX_NOMEM);
-   debug_msg(OUTPUT," ldap search results \t: maildir path is '%s'\n",homedir->s);
+   if (!stralloc_0(&homedir)) _exit(QLX_NOMEM);
+   debug_msg(OUTPUT," ldap search results \t: maildir path is '%s'\n",homedir.s);
 
    } else {
       debug_msg(OUTPUT," ldap search results \t: no maildir path specified\n");
@@ -396,8 +415,8 @@ char **argv;
  char hashed[100];
  char salt[33];
  char *login,
-      *encrypted,
-      *entredpassword;
+      *enteredpasswd,
+      *encrypted;
 
 #warning __do_not_remove_one_of_this_variables_all_are_somehow_used__
  unsigned int i, r,
@@ -405,8 +424,6 @@ char **argv;
               gid,
               shift;
 
- stralloc password={0};
- stralloc homedir={0};
 
 #ifdef LOOK_UP_PASSWD
  struct passwd *pw;
@@ -446,7 +463,11 @@ char **argv;
 
 #ifdef QLDAPDEBUG
  login = argv[1];
- entredpassword = argv[2];
+ enteredpasswd = argv[2];
+ if ( argc == 4 ) {
+   stralloc_copys(&qldap_me, argv[3]);
+   stralloc_0(&qldap_me);
+ }
 #else
 
  uplen = 0;
@@ -464,18 +485,14 @@ char **argv;
  i = 0;
  login = up + i;
  while (up[i++]) if (i == uplen) _exit(2);
- entredpassword = up + i;
+ enteredpasswd = up + i;
  if (i == uplen) _exit(2);
  while (up[i++]) if (i == uplen) _exit(2);
 
 #endif
 
  /* do the ldap lookup based on the POP username */
-#ifdef QLDAP_BIND
- if(qldap_get(login, entredpassword, &uid, &gid, &homedir) ) {
-#else
- if(qldap_get(login, &password, &uid, &gid, &homedir) ) {
-#endif
+ if(qldap_get(login, enteredpasswd, &uid, &gid) ) {
 
 #ifdef LOOK_UP_PASSWD /* check for password and stuff in passwd */
     debug_msg(OUTPUT,"\naction: ldap lookup not successful\n");
@@ -529,7 +546,7 @@ char **argv;
   
     debug_msg(OUTPUT,"\naction: get password from passwd-file succeeded\n");
 #ifdef QLDAP_BIND
-    encrypted = crypt(entredpassword,password.s);
+    encrypted = crypt(enteredpasswd,password.s);
     debug_msg(OUTPUT," comparing passwords \t: crypt()ed '%s'\n",encrypted);
     if (!*password.s || str_diff(password.s,encrypted) ) {
       debug_msg(OUTPUT," comparing passwords \t: compare crypt failed\n");
@@ -552,18 +569,18 @@ char **argv;
    if (!str_diffn("{crypt}", password.s, 7) ) {
    /* CRYPT */
       shift = 7;
-      encrypted=crypt(entredpassword,password.s+shift);
+      encrypted=crypt(enteredpasswd,password.s+shift);
       str_copy(hashed,encrypted);
       debug_msg(OUTPUT," comparing passwords \t: calculated  '{crypt}%s'\n",hashed);
    } else if (!str_diffn("{MD4}", password.s, 5) ) {
    /* MD4 */
       shift = 5;
-      MD4DataBase64(entredpassword,strlen(entredpassword),hashed,sizeof(hashed));
+      MD4DataBase64(enteredpasswd,strlen(enteredpasswd),hashed,sizeof(hashed));
       debug_msg(OUTPUT," comparing passwords \t: calculated  '{MD4}%s'\n",hashed);
    } else if (!str_diffn("{MD5}", password.s, 5) ) {
    /* MD5 */
       shift = 5;
-      MD5DataBase64(entredpassword,strlen(entredpassword),hashed,sizeof(hashed));
+      MD5DataBase64(enteredpasswd,strlen(enteredpasswd),hashed,sizeof(hashed));
       debug_msg(OUTPUT," comparing passwords \t: calculated  '{MD5}%s'\n",hashed);
    } else if (!str_diffn("{NS-MTA-MD5}", password.s, 12) ) {
    /* NS-MTA-MD5 */
@@ -573,18 +590,18 @@ char **argv;
       _exit(1); } /* boom */
       strncpy(salt,&password.s[44],32);
       salt[32] = 0;
-      ns_mta_hash_alg(hashed,salt,entredpassword);
+      ns_mta_hash_alg(hashed,salt,enteredpasswd);
       strncpy(&hashed[32],salt,33);
       debug_msg(OUTPUT," comparing passwords \t: calculated  '{NS-MTA-MD5}%s'\n",hashed);
    } else if (!str_diffn("{SHA}", password.s, 5) ) {
    /* SHA */
       shift = 5;
-      SHA1DataBase64(entredpassword,strlen(entredpassword),hashed,sizeof(hashed));
+      SHA1DataBase64(enteredpasswd,strlen(enteredpasswd),hashed,sizeof(hashed));
       debug_msg(OUTPUT," comparing passwords \t: calculated  '{SHA}%s'\n",hashed);
    } else  if (!str_diffn("{RMD160}", password.s, 8) ) {
    /* RMD160 */
       shift = 8;
-      RMD160DataBase64(entredpassword,strlen(entredpassword),hashed,sizeof(hashed));
+      RMD160DataBase64(enteredpasswd,strlen(enteredpasswd),hashed,sizeof(hashed));
       debug_msg(OUTPUT," comparing passwords \t: calculated  '{RMD160}%s'\n",hashed);
    } else {
    /* unknown hash function detected */ 
@@ -604,11 +621,11 @@ char **argv;
    debug_msg(OUTPUT," comparing passwords \t: found value '%s'\n",password.s);
 
 #warning ___remove_crypt_code_@_clear_text_compare___
-   encrypted = crypt(entredpassword,password.s);
+   encrypted = crypt(enteredpasswd,password.s);
    debug_msg(OUTPUT," comparing passwords \t: crypt()ed '%s'\n",encrypted);
    if (!*password.s || str_diff(password.s,encrypted) ) {
      debug_msg(OUTPUT," comparing passwords \t: compare crypt failed, doing clear text compare\n");
-     if (!*password.s || str_diff(password.s,entredpassword) ) {
+     if (!*password.s || str_diff(password.s,enteredpasswd) ) {
        debug_msg(OUTPUT," comparing passwords \t: clear text compare also failed\n");
        _exit(1);
      } else {
@@ -730,7 +747,7 @@ static void copyloop(int infd, int outfd, int timeout)
 		maxfd = outfd;
 	}
 
-	debug_msg(OUTPUT, "Entering copyloop() - timeout is %d\n");
+	debug_msg(OUTPUT, "Entering copyloop() - timeout is %d\n", timeout);
 	while(1) {
 		//memcpy(&iofds, &savedfds, sizeof(iofds));
 		byte_copy(&iofds, sizeof(iofds), &savedfds);
@@ -762,14 +779,17 @@ static void copyloop(int infd, int outfd, int timeout)
 	return;
 }
 
-static void forward_session()
+static void forward_session(char *host, char *name, char *passwd)
 {
 	ipalloc ip = {0};
+	stralloc host_stralloc = {0};
 	int ffd;
 	int timeout = 60;
 	int ctimeout = 20;
 	
-	switch (dns_ip(&ip,&qldap_forwardhost)) {
+	if (!stralloc_copys(&host_stralloc, host)) _exit(QLX_NOMEM);
+
+	switch (dns_ip(&ip,&host_stralloc)) {
 		case DNS_MEM:
 			debug_msg(OUTPUT, "Out of memory\n");
 			_exit(QLX_NOMEM);
@@ -777,7 +797,7 @@ static void forward_session()
 			debug_msg(OUTPUT, "Sorry, I couldn't find any host by that name.\n");
 			_exit(33);
 		case DNS_HARD:
-			debug_msg(OUTPUT, "There is no host named '%s'\n", sa2s(&qldap_forwardhost));
+			debug_msg(OUTPUT, "There is no host named '%s'\n", host);
 			_exit(30);
 		case 1:
 			if (ip.len <= 0) {
@@ -801,7 +821,10 @@ static void forward_session()
 		_exit(37);
 	}
 	
-	/* We have a connection */
+	/* We have a connection, first send user and pass */
+	write(ffd, "user ", 5); write(ffd, name, str_len(name) ); write(ffd, "\n", 1);
+	write(ffd, "pass ", 5); write(ffd, passwd, str_len(passwd) ); write(ffd, "\n",1);
+	/* Now the other server can handle this */
 	copyloop(0, ffd, timeout);
 	
 	_exit(0);

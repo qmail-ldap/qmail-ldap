@@ -1,0 +1,106 @@
+Betacode 19990805 by Andre Oppermann <opi@nrg4u.com>,
+Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
+(c) 1998,1999 Internet Business Solutions Ltd.
+
+This LDAP patches for qmail come with NO WARRANTY.
+
+These patches are under the BSD license.
+
+This is the NEWS and TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
+This file is NOT structured!!
+
+TODO:
+
+ongoing - Debugging and testing, testing, testing
+ongoing - The big qmail-ldap picture
+planned - support for mail clusters
+
+NEWS:
+
+ Few minor bug fixes (accountStatus, AUTO_MAILDIRMAKE)
+
+ Hack in the LDAP serch filter escape function due to a bug in most LDAP
+ servers. Instead of escapeing the wildchars we replace them with '_' as 
+ long as -DLDAP_ESCAPE_BUG is present. (see Makefile)
+
+ a catch all mail for one domain system is now available. The default
+ catchall account is "catchall@domain.com". You can change that to any
+ other sting in qmail-ldap.h at compile time. LDAP wildcards are not
+ allowed.
+ Due to a bug in the LDAP servers wildcards escaping does not work, so pay
+ attention.
+
+OLDER NEWS:
+
+ rewritten qmail-locals qldap code, now supports better support for different 
+ dotModes. There are also some new settings.
+
+ fixed some old bugs in qmail-local
+
+ fixed allready some bugs in new qmail-local code ;-)
+
+ added a log facility to qmail-lspawn.
+
+ added some experimental -extension support in qmail-lspawn.
+
+ Added a headerfile qmail-ldap.h where all parameters are set.
+ This includes some changes in qmail-local.c qmail-lspawn.c and checkpassword.c
+ (XXX have a look at qmail-quotawarn and qmail-reply)
+
+ qmail-lspawn checks no longer for "correct" mailaddresses, now the possibe
+ mailaddress is escaped ('(', ')', '*') before added to the search filter.
+
+ all the stuff that was fixed in the subpatches. (XXX double check that)
+ 
+ Added some compile options in the Makefile for easier configuration (see 5.)
+
+ Added Christopher K. Davis' patch to handle oversized dns packets.
+
+ Added Chris Johnson's <cjohnson-qmail@palomine.net> tarpitting patch.
+
+ Added qmail-quotawarn and qmail-reply for better handling of quota-warnings
+ and auto reply
+
+ deliveryMode is now a comma separated list see LDAP PARAMETER FIELDS
+
+ Fixed a few things in qmail-local
+
+ Supports OpenLDAP now
+
+ WARNING: {SHA1} changed to {SHA} according to the standard
+
+ Integrated Lindsay Haisley update to Rask Lambertsen's excellent
+ antispam patch for qmail v1.01, based on Lionel Widdifield's patch.
+ Please read ANTISPAM for more information.
+
+ checkpassword now supports the password format used by Netscape
+ Mailserver pre-3.0 and Software.com's Post.Office (NS-MTA-MD5).
+ That string is hex encoded, the first 32 Octets are the MD5 hashed
+ password and the second 32 Octets are the salt to the MD5 function.
+
+ Added automatic homedir and maildir maker to qmail-local.
+ This can be enabled with ~control/dirmaker
+
+ qmail-smtpd does logging now. This can be set by an environment variable
+ in tcpserver: LOGLEVEL="X". "0" or not present = no logging, "1" = fatal
+ errors, "2" = connection setup and warnings, "3" = verbose.
+
+ Added fix for qmail-pop3d stat command bug found by Aaron Nabil
+ <nabil@spiritone.com>.
+
+ checkpassword compiled with QLDAPDEBUG now does complete LDAP debugging.
+  Usage: ./checkpassword POPLogin POPPassword
+
+ digest computes MD4, MD5, RMD160 and SHA passwords (compatible to Netscape)
+  Usage: ./digest POPPassword
+
+ solved a problem on big endian machines that caused wrong SHA, MD5, MD4, RMD160
+ passwords. (Added an endian testprogram to solve those probs)
+ 
+ added a working version of the "MAKE_NETSCAPE_WORK" patch under qmail-pop3d.
+ The download bar should now work correctly.
+ 
+ Fixed the bugs in qmail-lspawn. Changed starlloc_catb to stralloc_cat. 
+ Thanks to Franky Van Liedekerke <franky.van.liedekerke@telenet.be>
+ 
+

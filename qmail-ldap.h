@@ -20,6 +20,7 @@
 #define LDAP_QUOTA "mailQuota"
 #define LDAP_FORWARDS "mailForwardingAddress"
 #define LDAP_PROGRAM "deliveryProgramPath"
+#define LDAP_MAILHOST "mailHost"
 #define LDAP_MODE "deliveryMode"
 #define LDAP_REPLYTEXT "mailReplyText"
 #define LDAP_DOTMODE "qmailDotMode"
