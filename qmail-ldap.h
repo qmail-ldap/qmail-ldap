@@ -18,6 +18,10 @@
 #define LDAP_UID "uid"
 #define LDAP_PASSWD "userPassword"
 
+#define LDAP_DEFAULT "\\*"  /* this is the "catch all" string *
+ * ATTN: escape the string correctly, remember             *
+ * '(', ')', '\', '*' and '\0' have to be escaped with '\' */
+
 /* environment variables used between qmail-lspan and qmail-local *
  * and some other tools */
 #define ENV_HOMEDIRMAKE "QLDAPAUTOHOMEDIRMAKE"

@@ -510,36 +510,30 @@ int qldap_get( stralloc *mail )
    r = mail->s;
    /* count the results, we must have exactly one */
    if ( (num_entries = ldap_count_entries(ld,res)) != 1) {
-#if 0 /* this handles the -default extension */
+#if 0 /* this handles the "catch all" extension */
       i = mail->len;
       for (at = i - 1; r[at] != '@' && at >= 0 ; at--) ;
-      for (ext = at; ext > 0;--ext)
-         if (r[ext - 1] == '-' ) {
-            /* build the search string for the email address */
-            if (!stralloc_copys(&filter,"(|(mail=" ) ) _exit(QLX_NOMEM);
-            if (!stralloc_catb(&filter,r,ext)) _exit(QLX_NOMEM);
-            if (!stralloc_cats(&filter,"default@")) _exit(QLX_NOMEM);
-            if (!stralloc_catb(&filter,r+at+1, i-at-1)) _exit(QLX_NOMEM);
-            if (!stralloc_cats(&filter,")(mailalternateaddress=")) _exit(QLX_NOMEM);
-            if (!stralloc_catb(&filter,r,ext)) _exit(QLX_NOMEM);
-            if (!stralloc_cats(&filter,"default@")) _exit(QLX_NOMEM);
-            if (!stralloc_catb(&filter,r+at+1, i-at-1)) _exit(QLX_NOMEM);
-            if (!stralloc_cats(&filter,"))")) _exit(QLX_NOMEM);
-            if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
-            DEBUG("def-filter: ", filter.s, "\n", 0);
-            
-            /* do the search for the email address */
-            if ( (rc = ldap_search_s(ld,qldap_basedn.s,LDAP_SCOPE_SUBTREE,filter.s,attrs,0,&res)) != LDAP_SUCCESS ) {
-               ERROR("ldap_search_ext_s: ", ldap_err2string(rc), "\n", 0);
-               if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
-               return 14;
-            }
-            if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
-            /* count the results, we must have exactly one */
-            if ( (num_entries = ldap_count_entries(ld,res)) == 1) break;
-         }
+      /* build the search string for the email address */
+      if (!stralloc_copys(&filter,"(|(mail=" ) ) _exit(QLX_NOMEM);
+      if (!stralloc_cats(&filter,LDAP_CATCH_ALL)) _exit(QLX_NOMEM);
+      if (!stralloc_catb(&filter,r+at, i-at)) _exit(QLX_NOMEM);
+      if (!stralloc_cats(&filter,")(mailalternateaddress=")) _exit(QLX_NOMEM);
+      if (!stralloc_cats(&filter,LDAP_CATCH_ALL)) _exit(QLX_NOMEM);
+      if (!stralloc_catb(&filter,r+at, i-at)) _exit(QLX_NOMEM);
+      if (!stralloc_cats(&filter,"))")) _exit(QLX_NOMEM);
+      if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
+      DEBUG("def-filter: ", filter.s, "\n", 0);
+           
+      /* do the search for the email address */
+      if ( (rc = ldap_search_s(ld,qldap_basedn.s,LDAP_SCOPE_SUBTREE,filter.s,attrs,0,&res)) != LDAP_SUCCESS ) {
+         ERROR("ldap_search_ext_s: ", ldap_err2string(rc), "\n", 0);
+         if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
+         return 14;
+      }
+      if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
+      /* count the results, we must have exactly one */
+      if ( (num_entries = ldap_count_entries(ld,res)) == 1) break;
       if (num_entries != 1) 
-         
 #endif
       return 1;
    }
