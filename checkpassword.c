@@ -51,7 +51,8 @@
  * 4 = account disabled
  * 5 = mailhost is unreachable
  * 6 = mailbox is corrupted
- * 7 = unable to start pop daemon
+ * 7 = unable to start subprogram
+ * 8 = out of memory
  */
 
 /* Edit the first lines in the Makefile to enable local passwd lookups and debug options.
@@ -128,19 +129,19 @@ void get_qldap_controls()
       debug_msg(OUTPUT," unable to read \t: control/ldapserver\n exit\n");
       _exit(1);
    }
-   if (!stralloc_0(&qldap_server)) _exit(QLX_NOMEM);
+   if (!stralloc_0(&qldap_server)) _exit(8);
    debug_msg(OUTPUT," control/ldapserver \t: %s\n",qldap_server.s);
 
    if (control_rldef(&qldap_basedn,"control/ldapbasedn",0,"") == -1) _exit(1);
-   if (!stralloc_0(&qldap_basedn)) _exit(QLX_NOMEM);
+   if (!stralloc_0(&qldap_basedn)) _exit(8);
    debug_msg(OUTPUT," control/ldapbasedn \t: %s\n",qldap_basedn.s);
 
    if (control_rldef(&qldap_user,"control/ldaplogin",0,"") == -1) _exit(1);
-   if (!stralloc_0(&qldap_user)) _exit(QLX_NOMEM);
+   if (!stralloc_0(&qldap_user)) _exit(8);
    debug_msg(OUTPUT," control/ldaplogin \t: %s\n",qldap_user.s);
 
    if (control_rldef(&qldap_password,"control/ldappassword",0,"") == -1) _exit(1);
-   if (!stralloc_0(&qldap_password)) _exit(QLX_NOMEM);
+   if (!stralloc_0(&qldap_password)) _exit(8);
    debug_msg(OUTPUT," control/ldappassword \t: %s\n",qldap_password.s);
 
    if (control_readint(&qldap_localdelivery,"control/ldaplocaldelivery") == -1) _exit(1);
@@ -159,12 +160,12 @@ void get_qldap_controls()
    debug_msg(OUTPUT," control/ldappasswdappend: %s\n",sa2s(&qldap_passwdappend) );
 
    if (control_rldef(&qldap_me,"control/me",0,"") == -1) _exit(1);
-   if (!stralloc_0(&qldap_me)) _exit(QLX_NOMEM);
+   if (!stralloc_0(&qldap_me)) _exit(8);
    debug_msg(OUTPUT," control/me\t\t: %s\n",qldap_me.s);
 
 #ifdef AUTOHOMEDIRMAKE
    if (control_rldef(&qldap_dirmaker,"control/dirmaker",0,(char *) 0) == -1) _exit(1);
-   if (!stralloc_0(&qldap_dirmaker)) _exit(QLX_NOMEM);
+   if (!stralloc_0(&qldap_dirmaker)) _exit(8);
    debug_msg(OUTPUT," control/dirmaker \t: %s\n",sa2s(&qldap_dirmaker) );
 #endif
 
@@ -238,10 +239,10 @@ int qldap_get( char *login, char *passwd, unsigned int *uid, unsigned int *gid )
    }
 
    /* build the search string for the login uid */
-   if (!stralloc_copys(&filter,"(uid=" ) ) _exit(QLX_NOMEM);
-   if (!stralloc_cats(&filter,login)) _exit(QLX_NOMEM);
-   if (!stralloc_cats(&filter,")")) _exit(QLX_NOMEM);
-   if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
+   if (!stralloc_copys(&filter,"(uid=" ) ) _exit(8);
+   if (!stralloc_cats(&filter,login)) _exit(8);
+   if (!stralloc_cats(&filter,")")) _exit(8);
+   if (!stralloc_0(&filter)) _exit(8);
 
    debug_msg(OUTPUT," building ldap search string\t: '%s'\n",filter.s);
    
@@ -313,8 +314,8 @@ int qldap_get( char *login, char *passwd, unsigned int *uid, unsigned int *gid )
    /* go through the attributes and set the proper args for qmail-pop3d */
    /* get the stored and (hopefully) encrypted password */
    if ( (vals = ldap_get_values(ld,msg,LDAP_PASSWD)) != NULL ) {
-      if (!stralloc_copys(&password, vals[0])) _exit(QLX_NOMEM);
-      if (!stralloc_0(&password)) _exit(QLX_NOMEM);
+      if (!stralloc_copys(&password, vals[0])) _exit(8);
+      if (!stralloc_0(&password)) _exit(8);
       debug_msg(OUTPUT," ldap search results \t: found password '%s'\n", vals[0]);
    } else {
       debug_msg(OUTPUT," ldap search results \t: no password\n");
@@ -387,7 +388,7 @@ int qldap_get( char *login, char *passwd, unsigned int *uid, unsigned int *gid )
             debug_msg(OUTPUT," ldap search results \t: control/ldapmessagepath does not end with /\n");
             _exit(25);
          }
-         if (!stralloc_cats(&qldap_messagestore, vals[0])) _exit(QLX_NOMEM);
+         if (!stralloc_cats(&qldap_messagestore, vals[0])) _exit(8);
          if (!chck_pathb(qldap_messagestore.s,qldap_messagestore.len) ) {
             debug_msg(OUTPUT," ldap search results \t: combined maildir path contains illegal constructs\n");
             _exit(25);
@@ -396,20 +397,20 @@ int qldap_get( char *login, char *passwd, unsigned int *uid, unsigned int *gid )
             debug_msg(OUTPUT," ldap search results \t: combined maildir path does not end with /\n");
             _exit(25);
          }
-         if (!stralloc_copy(&homedir,&qldap_messagestore)) _exit(QLX_NOMEM);
+         if (!stralloc_copy(&homedir,&qldap_messagestore)) _exit(8);
       } else {                   /* absolute path */
          debug_msg(OUTPUT," ldap search results \t: maildir path is absolute\n");
          if (!chck_paths(vals[0]) ) {
             debug_msg(OUTPUT," ldap search results \t: maildir path contains illegal constructs\n");
             _exit(25);
          }
-         if (!stralloc_copys(&homedir, vals[0])) _exit(QLX_NOMEM);
+         if (!stralloc_copys(&homedir, vals[0])) _exit(8);
          if (homedir.s[homedir.len -1] != '/') {
             debug_msg(OUTPUT," ldap search results \t: maildir path does not end with /\n");
             _exit(25);
          }
       }
-   if (!stralloc_0(&homedir)) _exit(QLX_NOMEM);
+   if (!stralloc_0(&homedir)) _exit(8);
    debug_msg(OUTPUT," ldap search results \t: maildir path is '%s'\n",homedir.s);
 
    } else {
@@ -452,18 +453,18 @@ char **argv;
  if (!argv[1]) {
    debug_msg(OUTPUT," parsing arguments: no username\n");
    debug_msg(OUTPUT,"\nusage : %s username password\n\n",argv[0]);
-   _exit(2);
+   _exit(111);
  }
  debug_msg(OUTPUT," parsing arguments: POP username is '%s'\n",argv[1]);
  if (!argv[2]) {
    debug_msg(OUTPUT," parsing arguments: no password\n");
    debug_msg(OUTPUT,"\nusage : %s username password\n\n",argv[0]);
-   _exit(2);
+   _exit(111);
  }
  debug_msg(OUTPUT," parsing arguments: POP password is '%s'\n",argv[2]);
  debug_msg(OUTPUT,"\naction: parsing arguments successful\n");
 #else
- if (!argv[1]) _exit(2);
+ if (!argv[1]) _exit(1);
 #endif
 
  /* read the ldap control files */
@@ -496,10 +497,10 @@ char **argv;
 
  i = 0;
  login = up + i;
- while (up[i++]) if (i == uplen) _exit(111);
+ while (up[i++]) if (i == uplen) _exit(3);
  enteredpasswd = up + i;
- if (i == uplen) _exit(2);
- while (up[i++]) if (i == uplen) _exit(111);
+ if (i == uplen) _exit(3);
+ while (up[i++]) if (i == uplen) _exit(3);
 
 #endif
 
@@ -526,7 +527,7 @@ char **argv;
     } else {
       debug_msg(OUTPUT," passwd-file lookup \t: login '%s' found in shadow file\n",login);
     }
-    if (!stralloc_copys(&password, spw->sp_pwdp) ) _exit(QLX_NOMEM);
+    if (!stralloc_copys(&password, spw->sp_pwdp) ) _exit(8);
 #else
 #ifdef AIX
     spw = getuserpw(login);
@@ -536,12 +537,12 @@ char **argv;
     } else {
       debug_msg(OUTPUT," passwd-file lookup \t: login '%s' found in shadow file\n",login);
     }
-    if (!stralloc_copys(&password, spw->upw_passwd) ) _exit(QLX_NOMEM);
+    if (!stralloc_copys(&password, spw->upw_passwd) ) _exit(8);
 #else
-    if (!stralloc_copys(&password, pw->pw_passwd) ) _exit(QLX_NOMEM);
+    if (!stralloc_copys(&password, pw->pw_passwd) ) _exit(8);
 #endif /* AIX */
 #endif /* PW_SHADOW */
-    if (!stralloc_0(&password) ) _exit(QLX_NOMEM);
+    if (!stralloc_0(&password) ) _exit(8);
     debug_msg(OUTPUT," passwd-file lookup \t: found password '%s'\n", password.s);
 
     gid = pw->pw_gid;
@@ -550,11 +551,11 @@ char **argv;
     uid = pw->pw_uid;
     debug_msg(OUTPUT," passwd-file lookup \t: UID succeeded for '%u'\n",uid );
   
-    if (!stralloc_copys(&homedir, pw->pw_dir) ) _exit(QLX_NOMEM);
+    if (!stralloc_copys(&homedir, pw->pw_dir) ) _exit(8);
     if (homedir.s[homedir.len -1] != '/') 
-       if (!stralloc_cats(&homedir, "/") ) _exit(QLX_NOMEM);
-    if (!stralloc_cat(&homedir, &qldap_passwdappend) ) _exit(QLX_NOMEM);
-    if (!stralloc_0(&homedir) ) _exit(QLX_NOMEM);
+       if (!stralloc_cats(&homedir, "/") ) _exit(8);
+    if (!stralloc_cat(&homedir, &qldap_passwdappend) ) _exit(8);
+    if (!stralloc_0(&homedir) ) _exit(8);
     debug_msg(OUTPUT," passwd-file lookup \t: homedir path is '%s'\n",homedir.s);
   
     debug_msg(OUTPUT,"\naction: get password from passwd-file succeeded\n");
@@ -601,7 +602,7 @@ char **argv;
       shift = 12;
       if (!strlen(password.s) == 76) {
       debug_msg(OUTPUT," comparing passwords \t: NS-MTA-MD5 password string length mismatch\n");
-      _exit(1); } /* boom */
+      _exit(3); } /* boom */
       strncpy(salt,&password.s[44],32);
       salt[32] = 0;
       ns_mta_hash_alg(hashed,salt,enteredpasswd);
@@ -682,7 +683,7 @@ char **argv;
      char *(dirargs[4]);
      int wstat;
 
-     if (!stralloc_0(&qldap_dirmaker)) _exit(QLX_NOMEM);
+     if (!stralloc_0(&qldap_dirmaker)) _exit(8);
 
      switch(child = fork()) {
      case -1:
@@ -821,12 +822,12 @@ static void forward_session(char *host, char *name, char *passwd)
 	int timeout = 60;
 	int ctimeout = 20;
 	
-	if (!stralloc_copys(&host_stralloc, host)) _exit(QLX_NOMEM);
+	if (!stralloc_copys(&host_stralloc, host)) _exit(8);
 
 	switch (dns_ip(&ip,&host_stralloc)) {
 		case DNS_MEM:
 			debug_msg(OUTPUT, "Out of memory\n");
-			_exit(QLX_NOMEM);
+			_exit(8);
 		case DNS_SOFT:
 			debug_msg(OUTPUT, "Sorry, I couldn't find any host by that name.\n");
 			_exit(5);
