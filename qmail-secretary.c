@@ -870,13 +870,7 @@ void savemessage(stralloc *hash, const char *maildir, const char *subdir)
 	substdio_fdbuf(&ss, read, 0, buf, sizeof(buf));
 	substdio_fdbuf(&ssout, write, fd, outbuf, sizeof(outbuf));
 	if (substdio_put(&ssout, dtline.s, dtline.len) == -1) goto fail;
-	if (flagezmlm) {
-		if (substdio_puts(&ssout, "Mailing-List: ") == -1) goto fail;
-		if (substdio_put(&ssout, mailinglist.s, mailinglist.len) == -1)
-			goto fail;
-		if (substdio_puts(&ssout, "\n") == -1) goto fail;
-	}
-	
+
 	switch(substdio_copy(&ssout, &ss)) {
 	case -2:
 		strerr_warn2(FATAL, "Unable to read message: ",
