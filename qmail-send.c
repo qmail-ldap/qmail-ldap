@@ -1504,8 +1504,9 @@ fd_set *rfds;
 datetime_sec *wakeup;
 {
   if (flagexitasap) {
-    if (flagtodoalive)
+    if (flagtodoalive) {
       write(todofdout, "X", 1);
+    }
   }
   if (flagtodoalive) {
     FD_SET(todofdin,rfds);
@@ -1520,7 +1521,6 @@ void todo_del(char* s)
  struct prioq_elt pe;
  unsigned long id;
  unsigned int len;
- char ch;
  int c;
 
  for (c = 0;c < CHANNELS;++c) flagchan[c] = 0;
@@ -1593,6 +1593,12 @@ fd_set *rfds;
 	  break;
 	case 'L':
 	  log1(todoline.s + 1);
+	  break;
+	case 'X':
+	  if (flagexitasap)
+	    flagtodoalive = 0;
+	  else
+	    tododied();
 	  break;
 	default:
 	  log1("warning: qmail-send unable to understand qmail-todo: report mangled\n");

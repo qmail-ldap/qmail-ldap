@@ -50,8 +50,14 @@ datetime_sec recent;
 void log1(char *x);
 void log3(char* x, char* y, char* z);
 
-int flagexitasap = 0; void sigterm(void) 
-{ log1("status: qmail-todo exiting asap\n"); flagexitasap = 1; }
+int flagstopasap = 0;
+void sigterm(void)
+{
+  if (flagstopasap == 0)
+    log1("status: qmail-todo stop processing asap\n");
+  flagstopasap = 1;
+}
+
 int flagreadasap = 0; void sighup(void) { flagreadasap = 1; }
 int flagsendalive = 1; void senddied(void) { flagsendalive = 0; }
 
@@ -59,12 +65,14 @@ void nomem() { log1("alert: out of memory, sleeping...\n"); sleep(10); }
 void pausedir(dir) char *dir;
 { log3("alert: unable to opendir ",dir,", sleeping...\n"); sleep(10); }
 
-void cleandied() { 
-	log1("alert: qmail-todo: oh no! lost qmail-clean connection! dying...\n");
-	flagexitasap = 1; }
+void cleandied()
+{ 
+  log1("alert: qmail-todo: oh no! lost qmail-clean connection! dying...\n");
+  flagstopasap = 1;
+}
 
 
-/* this file is not too long ------------------------------------- FILENAMES */
+/* this file is not so long ------------------------------------- FILENAMES */
 
 stralloc fn = {0};
 
@@ -80,7 +88,7 @@ void fnmake_chanaddr(unsigned long id, int c)
 { fn.len = fmtqfn(fn.s,chanaddr[c],id,1); }
 
 
-/* this file is not too long ------------------------------------- REWRITING */
+/* this file is not so long ------------------------------------- REWRITING */
 
 stralloc rwline = {0};
 
@@ -135,7 +143,7 @@ int rewrite(char *recip)
   return 2;
 }
 
-/* this file is not too long --------------------------------- COMMUNICATION */
+/* this file is not so long --------------------------------- COMMUNICATION */
 
 substdio sstoqc; char sstoqcbuf[1024];
 substdio ssfromqc; char ssfromqcbuf[1024];
@@ -266,9 +274,20 @@ fail:
   comm_buf.len = pos;
 }
 
+void comm_exit(void)
+{
+  int w;
+  
+  /* if it fails exit, we have already stoped */
+  if (!stralloc_cats(&comm_buf,"X")) _exit(1);
+  if (!stralloc_0(&comm_buf)) _exit(1);
+}
+
 void comm_selprep(int *nfds, fd_set *wfds, fd_set *rfds)
 {
   if (flagsendalive) {
+    if (flagstopasap && comm_canwrite() == 0)
+      comm_exit();
     if (comm_canwrite()) {
       FD_SET(fdout,wfds);
       if (*nfds <= fdout)
@@ -326,7 +345,7 @@ void comm_do(fd_set *wfds, fd_set *rfds)
     }
 }
 
-/* this file is not too long ------------------------------------------ TODO */
+/* this file is not so long ------------------------------------------ TODO */
 
 datetime_sec nexttodorun;
 DIR *tododir; /* if 0, have to opendir again */
@@ -344,7 +363,7 @@ void todo_init(void)
 
 void todo_selprep(int *nfds, fd_set *rfds, datetime_sec *wakeup)
 {
- if (flagexitasap) return;
+ if (flagstopasap) return;
  trigger_selprep(nfds,rfds);
  if (tododir) *wakeup = 0;
  if (*wakeup > nexttodorun) *wakeup = nexttodorun;
@@ -371,7 +390,7 @@ void todo_do(fd_set *rfds)
  fdinfo = -1;
  for (c = 0;c < CHANNELS;++c) fdchan[c] = -1;
 
- if (flagexitasap) return;
+ if (flagstopasap) return;
 
  if (!tododir)
   {
@@ -627,7 +646,7 @@ void main()
      _exit(100); /* read failed probably qmail-send died */
  } while (r =! 1); /* we assume it is a 'S' */
  
- while (!flagexitasap || comm_canwrite())
+ for (;;)
   {
    recent = now();
 
@@ -662,6 +681,6 @@ void main()
      comm_do(&wfds, &rfds);
     }
   }
- _exit(0);
+  /* NOTREACHED */
 }
 
