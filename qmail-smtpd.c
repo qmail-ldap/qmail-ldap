@@ -216,6 +216,7 @@ int rmfok = 0;
 stralloc rmf = {0};
 struct constmap maprmf;
 int rblok = 0;
+int rbloh = 0;
 int brtok = 0;
 stralloc brt = {0};
 struct constmap mapbadrcptto;
@@ -245,19 +246,17 @@ void setup()
   if (control_readint(&timeout,"control/timeoutsmtpd") == -1) die_control();
   if (timeout <= 0) timeout = 1;
 
-  if (control_readint(&tarpitcount,"control/tarpitcount") == -1) die_control();
-  if (tarpitcount < 0) tarpitcount = 0;
   x = env_get("TARPITCOUNT");
   if (x) { scan_ulong(x,&u); tarpitcount = u; };
-  if (control_readint(&tarpitdelay,"control/tarpitdelay") == -1) die_control();
-  if (tarpitdelay < 0) tarpitdelay = 0;
+  if (tarpitcount < 0) tarpitcount = 0;
+
   x = env_get("TARPITDELAY");
   if (x) { scan_ulong(x,&u); tarpitdelay = u; };
+  if (tarpitdelay < 0) tarpitdelay = 0;
 
-  if (control_readint(&maxrcptcount,"control/maxrcptcount") == -1) die_control();
-  if (maxrcptcount < 0) maxrcptcount = 0;
   x = env_get("MAXRCPTCOUNT");
   if (x) { scan_ulong(x,&u); maxrcptcount = u; };
+  if (maxrcptcount < 0) maxrcptcount = 0;
 
   if (rcpthosts_init() == -1) die_control();
 
@@ -282,8 +281,11 @@ void setup()
   if (brtok)
     if (!constmap_init(&mapbadrcptto,brt.s,brt.len,0)) die_nomem();
 
-  rblok = rblinit();
-  if (rblok == -1) die_control();
+  if (env_get("RBL")) {
+    rblok = rblinit();
+    if (rblok == -1) die_control();
+    if (env_get("RBLONLYHEADER")) rbloh = 1;
+  }
 
   if (env_get("SMTP550DISCONNECT")) errdisconnect = 1;
   if (env_get("NOBOUNCE")) nobounce = 1;
@@ -325,8 +327,8 @@ void setup()
   if (returnmxcheck) logstring(2,"returnmxcheck ");
   if (blockrelayprobe) logstring(2,"blockrelayprobe ");
   if (nobounce) logstring(2,"nobounce ");
-  if (env_get("RBL")) logstring(2,"rblcheck ");
-  if (env_get("RBLONLYHEADER")) logstring(2,"rblonlyheader ");
+  if (rblok) logstring(2,"rblcheck ");
+  if (rbloh) logstring(2,"rblonlyheader ");
 #ifdef SMTPEXECCHECK
   if (execcheck_on()) logstring(2, "rejectexecutables ");
 #endif
@@ -724,7 +726,7 @@ void smtp_mail(arg) char *arg;
   /* Check RBL only if relayclient is not set */
   if (rblok && !relayclient)
   {
-    switch(rblcheck(remoteip, &rblname))
+    switch(rblcheck(remoteip, &rblname, rbloh))
     {
       case 2: /* soft error lookup */
         /*
@@ -840,10 +842,10 @@ void smtp_rcpt(arg) char *arg; {
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
   if (!stralloc_0(&rcptto)) die_nomem();
-  if (tarpitcount && rcptcount >= tarpitcount)
+  if (tarpitcount && tarpitdelay && rcptcount >= tarpitcount)
   {
     logline(2,"tarpitting");
-    while (sleep(tarpitdelay)); 
+    while (sleep(tarpitdelay));
   }
   out("250 ok\r\n");
 }

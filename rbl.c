@@ -10,9 +10,8 @@
 #include "rbl.h"
 
 static stralloc rblmessage = {0};
-int rblprintheader;
+int rblprintheader = 0;
 char *rblonlyheader;
-char *rblenabled;
 
 /* functions borrowed from qmail-smtpd.c */
 extern void safeput();
@@ -25,7 +24,6 @@ extern void logflush();
 
 void rblheader(struct qmail *qqt)
 {
-  if (!rblenabled) return;
   if (!rblprintheader) return;
   /* rblmessage is safe because it does not contain any remote info */
   if (rblmessage.s) qmail_put(qqt,rblmessage.s,rblmessage.len);
@@ -117,12 +115,12 @@ void rbladdheader(char *base, char *matchon, char *message)
   if(!stralloc_cats(&rblmessage, "\n")) die_nomem();
 }
 
-int rblcheck(char *remoteip, char** rblname)
+int rblcheck(char *remoteip, char** rblname, int rbloh)
 {
-  int r=1;
+  int r = 1;
   int i;
 
-  if (!rblenabled) return 0;
+  rblonlyheader = &rbloh;
 
   if(!stralloc_copys(&rblmessage, "")) die_nomem();
   if(!rbl_start(remoteip)) return 0;
@@ -169,12 +167,6 @@ int rblinit(void)
   int j;
   int k;
   int n;
-
-  rblonlyheader = 0;
-  rblenabled = 0;
-
-  rblenabled = env_get("RBL");
-  if (!rblenabled) return 0;
 
   on = control_readfile(&rbldata,"control/rbllist",0);
   if (on == -1) return on;
@@ -226,10 +218,6 @@ int rblinit(void)
     return -1;
   }
 
-  on = control_readint(&rblonlyheader,"control/rblonlyheader",0);
-  if (on == -1) return on;
-  rblonlyheader = env_get("RBLONLYHEADER");
-
-  return 1;
+  return 1; /* everything fine */
 }
 

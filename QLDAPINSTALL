@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2003/08/19 13:37:12 $)
+RELEASE: current ($Date: 2003/08/31 13:57:07 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -25,11 +25,16 @@ NEWS:
 
 IMPORTANT NEWS:
 
- - added experimental on the fly smtp data compression
+ - This release breaks certain backwards compatibility for clarity and
+   cleanup reasons!!
 
- - added qmailqueue patch, turn on with -DALTQUEUE
+ - delivery modes changed in important ways (easier now, but incompatble
+   for some installations)
 
- - new delivery mode noforward
+ - quota definitions are new format only (size and count separate)
+
+ - qmail-smtpd control files are gone (tarpitcount/delay, maxrcptcount,
+   rblonlyheader) and are environment only (with tcpserver)
 
  - and as always a lot of smaller patches see QLDAPNEWS
 
@@ -46,14 +51,12 @@ INSTALL:
    read http://www.lifewithqmail.org/ldap/ first.
 
 3. You need the following compiled and installed
-    - OpenLDAP 1.2.x/2.x or higher (others might also work)
-   or
-    - Netscape LDAP sdk (tested libldapssl30 on Solaris 2.6)
+    - OpenLDAP 2.x or higher (others might also work)
    and
     - OpenSSL 0.9.4 or higher if you want TLS SMTP encrytion
 
    If you have problems with OpenLDAP look into their FAQ. The same for
-   Netscape and OpenSSL.
+   OpenSSL.
    You NEED knowledge of LDAP so READ their FAQ and/or man pages.
 
 4. Apply the qmail-ldap patches to a clean qmail-1.03 source tree
@@ -134,7 +137,6 @@ INSTALL:
      prog: [a-zA-Z0-9@_./:=\\\t\n "'+,][a-zA-Z0-9@_.-/:=\\\t\n "'+,]* 
            (for LDAP_PROGRAM with RESTRICT_PROG on, if RESTRICT_PROG is 0
            then most shell escape characters are also allowed. e.g [$#!%&()*;])
-     NOTE: have a look at QLDAPNEWS for more info
 
 5.3 Note on DASH_EXT:
     Finally we added a variation of Henning Brauer's dash-ext patch. The main
@@ -146,7 +148,9 @@ INSTALL:
       CATCHALL@domain.tld
     where CATCHALL is replaced with the value of LDAP_CATCH_ALL defined
     in qmail-ldap.h. If CATCHALL is set to "default" instead of the standart
-    "catchall" it is allmost stock qmails behaviour.
+    "catchall" it is almost stock qmails behaviour.
+    Note: Only up to five levels of dash extensions are checked to prevent
+    DoS attacks. You can change that in qmail-ldap.h DASH_EXT_LEVELS.
 
 6.  Compile and install the stuff (it's the same as in standard qmail
     install -> HINT: read the INSTALL and the FAQ file!!! :) ).
@@ -304,13 +308,21 @@ CONFIG FILES:
  Example: customersmtp.nrg4u.com
  Note: multiline
 
-~control/ldapdefaultquota
+~control/ldapdefaultquotasize
 
  The default amount of disk space the user can use until all further messages
- get bounced back to the sender. There are two possible limits, size (a byte
- count 'S') and count (a file count 'C')
+ get bounced back to the sender. Size is a byte count.
  Default: unlimited
- Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
+ Example: 1000000 (max 1000000 bytes size)
+ Note: is overridden by mailQuota*, make sure to have set ~control/quotowarning
+       otherwise you will not get quota warning messages
+
+~control/ldapdefaultquotacount
+
+ The default maximum amount of messages the user can have until all further
+ messages get bounced back to the sender. Count is a file count.
+ Default: unlimited
+ Example: 1000 (max 1000 Mails)
  Note: is overridden by mailQuota*, make sure to have set ~control/quotowarning
        otherwise you will not get quota warning messages
 
@@ -319,7 +331,7 @@ CONFIG FILES:
  The default interpretation of .qmail files
  Default: ldaponly
  Example: both
- Values: both, dotonly, ldaponly, ldapwithprog, none
+ Values: both, dotonly, ldaponly, ldapwithprog
  Note: Works only for deliveries based on LDAP lookups.
        Local mails use dotonly like in normal qmail.
 
@@ -364,7 +376,7 @@ CONFIG FILES:
  Example: You can contact us at (555) 555 5555
  Note: Multiline
        It MUST NOT contain a blank line ("\n\n") anywhere otherwise you 
-       break qsmbf. Use a line with one ore more spaces ("\n \n") instead.
+       break qsmbf. Use a line with one or more spaces ("\n \n") instead.
        See http://cr.yp.to/proto/qsbmf.txt for more info.
 
 ~control/quotawarning
@@ -374,32 +386,6 @@ CONFIG FILES:
  Default: NULL
  Example: You can contact us at (555) 555 5555
  Note: Multiline. Needs to be present to make qmail-quotawarn work.
-
-~control/tarpitcount
-
- Tarpitcount is the number of RCPT TOs you accept before you start tarpitting
- Default: 0 (which means no tarpitting)
- Example: 5
- Note: You can override tarpitcount by setting TARPITCOUNT in qmail-smtpd's
-       environment (with tcpserver).
-
-~control/tarpitdelay
-
- Tarpitdelay is the number of seconds of delay to introduce after each
- subsequent RCPT TO.
- Default: 5
- Example: 10
- Note: You can override tarpitdelay by setting TARPITDELAY in qmail-smtpd's
-       environment (with tcpserver).
-
-~control/maxrcptcount
-
- Maxrcptcount is the maximum number of RCPT TOs you accept before permanently
- rejecting this delivery attempt.
- Default: 0 (which means no maxrcptcount)
- Example: 5
- Note: You can override maxrcptcount by setting MAXRCPTCOUNT in qmail-smtpd's
-       environment (with tcpserver).
 
 ~control/relaymailfrom
 
@@ -438,18 +424,8 @@ CONFIG FILES:
  Note: Multiline. To activate RBL checks you have to set RBL in qmail-smtpd's
        environment (with tcpserver). See this website for more information on
        available RBLs: http://www.declude.com/JunkMail/Support/ip4r.htm
-
-~control/rblonlyheader
-
- Rblonlyheader causes qmail-smtpd not to reject the message but to add a
- line with it's findings to the mail header.
- Default: none
- Example: 1
- Note: Add's a
-       "X-RBL: (relays.ordb.org) matches with 127.0.0.2 and tells us go home"
-       header to the message for later filtering. Can also be activated for
-       certain IP ranges if you set RBLONLYHEADER in qmail-smtpd's environment
-       (with tcpserver).
+       The environment variable RBLONLYHEADER overrides any rejects and only
+       adds headers. This can be set by ip-range with tcpserver.
 
 ~control/badrcptto
 
@@ -507,8 +483,12 @@ CONFIG FILES:
        #EOF
        -cut-
 
+~control/tarpitcount
+~control/tarpitdelay
+~control/maxrcptcount
+~control/rblonlyheader
 ~control/ldapusername
- NO LONGER USED, PLEASE REMOVE THE FILE
+ NO LONGER USED, PLEASE REMOVE THE FILES
 
 ~control/ldappasswdappend
  NO LONGER USED, PLEASE REMOVE THE FILE
@@ -519,13 +499,49 @@ CONFIG FILES:
 
 Environment variables with control files (see control file for description):
 
- TARPITCOUNT
- TARPITDELAY
- MAXRCPTCOUNT
  RBL
- RBLONLYHEADER
 
 Environment variables *without* control file (setable with tcpserver):
+
+TARPITCOUNT
+
+ Tarpitcount is the number of RCPT TOs you accept before you start tarpitting.
+ Default: 0 (which means no tarpitting)
+ Affects: qmail-smtpd
+ Example: 5
+ Note: This number should be smaller than MAXRCPTCOUNT to have any effect.
+
+TARPITDELAY
+
+ Tarpitdelay is the number of seconds of delay to introduce after each
+ subsequent RCPT TO.
+ Default: 5
+ Affects: qmail-smtpd
+ Example: 10
+ Note: Connection which are tarpitted take a long time to finish. Be aware
+       that this ties up the available qmail-smtpd slots. Raise connection
+       limits with tcpserver if neccessary.
+
+MAXRCPTCOUNT
+
+ Maxrcptcount is the maximum number of RCPT TOs you accept before permanently
+ rejecting this delivery attempt.
+ Default: 0 (which means no unlimited)
+ Affects: qmail-smtpd
+ Example: 5
+ Note: This is a hard limit. If you just want to give some pain for smaller
+       recipient numbers consider tarpit use as well.
+
+RBLONLYHEADER
+
+ Rblonlyheader causes qmail-smtpd not to reject the message in any case but
+ just to add a line with it's findings to the mail header.
+ Default: none
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Add's a
+       "X-RBL: (relays.ordb.org) matches with 127.0.0.2 and tells us go home"
+       header to the message for later filtering.
 
 SMTP550DISCONNECT
 
@@ -740,24 +756,14 @@ LDAP_HOMEDIR (default: "homeDirectory")
 
 LDAP_QUOTA_SIZE (default: "mailQuotaSize")
 LDAP_QUOTA_COUNT (default: "mailQuotaCount")
-LDAP_QUOTA (default: "mailQuota")
 
  The amount of space the user can use until all further messages get bounced.
  There are two possible limits, size (a byte count) and count (a file count).
- You can either use mailQuotaSize and mailQuotaCount to specify the quota or
- the mailQuota string. The mailQuota is a string of the form figures type (S 
- or C) and a ',' separating multiple entries.
- If both versions are present the mailQuotaSize and mailQuotaCount pair has
- precedence over mailQuota.
  Example: max 1000000 bytes size and max 1000 Mails
-            mailQuota: 1000000S,1000C
-         or
             mailQuotaSize: 1000000
             mailQuotaCount: 1000
- Note: overrides ldapdefaultquota, the old format (only a number representing
-       the amount of bytes allowed) is still supported but shouldn't be used
-       any longer.
-
+ Note: overrides ldapdefaultquotasize and ldapdefaultquotacount per user.
+       the old string forma (1000000S,1000C) is no longer supported.
 
 LDAP_MAXMSIZE (default: "mailSizeMax")
 
