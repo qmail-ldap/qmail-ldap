@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/09/30 21:30:20 $ ($Revision: 1.68 $)
+RELEASE: $Date: 2002/10/02 21:12:30 $ ($Revision: 1.69 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,11 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ In qmail.schema 'ProgramDeliveryPath' was incorrectly specified as SINGLE-VALUE.
+ Thanks to <andreas.schulze@web.de> for finding it.
+
+NEWS for 20021001 stuff:
 
  Corrected qmail.schema contributed by Mike Jackson.
 
