@@ -71,7 +71,8 @@ filter_uid(char *uid)
 	return filter_objectclass(filter.s);
 }
 
-int extcnt;
+static int extcnt;
+
 
 char *
 filter_mail(char *mail, int *done)
@@ -82,7 +83,10 @@ filter_mail(char *mail, int *done)
 	int i;
 #endif
 
-	if (mail == (char *)0) return 0;
+	if (mail == (char *)0) {
+		len = 0;
+		return 0;
+	}
 
 	if (len == 0) {
 		escaped = filter_escape(mail);
