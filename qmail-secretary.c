@@ -569,6 +569,10 @@ sendmoderator(stralloc *hash, int fd)
 	if (r == -1)
 		strerr_die2sys(111, FATAL, "Header magic failed: ");
 
+	if (moderators.s == NULL || moderators.len == 0)
+		strerr_die2x(100, FATAL,
+		    "no moderators found but needed.");
+		
 	if (qmail_open(&qqt) == -1) temp_fork();
 	qp = qmail_qp(&qqt);
 	

@@ -221,6 +221,9 @@ blast(void)
 	datetime_sec when;
 	int match;
 
+	if (recips.s == NULL || recips.len == 0)
+		strerr_die2x(100, FATAL, "no recipients found in group.");
+		
 	if (seek_begin(0) == -1) temp_rewind();
 	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
 	
@@ -638,7 +641,7 @@ ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
 
 	*flagm = getmoderators(q);
 	
-	if (flags) {
+	if (*flags) {
 		r = qldap_get_attr(q, LDAP_GROUPSENDERDN,
 		    &ldapval, MULTI_VALUE);
 		switch (r) {
