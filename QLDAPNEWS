@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/08/06 15:50:01 $ ($Revision: 1.202 $)
+RELEASE: $Date: 2004/08/06 16:14:34 $ ($Revision: 1.203 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -21,7 +21,8 @@ NEWS for current stuff:
  user $USER. If $USER was set on invocation of the script, the value was not
  reset to the default qmaild. In the worst-case qmail-smtpd was running as
  root. Yikes! To install the new script you need to remove the old one before
- make setup check.
+ make setup check. Also affected are the qmail-pbsdbd and qmail-qmqpd
+ run-scripts.
 
  Fix a bug in smtp_auth handling where empty password caused a disconnect.
  Noticed by Fabio Gomes.
