@@ -98,10 +98,8 @@ void hier()
   c(auto_qmail,"doc","PIC.relaybad",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","PIC.relaygood",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","PIC.rem2local",auto_uido,auto_gidq,0644);
-#ifdef QLDAP
   c(auto_qmail,"doc","QLDAPINSTALL",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","ANTISPAM",auto_uido,auto_gidq,0644);
-#endif
 
   c(auto_qmail,"bin","qmail-queue",auto_uidq,auto_gidq,04711);
   c(auto_qmail,"bin","qmail-lspawn",auto_uido,auto_gidq,0700);
@@ -147,13 +145,10 @@ void hier()
   c(auto_qmail,"bin","qail",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","elq",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","pinq",auto_uido,auto_gidq,0755);
-#ifdef QLDAP
   c(auto_qmail,"bin","qmail-reply",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","qmail-quotawarn",auto_uido,auto_gidq,0755);
-#ifndef QLDAPDEBUG  
-  c(auto_qmail,"bin","checkpassword",auto_uido,auto_gidq,0700);
-#endif
-#endif
+  c(auto_qmail,"bin","auth_pop",auto_uido,auto_gidq,0700);
+  c(auto_qmail,"bin","auth_imap",auto_uido,auto_gidq,0700);
 
   c(auto_qmail,"man/man5","addresses.5",auto_uido,auto_gidq,0644);
   c(auto_qmail,"man/cat5","addresses.0",auto_uido,auto_gidq,0644);

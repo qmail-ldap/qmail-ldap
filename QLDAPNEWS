@@ -15,8 +15,19 @@ ongoing - Debugging and testing, testing, testing
 ongoing - The big qmail-ldap picture
 done    - support for mail clusters
 planned - full code review
+planned - splitting the patch into smaler separate pieces
+planned - ldap authentication for courier-imap
 
 NEWS:
+
+ Added maildir++ support, this means especially better quota support via the
+ maildir++ maildirsize file. For more info have a look at courier-imap
+ http://www.inter7.com/courierimap/
+
+OLDER NEWS:
+
+ Added signal-handler for qmail-lspawn, now with a SIGHUP the qmail-lspawn
+ parent process reloads the his settings ( via the ~control files )
 
  Added cluster support, use -DQLDAP_CLUSTER for enabling.
 
@@ -43,8 +54,6 @@ NEWS:
  allowed.
  Due to a bug in the LDAP servers wildcards escaping does not work, so pay
  attention.
-
-OLDER NEWS:
 
  rewritten qmail-locals qldap code, now supports better support for different 
  dotModes. There are also some new settings.

@@ -135,7 +135,6 @@ char *server;
 
 stralloc servers = {0};
 
-#ifdef QLDAP
 #include "dns.h"
 #include "ipalloc.h"
 
@@ -144,9 +143,6 @@ ipalloc ia = {0};
 void main(argc,argv)
 int argc;
 char **argv;
-#else
-main()
-#endif
 {
   int i;
   int j;
@@ -155,7 +151,6 @@ main()
 
   if (chdir(auto_qmail) == -1) die_home();
   if (control_init() == -1) die_control();
-#ifdef QLDAP
   if ( argv[1] ) {
 	  char temp[IPFMT];
 	  if (!stralloc_copys(&servers,argv[1])) nomem();
@@ -170,7 +165,6 @@ main()
 	  if (!stralloc_copys(&servers, temp)) nomem();
 	  if (!stralloc_0(&servers)) nomem();
   } else
-#endif	  
   if (control_readfile(&servers,"control/qmqpservers",0) != 1) die_control();
 
   getmess();

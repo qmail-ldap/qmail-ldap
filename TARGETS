@@ -401,3 +401,12 @@ qmail-reply
 qmail-reply.o
 qmail-quotawarn
 qmail-quotawarn.o
+maildir++.o
+auth_imap.o
+auth_pop.o
+qldap-debug.o
+qldap-ldaplib.o
+qldap-mdm.o
+auth_imap
+auth_pop
+

@@ -29,14 +29,13 @@
 #include "gfrom.h"
 #include "auto_patrn.h"
 
-/* #define QLDAP *//* enable LDAP for qmail, done by the Makefile */
-
-#ifdef QLDAP /* includes for LDAP mode */
 #include "qmail-ldap.h"
-#include <dirent.h>
+#include "qldap-errno.h"
 #include "auto_qmail.h"
 #include "scan.h"
-
+#include "maildir++.h"
+#ifdef AUTOHOMEDIRMAKE
+#include "qldap-mdm.h"
 #endif
 
 void usage() { strerr_die1x(100,"qmail-local: usage: qmail-local [ -nN ] user homedir local dash ext domain sender aliasempty"); }
@@ -63,9 +62,9 @@ char *host;
 char *sender;
 char *aliasempty;
 
-#ifdef QLDAP /* define the global variables */
-unsigned long int g_quota;
-#endif
+/* define the global variables */
+char *quotastring;
+long int mailsize;
 
 stralloc safeext = {0};
 stralloc ufline = {0};
@@ -82,9 +81,8 @@ char buf[1024];
 char outbuf[1024];
 
 /* child process */
-
-char fntmptph[80 + FMT_ULONG * 2];
-char fnnewtph[80 + FMT_ULONG * 2];
+char fntmptph[83 + FMT_ULONG * 3];
+char fnnewtph[83 + FMT_ULONG * 3];
 void tryunlinktmp() { unlink(fntmptph); }
 void sigalrm() { tryunlinktmp(); _exit(3); }
 
@@ -129,13 +127,13 @@ char *dir;
 	
    if (stat("cur", &st) == -1) {
      if (errno == error_noent) {
-      if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
+       if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
      } else if (error_temp(errno)) _exit(5); _exit(6);
    } else if (! S_ISDIR(st.st_mode) ) _exit(7);
 	
    if (stat("tmp", &st) == -1) {      
      if (errno == error_noent) {        
-      if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
+       if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
      } else if (error_temp(errno)) _exit(5); _exit(6);
    } else if (! S_ISDIR(st.st_mode) ) _exit(7);
  }
@@ -151,7 +149,10 @@ char *dir;
    s += fmt_str(s,"tmp/");
    s += fmt_ulong(s,time); *s++ = '.';
    s += fmt_ulong(s,pid); *s++ = '.';
-   s += fmt_strn(s,host,sizeof(host)); *s++ = 0;
+   s += fmt_strn(s,host,sizeof(host)); 
+   s += fmt_str(s,",S=");
+   s += fmt_ulong(s,mailsize);
+   *s++ = 0;
    if (stat(fntmptph,&st) == -1) if (errno == error_noent) break;
    /* really should never get to this point */
    if (loop == 2) _exit(1);
@@ -188,8 +189,7 @@ char *dir;
 
 /* end child process */
 
-#ifdef QLDAP /* quota handling maildir */
-
+/* quota handling warning and bounce */
 void quota_bounce(void) { strerr_die1x(100, "The users mailbox is over the allowed quota (size)."); }
 
 void quota_warning(char *fn)
@@ -227,37 +227,7 @@ void quota_warning(char *fn)
   }
 
 }
-
-unsigned long int maildirsize (dir)
-char *dir;
-{
-   struct dirent *dp;
-   DIR *dirp;
-   struct stat filest;
-   stralloc file = {0};
-   unsigned long int temp = 0;
-   
-   if ( (dirp = opendir(dir)) == 0 )
-     if ( errno != error_noent )
-       strerr_die5x(111,"Unable to quota: can not open ",dir,": ",error_str(errno),". (LDAP-ERR #2.4.2)");
-     else
-       return 0;
-   while ((dp = readdir(dirp)) != 0) {
-     if (!stralloc_copys(&file,dir)) temp_nomem();
-     if (!stralloc_cats(&file,dp->d_name)) temp_nomem();
-     if (!stralloc_0(&file)) temp_nomem();
-     if (stat(file.s, &filest) == 0) {
-       if ( S_ISREG(filest.st_mode) )
-         temp += filest.st_size;
-     } else if (! S_ISLNK(filest.st_mode) ) {
-       strerr_warn5("Unable to quota ", file.s, ": ",error_str(errno),". (LDAP-ERR #2.4.3)",0);
-     }
-   }
-   closedir(dirp);
-   return temp;
-}
-   
-#endif /* end -- quota handling maildir */
+/* end -- quota handling warning and bounce */
 
 void maildir(fn)
 char *fn;
@@ -265,37 +235,33 @@ char *fn;
  int child;
  int wstat;
 
-#ifdef QLDAP /* quota handling maildir */
+ /* quota handling maildir */
  struct stat mailst;
- unsigned long int totalsize, size = 0;
- stralloc dir = {0};
+ int perc;
+ int fd;
 
- if(g_quota != 0 ) {
+ if( quotastring && *quotastring ) {
    if (fstat(0, &mailst) != 0)
-       strerr_die5x(111,"Unable to open for quota ", "mail", ": ",error_str(errno),". (LDAP-ERR #2.4.1)");
-
-   if (!stralloc_copys(&dir,fn)) temp_nomem();
-   if (!stralloc_cats(&dir,"cur/")) temp_nomem();
-   if (!stralloc_0(&dir)) temp_nomem();
-   size += maildirsize(dir.s);
-   if (!stralloc_copys(&dir,fn)) temp_nomem();
-   if (!stralloc_cats(&dir,"new/")) temp_nomem();
-   if (!stralloc_0(&dir)) temp_nomem();
-   size += maildirsize(dir.s);
-   if (!stralloc_copys(&dir,fn)) temp_nomem();
-   if (!stralloc_cats(&dir,"tmp/")) temp_nomem();
-   if (!stralloc_0(&dir)) temp_nomem();
-   size += maildirsize(dir.s);
-   
-   totalsize = size + mailst.st_size;
-   if ( totalsize > g_quota ) {
-     /* probably we could do a second check (to deliver big messages) */
-     quota_bounce();
-   } else if ( totalsize > g_quota/100UL*80UL ) /* drop a warning when mailbox is around 80% full */
+       strerr_die3x(111,"Unable to open for quota mail: ",error_str(errno),". (LDAP-ERR #2.4.1)");
+   mailsize = mailst.st_size;
+   perc = quota_maildir(fn, quotastring, &fd, mailsize, 1);
+   if ( perc == -1 ) {
+     /* seconde change */
+     sleep(3);
+     perc = quota_maildir(fn, quotastring, &fd, mailsize, 1);
+     if ( perc == -1 )
+       strerr_die1x(111,"Temporary race condition while calculating quota. (LDAP-ERR #2.4.2)");
+   }
+   if ( perc == 100 )
+	 quota_bounce();
+   else if ( perc > QUOTA_WARNING_LEVEL ) 
+	 /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
+
+   quota_add(fd, mailsize , 1);
  }
  
-#endif /* end -- quota handling maildir */
+ /* end -- quota handling maildir */
 
  if (seek_begin(0) == -1) temp_rewind();
 
@@ -336,30 +302,34 @@ char *fn;
  seek_pos pos;
  int flaglocked;
 
-#ifdef QLDAP /* quota handling mbox */
+ /* quota handling mbox */
  struct stat filest, mailst;
- unsigned long int totalsize;
+ long int quota;
+ long int totalsize;
+ int dummy;
 
  if (seek_begin(0) == -1) temp_rewind();
  
- if(g_quota != 0 ) {
+ if(quotastring != 0 ) {
+   get_quota(quotastring, &quota, &dummy);
    if (stat(fn, &filest) == -1)
      if ( errno != error_noent) { /* FALSE if file doesn't exist */
        strerr_die5x(111,"Unable to quota ", fn, ": ",error_str(errno), ". (LDAP-ERR #2.4.5)");
        filest.st_size = 0;        /* size of nonexisting maildir */
      }
    if (fstat(0, &mailst) != 0)
-     strerr_die5x(111,"Unable to quota ", "mail", ": ",error_str(errno), ". (LDAP-ERR #2.4.6)");
+     strerr_die3x(111,"Unable to quota mail: ",error_str(errno), ". (LDAP-ERR #2.4.6)");
    
    totalsize = filest.st_size + mailst.st_size;
-   if ( totalsize > g_quota ) {
+   if ( totalsize > quota ) {
      /* probably we could do a second check (to deliver very big messages) */
      quota_bounce();
-   } else if ( totalsize > g_quota/100UL*80UL ) /* drop a warning when mailbox is around 80% full */
+   } else if ( totalsize > (quota/100.0*QUOTA_WARNING_LEVEL) ) 
+	 /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
  }
  
-#endif /* end -- quota handling mbox */
+ /* end -- quota handling mbox */
 
  if (seek_begin(0) == -1) temp_rewind();
 
@@ -629,8 +599,6 @@ int len;
  substdio_putsflush(subfdoutsmall,"\n");
 }
 
-#ifdef QLDAP /* various handling routines for LDAP stuff */
-
 /* char replacement */
 unsigned int replace(s, len, f, r)
 char *s;
@@ -650,8 +618,6 @@ register char r;
    }
 }
 
-#endif /* end -- various LDAP funtions */
-
 void main(argc,argv)
 int argc;
 char **argv;
@@ -667,7 +633,7 @@ char **argv;
  int flagforwardonly;
  char *x;
 
-#ifdef QLDAP /* set up the variables */
+ /* set up the variables for qmail-ldap */
  int slen;
  int qmode;
  int mboxdelivery;
@@ -676,7 +642,6 @@ char **argv;
  char *s;
  
  mboxdelivery = 1; localdelivery = 0; ldapprogdelivery = 0;
-#endif
 
 
  umask(077);
@@ -709,38 +674,27 @@ char **argv;
  if (homedir[0] != '/') usage();
  if (chdir(homedir) == -1) {
 #ifdef AUTOHOMEDIRMAKE
-   if (! (s = env_get(ENV_HOMEDIRMAKE)) ) {
-     strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
+   s = env_get(ENV_HOMEDIRMAKE);
+   if ( errno == error_noent && s && *s ) {
+      /* do the auto homedir creation */
+      if ( make_homedir(homedir, aliasempty, s ) != 0 ) {
+         if ( qldap_errno == ERRNO ) {
+            strerr_die5x(111,"Error while running automatic dirmaker:",s,": ",
+                         error_str(errno),". (LDAP-ERR #2.2.1)");
+         } else {
+            strerr_die3x(111,s,qldap_errno == MAILDIR_CRASHED?
+                         ": is crashed" : ": exited non zero",
+                         ". (LDAP-ERR #2.2.2)");
+         }
+      }
+      if (chdir(homedir) == -1) {
+         strerr_die5x(111,"Unable to switch to ",homedir,
+                      " even after running dirmaker: ",error_str(errno),
+                      ". (LDAP-ERR #2.2.3)");
+      }
    } else {
-     if (errno == error_noent) {
-       /* do the auto homedir creation */
-       int child;
-       char *(dirargs[4]);
-       int wstat;
-
-       switch(child = fork()) {
-       case -1:
-         temp_fork();
-       case 0:
-         dirargs[0] = s; dirargs[1] = homedir;
-         dirargs[2] = aliasempty; dirargs[3] = 0;
-         execv(*dirargs,dirargs);
-         strerr_die5x(111,"Error while running automatic dirmaker:",s,": ",error_str(errno),". (LDAP-ERR #2.2.1)");
-       }
-
-       wait_pid(&wstat,child);
-       if (wait_crashed(wstat))
-          temp_childcrashed();
-       switch(wait_exitcode(wstat)) {
-       case 0: break;
-       default:
-         strerr_die3x(111,s,": exited non zero",". (LDAP-ERR #2.2.2)");
-       }
-       if (chdir(homedir) == -1) 
-          strerr_die5x(111,"Unable to switch to ",homedir," even after running dirmaker: ",error_str(errno),". (LDAP-ERR #2.2.3)");
-     } else {
-       strerr_die5x(111,"Unable to switch to ",homedir,", it does exist but is not accessable: ",error_str(errno),". (LDAP-ERR #2.2.4)");
-     }
+      strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),
+                   ". (LDAP_ERR #2.2.4)");
    }
 #else
    strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
@@ -841,16 +795,12 @@ char **argv;
 
  flagforwardonly = 0;
 
-#ifdef QLDAP /* quota, dotmode and forwarding handling - part 1 */
+   /* quota, dotmode and forwarding handling - part 1 */
    /* setting the quota */
-   if ( s = env_get(ENV_QUOTA) ) {
-      if (! scan_ulong(s, &g_quota) )
-         strerr_die3x(100,"Format error: the quota is not a number: ",s,". (LDAP-ERR #2.0.1)");
-      g_quota *= 1024; /* we need bytes not kbytes as quota */
-      if (!flagdoit) sayit("quota in kB ",s,str_len(s) );
+   if ( quotastring = env_get(ENV_QUOTA) ) {
+      if (!flagdoit) sayit("quota defined as: ",quotastring,str_len(quotastring) );
    } else {
-      g_quota = 0;
-      if (!flagdoit) sayit("unlimited quota",s,0 );
+      if (!flagdoit) sayit("unlimited quota",quotastring,0 );
    }
    
    if ( s = env_get(ENV_DOTMODE) ) {
@@ -886,7 +836,8 @@ char **argv;
       }
    } else qmode = DO_DOT;  /* no qmailmode, so I use standard .qmail */
 	   
- /* prepare the cmds string to hold all the commands from the ldap server and the .qmail file */
+ /* prepare the cmds string to hold all the commands from the 
+  * ldap server and the .qmail file */
  if (!stralloc_ready(&cmds,0)) temp_nomem();
  cmds.len = 0;
  
@@ -984,13 +935,10 @@ char **argv;
 
  } 
  if ( qmode & DO_DOT ) { /* start dotqmail */
-#endif
    qmesearch(&fd,&flagforwardonly);
    if (fd == -1)
      if (*dash)
-#ifdef QLDAP
        if ( qmode == DO_DOT ) /* XXX: OK ??? */
-#endif
          strerr_die1x(100,"Sorry, no mailbox here by that name. (#5.1.1)");
 
    if (!stralloc_copys(&ueo,sender)) temp_nomem();
@@ -1012,17 +960,11 @@ char **argv;
    if (!stralloc_0(&ueo)) temp_nomem();
    if (!env_put2("NEWSENDER",ueo.s)) temp_nomem();
 
-#ifndef QLDAP /* need to "comment" the next two lines else everything from above is canceled */
-   if (!stralloc_ready(&cmds,0)) temp_nomem();
-   cmds.len = 0;
-#endif
    if (fd != -1)
      if (slurpclose(fd,&cmds,256) == -1) temp_nomem();
 
-#ifdef QLDAP
  } else if (! qmode & DO_LDAP ) /* XXX: If non of DO_LDAP, DO-DOT */
    strerr_die1x(100,"Error: No valid delivery mode selected. (LDAP-ERR #2.0.3)");
-#endif
  if (!cmds.len)
   {
    if (!stralloc_copys(&cmds,aliasempty)) temp_nomem();
@@ -1064,9 +1006,7 @@ char **argv;
          break;
        case '.':
        case '/':
-#ifdef QLDAP
 	 if (! mboxdelivery ) break;
-#endif
 	 ++count_file;
 	 if (flagforwardonly) strerr_die1x(111,"Uh-oh: .qmail has file delivery but has x bit set. (#4.7.0)");
 	 if (cmds.s[k - 1] == '/')

@@ -56,9 +56,6 @@ stralloc bouncehost = {0};
 stralloc doublebounceto = {0};
 stralloc doublebouncehost = {0};
 
-/* #define QLDAP */ /* this patch comes with the LDAP patches 
-                     * and is set by the Makefile */
-#ifdef QLDAP
 stralloc custombouncetext = {0};
 
 /* char replacement */
@@ -75,8 +72,6 @@ unsigned int replace(char *s, register unsigned int len, char f, char r)
       if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
    }
 }
-#endif
-
 
 char strnum2[FMT_ULONG];
 char strnum3[FMT_ULONG];
@@ -740,13 +735,11 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
 \n\
 ");
 
-#ifdef QLDAP
    if (custombouncetext.len)
    {
      qmail_put(&qqt,custombouncetext.s,custombouncetext.len-1);
      qmail_puts(&qqt,"\n\n");
    }
-#endif
 
    fd = open_read(fn2.s);
    if (fd == -1)
@@ -1486,11 +1479,9 @@ int getcontrols() { if (control_init() == -1) return 0;
  if (!stralloc_cats(&doublebounceto,"@")) return 0;
  if (!stralloc_cat(&doublebounceto,&doublebouncehost)) return 0;
  if (!stralloc_0(&doublebounceto)) return 0;
-#ifdef QLDAP
  if (control_readfile(&custombouncetext,"control/custombouncetext",0) == -1) return 0;
  replace(custombouncetext.s, custombouncetext.len, '\0', '\n');
  if (! stralloc_0(&custombouncetext) ) return 0;
-#endif
  if (control_readfile(&locals,"control/locals",1) != 1) return 0;
  if (!constmap_init(&maplocals,locals.s,locals.len,0)) return 0;
  switch(control_readfile(&percenthack,"control/percenthack",0))

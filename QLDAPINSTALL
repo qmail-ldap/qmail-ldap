@@ -14,38 +14,13 @@ ongoing - The big qmail-ldap picture
 done    - support for mail clusters
 planned - full code review
 planned - splitting the patch into smaler separate pieces
+planned - ldap authentication for courier-imap
 
 NEWS:
 
- Added signal-handler for qmail-lspawn, now with a SIGHUP the qmail-lspawn
- parent process reloads the his settings ( via the ~control files )
-
- Added cluster support, use -DQLDAP_CLUSTER for enabling.
-
- Removed PWOPTS=-DLOOK_UP_PASSWD because it was only for checkpassword
- and with ldaplocaldelivery you get the same result on the fly.
-
- Few minor bug fixes (qmail-qmqpd.c, qmail-qmtpd.c, receive.c)
-
- Updated QLDAPINSTALL and added new QLDAPNEWS because QLDAPINSTALL was
- getting to long.
-
- Changed the make process, now with "make setup check" also the qmail-ldap
- parts are build and installed. Have fun ...
-
- Few minor bug fixes (accountStatus, AUTO_MAILDIRMAKE)
-
- Hack in the LDAP serch filter escape function due to a bug in most LDAP
- servers. Instead of escapeing the wildchars we replace them with '_' as 
- long as -DLDAP_ESCAPE_BUG is present. (see Makefile)
-
- a catch all mail for one domain system is now available. The default
- catchall account is "catchall@domain.com". You can change that to any
- other sting in qmail-ldap.h at compile time. LDAP wildcards are not
- allowed.
- Due to a bug in the LDAP servers wildcards escaping does not work, so pay
- attention.
-
+ Added maildir++ support, this means especially better quota support via the
+ maildir++ maildirsize file. For more info have a look at courier-imap
+ http://www.inter7.com/courierimap/
 
 INSTALL:
 
@@ -155,10 +130,14 @@ CONFIG FILES:
 
 ~control/ldapdefaultquota
 
- The default amount of space one user can use
+ The amount of space the user can use until all further msg get bounced
+ There are two possible limits, size (a byte count 'S') and count (a file count 'C')
+ The mailQuota is a string of the form figures type (S or C) and a ',' separates
+ multiple entries.
  Default: unlimited
- Example: 1000
- Note: Is written in KBytes, is overridden by mailQuota
+ Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
+ The default amount of space one user can use
+ Note: is overridden by mailQuota
 
 ~control/ldapdefaultdotmode
 
@@ -312,8 +291,11 @@ mailMessageStore
 mailQuota
 
  The amount of space the user can use until all further msg get bounced
- Example: 1000
- Note: In KBytes, overrides ldapdefaultquota
+ There are two possible limits, size (a byte count) and count (a file count)
+ The mailQuota is a string of the form figures type (S or C) and a ',' separates
+ multiple entries.
+ Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
+ Note: overrides ldapdefaultquota
 
 mailForwardingAddress
 
@@ -404,7 +386,7 @@ objectClass: qmailUser
 mail: opi@opi.flirtbox.ch
 mailHost: opi.flirtbox.ch
 mailMessageStore: /usr/home/opi/Maildir/
-mailQuota: 1000
+mailQuota: 1000000S,100C
 qmailUser: opi
 qmailUID: 1001
 qmailGID: 1001

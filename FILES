@@ -453,3 +453,16 @@ qmail-quotawarn.c
 ANTISPAM
 qmail-ldap.h
 QLDAPNEWS
+maildir++.h
+maildir++.c
+auth_imap.c
+auth_pop.c
+auth_mod.h
+qldap-debug.h
+qldap-debug.c
+qldap-errno.h
+qldap-ldaplib.c
+qldap-ldaplib.h
+qldap-mdm.c
+qldap-mdm.h
+

@@ -1,59 +1,33 @@
+/* checkpasswd.c, jeker@n-r-g.com, best viewed with tabsize = 4 */
 #include "qmail-ldap.h"
+#include "stralloc.h"
+#include "auth_mod.h"
+#include "qldap-ldaplib.h"
+#include "qldap-errno.h"
+#include "readwrite.h"
+#include "error.h"
+#include "str.h"
+#include "open.h"
+#include "substdio.h"
+#include "getln.h"
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <errno.h>
-#include <lber.h>
-#include <ldap.h>
-#include "control.h"
-#include "stralloc.h"
-#include "env.h"
-#include "auto_usera.h"
-#include "auto_uids.h"
-#include "auto_qmail.h"
-#include "fmt.h"
-#include "check.h"
-#include "case.h"
-#include "qlx.h"
 #include "compatibility.h"
 #include "digest_md4.h"
 #include "digest_md5.h"
 #include "digest_rmd160.h"
 #include "digest_sha1.h"
-#include "str.h"
 #include "select.h"
 #include "ipalloc.h"
 #include "dns.h"
 #include "timeoutconn.h"
 #include "byte.h"
-#include "readwrite.h"
-
-#ifdef AUTOHOMEDIRMAKE
-#include "error.h"
-#include "wait.h"
-#endif
-
-#define QLDAP_PORT LDAP_PORT
-
-#ifndef NULL
-#define NULL 0
-#endif
-
-#ifdef QLDAPDEBUG
-#warning __checkpassword_DEBUG_version_set_in_Makefile__
-#warning __you_need_a_none_debug_version_to_run_with_qmail-pop3d__
-#endif
-
-/* Error exit codes:
- * 1 = error in server configuration
- * 2 = unable to contact authorization server
- * 25= user record incorrect
- * 3 = authorization failed
- * 4 = account disabled
- * 5 = mailhost is unreachable
- * 6 = mailbox is corrupted
- * 7 = unable to start subprogram
- * 8 = out of memory
- */
+#include "scan.h"
+#include "fmt.h"
+#include "alloc.h"
+#include <assert.h>
+#include "check.h"
+#include "qldap-debug.h"
 
 /* Edit the first lines in the Makefile to enable local passwd lookups and debug options.
  * To use shadow passwords under Solaris, uncomment the 'SHADOWOPTS' line in the Makefile.
@@ -68,673 +42,369 @@
 #include <userpw.h>
 #endif
 
+extern stralloc qldap_me;
 
-extern int errno;
-extern char *crypt();
-extern char *malloc();
+int rebind; 
+int cluster;
 
-char up[513];
-int uplen;
+static int check_ldap(stralloc *login,
+	   				  stralloc *authdata,
+					  unsigned long *uid,
+					  unsigned long *gid,
+					  stralloc *home);
 
-#ifdef QLDAPDEBUG
+static int check_passwd(stralloc *login,
+	   					stralloc *authdata,
+						unsigned long *uid,
+						unsigned long *gid,
+						stralloc *home,
+						stralloc *md);
 
-#include <stdio.h>
-#define OUTPUT stderr
-#define debug_msg fprintf
+static int cmp_passwd(char *clear, char *encrypted);
 
-char *sa2s(stralloc *sa)
-{
-  if(! stralloc_0(sa) ) return "No memory";
-  sa->len--;
-  return sa->s;
-}
+static int get_local_maildir(stralloc *home, stralloc *maildir);
 
-#else
-#define OUTPUT 0
-void debug_msg( ) { ; }
+static void copyloop(int infd, int outfd, int timeout);
 
-char* sa2s(stralloc *sa) { return 0; }
-
-#endif
-
-static void forward_session(char *host, char *name, char *passwd);
-
-/* initialize the string arrays, this uses DJB's libs */
-stralloc    qldap_server = {0};
-stralloc    qldap_basedn = {0};
-stralloc    qldap_user = {0};
-stralloc    qldap_password = {0};
-
-stralloc    qldap_uid = {0};
-stralloc    qldap_gid = {0};
-stralloc    qldap_messagestore = {0};
-stralloc    qldap_passwdappend = {0};
-stralloc    qldap_me = {0};
-#ifdef AUTOHOMEDIRMAKE
-stralloc    qldap_dirmaker = {0};
-#endif
-
-int         qldap_localdelivery = 1;
-
-/* init done */
-
-/* read the various LDAP control files */
-
-void get_qldap_controls()
-{
-
-   debug_msg(OUTPUT,"\naction: reading control files\n\n");
-
-   if (control_rldef(&qldap_server,"control/ldapserver",0,(char *) 0) != 1) {
-      debug_msg(OUTPUT," unable to read \t: control/ldapserver\n exit\n");
-      _exit(1);
-   }
-   if (!stralloc_0(&qldap_server)) _exit(8);
-   debug_msg(OUTPUT," control/ldapserver \t: %s\n",qldap_server.s);
-
-   if (control_rldef(&qldap_basedn,"control/ldapbasedn",0,"") == -1) _exit(1);
-   if (!stralloc_0(&qldap_basedn)) _exit(8);
-   debug_msg(OUTPUT," control/ldapbasedn \t: %s\n",qldap_basedn.s);
-
-   if (control_rldef(&qldap_user,"control/ldaplogin",0,"") == -1) _exit(1);
-   if (!stralloc_0(&qldap_user)) _exit(8);
-   debug_msg(OUTPUT," control/ldaplogin \t: %s\n",qldap_user.s);
-
-   if (control_rldef(&qldap_password,"control/ldappassword",0,"") == -1) _exit(1);
-   if (!stralloc_0(&qldap_password)) _exit(8);
-   debug_msg(OUTPUT," control/ldappassword \t: %s\n",qldap_password.s);
-
-   if (control_readint(&qldap_localdelivery,"control/ldaplocaldelivery") == -1) _exit(1);
-   debug_msg(OUTPUT," control/ldaplocaldelivery \t: %i\n", qldap_localdelivery);
-	
-   if (control_rldef(&qldap_uid,"control/ldapuid",0,"") == -1) _exit(1);
-   debug_msg(OUTPUT," control/ldapuid \t: %s\n",sa2s(&qldap_uid) );
-   
-   if (control_rldef(&qldap_gid,"control/ldapgid",0,"") == -1) _exit(1);
-   debug_msg(OUTPUT," control/ldapgid \t: %s\n",sa2s(&qldap_gid) );
-
-   if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"") == -1) _exit(1);
-   debug_msg(OUTPUT," control/ldapmessagestore: %s\n",sa2s(&qldap_messagestore) );
-
-   if (control_rldef(&qldap_passwdappend,"control/ldappasswdappend",0,"./") == -1) 
-   debug_msg(OUTPUT," control/ldappasswdappend: %s\n",sa2s(&qldap_passwdappend) );
-
-   if (control_rldef(&qldap_me,"control/me",0,"") == -1) _exit(1);
-   if (!stralloc_0(&qldap_me)) _exit(8);
-   debug_msg(OUTPUT," control/me\t\t: %s\n",qldap_me.s);
-
-#ifdef AUTOHOMEDIRMAKE
-   if (control_rldef(&qldap_dirmaker,"control/dirmaker",0,(char *) 0) == -1) _exit(1);
-   if (!stralloc_0(&qldap_dirmaker)) _exit(8);
-   debug_msg(OUTPUT," control/dirmaker \t: %s\n",sa2s(&qldap_dirmaker) );
-#endif
-
-   debug_msg(OUTPUT,"\naction: reading control files done successful\n");
-}
-
-stralloc password={0};
-stralloc homedir={0};
-
-int qldap_get( char *login, char *passwd, unsigned int *uid, unsigned int *gid )
-{
-   LDAP           *ld;
-   LDAPMessage    *res, *msg;
-   char           *dn,
-                  **vals,
-                  *attrs[] = {  LDAP_UID,
-                                LDAP_PASSWD,
-                                LDAP_QMAILUID,
-                                LDAP_QMAILGID,
-				LDAP_ISACTIVE,
-				LDAP_MAILHOST,
-                                LDAP_MAILSTORE, NULL };
-
-   int            rc,
-                  version,
-                  num_entries = 0;
-
-   stralloc       filter = {0};
-
-
-   debug_msg(OUTPUT,"\naction: doing ldap lookup\n\n");
-   /* lower case the POP user name before we do the      *
-    * check for illegal chars                            */
-   case_lowers(login);
-
-   /* check the login uid for illegal characters         *
-    * only [a-z][0-9][.-_] are allowed                   *
-    * because all other stuff would kill the LDAP search */
-   if ( !chck_users(login) ) {
-     debug_msg(OUTPUT," check for illegal characters \t: failed, POP username contains illegal characters\n");
-     _exit(3);
-   } else {
-     debug_msg(OUTPUT," check for illegal characters \t: succeeded\n");
-   }
-
-   /* initialize the LDAP connection and get a handle */
-   if ( (ld = ldap_init(qldap_server.s,QLDAP_PORT)) == NULL ) {
-     debug_msg(OUTPUT," initialize ldap connection \t: failed, problem in ldap library?\n");
-     _exit(2);
-   } else {
-     debug_msg(OUTPUT," initialize ldap connection\t: succeeded\n");
-   }
-
-   /* set LDAP connection options (only with Mozilla LDAP SDK) */
-#ifdef LDAP_OPT_PROTOCOL_VERSION
-   version = LDAP_VERSION2;
-   if ( ldap_set_option(ld,LDAP_OPT_PROTOCOL_VERSION,&version) != LDAP_SUCCESS ) {
-     debug_msg(OUTPUT," setting ldap connection options\t: failed, are you using Mozilla LDAP SDK?\n");
-     _exit(2);
-   } else {
-     debug_msg(OUTPUT," setting ldap connection options: succeeded\n");
-   }
-#endif
-
-   /* connect to the LDAP server */
-   if ( (rc = ldap_simple_bind_s(ld,qldap_user.s,qldap_password.s)) != LDAP_SUCCESS ) {
-     debug_msg(OUTPUT," connecting to ldap server\t: failed, %s\n",ldap_err2string(rc));
-     _exit(2);
-   } else {
-     debug_msg(OUTPUT," connecting to ldap server\t: succeeded\n");
-   }
-
-   /* build the search string for the login uid */
-   if (!stralloc_copys(&filter,"(uid=" ) ) _exit(8);
-   if (!stralloc_cats(&filter,login)) _exit(8);
-   if (!stralloc_cats(&filter,")")) _exit(8);
-   if (!stralloc_0(&filter)) _exit(8);
-
-   debug_msg(OUTPUT," building ldap search string\t: '%s'\n",filter.s);
-   
-   /* do the search for the login uid */
-   if ( (rc = ldap_search_s(ld,qldap_basedn.s,LDAP_SCOPE_SUBTREE,filter.s,attrs,0,&res)) != LDAP_SUCCESS ) {
-      debug_msg(OUTPUT," ldap search on server\t: failed, %s\n",ldap_err2string(rc));
-      _exit(2);
-   } else {
-      debug_msg(OUTPUT," ldap search on server\t: succeeded");
-   }
-
-   /* count the results, we must have exactly one */
-   if ( (num_entries = ldap_count_entries(ld,res)) != 1) {
-     debug_msg(OUTPUT,", but returned no match\n");
-     return 1;
-   } else {
-     debug_msg(OUTPUT,", found one match\n");
-   }
-
-   /* go to the first entry */
-   msg = ldap_first_entry(ld,res);
-
-   /* check if the ldap entry is active */
-   if ( (vals = ldap_get_values(ld,msg,LDAP_ISACTIVE)) != NULL ) {
-      debug_msg(OUTPUT," accountStatus is\t: %s\n", vals[0]);
-      if ( !str_diff(ISACTIVE_BOUNCE, vals[0]) ) _exit(4);
-      if ( !str_diff(ISACTIVE_NOPOP, vals[0]) ) _exit(4);
-   }
 #ifdef QLDAP_CLUSTER
-   /* check if the I'm the right host */
-   if ( (vals = ldap_get_values(ld,msg,LDAP_MAILHOST)) != NULL ) {
-      debug_msg(OUTPUT," mailHost is\t\t: %s (I'm %s)\n", vals[0], qldap_me.s);
-      if ( str_diff(qldap_me.s, vals[0]) ) {
-		  	/* hostname is different, so I reconnect */
-#ifdef QLDAPDEBUG
-         debug_msg(OUTPUT, "\t\t\t  would connect to new host %s\n", vals[0]);
-#else
-			forward_session(vals[0], login, passwd);
-#endif
-			/* that's it */
-		}
-   }
-#endif
-   /* get the dn and free it (we dont need it, to prevent memory leaks) *
-    * but first try to rebind with the password (only if compiled with  *
-    * QLDAP_BIND.                                                       */
-   dn = ldap_get_dn(ld,msg);
-#ifdef QLDAP_BIND
-   if ( dn == NULL ) _exit(25);
-   /* add re-bind here */
-   if ( (rc = ldap_simple_bind_s(ld,dn,passwd)) != LDAP_SUCCESS) {
-      debug_msg(OUTPUT," rebinding with dn %s \t: failed, %s\n",dn,ldap_err2string(rc));
-#ifdef LDAP_OPT_PROTOCOL_VERSION /* (only with Mozilla LDAP SDK) */
-      ldap_memfree(dn);
-#else
-      free(dn);
-#endif
-      return 1;
-   }
-   debug_msg(OUTPUT," rebinding with dn %s \t: succeeded\n", dn);
-#endif
-#ifdef LDAP_OPT_PROTOCOL_VERSION /* (only with Mozilla LDAP SDK) */
-   if ( dn != NULL ) ldap_memfree(dn);
-#else
-   if ( dn != NULL ) free(dn);
+static void forward_session(char *host, char *name, char *passwd);
 #endif
 
-#ifndef QLDAP_BIND
-   /* go through the attributes and set the proper args for qmail-pop3d */
-   /* get the stored and (hopefully) encrypted password */
-   if ( (vals = ldap_get_values(ld,msg,LDAP_PASSWD)) != NULL ) {
-      if (!stralloc_copys(&password, vals[0])) _exit(8);
-      if (!stralloc_0(&password)) _exit(8);
-      debug_msg(OUTPUT," ldap search results \t: found password '%s'\n", vals[0]);
-   } else {
-      debug_msg(OUTPUT," ldap search results \t: no password\n");
-      _exit(25);
-   }
-   ldap_value_free(vals);
-#endif
+static char* make_filter(stralloc *value);
+static void free_filter(char* filter);
 
-   /* get the UID for setuid() for POP retrieval */
-   if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILUID)) != NULL ) {
-      *uid = chck_ids(vals[0]);
-      if (PW_MIN > *uid ) {
-         debug_msg(OUTPUT," ldap search results \t: UID failed for '%s'\n",vals[0]);
-         _exit(25);
-      } else {
-         debug_msg(OUTPUT," ldap search results \t: UID succeeded for '%s'\n",vals[0]);
-      }
-   } else { /* default */
-      if (!qldap_uid.len) {
-         debug_msg(OUTPUT," ldap search results \t: no UID found and control/ldapuid empty\n");
-         _exit(25);
-      } else {
-         debug_msg(OUTPUT," ldap search results \t: no UID found, taking control/ldapuid\n");
-      }
-      *uid = chck_idb(qldap_uid.s,qldap_uid.len);
-      if (PW_MIN > *uid ) {
-         debug_msg(OUTPUT," ldap search results \t: control/ldapuid check failed for '%s'\n",sa2s(&qldap_uid) );
-         _exit(25);
-      } else {
-         debug_msg(OUTPUT," ldap search results \t: control/ldapuid check succeeded for '%s'\n",sa2s(&qldap_uid) );
-      }
-   }
-   ldap_value_free(vals);
-
-   /* get the GID for setgid() for POP retrieval */
-   if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILGID)) != NULL ) {
-      *gid = chck_ids(vals[0]);
-      if ( PW_MIN > *gid ) {
-         debug_msg(OUTPUT," ldap search results \t: GID failed for '%s'\n",vals[0]);
-         _exit(25);
-      } else {
-         debug_msg(OUTPUT," ldap search results \t: GID succeeded for '%s'\n",vals[0]);
-      }
-   } else { /* default */
-      if (!qldap_gid.len) {
-         debug_msg(OUTPUT," ldap search results \t: no GID found, and control/ldapgid empty\n");
-         _exit(25);
-      } else {
-         debug_msg(OUTPUT," ldap search results \t: no GID found, taking control/ldapgid\n");
-      }
-      *gid = chck_idb(qldap_gid.s,qldap_gid.len);
-      if ( PW_MIN > *gid ) {
-         debug_msg(OUTPUT," ldap search results \t: control/ldapgid check failed for '%s'\n",sa2s(&qldap_gid) );
-         _exit(25);
-      } else {
-         debug_msg(OUTPUT," ldap search results \t: control/ldapgid check succeeded for '%s'\n",sa2s(&qldap_gid) );
-      }
-   }
-   ldap_value_free(vals);
-
-   /* get the path of the maildir for qmail-pop3d */
-   if ( (vals = ldap_get_values(ld,msg,LDAP_MAILSTORE)) != NULL ) {
-      if (vals[0][0] != '/') {   /* relative path */
-            debug_msg(OUTPUT," ldap search results \t: maildir path is relative to messagestore\n");
-         if (qldap_messagestore.s[0] != '/') {
-            debug_msg(OUTPUT," ldap search results \t: control/ldapmessagestore path does not begin with /\n");
-            _exit(25);
-         }
-         if (qldap_messagestore.s[qldap_messagestore.len -1] != '/') {
-            debug_msg(OUTPUT," ldap search results \t: control/ldapmessagepath does not end with /\n");
-            _exit(25);
-         }
-         if (!stralloc_cats(&qldap_messagestore, vals[0])) _exit(8);
-         if (!chck_pathb(qldap_messagestore.s,qldap_messagestore.len) ) {
-            debug_msg(OUTPUT," ldap search results \t: combined maildir path contains illegal constructs\n");
-            _exit(25);
-         }
-         if (qldap_messagestore.s[qldap_messagestore.len -1] != '/') {
-            debug_msg(OUTPUT," ldap search results \t: combined maildir path does not end with /\n");
-            _exit(25);
-         }
-         if (!stralloc_copy(&homedir,&qldap_messagestore)) _exit(8);
-      } else {                   /* absolute path */
-         debug_msg(OUTPUT," ldap search results \t: maildir path is absolute\n");
-         if (!chck_paths(vals[0]) ) {
-            debug_msg(OUTPUT," ldap search results \t: maildir path contains illegal constructs\n");
-            _exit(25);
-         }
-         if (!stralloc_copys(&homedir, vals[0])) _exit(8);
-         if (homedir.s[homedir.len -1] != '/') {
-            debug_msg(OUTPUT," ldap search results \t: maildir path does not end with /\n");
-            _exit(25);
-         }
-      }
-   if (!stralloc_0(&homedir)) _exit(8);
-   debug_msg(OUTPUT," ldap search results \t: maildir path is '%s'\n",homedir.s);
-
-   } else {
-      debug_msg(OUTPUT," ldap search results \t: no maildir path specified\n");
-      _exit(25);
-   }
-   ldap_value_free(vals);
-
-   debug_msg(OUTPUT,"\naction: ldap lookup done successful\n");
-   return 0;
-} /* end -- ldap lookup */
-
-void main(argc,argv)
-int argc;
-char **argv;
+void main(int argc, char **argv)
 {
- char hashed[100];
- char salt[33];
- char *login,
-      *enteredpasswd,
-      *encrypted;
+	int locald;
+	stralloc login = {0};
+	stralloc authdata = {0};
+	stralloc home = {0};
+	stralloc homemaker = {0};
+	stralloc maildir = {0};
+	unsigned long uid;
+	unsigned long gid;
 
-#warning __do_not_remove_one_of_this_variables_all_are_somehow_used__
- unsigned int i, r,
-              uid,
-              gid,
-              shift;
+	init_debug(STDERR, 64); /* XXX limited to 64 so it is not possible to get
+							 * XXX passwords via debug under normal systems */
 
+	auth_init(argc, argv, &login, &authdata);
+	debug(128, "auth_init: login=%s, authdata=%s\n", login.s, authdata.s);
+	
+	if ( init_ldap(&locald, &cluster, &rebind, &homemaker, 0, 0, 0) == -1 ) {
+		debug(1, "alert: init_ldap faild.\n");
+		_exit(1);
+	}
+	debug(64, "init_ldap: ld=%i, cluster=%i, rebind=%i, hdm=%s\n", 
+			locald, cluster, rebind, homemaker.s);
+	
+	if ( check_ldap(&login, &authdata, &uid, &gid, &home) ) {
+		debug(16, "authentication with ldap was not successful\n");
+		if ( locald == 1 && qldap_errno == LDAP_NOSUCH ) {
+			debug(16, "trying to authenticate with the local passwd db\n");
+			if ( check_passwd(&login, &authdata, &uid, &gid, &home, &maildir) ) {
+				auth_fail(argc, argv, login.s);
+			}
+		} else {
+			auth_fail(argc, argv, login.s);
+		}
+	}
+	
+	auth_success(argc, argv, login.s, uid, gid, home.s, homemaker.s, maildir.s);
+	_exit(1); /* should never get here */
+}
 
- struct passwd *pw;
+int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid, 
+			   unsigned long *gid, stralloc *home)
+{
+	userinfo	info;
+	extrainfo	extra[2];
+	searchinfo	search;
+	int		ret;
+	char    *attrs[] = { LDAP_UID, /* the first 5 attrs are the default ones */
+						 LDAP_QMAILUID,
+						 LDAP_QMAILGID,
+						 LDAP_ISACTIVE,
+						 LDAP_MAILHOST,
+						 LDAP_MAILSTORE,
+						 LDAP_PASSWD, 0 }; /* passwd is extra */
+
+	/* initalize the different info objects */
+	if ( rebind ) {
+		extra[0].what = 0;	/* under rebind mode no additional info is needed */
+		search.bindpw = authdata->s;	/* rebind on, check passwd via ldap rebind */ 
+	} else {
+		extra[0].what = LDAP_PASSWD; /* need to get the crypted password */
+		search.bindpw = 0; 	/* rebind off */
+	}
+	extra[1].what = 0;		/* end marker for extra info */
+	
+	search.filter = make_filter(login);	/* create search filter */
+	
+	ret = ldap_lookup(&search, attrs, &info, extra);
+	free_filter(search.filter);	/* free the old filter */
+	if ( ret != 0 ) {
+		debug(4, "warning: check_ldap: ldap_lookup not successful!\n");
+		return -1;
+	}
+	/* check the status of the account !!! */
+	if ( info.status == STATUS_BOUNCE || info.status == STATUS_NOPOP ) {
+		qldap_errno = ACC_DISABLED;
+		return -1;
+	}
+	
+#ifdef QLDAP_CLUSTER
+	/* for cluster check if I'm on the right host */
+	if ( cluster && info.host && str_diff(qldap_me.s, info.host) ) {
+		/* hostname is different, so I reconnect */
+		debug(8, "check_ldap: forwarding session to %s\n", info.host);
+		forward_session(info.host, login->s, authdata->s);
+		/* that's it. Function does not return */ 
+	}
+#endif
+
+	scan_ulong(info.uid, uid);	/* get uid, gid and home */
+	scan_ulong(info.gid, gid);	/* XXX the values have to be verified */
+	if ( ! stralloc_copys(home, info.mms) ) {	/* ... the same for the path */
+		qldap_errno = ERRNO;
+		return -1;
+	}
+	/* lets check the home path for his correctnes (no ../ and special chars) because 
+	 * the ldap-server could be returning fake entries (modified by a "hacker") 
+	 * There is still the possibility that one customer changes his mailmessagestore to
+	 * point to an other user/customer so don't let user/customer modifiy the 
+	 * mailmassagestore, uid, qmailUID, qmailGID ... */
+	if ( !chck_pathb(home->s,home->len) ) {
+		debug(2, "warning: check_ldap: path contains illegal chars!\n");
+		qldap_errno = ILL_PATH;
+		return -1;
+	}
+	if (!stralloc_0(home) ) {
+		qldap_errno = ERRNO;
+		return -1;
+	}
+	/* free a part of the info struct */
+	alloc_free(info.user);
+	alloc_free(info.uid);
+	alloc_free(info.gid);
+	alloc_free(info.mms);
+	
+	if ( rebind && search.bind_ok ) {
+		debug(32, 
+				"check_ldap: ldap_lookup sucessfully authenticated with rebind\n");
+		return 0; /* if we got till here under rebind mode, the user is authenticated */
+	} else if ( rebind ) {
+		debug(32, 
+				"check_ldap: ldap_lookup not sucessfully authenticated with rebind\n");
+		qldap_errno = AUTH_FAILD;
+		return -1; /* user authentification faild */
+	}
+	
+	if ( ! extra[0].vals ) {
+		debug(2, "warning: check_ldap: password is missing for uid %s\n", login);
+		qldap_errno = AUTH_NEEDED;
+		return -1; 
+	}
+	
+	ret = cmp_passwd(authdata->s, extra[0].vals[0]); 
+	debug(32, "check_ldap: password compare was %s\n", 
+			ret==0?"successful":"not successful");
+	ldap_value_free(extra[0].vals);
+	return ret;
+}
+
+static int check_passwd(stralloc *login, stralloc *authdata, unsigned long *uid, 
+				 unsigned long *gid, stralloc *home, stralloc *md)
+{
+	int ret;
+	struct passwd *pw;
 #ifdef PW_SHADOW
- struct spwd *spw;
+	struct spwd *spw;
 #endif
 #ifdef AIX
- struct userpw *spw;
+	struct userpw *spw;
 #endif
+	
+	pw = getpwnam(login->s);
+	if (!pw) {
+		/* XXX: unfortunately getpwnam() hides temporary errors */
+		debug(32, "check_passwd: user %s not found in passwd db\n", login->s);
+		qldap_errno = AUTH_NOSUCH;
+		return -1;
+	}
+	*gid = pw->pw_gid;
+	*uid = pw->pw_uid;
 
-#ifdef QLDAPDEBUG
- debug_msg(OUTPUT,"\naction: parsing arguments\n\n");
- if (!argv[1]) {
-   debug_msg(OUTPUT," parsing arguments: no username\n");
-   debug_msg(OUTPUT,"\nusage : %s username password\n\n",argv[0]);
-   _exit(111);
- }
- debug_msg(OUTPUT," parsing arguments: POP username is '%s'\n",argv[1]);
- if (!argv[2]) {
-   debug_msg(OUTPUT," parsing arguments: no password\n");
-   debug_msg(OUTPUT,"\nusage : %s username password\n\n",argv[0]);
-   _exit(111);
- }
- debug_msg(OUTPUT," parsing arguments: POP password is '%s'\n",argv[2]);
- debug_msg(OUTPUT,"\naction: parsing arguments successful\n");
-#else
- if (!argv[1]) _exit(1);
-#endif
-
- /* read the ldap control files */
- if (chdir(auto_qmail) == -1) {
-   debug_msg(OUTPUT," ldap checkpassword \t: unable to chdir to control file directory\n");
-   _exit(1);
- }
- get_qldap_controls();
-
-#ifdef QLDAPDEBUG
- login = argv[1];
- enteredpasswd = argv[2];
- if ( argc == 4 ) {
-   stralloc_copys(&qldap_me, argv[3]);
-   stralloc_0(&qldap_me);
- }
-#else
-
- uplen = 0;
- for (;;)
-  {
-   do r = read(3,up + uplen,sizeof(up) - uplen);
-   while ((r == -1) && (errno == EINTR));
-   if (r == -1) _exit(111);
-   if (r == 0) break;
-   uplen += r;
-   if (uplen >= sizeof(up)) _exit(111);
-  }
- close(3);
-
- i = 0;
- login = up + i;
- while (up[i++]) if (i == uplen) _exit(3);
- enteredpasswd = up + i;
- if (i == uplen) _exit(3);
- while (up[i++]) if (i == uplen) _exit(3);
-
-#endif
-
- /* do the ldap lookup based on the POP username */
- if(qldap_get(login, enteredpasswd, &uid, &gid) ) {
-   if (qldap_localdelivery == 1 ) {
-
- /* check for password and stuff in passwd */
-    debug_msg(OUTPUT,"\naction: ldap lookup not successful\n");
-    debug_msg(OUTPUT,"\naction: try to get password from passwd-file\n\n");
-    pw = getpwnam(login);
-    if (!pw) {
-      debug_msg(OUTPUT," passwd-file lookup \t: login '%s' not found\n",login);
-      _exit(3); /* XXX: unfortunately getpwnam() hides temporary errors */
-    } else {
-      debug_msg(OUTPUT," passwd-file lookup \t: login '%s' found\n",login);
-    }
-
+	/* here we don't check the home and maildir path, if a user has a faked passwd
+	 * entry, then you have a bigger problem on your system than just a guy how can
+	 * read the mail of other users/customers */
+	if (!stralloc_copys(home, pw->pw_dir) ) {
+		qldap_errno = ERRNO;
+		return -1;
+	}
+	
+	if ( get_local_maildir(home, md) == -1 ) {
+		/* function sets qldap_errno */
+		return -1;
+	}
+	debug(32, "get_local_maildir: maildir=%s\n", md->s);
+	
+	if (!stralloc_0(home) ) {
+		qldap_errno = ERRNO;
+		auth_error();
+	}
+	
 #ifdef PW_SHADOW
-    spw = getspnam(login);
-    if (!spw) {
-      debug_msg(OUTPUT," passwd-file lookup \t: login '%s' not found in shadow file\n",login);
-      _exit(3); /* XXX: again, temp hidden */
-    } else {
-      debug_msg(OUTPUT," passwd-file lookup \t: login '%s' found in shadow file\n",login);
-    }
-    if (!stralloc_copys(&password, spw->sp_pwdp) ) _exit(8);
-#else
+	spw = getspnam(login->s);
+	if (!spw) {
+		/* XXX: again, temp hidden */
+		qldap_errno = AUTH_ERROR;
+		return -1;
+	}
+	ret = cmp_passwd(authdata->s, spw->sp_pwdp);
+#else /* no PW_SHADOW */
 #ifdef AIX
-    spw = getuserpw(login);
-    if (!spw) {
-      debug_msg(OUTPUT," passwd-file lookup \t: login '%s' not found in shadow file\n",login);
-      _exit(3); /* XXX: and again */
-    } else {
-      debug_msg(OUTPUT," passwd-file lookup \t: login '%s' found in shadow file\n",login);
-    }
-    if (!stralloc_copys(&password, spw->upw_passwd) ) _exit(8);
-#else
-    if (!stralloc_copys(&password, pw->pw_passwd) ) _exit(8);
-#endif /* AIX */
-#endif /* PW_SHADOW */
-    if (!stralloc_0(&password) ) _exit(8);
-    debug_msg(OUTPUT," passwd-file lookup \t: found password '%s'\n", password.s);
+	spw = getuserpw(login->s);
+	if (!spw) {
+		/* XXX: and again */
+		qldap_errno = AUTH_ERROR;
+		return -1;
+	}
+	ret = cmp_passwd(authdata->s, spw->upw_passwd);
+#else /* no AIX */
+	ret = cmp_passwd(authdata->s, pw->pw_passwd);
+#endif /* END AIX */
+#endif /* END PW_SHADOW */
+	debug(32, "check_pw: password compare was %s\n", 
+			ret==0?"successful":"not successful");
+	return ret;
+	
+}
 
-    gid = pw->pw_gid;
-    debug_msg(OUTPUT," passwd-file lookup \t: GID succeeded for '%u'\n",gid );
-  
-    uid = pw->pw_uid;
-    debug_msg(OUTPUT," passwd-file lookup \t: UID succeeded for '%u'\n",uid );
-  
-    if (!stralloc_copys(&homedir, pw->pw_dir) ) _exit(8);
-    if (homedir.s[homedir.len -1] != '/') 
-       if (!stralloc_cats(&homedir, "/") ) _exit(8);
-    if (!stralloc_cat(&homedir, &qldap_passwdappend) ) _exit(8);
-    if (!stralloc_0(&homedir) ) _exit(8);
-    debug_msg(OUTPUT," passwd-file lookup \t: homedir path is '%s'\n",homedir.s);
-  
-    debug_msg(OUTPUT,"\naction: get password from passwd-file succeeded\n");
-#ifdef QLDAP_BIND
-    encrypted = crypt(enteredpasswd,password.s);
-    debug_msg(OUTPUT," comparing passwords \t: crypt()ed '%s'\n",encrypted);
-    if (!*password.s || str_diff(password.s,encrypted) ) {
-      debug_msg(OUTPUT," comparing passwords \t: compare crypt failed\n");
-      _exit(3);
-    }
-    debug_msg(OUTPUT," comparing passwords \t: compare crypt succeeded\n");
+static int cmp_passwd(char *clear, char *encrypted)
+{
+#define HASH_LEN 100 /* is this enough, I think yes *//* What do you think ? */
+	char hashed[HASH_LEN];
+	char salt[33];
+	int  shift;
+	
+	if (encrypted[0] == '{') { /* hashed */
+		if (!str_diffn("{crypt}", encrypted, 7) ) {
+			/* CRYPT */
+			shift = 7;
+			str_copy(hashed, crypt(clear, encrypted+shift) );
+		} else if (!str_diffn("{MD4}", encrypted, 5) ) {
+			/* MD4 */
+			shift = 5;
+			MD4DataBase64(clear, strlen(clear), hashed, sizeof(hashed));
+		} else if (!str_diffn("{MD5}", encrypted, 5) ) {
+			/* MD5 */
+			shift = 5;
+			MD5DataBase64(clear, strlen(clear), hashed, sizeof(hashed));
+		} else if (!str_diffn("{NS-MTA-MD5}", encrypted, 12) ) {
+			/* NS-MTA-MD5 */
+			shift = 12;
+			if (!strlen(encrypted) == 76) {
+				qldap_errno = ILL_AUTH;
+				return -1;
+			} /* boom */
+			byte_copy(salt, 32, &encrypted[44]);
+			salt[32] = 0;
+			ns_mta_hash_alg(hashed, salt, clear);
+			byte_copy(&hashed[32], 33, salt);
+		} else if (!str_diffn("{SHA}", encrypted, 5) ) {
+			/* SHA */
+			shift = 5;
+			SHA1DataBase64(clear, strlen(clear), hashed, sizeof(hashed));
+		} else  if (!str_diffn("{RMD160}", encrypted, 8) ) {
+			/* RMD160 */
+			shift = 8;
+			RMD160DataBase64(clear, strlen(clear), hashed, sizeof(hashed));
+		} else {
+			/* unknown hash function detected */ 
+			shift = 0;
+			qldap_errno = ILL_AUTH;
+			return -1;
+		}
+		/* End getting correct hash-func hashed */
+		debug(128, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
+				hashed, encrypted);
+		if (!*encrypted || str_diff(hashed,encrypted+shift) ) {
+			qldap_errno = AUTH_FAILD;
+			return -1;
+		}
+		/* hashed passwds are equal */
+	} else { /* crypt or clear text */
+		debug(128, "cpm_passwd: comparing standart passwd (%s == %s)\n", 
+				crypt(clear,encrypted), encrypted);
+		if (!*encrypted || str_diff(encrypted, crypt(clear,encrypted) ) ) {
+			/* CLEARTEXTPASSWD ARE NOT GOOD */
+#ifdef CLEARTEXTPASSWD
+			if (!*encrypted || str_diff(encrypted, clear) ) {
 #endif
-
-  } else { /* do not check in passwd file */
-    debug_msg(OUTPUT," nothing found, giving up\n");
-    _exit(3);
-  }
- }
-#ifndef QLDAP_BIND
- /* compare the password given by user and the stored one */
-   debug_msg(OUTPUT,"\naction: comparing passwords\n\n");
-
- if (password.s[0] == '{') { /* hashed */
-   debug_msg(OUTPUT," comparing passwords \t: password is encrypted with an hash function\n");
-   debug_msg(OUTPUT," comparing passwords \t: found value '%s'\n",password.s);
-   if (!str_diffn("{crypt}", password.s, 7) ) {
-   /* CRYPT */
-      shift = 7;
-      encrypted=crypt(enteredpasswd,password.s+shift);
-      str_copy(hashed,encrypted);
-      debug_msg(OUTPUT," comparing passwords \t: calculated  '{crypt}%s'\n",hashed);
-   } else if (!str_diffn("{MD4}", password.s, 5) ) {
-   /* MD4 */
-      shift = 5;
-      MD4DataBase64(enteredpasswd,strlen(enteredpasswd),hashed,sizeof(hashed));
-      debug_msg(OUTPUT," comparing passwords \t: calculated  '{MD4}%s'\n",hashed);
-   } else if (!str_diffn("{MD5}", password.s, 5) ) {
-   /* MD5 */
-      shift = 5;
-      MD5DataBase64(enteredpasswd,strlen(enteredpasswd),hashed,sizeof(hashed));
-      debug_msg(OUTPUT," comparing passwords \t: calculated  '{MD5}%s'\n",hashed);
-   } else if (!str_diffn("{NS-MTA-MD5}", password.s, 12) ) {
-   /* NS-MTA-MD5 */
-      shift = 12;
-      if (!strlen(password.s) == 76) {
-      debug_msg(OUTPUT," comparing passwords \t: NS-MTA-MD5 password string length mismatch\n");
-      _exit(3); } /* boom */
-      strncpy(salt,&password.s[44],32);
-      salt[32] = 0;
-      ns_mta_hash_alg(hashed,salt,enteredpasswd);
-      strncpy(&hashed[32],salt,33);
-      debug_msg(OUTPUT," comparing passwords \t: calculated  '{NS-MTA-MD5}%s'\n",hashed);
-   } else if (!str_diffn("{SHA}", password.s, 5) ) {
-   /* SHA */
-      shift = 5;
-      SHA1DataBase64(enteredpasswd,strlen(enteredpasswd),hashed,sizeof(hashed));
-      debug_msg(OUTPUT," comparing passwords \t: calculated  '{SHA}%s'\n",hashed);
-   } else  if (!str_diffn("{RMD160}", password.s, 8) ) {
-   /* RMD160 */
-      shift = 8;
-      RMD160DataBase64(enteredpasswd,strlen(enteredpasswd),hashed,sizeof(hashed));
-      debug_msg(OUTPUT," comparing passwords \t: calculated  '{RMD160}%s'\n",hashed);
-   } else {
-   /* unknown hash function detected */ 
-      shift = 0;
-      debug_msg(OUTPUT," comparing passwords \t: unknown hash function\n");
-      _exit(3);
-   }
-   /* End getting correct hash-func hashed */
-   if (!*password.s || str_diff(hashed,password.s+shift) ) {
-     debug_msg(OUTPUT," comparing passwords \t: compare failed, password are not equal\n");
-     _exit(3);
-   } else {
-     debug_msg(OUTPUT," comparing passwords \t: compare succeeded, passwords are equal\n");
-   }
- } else { /* crypt or clear text */
-   debug_msg(OUTPUT," comparing passwords \t: password is crypt()ed or clear text\n");
-   debug_msg(OUTPUT," comparing passwords \t: found value '%s'\n",password.s);
-
-#warning ___remove_crypt_code_@_clear_text_compare___
-   encrypted = crypt(enteredpasswd,password.s);
-   debug_msg(OUTPUT," comparing passwords \t: crypt()ed '%s'\n",encrypted);
-   if (!*password.s || str_diff(password.s,encrypted) ) {
-     debug_msg(OUTPUT," comparing passwords \t: compare crypt failed, doing clear text compare\n");
-     if (!*password.s || str_diff(password.s,enteredpasswd) ) {
-       debug_msg(OUTPUT," comparing passwords \t: clear text compare also failed\n");
-       _exit(3);
-     } else {
-       debug_msg(OUTPUT," comparing passwords \t: compare clear text succeeded, passwords are equal\n");
-     }
-   } else {
-     debug_msg(OUTPUT," comparing passwords \t: compare crypt succeeded, passwords are equal\n");
-   }
- } /* end -- hashed or crypt/clear text */
- debug_msg(OUTPUT,"\naction: comparing passwords done successful\n");
-#endif /* QLDAP_BIND */
-
- for(i = 0; i < sizeof(up); i++) up[i] = 0;
-
- debug_msg(OUTPUT,"\naction: doing set{gid|uid} and chdir(homedir)\n\n");
-
- /* set uid, gid, chdir to homedir of POP user */
- if (setgid(gid) == -1) {
-   debug_msg(OUTPUT," set{gid|uid} \t: setgid failed with '%i'\n",gid);
-   _exit(25);
- } else {
-   debug_msg(OUTPUT," set{gid|uid} \t: setgid succeeded with '%i'\n",gid);
- }
- if (setuid(uid) == -1) {
-   debug_msg(OUTPUT," set{gid|uid} \t: setuid failed with '%i'\n",uid);
-   _exit(25);
- } else {
-   debug_msg(OUTPUT," set{gid|uid} \t: setuid succeeded with '%i'\n",uid);
- }
- if (!getuid()) {
-   debug_msg(OUTPUT," ABORTING, ROOT IS NOT ALLOWED!!!!\n");
-   _exit(25);
- }
-
- if (chdir(homedir.s) == -1) {
-#ifdef AUTOHOMEDIRMAKE
-   if (errno == error_noent && qldap_dirmaker.len > 1) {
-     /* do the auto homedir creation */
-     int child;
-     char *(dirargs[4]);
-     int wstat;
-
-     if (!stralloc_0(&qldap_dirmaker)) _exit(8);
-
-     switch(child = fork()) {
-     case -1:
-       debug_msg(OUTPUT," create homedir : fork failed\n");
-       _exit(7);
-     case 0:
-       dirargs[0] = qldap_dirmaker.s; dirargs[1] = homedir.s;
-       dirargs[2] = argv[2]; dirargs[3] = 0;
-       execv(*dirargs,dirargs);
-       debug_msg(OUTPUT," create homedir : exec '%s' failed with %s\n", dirargs[0],error_str(errno));
-       _exit(7);
-     }
-
-     wait_pid(&wstat,child);
-     if (wait_crashed(wstat)) {
-       debug_msg(OUTPUT," create homedir : %s crashed\n", qldap_dirmaker.s);
-       _exit(7);
-     }
-     switch(wait_exitcode(wstat)) {
-     case 0: break;
-     default:
-       debug_msg(OUTPUT," create homedir : %s's exitcode is not zero\n", qldap_dirmaker.s);
-       _exit(7);
-     }
-     debug_msg(OUTPUT," create homedir : so far everything went fine\n");
-     if (chdir(homedir.s) == -1)
-       debug_msg(OUTPUT," chdir(homedir) : chdir failed with '%s'; %s\n",homedir.s,error_str(errno));
-     else
-       debug_msg(OUTPUT," chdir(homedir) : chdir succeeded with '%s'\n",homedir.s);
-   } else {
+			qldap_errno = AUTH_FAILD;
+			return -1;
+#ifdef CLEARTEXTPASSWD
+			}
 #endif
-   debug_msg(OUTPUT," chdir(homedir) : chdir failed with '%s'; %s\n",homedir.s,error_str(errno));
-   _exit(6);
-#ifdef AUTOHOMEDIRMAKE
-   }
-#endif
- } else {
-   debug_msg(OUTPUT," chdir(homedir) : chdir succeeded with '%s'\n",homedir.s);
- }
- debug_msg(OUTPUT,"\naction: set{uid|gid} and chdir(homedir) done successful\n");
+			/* crypted or cleartext passwd ok */
+		}
+	} /* end -- hashed or crypt/clear text */
 
-#ifndef QLDAPDEBUG
- /* set up the environment for the execution of qmail-pop3d */
+	return 0;
 
- if (!env_put2("USER",login)) _exit(111);
- if (!env_put2("HOME",homedir.s)) _exit(111);
+}
 
- execvp(argv[1],argv + 1);
-#endif
+static int get_local_maildir(stralloc *home, stralloc *maildir)
+{
+	substdio ss;
+	stralloc dotqmail = {0};
+	char buf[512];
+	int match;
+	int fd;
+	
+	if ( ! stralloc_copy(&dotqmail, home) ) {
+		qldap_errno = ERRNO;
+		return -1;
+	}
+	if ( ! stralloc_cats(&dotqmail, "/.qmail") ) {
+		qldap_errno = ERRNO;
+		return -1;
+	}
+	if ( ! stralloc_0(&dotqmail) ) {
+		qldap_errno = ERRNO;
+		return -1;
+	}
+	
+	if ( ( fd = open_read(dotqmail.s) ) == -1 ) {
+		if ( errno == error_noent ) return 0;
+		qldap_errno = ERRNO;
+		return -1;
+	}
+	substdio_fdbuf(&ss,read,fd,buf,sizeof(buf));
+	while (1) {
+		if (getln(&ss,&dotqmail,&match,'\n') != 0) goto tryclose;
+		if (!match && !dotqmail.len) break;
+		if ( (dotqmail.s[0] == '.' || dotqmail.s[0] == '/') && 
+			  dotqmail.s[dotqmail.len-2] == '/' ) { /* is a maildir line ? */
+			if ( ! stralloc_copy(maildir, &dotqmail) ) goto tryclose;
+			maildir->s[maildir->len-1] = '\0';
+			break;
+		}		
+	}
+	
+	close(fd);
+	if ( ! stralloc_copys(&dotqmail, "") ) {
+		qldap_errno = ERRNO;
+		return -1;
+	}
+	return 0;
 
- _exit(0);
+tryclose:
+	match = errno; /* preserve errno */
+	close(fd);
+	errno = match;
+	qldap_errno = ERRNO;
+	return -1;
 
 }
 
@@ -745,7 +415,7 @@ static void copyloop(int infd, int outfd, int timeout)
 	int maxfd;			/* Maximum numbered fd used */
 	struct timeval tv;
 	unsigned long bytes;
-	char buf[4096];
+	char buf[4096];		/* very big buffer ethernet pkgs are only 1500 bytes long */
 
 	/* Set up timeout */
 	tv.tv_sec = timeout;
@@ -762,13 +432,10 @@ static void copyloop(int infd, int outfd, int timeout)
 		maxfd = outfd;
 	}
 
-	debug_msg(OUTPUT, "Entering copyloop() - timeout is %d\n", timeout);
 	while(1) {
-		//memcpy(&iofds, &savedfds, sizeof(iofds));
 		byte_copy(&iofds, sizeof(iofds), &savedfds);
-		
-		if ( select( maxfd + 1, &iofds, (fd_set *)0, (fd_set *)0, &tv)
-			  <= 0 ) {
+
+		if ( select( maxfd + 1, &iofds, (fd_set *)0, (fd_set *)0, &tv) <= 0 ) {
 			break;
 		}
 
@@ -785,33 +452,12 @@ static void copyloop(int infd, int outfd, int timeout)
 				break;
 		}
 	}
-	debug_msg(OUTPUT, "Leaving main copyloop\n");
 
 	shutdown(infd,0);
 	shutdown(outfd,0);
 	close(infd);
 	close(outfd);
 	return;
-}
-
-static void get_ok(int ffd)
-{
-	char temp;
-	int  len;
-	int  ok = 0;
-	
-	while (!read(ffd, &temp, 1) );
-	if ( temp == '+' ) {
-		while(1) {
-			len = read(ffd, &temp, 1);
-			if (len && temp == '\n' ) {
-			  return;
-			}
-		}
-	} else {
-		debug_msg(OUTPUT, "Other pop-server is not happy\n");
-		_exit(5);
-	}
 }
 
 static void forward_session(char *host, char *name, char *passwd)
@@ -822,48 +468,69 @@ static void forward_session(char *host, char *name, char *passwd)
 	int timeout = 60;
 	int ctimeout = 20;
 	
-	if (!stralloc_copys(&host_stralloc, host)) _exit(8);
+	if (!stralloc_copys(&host_stralloc, host)) {
+		qldap_errno = ERRNO;
+		auth_error();
+	}
 
 	switch (dns_ip(&ip,&host_stralloc)) {
 		case DNS_MEM:
-			debug_msg(OUTPUT, "Out of memory\n");
-			_exit(8);
+			qldap_errno = ERRNO;
+			auth_error();
 		case DNS_SOFT:
-			debug_msg(OUTPUT, "Sorry, I couldn't find any host by that name.\n");
-			_exit(5);
+			qldap_errno = BADCLUSTER;
+			auth_error();
 		case DNS_HARD:
-			debug_msg(OUTPUT, "There is no host named '%s'\n", host);
-			_exit(5);
+			qldap_errno = BADCLUSTER;
+			auth_error();
 		case 1:
 			if (ip.len <= 0) {
-				debug_msg(OUTPUT, "Sorry, I couldn't find any host by that name.\n");
-				_exit(5);
+				qldap_errno = BADCLUSTER;
+				auth_error();
 			}
 	}
 	if ( ip.len != 1 ) {
-		debug_msg(OUTPUT, "Too many hosts found ???\n");
-		_exit(5);
+		qldap_errno = BADCLUSTER;
+		auth_error();
 	}
 	
 	ffd = socket(AF_INET,SOCK_STREAM,0);
 	if (ffd == -1) {
-		debug_msg(OUTPUT, "socket made a booboo\n");
-		_exit(5);
+		qldap_errno = ERRNO;
+		auth_error();
 	}
 	
-	if (timeoutconn(ffd,&ip.ix[0].ip,110,ctimeout) != 0) {
-		debug_msg(OUTPUT, "timeoutconn made a booboo\n");
-		_exit(5);
+	if (timeoutconn(ffd, &ip.ix[0].ip, auth_port, ctimeout) != 0) {
+		qldap_errno = ERRNO;
+		auth_error();
 	}
 	
 	/* We have a connection, first send user and pass */
-	get_ok(ffd);
-	write(ffd, "user ", 5); write(ffd, name, str_len(name) ); write(ffd, "\n", 1);
-	get_ok(ffd);
-	write(ffd, "pass ", 5); write(ffd, passwd, str_len(passwd) ); write(ffd, "\n",1);
-	/* Now the other server can handle this */
+	auth_forward(ffd, name, passwd);
 	copyloop(0, ffd, timeout);
-	
-	_exit(0);
+
+	_exit(0); /* here all went ok, exit normaly */
+
 }
+
+static char* make_filter(stralloc *value)
+/* create a searchfilter, "(uid=VALUE)" */
+{
+	char *f;
+	char *filter;
 	
+	f = alloc(value->len + 7 ); /* allocate a reagion that is big enough */
+	filter = f;
+	f += fmt_str(f, "(uid=");
+	f += fmt_strn(f, value->s, value->len);
+	f += fmt_str(f, ")"); *f++ = 0;
+
+	assert(f-filter <= value->len + 7); /* XXX remove if ok */
+	return filter;
+}
+
+static void free_filter(char* filter)
+{
+	alloc_free(filter);
+}
+

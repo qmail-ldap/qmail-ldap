@@ -110,7 +110,9 @@ char *pass;
   int wstat;
   int pi[2];
  
+#ifndef DEBUG
   if (fd_copy(2,1) == -1) die_pipe();
+#endif
   close(3);
   if (pipe(pi) == -1) die_pipe();
   if (pi[0] != 3) die_pipe();

@@ -16,10 +16,18 @@
 #include "readwrite.h"
 #include "timeoutread.h"
 #include "timeoutwrite.h"
+
+/* qmail-ldap stuff */
 #ifdef AUTOMAILDIRMAKE
- #include "error.h"
+#include "error.h"
 #endif
 
+#include "maildir++.h"
+#include "env.h"
+char *dir;
+int qfd;
+/* end qmail-ldap stuff */
+ 
 void die() { _exit(0); }
 
 int saferead(fd,buf,len) int fd; char *buf; int len;
@@ -175,7 +183,16 @@ void pop3_stat()
 void pop3_rset()
 {
   int i;
-  for (i = 0;i < numm;++i) m[i].flagdeleted = 0;
+/* qmail-ldap stuff */
+/* this is just minimal support, because pop3 can not produce new mail */
+  for (i = 0;i < numm;++i) {
+    if ( m[i].flagdeleted == 1 ) {
+      quota_maildir(dir,(char *) 0, &qfd, 0, 0);
+      if ( qfd != -1 ) quota_add(qfd, m[i].size, 1);
+    }
+    m[i].flagdeleted = 0;
+  }
+/* end qmail-ldap stuff */
   last = 0;
   okay();
 }
@@ -225,6 +242,11 @@ void pop3_dele(arg) char *arg;
   if (i == -1) return;
   m[i].flagdeleted = 1;
   if (i + 1 > last) last = i + 1;
+/* qmail-ldap stuff */
+/* this is just minimal support, because pop3 can not produce new mail */
+  quota_maildir(dir,(char *) 0, &qfd, 0, 0);
+  if ( qfd != -1 ) quota_rm(qfd, m[i].size, 1);
+/* end qmail-ldap stuff */
   okay();
 }
 
@@ -269,7 +291,7 @@ void pop3_top(arg) char *arg;
   unsigned long limit;
   int fd;
 #ifdef MAKE_NETSCAPE_WORK /* Based on a patch by sven@megabit.net */
-  char foo[21];  /* should be enough to hold a 64bit-ulong */
+  char foo[40];  /* should be enough to hold 2^128 - 1 in decimal, plus \0 */
 #endif
  
   i = msgno(arg);
@@ -316,9 +338,15 @@ void main(argc,argv)
 int argc;
 char **argv;
 {
+/* qmail-ldap stuff */
+  char *env;
+  
   sig_alarmcatch(die);
   sig_pipeignore();
- 
+  
+  /* if MAILDIR is defined us this as Maildir and not the argument */
+  if ( (env = env_get("MAILDIR") ) && *env ) argv[1] = env;
+
   if (!argv[1]) die_nomaildir();
   if (chdir(argv[1]) == -1) {
 #ifdef AUTOMAILDIRMAKE
@@ -363,6 +391,8 @@ char **argv;
    } else if (! S_ISDIR(st.st_mode) ) die_maildir();
   }
 #endif
+  dir = argv[1];
+/* qmail-ldap stuff */
 
   getlist();
 
