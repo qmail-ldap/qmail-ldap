@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/04/23 21:01:15 $ ($Revision: 1.49 $)
+RELEASE: $Date: 2002/04/24 07:36:36 $ ($Revision: 1.50 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -34,7 +34,7 @@ NEWS for current stuff:
 
  Add an external TODO processor program. This moves the queue todo processing
  out of qmail-send to avoid the silly qmail syndrome with high injection rates
- (see EXTTODO for more info). Enable with -DEXTTODO in Makefile.
+ (see EXTTODO for more info). Enable with -DEXTERNAL_TODO in Makefile.
 
 NEWS for 20011001 stuff:
 

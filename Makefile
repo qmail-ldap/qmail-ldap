@@ -8,9 +8,9 @@
 # -DDASH_EXT to enable the dash_ext patch for extended mail addresses
 # -DCLEARTEXTPASSWD to use cleartext passwords (a bad idea on production
 # systems)
-# -DEXTTODO to use the external high-performance todo processing (this
+# -DEXTERNAL_TODO to use the external high-performance todo processing (this
 # avoids the silly qmail syndrome with high injection rates)
-#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTTODO
+#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
