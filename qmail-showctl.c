@@ -15,6 +15,7 @@
 #include "auto_patrn.h"
 #include "auto_spawn.h"
 #include "auto_split.h"
+#include "byte.h"
 
 stralloc me = {0};
 int meok;
@@ -217,7 +218,7 @@ void main()
     _exit(111);
   }
   ldapok = control_readfile(&ldapserver,"ldapserver",0);
-  byte_repl(ldap_server.s, ldap_server.len, '\0', ' ');
+  byte_repl(ldapserver.s, ldapserver.len, '\0', ' ');
   if (ldapok == -1) {
     substdio_puts(subfdout,"Oops! Trouble reading control/ldapserver.");
     substdio_flush(subfdout);
@@ -302,7 +303,7 @@ void main()
 
   substdio_puts(subfdout,"\n\n\nNow the qmail-ldap specific files:\n");
   do_str("ldapbasedn",0,"NULL","LDAP basedn: ");
-  do_list("ldapserver","undefined! Uh-oh","","");
+  do_lst("ldapserver","undefined! Uh-oh","","");
   do_str("ldaplogin",0,"NULL","LDAP login: ");
   do_str("ldappassword",0,"NULL","LDAP password: ");
   do_int("ldaptimeout","30","LDAP server timeout is "," seconds");
