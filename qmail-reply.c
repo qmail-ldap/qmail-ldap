@@ -155,7 +155,7 @@ int junksender(char *buf, int len)
 	if (constmap(&mapjunk,buf+at,len-at)) return 1;
 	
 	for (dash = 0; dash < at; dash++) {
-		dash = byte_chr(buf+dash,at-dash);
+		dash += byte_chr(buf+dash,at-dash, '-');
 		if (constmap(&mapjunk,buf+dash,at-dash)) return 1;
 	}
 	return 0;
