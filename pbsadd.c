@@ -11,7 +11,8 @@
 #include "exit.h"
 #include "fmt.h"
 #include "ip.h"
-#include "readwrite.h"
+#include "open.h"
+#include "str.h"
 #include "stralloc.h"
 #include "substdio.h"
 

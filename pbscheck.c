@@ -12,7 +12,7 @@
 #include "fmt.h"
 #include "ip.h"
 #include "now.h"
-#include "readwrite.h"
+#include "open.h"
 #include "str.h"
 #include "stralloc.h"
 #include "substdio.h"
@@ -195,11 +195,12 @@ int env_snap()
     str_copy(envsnap[en],environ[en]);
   }
   envsnap[en] = 0;
+  return 1;
 }
 
 stralloc vbuf = {0};
 
-char* env_rewrite(char** name, char** value)
+void env_rewrite(char** name, char** value)
 {
   char *e;
   int i;
@@ -267,7 +268,6 @@ int main (int argc, char** argv)
   struct ip_address ip;
   char **childargs;
   char *ipstr;
-  char *x;
   char *s;
   unsigned long t;
   int sfd;
