@@ -162,6 +162,7 @@ int comm_canwrite(void)
 {
  /* XXX: could allow a bigger buffer; say 10 recipients */
  /* XXX: returns true if there is something in the buffer */
+ if (!flagsendalive) return 0;
  if (comm_buf.s && comm_buf.len) return 1;
  return 0;
 }
@@ -307,7 +308,7 @@ void comm_do(fd_set *wfds, fd_set *rfds)
       int r;
       r = read(fdin, &c, 1);
       if (r <= 0) {
-	if ((r == -1) && (errno == error_pipe))
+	if ((r == -1) && (errno != error_intr))
 	  senddied();
       } else {
 	switch(c) {
