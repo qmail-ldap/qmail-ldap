@@ -20,9 +20,6 @@ int b64_ntops(unsigned char const *, size_t , stralloc *);
 /* the same as above but this time with a stralloc as destination */
 int b64_ptons(char const *, stralloc *);
 
-#define BASE64_NTOP_LEN(x)      (((x)+2)/3 * 4 + 1)
-#define BASE64_PTON_LEN(x)      (((x)+3)/4 * 3 + 1)
-
 int hex_ntops(unsigned char const *, size_t, stralloc *);
 int hex_ptons(char const *, stralloc *);
 

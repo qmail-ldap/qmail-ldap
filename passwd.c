@@ -111,7 +111,10 @@ feed_crypt(const char *format)
 	if (!stralloc_copyb(&cryptformat, format, len)) goto fail;
 	for (slen = len; format[slen] == 'X'; slen++) ;
 	slen -= len;
-	if (BASE64_PTON_LEN(slen) > salt.len) goto fail;
+	if (slen > salt.len * 4 / 3) goto fail; /* slen is in base64 but salt
+						   is not. The conversion isn't
+						   100% correct but close
+						   enough. */
 	if (b64_ntops(salt.s, slen, &intermediate) == -1) goto fail;
 	if (!stralloc_catb(&cryptformat, intermediate.s, slen)) goto fail;
 	if (!stralloc_0(&cryptformat)) goto fail;
