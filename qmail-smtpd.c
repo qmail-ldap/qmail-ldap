@@ -42,6 +42,7 @@ SSL *ssl = NULL;
 #endif
 
 #define MAXHOPS 100
+#define MAXLINELEN 10000
 unsigned long databytes = 0;
 int timeout = 1200;
 
@@ -146,6 +147,7 @@ void die_nomem(void) { out("421 out of memory (#4.3.0)\r\n"); logline(1,"out of 
 void die_control(void) { out("421 unable to read controls (#4.3.0)\r\n"); logline(1,"unable to read controls, closing connection"); flush(); _exit(1); }
 void die_ipme(void) { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); logline(1,"unable to figure out my IP address, closing connection"); flush(); _exit(1); }
 void straynewline(void) { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
+void oversizedline(void) { out("500 Text line too long."); logline(1,"Oversized line in data part, closing connection"); flush(); _exit(1); }
 void err_qqt(void) { out("451 qqt failure (#4.3.0)\r\n"); }
 void err_dns(void) { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
 void err_ldapsoft(void) { out("451 temporary ldap lookup failure, try again later\r\n"); logline(1,"temporary ldap lookup failure"); }
@@ -1255,6 +1257,7 @@ void blast(unsigned int *hops)
         if (flagmaybey) if (pos == 1) flaginheader = 0;
       }
       ++pos;
+      if (pos > MAXLINELEN) oversizedline();
       if (ch == '\n') { pos = 0; flagmaybex = flagmaybey = flagmaybez = 1; }
     }
     switch(state) {
