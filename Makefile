@@ -15,6 +15,13 @@ LDAPINCLUDES=-I/usr/local/include
 # if you need a special include-directory for ldap headers enable this
 #LDAPINCLUDES=-I/opt/OpenLDAP/include
 
+# TLS SMTP encryption in qmail-smtpd and qmail-remote
+# You need OpenSSL for this
+# TLS enable
+#TLSON=-DTLS
+# Path to OpenSSL libraries
+#TLSLIBS=-L/usr/local/lib -lssl -lcrypto
+
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
 MNW=-DMAKE_NETSCAPE_WORK 
@@ -1581,6 +1588,7 @@ substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
 	ipalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
 	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
 	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib`
+#	-L/usr/local/ssl/lib -lssl -lcrypto
 
 qmail-remote.0: \
 qmail-remote.8
@@ -1592,7 +1600,7 @@ subfd.h substdio.h scan.h case.h error.h auto_qmail.h control.h dns.h \
 alloc.h quote.h ip.h ipalloc.h ip.h gen_alloc.h ipme.h ip.h ipalloc.h \
 gen_alloc.h gen_allocdefs.h str.h now.h datetime.h exit.h constmap.h \
 tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
-	./compile qmail-remote.c
+	./compile ${TLSON} qmail-remote.c
 
 qmail-reply: \
 load qmail-reply.o case.a getln.a sig.a open.a seek.a env.a fd.a \
@@ -1690,6 +1698,7 @@ fs.a auto_qmail.o dns.lib socket.lib
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
 	alloc.a substdio.a error.a str.a fs.a auto_qmail.o dns.o \
 	`cat dns.lib` `cat socket.lib`
+#	-L/usr/local/ssl/lib -lssl -lcrypto
 
 qmail-smtpd.0: \
 qmail-smtpd.8
@@ -1701,7 +1710,7 @@ substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
 exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h
-	./compile qmail-smtpd.c
+	./compile ${TLSON} qmail-smtpd.c
 
 qmail-start: \
 load qmail-start.o prot.o fd.a auto_uids.o
@@ -2286,6 +2295,13 @@ compile wait_nohang.c haswaitp.h
 wait_pid.o: \
 compile wait_pid.c error.h haswaitp.h
 	./compile wait_pid.c
+
+#cert:
+#	/usr/local/bin/openssl req -new -x509 -nodes \
+#	-out /var/qmail/control/cert.pem -days 366 \
+#	-keyout /var/qmail/control/cert.pem
+#	chmod 640 /var/qmail/control/cert.pem
+#	chown qmaild:qmail /var/qmail/control/cert.pem
 
 backup: \
 BLURB BLURB2 BLURB3 BLURB4 README FAQ INSTALL INSTALL.alias INSTALL.ctl \
