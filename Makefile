@@ -1988,17 +1988,18 @@ tcpto.h
 qmail-secretary: \
 load qmail-secretary.o base64.o digest_sha1.o control.o newfield.o now.o \
 date822fmt.o datetime.a mailmaker.o mailmagic.o case.a getln.a qmail.o \
-getopt.a seek.a fd.a wait.a sig.a open.a stralloc.a env.a alloc.a strerr.a \
-substdio.a error.a str.a fs.a auto_qmail.o
+quote.o getopt.a seek.a fd.a wait.a sig.a open.a stralloc.a env.a alloc.a \
+strerr.a substdio.a error.a str.a fs.a auto_qmail.o
 	./load qmail-secretary base64.o digest_sha1.o control.o newfield.o \
 	now.o date822fmt.o datetime.a mailmaker.o mailmagic.o case.a getln.a \
-	qmail.o getopt.a seek.a fd.a wait.a sig.a open.a stralloc.a env.a \
-	alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o
+	qmail.o quote.o getopt.a seek.a fd.a wait.a sig.a open.a stralloc.a \
+	env.a alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o
 	
 qmail-secretary.o: \
 compile qmail-secretary.c uint32.h base64.h byte.h case.h digest_sha1.h \
-env.h error.h fmt.h getln.h mailmagic.h now.h open.h seek.h sgetopt.h \
-sig.h str.h stralloc.h strerr.h substdio.h qldap-errno.h mailmaker.h
+direntry.h env.h error.h fd.h fmt.h getln.h mailmagic.h newfield.h now.h \
+open.h qmail.h quote.h readwrite.h seek.h sgetopt.h sig.h str.h stralloc.h \
+strerr.h substdio.h wait.h qldap-errno.h mailmaker.h
 	./compile $(LDAPFLAGS) $(MDIRMAKE) qmail-secretary.c
 
 qmail-send: \

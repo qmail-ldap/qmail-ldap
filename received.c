@@ -27,7 +27,7 @@ static int issafe(ch) char ch;
 
 void safeput(qqt,s)
 struct qmail *qqt;
-char *s;
+const char *s;
 {
   char ch;
   while ((ch = *s++)) {

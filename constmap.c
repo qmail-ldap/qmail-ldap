@@ -3,7 +3,7 @@
 #include "case.h"
 
 static constmap_hash hash(s,len)
-char *s;
+const char *s;
 unsigned int len;
 {
   unsigned char ch;

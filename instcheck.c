@@ -12,10 +12,10 @@ extern void hier();
 #define WARNING "instcheck: warning: "
 
 void perm(prefix1,prefix2,prefix3,file,type,uid,gid,mode)
-char *prefix1;
-char *prefix2;
-char *prefix3;
-char *file;
+const char *prefix1;
+const char *prefix2;
+const char *prefix3;
+const char *file;
 int type;
 int uid;
 int gid;
@@ -42,7 +42,7 @@ int mode;
 }
 
 void h(home,uid,gid,mode)
-char *home;
+const char *home;
 int uid;
 int gid;
 int mode;
