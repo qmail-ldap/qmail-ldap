@@ -16,6 +16,9 @@
 #include "readwrite.h"
 #include "timeoutread.h"
 #include "timeoutwrite.h"
+#ifdef AUTOMAILDIRMAKE
+ #include "error.h"
+#endif
 
 #define MAKE_NETSCAPE_WORK /* make the Netscape download progress bar work with qmail-pop3d */
 
@@ -311,8 +314,19 @@ char **argv;
   sig_pipeignore();
  
   if (!argv[1]) die_nomaildir();
-  if (chdir(argv[1]) == -1) die_nomaildir();
- 
+  if (chdir(argv[1]) == -1) {
+#ifdef AUTOMAILDIRMAKE
+   if (errno == error_noent) {
+    umask(077);
+    if (mkdir(argv[1],0700) == -1) die_nomaildir();
+    if (chdir(argv[1]) == -1) die_nomaildir();
+    if (mkdir("tmp",0700) == -1) die_nomaildir();
+    if (mkdir("new",0700) == -1) die_nomaildir();
+    if (mkdir("cur",0700) == -1) die_nomaildir();
+   } else
+#endif
+    die_nomaildir();
+  } 
   getlist();
 
   okay();

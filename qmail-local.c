@@ -107,7 +107,18 @@ char *dir;
  substdio ssout;
 
  sig_alarmcatch(sigalrm);
- if (chdir(dir) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+ if (chdir(dir) == -1) { 
+#ifdef AUTOMAILDIRMAKE
+   if (errno == error_noent) {
+     umask(077);
+     if (mkdir(dir,0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+     if (chdir(dir) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+     if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+     if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+     if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+   } else
+#endif
+   if (error_temp(errno)) _exit(1); _exit(2); }
  pid = getpid();
  host[0] = 0;
  gethostname(host,sizeof(host));
@@ -204,8 +215,10 @@ char *dir;
    stralloc file = {0};
    unsigned long int temp = 0;
    
-   if ( (dirp = opendir(dir)) == 0 )
-     strerr_die3x(111,"Unable to quota: can not opend specified maildir: ",dir,". (LDAP-ERR #2.4.2)");
+   if ( (dirp = opendir(dir)) == 0 && errno != error_noent )
+     strerr_die5x(111,"Unable to quota: can not open ",dir,": ",error_str(errno),". (LDAP-ERR #2.4.2)");
+   else
+     return 0;
    while ((dp = readdir(dirp)) != 0) {
      if (!stralloc_copys(&file,dir)) temp_nomem();
      if (!stralloc_cats(&file,dp->d_name)) temp_nomem();
