@@ -991,7 +991,7 @@ clean_child(void)
 			if (!stralloc_0(&fname)) _exit(1);
 			/* remove files after a week */
 			if (stat(fname.s,&st) == 0)
-				if (t > st.st_ctime + 604800)
+				if (t > st.st_mtime + 604800)
 					unlink(fname.s);
 		}
 		closedir(folder);
