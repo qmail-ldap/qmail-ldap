@@ -122,8 +122,8 @@ void check_maildir(void)
 
 }
 
-char fntmptph[30];
-char fnnewtph[30];
+char fntmptph[80 + FMT_ULONG * 2];
+char fnnewtph[83 + FMT_ULONG * 3];
 void tryunlinktmp() { unlink(fntmptph); }
 void sigalrm()
    { tryunlinktmp(); strerr_die1x(111,"Timeout on quota-warning delivery. (LDAP-ERR #5.2.9)"); }
@@ -222,7 +222,14 @@ void write_maildir(char* fn)
 
    if (substdio_flush(&ssout) == -1) goto fail;
    if (fsync(fd) == -1) goto fail;
+   if (fstat(fd, &st) == -1) goto fail;
    if (close(fd) == -1) goto fail; /* NFS dorks */
+
+   s = fnnewtph;
+   while( *s ) s++;
+   s += fmt_str(s,",S=");
+   s += fmt_ulong(s,(unsigned long) st.st_size);
+   *s++ = 0;
 
    if (link(fntmptph,fnnewtph) == -1) /* if error_exist unlink and exit(0), strange things can happen */
       if ( errno != error_exist) goto fail;
