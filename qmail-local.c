@@ -187,7 +187,7 @@ char *dir;
 
  if( quotastring && *quotastring ) {
    /* finally update the quota file "maildirsize" */
-   quota_add(msfd, (unsigned long) st.st_size, 1, quotastring, ".");
+   quota_add(msfd, (unsigned long) st.st_size, 1);
    close(msfd);
  }
   
@@ -249,24 +249,27 @@ char *fn;
  /* quota handling maildir */
  struct stat mailst;
  int perc;
- long int mailsize;
+ quota_t q;
+ unsigned long mailsize;
 
  if( quotastring && *quotastring ) {
    if (fstat(0, &mailst) != 0)
        strerr_die3x(111,"Can not stat mail for quota: ",error_str(errno),". (LDAP-ERR #2.4.1)");
    mailsize = mailst.st_size;
-   perc = quota_maildir(fn, quotastring, &msfd, mailsize, 1);
-   if ( perc == -1 ) {
+   quota_get(&q, quotastring);
+   if ( quota_calc(fn, &msfd, &q) == -1 ) {
      /* second chance */
      sleep(3);
-     perc = quota_maildir(fn, quotastring, &msfd, mailsize, 1);
-	 /* XXX fd can be -1 when perc = 0 quota_add/rm take care of that */
-     if ( perc == -1 )
+	 /* XXX fd can be -1 when retval = 0 quota_add/rm take care of that */
+     if ( quota_calc(fn, &msfd, &q) == -1 ) {
        strerr_die1x(111,"Temporary race condition while calculating quota. (LDAP-ERR #2.4.2)");
+     }
    }
-   if ( perc == 100 )
-	 quota_bounce("mailfolder");
-   else if ( perc > QUOTA_WARNING_LEVEL ) 
+   
+   if ( quota_check(&q, mailsize, 1, &perc) ) /* 0 if OK */
+     if ( quota_recalc(fn, &msfd, &q, mailsize, 1, &perc) )
+       quota_bounce("mailfolder");
+   if ( perc > QUOTA_WARNING_LEVEL ) 
 	 /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
  }
@@ -314,14 +317,13 @@ char *fn;
 
  /* quota handling mbox */
  struct stat filest, mailst;
- long int quota;
  long int totalsize;
- int dummy;
+ quota_t q;
 
  if (seek_begin(0) == -1) temp_rewind();
  
  if( quotastring && *quotastring ) {
-   get_quota(quotastring, &quota, &dummy);
+   quota_get(&q, quotastring);
    if (stat(fn, &filest) == -1) {
      filest.st_size = 0;        /* size of nonexisting mailfile */
      if ( errno != error_noent) { /* FALSE if file doesn't exist */
@@ -332,9 +334,9 @@ char *fn;
      strerr_die3x(111,"Unable to quota mail: ",error_str(errno), ". (LDAP-ERR #2.4.6)");
    
    totalsize = (long) filest.st_size + (long) mailst.st_size;
-   if ( totalsize > quota ) {
+   if ( totalsize > q.quota_size ) {
      quota_bounce("mailbox");
-   } else if ( totalsize > (quota/100.0*QUOTA_WARNING_LEVEL) ) {
+   } else if ( totalsize*100/q.quota_size > QUOTA_WARNING_LEVEL) {
 	 /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
    }

@@ -199,9 +199,12 @@ void pop3_last()
 void pop3_quit()
 {
   int i;
+  quota_t q;
+  
 /* qmail-ldap stuff */
 /* this is just minimal support, because pop3 can not produce new mail */
-  quota_maildir(".",(char *) 0, &qfd, 0, 0);
+  quota_get(&q, 0);
+  quota_calc(".",&qfd, &q);
   for (i = 0;i < numm;++i)
     if (m[i].flagdeleted) {
       if ( qfd != -1 ) quota_rm(qfd, m[i].size, 1);

@@ -420,7 +420,7 @@ void smtp()
         X509_NAME_get_text_by_NID(X509_get_subject_name(
                                    SSL_get_peer_certificate(ssl)),
                                    NID_commonName, commonName, 256);
-        if (strcasecmp(fqdn,commonName)){
+        if (case_diffs(fqdn,commonName)){
          out("ZTLS connection to "); out(fqdn);
          out(" wanted, certificate for "); out(commonName);
          out(" received\n");

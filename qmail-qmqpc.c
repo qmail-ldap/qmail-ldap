@@ -59,6 +59,7 @@ substdio envelope = SUBSTDIO_FDBUF(read,1,buf,sizeof buf);
 /* WARNING: can use only one of these at a time! */
 
 stralloc beforemessage = {0};
+stralloc toline = {0};
 stralloc dtline = {0};
 stralloc message = {0};
 stralloc aftermessage = {0};
@@ -100,6 +101,8 @@ void getmess()
     if (!stralloc_cats(&aftermessage,":")) nomem();
     if (!stralloc_catb(&aftermessage,line.s + 1,line.len - 2)) nomem();
     if (!stralloc_cats(&aftermessage,",")) nomem();
+    /* only use the last (and only) TO address */
+    if (!stralloc_copyb(&toline,line.s + 1,line.len - 2)) nomem();
   }
   /* extension to qmail-qmqpc for clustering mode, add Delivered-To: CLUSTERHOST $HOST *
    * at the top of the mail */
@@ -113,6 +116,8 @@ void getmess()
   if (line.s[0] != 'H') die_format();
   if (!stralloc_copys(&dtline, "Delivered-To: CLUSTERHOST ")) nomem();
   if (!stralloc_catb(&dtline, line.s + 1,line.len - 2 )) nomem();
+  if (!stralloc_cats(&dtline, " ")) nomem();
+  if (!stralloc_cat(&dtline, &toline)) nomem();
   for (i = 0;i < dtline.len;++i) if (dtline.s[i] == '\n') dtline.s[i] = '_';
   if (!stralloc_cats(&dtline,"\n")) nomem();
   strnum[fmt_ulong(strnum,(unsigned long) message.len+dtline.len)] = 0;
