@@ -62,7 +62,7 @@ void setup(void)
   if (chdir(auto_qmail) == -1) die_control();
 
   if (control_readfile(&addresses,"control/pbsservers",0) == -1) die_control();
-  if (!stralloc_0(&addresses) ) die_nomem();
+  if (!stralloc_0(&addresses) ) log_nomem();
   
   if (control_readint(&serverport,"control/pbsport") == -1) die_control();
   if (serverport > 65000) die_control();
@@ -73,7 +73,7 @@ void setup(void)
     if( addresses.s[i] == '\0' ) numservers++;
   
   servers = (struct ip_address*)alloc(numservers * sizeof(struct ip_address));
-  if (! servers ) die_nomem();
+  if (! servers ) log_nomem();
   
   s = addresses.s;
   for( i = 0; i < numservers; i++ ) {
