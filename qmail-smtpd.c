@@ -400,9 +400,10 @@ void smtp_mail(arg) char *arg;
       if (!addr.s[0] || !str_diff("#@[]", addr.s)) /*mjr*/
       /* if (!addr.s[0]) */
       {  
-         if (!str_diff("NOBOUNCE", denymail))
+         if (!str_diff("NOBOUNCE", denymail)) {
             why = "refused to accept RFC821 bounce from remote";
             flagbarf=1;
+         }
       }
       else
       {
