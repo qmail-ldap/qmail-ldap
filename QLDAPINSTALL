@@ -57,6 +57,9 @@ NEWS:
  in tcpserver: LOGLEVEL="X". "0" or not present = no logging, "1" = fatal
  errors, "2" = connection setup and warnings, "3" = verbose.
 
+ Added fix for qmail-pop3d stat command bug found by Aaron Nabil
+ <nabil@spiritone.com>.
+
 OLDER NEWS:
 
  checkpassword compiled with QLDAPDEBUG now does complete LDAP debugging.
