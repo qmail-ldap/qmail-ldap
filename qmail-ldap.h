@@ -122,6 +122,7 @@
                  normaly you can stop editing here
 *********************************************************************/
 /* the same values as ints */
+#define STATUS_DELETE		3
 #define STATUS_BOUNCE		2
 #define STATUS_NOPOP		1
 #define STATUS_OK 		0

@@ -623,7 +623,7 @@ qldap_get_status(qldap *q, int *status)
 		if (!case_diffs(ldap_attr.s, ISACTIVE_BOUNCE))
 			*status = STATUS_BOUNCE;
 		else if (!case_diffs(ldap_attr.s, ISACTIVE_DELETE))
-			*status = STATUS_BOUNCE;
+			*status = STATUS_DELETE;
 		else if (!case_diffs(ldap_attr.s, STATUS_NOPOP))
 			*status = STATUS_NOPOP;
 		else	*status = STATUS_OK; /* default to OK */
