@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/07/30 18:35:32 $ ($Revision: 1.105 $)
+RELEASE: $Date: 2003/07/30 21:13:24 $ ($Revision: 1.106 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,8 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Some cleanup and clarification in smtpd logging.
 
  Added Russell Nelsons antivirus patch for qmail-smtpd.
  Compile qmail-ldap with the -DSMTPEXECCHECK option and turn it on with
