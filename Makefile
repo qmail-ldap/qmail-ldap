@@ -48,7 +48,7 @@ MNW=-DMAKE_NETSCAPE_WORK
 #HDIRMAKE=-DAUTOHOMEDIRMAKE
 
 # on most systems we need this to make checkpassword
-#SHADOWLIBS=-lcrypt
+SHADOWLIBS=-lcrypt
 # OpenBSD Systems seems to have no libcrypt, so comment the line out if you
 # get linking problems
 # To use shadow passwords under some Linux OS, uncomment the next two lines.
