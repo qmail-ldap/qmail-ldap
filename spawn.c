@@ -239,6 +239,10 @@ char **argv;
 
  for (;;)
   {
+   if (flagreinit) {
+     initialize(argc,argv);
+     flagreinit = 0;
+   }
    if (!flagreading)
     {
      for (i = 0;i < auto_spawn;++i) if (d[i].used) break;
@@ -257,10 +261,6 @@ char **argv;
 
    if (r != -1)
     {
-     if (flagreinit) {
-       initialize(argc,argv);
-       flagreinit = 0;
-     }
      if (flagreading)
        if (FD_ISSET(0,&rfds))
 	 getcmd();
