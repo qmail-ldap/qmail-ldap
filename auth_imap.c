@@ -330,16 +330,16 @@ void auth_error(void)
 	char envname[FMT_ULONG+8];
 	char *n;
 	char *n2;
+	char **argvs;
 	unsigned long numarg;
 	unsigned long i;
-	char **argvs;
 	
-	/* XXX under courier-imap it is not simple to give the correct failure back
-	 * XXX to the user, perhaps somebody has a good idea */
+	/* XXX under courier-imap it is not simple to give the correct failure
+	 * XXX back to the user, perhaps somebody has a good idea */
 
 	log(2, "warning: auth_error: authorization failed (%s)\n",
 		   qldap_err_str(qldap_errno) );
-	if (! (env = env_get("ARGC") ) ) {
+	if (! (env = env_get("AUTHARGC") ) ) {
 		_exit(111);
 	}
 	scan_ulong(env, &numarg);
@@ -353,7 +353,10 @@ void auth_error(void)
 		}
 	}
 	argvs[i+1] = 0;
-	execvp(*argvs, argvs);
+	if (!(env = env_get("AUTHUSER"))) {
+		_exit(100);
+	}
+	execv(env, argvs);
 	_exit(111);
 	
 }
