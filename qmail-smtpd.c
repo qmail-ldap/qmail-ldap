@@ -1638,7 +1638,7 @@ int main()
   if (ipme_init() != 1) die_ipme();
   if (greeting550) {
     stralloc_copys(&greeting,greeting550);
-    if (greeting.len != 0)
+    if (greeting.len == 0)
       stralloc_copys(&greeting,"sorry, your mail was administratively denied. (#5.7.1)");
     smtp_line("554 ");
     err_quit();
