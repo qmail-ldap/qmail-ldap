@@ -19,7 +19,7 @@
 # -DQMQP_COMPRESS to use the QMQP on the fly compression (for clusters)
 # -DQUOTATRASH to include the Trash in the quota calculation (normaly it is not)
 # -DSMTPEXECCHECK to enable smtp DOS/Windows executable detection
-#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT -DDATA_COMPRESS -DQMQP_COMPRESS
+#LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT -DDATA_COMPRESS -DQMQP_COMPRESS -DSMTPEXECCHECK
 
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
