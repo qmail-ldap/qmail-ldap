@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/09/29 21:48:32 $)
+RELEASE: current ($Date: 2001/10/06 16:05:51 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -387,12 +387,13 @@ CONFIG FILES:
 
  Rbllist contains a number of RBL's to check for the given senders IP address.
  Default: none
- Example: blackholes.mail-abuse.org
- Example: dialups.mail-abuse.org
- Example: relays.mail-abuse.org
- Example: spamsources.orbs.org
+ Example: relays.ordb.org
+ Example: relays.osirusoft.com
  Note: Multiline. To activate RBL checks you have to set RBL in qmail-smtpd's
-       environment (with tcpserver).
+       environment (with tcpserver). See this website for more information on
+       RBL's: http://www.declude.com/JunkMail/Support/ip4r.htm
+       We strongly recommend against using ORBZ because they are completly
+       unreasonable.
 
 ~control/rblonlyheader
 
