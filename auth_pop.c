@@ -96,7 +96,7 @@ auth_fail(const char *login, int reason)
 }
 
 void
-auth_success(void)
+auth_success(const char *login)
 {
 	/* pop befor smtp */
 	pbsexec();
@@ -114,7 +114,7 @@ void auth_error(int errnum)
 	 * See qmail-popup.c for exit codes meanings.
 	 */
 	log(2, "warning: auth_error: authorization failed (%s)\n",
-		   qldap_err_str(errnum) );
+		   qldap_err_str(errnum));
 
 	if (errnum == AUTH_CONF) _exit(1);
 	if (errnum == TIMEOUT || errnum == LDAP_BIND_UNREACH) _exit(2);

@@ -364,7 +364,7 @@ b64_ntops(unsigned char const *src, size_t srclength, stralloc *dest)
 			if (!stralloc_append(dest, &Base64[output[2]]))
 				return -1;
 		}
-		if (!stralloc_append(dest, &Pad64)) return -1;
+		if (!stralloc_catb(dest, &Pad64, 1)) return -1;
 	}
 	return 0;
 }

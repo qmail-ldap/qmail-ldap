@@ -442,6 +442,7 @@ auth_imap.c
 auth_mod.c
 auth_mod.h
 auth_pop.c
+auth_smtp.c
 base64.c
 base64.h
 byte_repl.c
@@ -510,3 +511,5 @@ rbl.c
 rbl.h
 read-ctrl.c
 read-ctrl.h
+smtpcall.c
+smtpcall.h

@@ -20,7 +20,7 @@ void auth_init(int, char **, stralloc *, stralloc *);
 void auth_fail(const char *, int);
 
 /* starts the next auth_module, or what ever (argv ... ) */
-void auth_success(void);
+void auth_success(const char *);
 
 /*
  * Error handler, for this module, MAY NOT return.

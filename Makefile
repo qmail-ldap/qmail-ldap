@@ -86,8 +86,9 @@ SHELL=/bin/sh
 
 default: it ldap
 
-ldap: qmail-quotawarn qmail-reply auth_pop auth_imap digest qmail-ldaplookup \
-pbsadd pbscheck pbsdbd qmail-todo qmail-forward qmail-secretary qmail-group
+ldap: qmail-quotawarn qmail-reply auth_pop auth_imap auth_smtp digest \
+qmail-ldaplookup pbsadd pbscheck pbsdbd qmail-todo qmail-forward \
+qmail-secretary qmail-group
 
 addresses.0: \
 addresses.5
@@ -130,8 +131,8 @@ substdio.h timeoutread.h auth_mod.h
 
 auth_mod.o: \
 compile auth_mod.c auth_mod.h checkpassword.h byte.h localdelivery.h \
-output.h qldap.h qldap-debug.h qldap-errno.h stralloc.h read-ctrl.h \
-dirmaker.h qldap-cluster.h
+locallookup.h output.h qldap.h qldap-debug.h qldap-errno.h stralloc.h \
+read-ctrl.h dirmaker.h qldap-cluster.h select.h
 	./compile $(LDAPFLAGS) $(DEBUG) $(HDIRMAKE) $(MDIRMAKE) auth_mod.c
 
 auth_pop: \
@@ -156,6 +157,23 @@ compile auth_pop.c byte.h env.h error.h exit.h pbsexec.h qldap-debug.h \
 qldap-errno.h qmail-ldap.h str.h stralloc.h substdio.h timeoutread.h \
 auth_mod.h
 	./compile $(LDAPFLAGS) $(DEBUG) auth_pop.c
+
+auth_smtp: \
+load auth_smtp.o checkpassword.o passwd.o digest_md4.o digest_md5.o \
+digest_rmd160.o digest_sha1.o base64.o read-ctrl.o control.o qldap.a \
+constmap.o getln.a substdio.a stralloc.a env.a alloc.a str.a case.a \
+fs.a error.a open.a prot.o auto_uids.o auto_qmail.o
+	./load auth_smtp checkpassword.o passwd.o digest_md4.o \
+	digest_md5.o digest_rmd160.o digest_sha1.o base64.o read-ctrl.o \
+	control.o qldap.a constmap.o getln.a substdio.a stralloc.a \
+	env.a alloc.a str.a case.a fs.a error.a open.a prot.o auto_uids.o \
+	auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS)
+	
+auth_smtp.o: \
+compile auth_smtp.c byte.h env.h error.h exit.h output.h qldap.h \
+qldap-debug.h qldap-errno.h qmail-ldap.h read-ctrl.h str.h stralloc.h \
+substdio.h checkpassword.h auth_mod.h
+	./compile $(LDAPFLAGS) $(DEBUG) auth_smtp.c
 
 auto-ccld.sh: \
 conf-cc conf-ld warn-auto.sh
@@ -438,7 +456,7 @@ compile check.c check.h str.h str_len.c
 
 checkpassword.o: \
 compile checkpassword.c auth_mod.h auto_uids.h byte.h check.h env.h \
-error.h fmt.h locallookup.h localdelivery.h passwd.h pbsexec.h prot.h \
+error.h fmt.h localdelivery.h passwd.h pbsexec.h prot.h \
 qldap.h qldap-debug.h qldap-errno.h qmail-ldap.h scan.h str.h stralloc.h \
 dns.h ipalloc.h ipme.h ndelay.h qldap-cluster.h readwrite.h select.h \
 timeoutconn.h dirmaker.h mailmaker.h
@@ -1962,15 +1980,16 @@ auto_split.h
 qmail-smtpd: \
 load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o rbl.o \
 timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
-date822fmt.o now.o qmail.o execcheck.o cdb.a fd.a wait.a datetime.a \
-getln.a open.a sig.a case.a env.a stralloc.a alloc.a substdio.a \
-error.a str.a fs.a auto_qmail.o dns.lib socket.lib
+date822fmt.o now.o qmail.o execcheck.o cdb.a smtpcall.o coe.o fd.a wait.a \
+datetime.a getln.a open.a sig.a case.a env.a stralloc.a alloc.a \
+substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
 	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o rbl.o \
 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
-	received.o date822fmt.o now.o qmail.o execcheck.o cdb.a fd.a \
-	wait.a datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
-	alloc.a substdio.a error.a fs.a auto_qmail.o dns.o str.a \
-	`cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
+	received.o date822fmt.o now.o qmail.o execcheck.o cdb.a \
+	smtpcall.o coe.o fd.a wait.a datetime.a getln.a open.a sig.a \
+	case.a env.a stralloc.a alloc.a substdio.a error.a fs.a \
+	auto_qmail.o dns.o str.a `cat dns.lib` `cat socket.lib` \
+	$(TLSLIBS) $(ZLIB)
 
 qmail-smtpd.0: \
 qmail-smtpd.8
@@ -2333,6 +2352,11 @@ slurpclose.o: \
 compile slurpclose.c stralloc.h gen_alloc.h readwrite.h slurpclose.h \
 error.h
 	./compile slurpclose.c
+
+smtpcall.o: \
+compile smtpcall.c auto_qmail.h coe.h fd.h substdio.h str.h stralloc.h \
+timeoutread.h timeoutwrite.h wait.h smtpcall.h
+	./compile smtpcall.c
 
 socket.lib: \
 trylsock.c compile load

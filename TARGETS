@@ -390,6 +390,8 @@ auth_imap.o
 auth_mod.o
 auth_pop
 auth_pop.o
+auth_smtp
+auth_smtp.o
 base64.o
 byte_repl.o
 case_startb.o
@@ -441,3 +443,4 @@ qmail-todo
 qmail-todo.o
 rbl.o
 read-ctrl.o
+smtpcall.o

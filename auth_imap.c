@@ -172,7 +172,7 @@ auth_fail(const char *login, int reason)
 }
 
 void
-auth_success(void)
+auth_success(const char *login)
 {
 	byte_zero(auth_up, sizeof(auth_up));
 	
