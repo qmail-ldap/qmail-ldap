@@ -292,6 +292,8 @@ static int quota_parsesize(quota_t *q, int *fd, char* buf, int len)
 	while( s - buf < len ) {
 		while( *s++ ); /* hop over the last line */
 		
+		while ( *s == ' ' ) s++; /* hop over the spaces */
+
 		/* first comes the size ... */
 		if ( *s == '-' ) {
 			if (! ( s += scan_ulong(++s, &fig) ) ) continue;
