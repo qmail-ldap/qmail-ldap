@@ -615,6 +615,11 @@ char **argv;
  } else {
    debug_msg(OUTPUT," set{gid|uid} \t: setuid succeeded with '%i'\n",uid);
  }
+ if (!getuid()) {
+   debug_msg(OUTPUT," ABORTING, ROOT IS NOT ALLOWED!!!!\n");
+   _exit(1);
+ }
+
  if (chdir(homedir.s) == -1) {
 #ifdef AUTOHOMEDIRMAKE
    if (errno == error_noent && qldap_dirmaker.len > 1) {

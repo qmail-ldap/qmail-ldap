@@ -39,8 +39,8 @@ PWOPTS=-DLOOK_UP_PASSWD
 # WARNING: you need a NONE DEBUG checkpassword to run with qmail-pop3d
 
 # Just for me, make a backup befor compiling
-#DOBACKUP=backup
-#BACKUPPATH=/backup/qmail-ldap.tar
+#DOBACKUP=backup # allways do a backup
+BACKUPPATH=/backup/qmail-backup/qmail-ldap.`date "+%Y%m%d-%H%M"`.tar
 # STOP editing HERE !!!
 
 # Don't edit Makefile! Use conf-* for configuration.

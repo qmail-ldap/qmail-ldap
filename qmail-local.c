@@ -119,6 +119,33 @@ char *dir;
    } else
 #endif
    if (error_temp(errno)) _exit(1); _exit(2); }
+#ifdef AUTOMAILDIRMAKE
+ else {
+     umask(077);
+     if (stat("new", &st) == -1) {
+       if (errno == error_noent) {
+         if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+       } else { 
+         _exit(5);
+       }
+     } else if (! S_ISDIR(st.st_mode) ) _exit(5);
+     if (stat("cur", &st) == -1) {
+       if (errno == error_noent) {
+        if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+       } else { 
+         _exit(5);
+       }
+     } else if (! S_ISDIR(st.st_mode) ) _exit(5);
+     if (stat("tmp", &st) == -1) {      
+       if (errno == error_noent) {        
+        if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+       } else {         
+         _exit(5);
+       }        
+     } else if (! S_ISDIR(st.st_mode) ) _exit(5);
+ }
+#endif
+
  pid = getpid();
  host[0] = 0;
  gethostname(host,sizeof(host));
@@ -295,6 +322,9 @@ char *fn;
    case 2: strerr_die1x(111,"Unable to chdir to maildir. (#4.2.1)");
    case 3: strerr_die1x(111,"Timeout on maildir delivery. (#4.3.0)");
    case 4: strerr_die1x(111,"Unable to read message. (#4.3.0)");
+#ifdef AUTOMAILDIRMAKE
+   case 5: strerr_die1x(111,"Unable to make maildir. (LDAP-ERR #2.4.4)");
+#endif
    default: strerr_die1x(111,"Temporary error on maildir delivery. (#4.3.0)");
   }
 }

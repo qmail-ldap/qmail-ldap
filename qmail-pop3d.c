@@ -70,6 +70,9 @@ void err(s) char *s;
 
 void die_nomem() { err("out of memory"); die(); }
 void die_nomaildir() { err("this user has no $HOME/Maildir"); die(); }
+#ifdef AUTOMAILDIRMAKE
+void die_maildir() { err("this user has a defective Maildir"); die(); }
+#endif
 void die_scan() { err("unable to scan $HOME/Maildir"); die(); }
 
 void err_syntax() { err("syntax error"); }
@@ -322,13 +325,42 @@ char **argv;
     umask(077);
     if (mkdir(argv[1],0700) == -1) die_nomaildir();
     if (chdir(argv[1]) == -1) die_nomaildir();
-    if (mkdir("tmp",0700) == -1) die_nomaildir();
-    if (mkdir("new",0700) == -1) die_nomaildir();
-    if (mkdir("cur",0700) == -1) die_nomaildir();
+    if (mkdir("tmp",0700) == -1) die_maildir();
+    if (mkdir("new",0700) == -1) die_maildir();
+    if (mkdir("cur",0700) == -1) die_maildir();
    } else
 #endif
     die_nomaildir();
   } 
+#ifdef AUTOMAILDIRMAKE
+  else {
+   struct stat st;
+
+   umask(077);
+   if (stat("new", &st) == -1) {
+     if (errno == error_noent) {
+       if (mkdir("new",0700) == -1) die_maildir();
+     } else {
+       die_maildir();
+     }
+   } else if (! S_ISDIR(st.st_mode) ) die_maildir();
+   if (stat("cur", &st) == -1) {
+     if (errno == error_noent) {
+       if (mkdir("cur",0700) == -1) die_maildir();
+     } else { 
+       die_maildir();
+     }
+   } else if (! S_ISDIR(st.st_mode) ) die_maildir();
+   if (stat("tmp", &st) == -1) {
+     if (errno == error_noent) {
+       if (mkdir("tmp",0700) == -1) die_maildir();
+     } else { 
+       die_maildir();
+     }
+   } else if (! S_ISDIR(st.st_mode) ) die_maildir();
+  }
+#endif
+
   getlist();
 
   okay();
