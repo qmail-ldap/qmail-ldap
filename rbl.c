@@ -128,13 +128,14 @@ int rblcheck(char *remoteip, char** rblname)
   if(!rbl_start(remoteip)) return 0;
 
   for (i=0; i < numrbl; i++) {
-    logpid(2); logstring(2,"RBL check with '"); logstring(2,rbl[i].baseaddr); logstring(2,"': ");
+    logpid(2); logstring(2,"RBL check with '");
+    logstring(2,rbl[i].baseaddr); logstring(2,"': ");
 
     r = rbl_lookup(rbl[i].baseaddr, rbl[i].matchon);
     if (r == 2) {
       logstring(2,"temporary DNS error, ignored."); logflush(2);
     } else if (r == 1) {
-      logstring(2,"found match,");
+      logstring(2,"found match, ");
       *rblname = rbl[i].message;
       if (rblonlyheader) {
 	logstring(2,"only tagging header."); logflush(2);
