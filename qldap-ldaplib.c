@@ -105,7 +105,7 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 
 	t = cf;
 	t += fmt_strn(cf, "control/ldapobjectclass", 64); *t=0;
-	if (control_rldef(&qldap_objectclass, ctrl_file, 0, "") == -1) return -1;
+	if (control_rldef(&qldap_objectclass, ctrl_file, 0, (char *) 0) == -1) return -1;
 	debug(64, "init_ldap: control/ldapobjectclass: %S\n", &qldap_objectclass);
 
 	t = cf;
@@ -143,7 +143,7 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 
 	t = cf;
 	t += fmt_strn(cf, "control/ldaptimeout", 64); *t=0;
-	if (control_readint(qldap_timeout, ctrl_file) == -1)
+	if (control_readint(&qldap_timeout, ctrl_file) == -1)
 		return -1;
 	debug(64, "init_ldap: control/ldaptimeout: %i\n", qldap_timeout);
 

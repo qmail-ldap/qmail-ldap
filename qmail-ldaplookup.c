@@ -121,12 +121,12 @@ int main(int argc, char **argv)
 	
 	output( "init_ldap:\tpasswords are %scompared via rebind\n",
 			rebind?"":"not ");
-	output( "\t\tlocaldelivery:\t%s\n\t\tclustering:\t%s\n",
+	output( "\t\tlocaldelivery:\t %s\n\t\tclustering:\t %s\n",
 			locald?"on":"off", cluster?"on":"off");
-	output( "\t\tldapobjectclass:\t%S\n", qldap_objectclass);
-	output( "\t\thomedirmaker:\t%s\n", homemaker.len?homemaker.s:"undefined");
-	output( "\t\tdefaultDotMode:\t%s\n", defdot.s);
-	output( "\t\tdefaultQuota:\t%s\n", defquota.s);
+	output( "\t\tldapobjectclass: %S\n", &qldap_objectclass);
+	output( "\t\thomedirmaker:\t %s\n", homemaker.len?homemaker.s:"undefined");
+	output( "\t\tdefaultDotMode:\t %s\n", defdot.s);
+	output( "\t\tdefaultQuota:\t %s\n", defquota.len?defquota.s:"undedined");
 	output( "\t\tQuotaWarning:\n------\n%s\n------\n", 
 			quotawarning.len?quotawarning.s:"undefined");
 
@@ -158,41 +158,67 @@ int main(int argc, char **argv)
 	if ( !escape_forldap(&value) ) {
 		strerr_die2x(1, "ERROR: escape_forldap failed: ", error_str(errno) );
 	}
+	if ( !stralloc_copys(&filter,"(") ) {
+		strerr_die2x(1, "ERROR: can not create a filter: ",
+				error_str(errno));
+	}
 	if ( mode == mail) {
 		/* build the search string for the email address */
-		if ( !stralloc_copys(&filter,"(|(" ) ) {
-			strerr_die2x(1, "ERROR: can not create a filter: ",
-				   error_str(errno));
-		}
 		if ( qldap_objectclass.len && (
+			 !stralloc_cats(&filter,"&(") ||
 			 !stralloc_cats(&filter,LDAP_OBJECTCLASS) ||
 			 !stralloc_cats(&filter,"=") ||
-			 !stralloc_cat(&filter,qldap_objectclass) ||
+			 !stralloc_cat(&filter,&qldap_objectclass) ||
 			 !stralloc_cats(&filter,")(") ) ) {
 			strerr_die2x(1, "ERROR: can not create a filter: ",
 				   error_str(errno));
 		}
-		if ( !stralloc_cats(&filter, LDAP_MAIL ) || 
+		if ( !stralloc_cats(&filter,"|(" ) ||
+			 !stralloc_cats(&filter, LDAP_MAIL ) || 
 			 !stralloc_cats(&filter, "=" ) ||
 			 !stralloc_cat(&filter,&value) ||
 			 !stralloc_cats(&filter,")(" ) || 
 			 !stralloc_cats(&filter,LDAP_MAILALTERNATE ) ||
 			 !stralloc_cats(&filter, "=") ||
 			 !stralloc_cat(&filter,&value) ||
-			 !stralloc_cats(&filter,"))") ||
-			 !stralloc_0(&filter)) {
+			 !stralloc_cats(&filter,"))") ) {
 			strerr_die2x(1, "ERROR: can not create a filter: ", 
 					error_str(errno));
 		}
+		if ( qldap_objectclass.len &&
+			 !stralloc_cats(&filter,")") ) {
+			strerr_die2x(1, "ERROR: can not create a filter: ",
+				   error_str(errno));
+		}
+		if ( !stralloc_0(&filter) ) {
+			strerr_die2x(1, "ERROR: can not create a filter: ",
+				   error_str(errno));
+		}
 	} else {
-		if ( !stralloc_copys(&filter, "(") ||
-			 !stralloc_cats(&filter, LDAP_UID) ||
+		if ( qldap_objectclass.len && (
+			 !stralloc_cats(&filter,"&(" ) || 
+			 !stralloc_cats(&filter,LDAP_OBJECTCLASS) ||
+			 !stralloc_cats(&filter,"=") ||
+			 !stralloc_cat(&filter,&qldap_objectclass) ||
+			 !stralloc_cats(&filter,")(") ) ) {
+			strerr_die2x(1, "ERROR: can not create a filter: ",
+				   error_str(errno));
+		}
+		if ( !stralloc_cats(&filter, LDAP_UID) ||
 			 !stralloc_cats(&filter, "=") ||
 			 !stralloc_cat(&filter, &value) ||
-			 !stralloc_cats(&filter, ")") || 
-			 !stralloc_0(&filter) ) {
+			 !stralloc_cats(&filter, ")") ) {
 			strerr_die2x(1, "ERROR: can not create a filter: ", 
 					error_str(errno));
+		}
+		if ( qldap_objectclass.len &&
+			 !stralloc_cats(&filter,")") ) {
+			strerr_die2x(1, "ERROR: can not create a filter: ",
+				   error_str(errno));
+		}
+		if ( !stralloc_0(&filter) ) {
+			strerr_die2x(1, "ERROR: can not create a filter: ",
+				   error_str(errno));
 		}
 	}
 	search.filter = filter.s;
