@@ -28,6 +28,10 @@
 #include "strerr.h"
 #include "substdio.h"
 #include "wait.h"
+#ifdef AUTOMAILDIRMAKE
+#include "qldap-errno.h"
+#include "mailmaker.h"
+#endif
 
 #define FATAL "qmail-secretary: fatal: "
 #define WARN  "qmail-secretary: warn: "
@@ -232,6 +236,19 @@ main(int argc, char **argv)
 	
 	
 	extractrcpt(&action, &hashid);
+#ifdef AUTOMAILDIRMAKE
+	switch (maildir_make(maildir)) {
+	case OK:
+		break;
+	case MAILDIR_CORRUPT:
+		strerr_die4x(111,FATAL, "The maildir '", maildir,
+		    "' seems to be corrupted. (#4.2.1)");
+	case ERRNO:
+	default:
+		strerr_die4x(111,FATAL, "Unable to create maildir '", maildir,
+		    "' (#4.3.0)");
+	}
+#endif
 
 	if (action.len == 0) {
 		nullsender();

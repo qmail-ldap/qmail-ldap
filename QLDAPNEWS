@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/01/30 14:33:24 $ ($Revision: 1.167 $)
+RELEASE: $Date: 2004/01/30 14:35:55 $ ($Revision: 1.168 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,8 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Add auto maildirmake capability to qmail-secretary.
 
  qmail-verify, auth_smtp, qmail-group and qmail-ldaplookup only try to read
  ~control/ldaplogin and ~control/ldappassword. If one of the files can not be
