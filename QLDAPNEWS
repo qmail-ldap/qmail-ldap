@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/02/17 12:52:20 $ ($Revision: 1.175 $)
+RELEASE: $Date: 2004/03/01 13:32:09 $ ($Revision: 1.176 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -27,10 +27,10 @@ NEWS for current stuff:
 
  Fix qmail-inject -f "" bug noticed by Mesa de Ayuda.
 
- Added LDAPFLAG -DBIND_8_COMPAT needed on system with new incompatible
+ Added LDAPFLAG -DBIND_8_COMPAT needed on systems with new incompatible
  bind9 header files. Currently this is necessary on MacOS X 10.3.
 
- Disable the to generic zip signature in the example signature file.
+ Disable the too generic zip blocker signature in the example signature file.
 
 NEWS for 20040201 stuff:
 
