@@ -134,8 +134,8 @@ auth_fail(const char *login, int reason)
 	t = auth_up;
 	
 	log(2, "warning: auth_fail: user %s failed\n", login);
-	if (reason == NOSUCH ) {
-		log(4, "warning: auth_fail: user %s not found\n", login);
+	if (reason == NOSUCH || reason == AUTH_TYPE) {
+		log(4, "warning: auth_fail: %s\n", qldap_err_str(reason));
 		if (!env_unset("AUTHENTICATED"))
 			auth_error(ERRNO);
 		for (i=0; i<auth_uplen; i++) if (!auth_up[i]) auth_up[i] = '\n';
@@ -168,7 +168,7 @@ auth_fail(const char *login, int reason)
 		close(pi[1]);
 		_exit(0);
 	}
-	auth_error(PANIC); /* complete failure */
+	auth_error(reason); /* complete failure */
 }
 
 void
@@ -199,7 +199,7 @@ void auth_error(int errnum)
 	byte_zero(auth_up, sizeof(auth_up));
 	
 	log(2, "warning: auth_error: authorization failed (%s)\n",
-		   qldap_err_str(errnum) );
+		   qldap_err_str(errnum));
 	if (!(env = env_get("AUTHARGC")))
 		_exit(111);
 	scan_ulong(env, &numarg);

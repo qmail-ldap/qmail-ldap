@@ -554,7 +554,7 @@ digest_sha1.o base64.o qldap-debug.o output.o getopt.a substdio.a \
 case.a env.a stralloc.a str.a fs.a alloc.a error.a
 	./load digest passwd.o digest_md4.o digest_md5.o digest_rmd160.o \
 	digest_sha1.o base64.o qldap-debug.o output.o getopt.a substdio.a \
-	case.a env.a stralloc.a str.a fs.a alloc.a error.a
+	case.a env.a stralloc.a str.a fs.a alloc.a error.a $(SHADOWLIBS)
 
 digest.o: \
 compile digest.c base64.h error.h passwd.h qldap-errno.h \
