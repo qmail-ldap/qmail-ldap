@@ -243,7 +243,7 @@ char *prepend;
 char *append;
 {
 /* TAG */
-#if defined(TLS) && defined(DEBUG)
+#if defined(TLS) && defined(TLSDEBUG)
 #define ONELINE_NAME(X) X509_NAME_oneline(X,NULL,0)
 
  if(ssl){
@@ -308,18 +308,22 @@ stralloc recip = {0};
 
 void smtp()
 {
+  struct stat st;
+  unsigned long len;
   unsigned long code;
   int flagbother;
+  int flagsize;
   int i;
+  char num[FMT_ULONG];
 #ifdef TLS
+  int flagtls;
   int needtlsauth = 0;
   SSL_CTX *ctx;
   int saveerrno, r;
-#ifdef DEBUG
+#ifdef TLSDEBUG
   char buf[1024];
 #endif
   stralloc servercert = {0};
-  struct stat st;
 
   if( fqdn && *fqdn ) {
     if(!stralloc_copys(&servercert, "control/tlshosts/")) temp_nomem();
@@ -328,19 +332,16 @@ void smtp()
     if(!stralloc_0(&servercert)) temp_nomem();
     if (stat(servercert.s,&st) == 0)  needtlsauth = 1;
   }
+  flagtls = 0;
 #endif
 
   if (smtpcode() != 220) quit("ZConnected to "," but greeting failed");
  
-#ifdef TLS
+  flagsize = 0;
   substdio_puts(&smtpto,"EHLO ");
-#else
-  substdio_puts(&smtpto,"HELO ");
-#endif
   substdio_put(&smtpto,helohost.s,helohost.len);
   substdio_puts(&smtpto,"\r\n");
   substdio_flush(&smtpto);
-#ifdef TLS
   if (smtpcode() != 250){
    substdio_puts(&smtpto,"HELO ");
    substdio_put(&smtpto,helohost.s,helohost.len);
@@ -348,26 +349,30 @@ void smtp()
    substdio_flush(&smtpto);
    if (smtpcode() != 250) quit("ZConnected to "," but my name was rejected");
   }
-#else
-  if (smtpcode() != 250) quit("ZConnected to "," but my name was rejected");
+
+  /* extension handling */
+  for (i = 0; i < smtptext.len; i += str_chr(smtptext.s+i,'\n') + 1) {
+    if (i+8 < smtptext.len && !case_diffb("SIZE", 4, smtptext.s+i+4) )
+      flagsize = 1;
+#ifdef TLS
+    else if (i+12 < smtptext.len && !case_diffb("STARTTLS", 8, smtptext.s+i+4) )
+      flagtls = 1;
 #endif
+  }
 
 #ifdef TLS
-  i = 0; 
-  while((i += str_chr(smtptext.s+i,'\n') + 1) && (i+12 < smtptext.len) &&
-        str_diffn(smtptext.s+i+4,"STARTTLS\n",9));
-  if (i+12 < smtptext.len)
+  if (flagtls)
    {
     substdio_puts(&smtpto,"STARTTLS\r\n");
     substdio_flush(&smtpto);
     if (smtpcode() == 220)
      {
-#ifdef DEBUG
+#ifdef TLSDEBUG
       SSL_load_error_strings();
 #endif
       SSLeay_add_ssl_algorithms();
       if(!(ctx=SSL_CTX_new(SSLv23_client_method())))
-#ifdef DEBUG
+#ifdef TLSDEBUG
        {out("ZTLS not available: error initializing ctx");
         out(": ");
         out(ERR_error_string(ERR_get_error(), buf));
@@ -390,7 +395,7 @@ void smtp()
       }
  
       if(!(ssl=SSL_new(ctx)))
-#ifdef DEBUG
+#ifdef TLSDEBUG
         {out("ZTLS not available: error initializing ssl");
          out(": ");
          out(ERR_error_string(ERR_get_error(), buf));
@@ -414,7 +419,7 @@ void smtp()
           out(servercert.s); out(": ");
           out(X509_verify_cert_error_string(r)); out("\n");}
         else
-#ifdef DEBUG
+#ifdef TLSDEBUG
          {out("ZTLS not available: connect failed");
           out(": ");
           out(ERR_error_string(ERR_get_error(), buf));
@@ -454,7 +459,15 @@ void smtp()
 
   substdio_puts(&smtpto,"MAIL FROM:<");
   substdio_put(&smtpto,sender.s,sender.len);
-  substdio_puts(&smtpto,">\r\n");
+  substdio_puts(&smtpto,">");
+  if (flagsize) {
+    substdio_puts(&smtpto," SIZE=");
+    if (fstat(0,&st) == -1) quit("Z", " unable to fstat stdin");
+    len = st.st_size;
+    len += len>>5; /* add some size for the \r chars see rcf 1870 */
+    substdio_put(&smtpto,num,fmt_ulong(num,len+1));
+  }
+  substdio_puts(&smtpto,"\r\n");
   substdio_flush(&smtpto);
   code = smtpcode();
   if (code >= 500) quit("DConnected to "," but sender was rejected");

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/04/24 11:49:04 $ ($Revision: 1.51 $)
+RELEASE: $Date: 2002/04/24 15:39:34 $ ($Revision: 1.52 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,15 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ qmail-remote supports the smtp size extension as specified by rfc 1870.
+ If the EHLO extension size is set qmail-remote sends size in the mail form
+ commando. It does not parse the EHLO size argument to check if the size is
+ OK, the remote smtp server should decide if it is OK.
+
+ clean up in qmail-remote, the starttls option was not compared in a case
+ indipendent way as defined in rfc 2821. The tls debug option is now called
+ TLSDEBUG.
 
  added Russ Nelson patch to qmail-remote to send using QMTP.
  From his patch:
