@@ -1,12 +1,12 @@
 QMAIL-LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
-(c) 1998,1999,2000 Internet Business Solutions Ltd.
+(c) 1998,1999,2000,2001 Internet Business Solutions Ltd.
 
 This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/12/07 22:02:58 $ ($Revision: 1.13 $)
+RELEASE: $Date: 2001/03/01 20:20:08 $ ($Revision: 1.14 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!

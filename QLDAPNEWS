@@ -1,12 +1,12 @@
 QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
-(c) 1998,1999,2000 Internet Business Solutions Ltd.
+(c) 1998,1999,2000,2001 Internet Business Solutions Ltd.
 
 This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/01/28 12:48:59 $ ($Revision: 1.33 $)
+RELEASE: $Date: 2001/03/01 20:20:08 $ ($Revision: 1.34 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,26 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ added 0.0.0.0 patch
+
+ some fixes for misc. stuff from Chris Noe
+  - with DEBUGLEVEL set, the default ldapGID is printed incorrectly
+  - The line above says 'without trailing slash' but the example has one :)
+  - Permanet -> Permanent
+  - Programm -> Program
+  - fix qmail-lspawn 'Out of memory' error when attempting local delivery
+    to a nonexistant user.
+
+ fix for qmail-reply.c from Jamie Blondin
+  - handle precedence flag in the right way
+
+ fix for qmail.schema mailReplyText from David E. Storey
+
+ fix for ldaptimeout to just defer message delivery instead of bouncing
+ sometimes
+
+NEWS for 20010201:
 
  fix for ldapobjectclass bugfix
 
