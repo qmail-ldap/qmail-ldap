@@ -19,7 +19,7 @@
 #include "fmt.h"
 
 #ifndef PORT_QMQP /* this is for testing purposes, so you can overwrite 
-					 this port via a simple -D argument */
+		     this port via a simple -D argument */
 #define PORT_QMQP 628
 #endif
 
@@ -182,18 +182,18 @@ char **argv;
   if (chdir(auto_qmail) == -1) die_home();
   if (control_init() == -1) die_control();
   if ( argv[1] ) {
-	  char temp[IPFMT];
-	  if (!stralloc_copys(&servers,argv[1])) nomem();
-	  dns_init(0);
-	  switch (dns_ip(&ia,&servers)) {
-		  case DNS_HARD: die_perm();
-		  case DNS_SOFT: die_temp();
-		  case DNS_MEM: nomem();
-	  }
+    char temp[IPFMT];
+    if (!stralloc_copys(&servers,argv[1])) nomem();
+    dns_init(0);
+    switch (dns_ip(&ia,&servers)) {
+      case DNS_HARD: die_perm();
+      case DNS_SOFT: die_temp();
+      case DNS_MEM: nomem();
+    }
 
-	  temp[ip_fmt(temp,&ia.ix[0].ip)]=0;
-	  if (!stralloc_copys(&servers, temp)) nomem();
-	  if (!stralloc_0(&servers)) nomem();
+    temp[ip_fmt(temp,&ia.ix[0].ip)]=0;
+    if (!stralloc_copys(&servers, temp)) nomem();
+    if (!stralloc_0(&servers)) nomem();
   } else
   if (control_readfile(&servers,"control/qmqpservers",0) != 1) die_control();
 

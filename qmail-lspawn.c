@@ -973,10 +973,10 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
           log(8, "was successful\n");
 		  _exit(0);
       case 31: case 61: 
-         log(8, "failed (hard error %i)/n", i); 
+         log(8, "failed (hard error %i)\n", i); 
          _exit(240);
       default:
-		 log(8, "failed (soft error %i)/n", i);
+		 log(8, "failed (soft error %i)\n", i);
          _exit(239);
    }
 }

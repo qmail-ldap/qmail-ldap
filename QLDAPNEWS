@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/05/06 14:17:37 $ ($Revision: 1.59 $)
+RELEASE: $Date: 2002/05/21 14:08:56 $ ($Revision: 1.60 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,17 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ better handling of virtual/ldap .qmail handling.
+ The ldap .qmail arguments are now exected in the following way:
+   1. reply (deliveryMode: reply)
+   2. delivery programs (deliveryProgramPath)
+   3. forwards (mailForwardingAddress)
+   4. localdeliver (deliveryMode: localdelivery)
+ So it is possible to use a filter delivery program or other more complex
+ delivery options.
+
+NEWS for 20020501a stuff:
 
  bounce messages are now qsbmf-compliant, wether custombouncetext is set or
  not. Note that you may not have blank lines in custombouncetext.
