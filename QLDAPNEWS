@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/10/11 14:11:59 $ ($Revision: 1.46 $)
+RELEASE: $Date: 2001/12/14 16:59:04 $ ($Revision: 1.47 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,9 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ reject any null sender (bounce) smtp session with more than one rcpt-to
+ (based on an idea of Charles Cazabon and some code of Henning Brauer)
 
  updated QLDAPINSTALL (more about those nasty -lresolv and ld.so problems)
 
