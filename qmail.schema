@@ -99,7 +99,7 @@ attributetype ( 1.3.6.1.4.1.7914.1.2.1.16 NAME 'mailQuotaCount'
 	DESC 'The number of messages the user can use until further messages get bounced.'
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
 
-attributetype ( 1.3.6.1.4.1.7914.1.2.1.16 NAME 'mailSizeMax'
+attributetype ( 1.3.6.1.4.1.7914.1.2.1.17 NAME 'mailSizeMax'
 	DESC 'The maximum size of a single messages the user accepts.'
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
 
