@@ -156,7 +156,7 @@ void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n");
 void err_rbl(arg) char *arg; { out("553 sorry, your mailserver is rejected by "); out(arg); out("\r\n"); }
 void err_deny() { out("553 sorry, mail from your location is administratively denied (#5.7.1)\r\n"); }
 void err_badrcptto() { out("553 sorry, mail to that recipient is not accepted (#5.7.1)\r\n"); }
-void err_554msg(arg) char *arg; { out("554 sorry, "); out(arg); out("\r\n"); logstring(3,"message denied because "); logstring(3,arg); logflush(3); }
+void err_554msg(arg) char *arg; { out("554 sorry, "); out(arg); out("\r\n"); /*logstring(3,"message denied because");*/ logstring(3,arg); logflush(3); }
 
 
 stralloc greeting = {0};
@@ -485,16 +485,12 @@ int addrallowed()
 int rcptdenied()
 {
   int j;
-  if (brtok)
-  {
-    j = byte_rchr(addr.s,addr.len,'@');
-    if (constmap(&mapbadrcptto, addr.s, addr.len - 1) ||
-        constmap(&mapbadrcptto, addr.s + j, addr.len - j - 1))
-    {
-      logpid(2); logstring(2,addr.s); logflush(2);
+  if (!brtok) return 0;
+  if (constmap(&mapbadrcptto, addr.s, addr.len - 1)) return 1;
+  j = byte_rchr(addr.s,addr.len,'@');
+  if (j < addr.len)
+    if (constmap(&mapbadrcptto, addr.s + j, addr.len - j - 1))
       return 1;
-    }
-  }
   return 0;
 }
 
@@ -615,6 +611,11 @@ void smtp_mail(arg) char *arg;
       if (errdisconnect) err_quit();
       return;
     }
+    if ( i == 0 || addr.s[i+1] == '\0' ) {
+      err_554msg("mailfrom without user or domain part is administratively denied");
+      if (errdisconnect) err_quit();
+      return;
+    }
     /* No '.' in domain.TLD */
     if ((j = byte_rchr(addr.s+i, addr.len-i, '.')) >= addr.len-i)
     {
@@ -715,7 +716,7 @@ void smtp_rcpt(arg) char *arg; {
   /* blockrelay stupid sendwhale bug relay probing */
   if (blockrelayprobe) /* don't enable this if you use percenthack */
   {
-    if (relayprobe)
+    if (relayprobe())
     {
       err_relay();
       logline(3,"'rcpt to' denied = looks like sendwhale bug relay probe");
