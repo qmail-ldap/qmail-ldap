@@ -25,30 +25,32 @@ static const char nullString[] = "(null pointer)";
 static const char ioHexArray[16] =  {'0','1','2','3','4','5','6','7',
                                      '8','9','a','b','c','d','e','f'};
 									 
-static int fmt_hexulong(char *s, unsigned long x) {
+static int fmt_hexulong(char *s, unsigned long x) 
+/* s has to be allready allocated, use at least FMT_ULONG chars 
+ * 40 chars should be enough for a 20 byte unsigned long (2^160) 
+ * so djb's fmt_ulong would first fail ;-) */
+{
 	unsigned int i;
 	
-	byte_copy(s, 2, "0x");
-	s += 2;
 	for (i = 0; i < sizeof(unsigned long) * 2; i++) {
-		*s++ = (ioHexArray[(x >> 28) & 0xf]);
+		*s++ = (ioHexArray[(x >> (sizeof(unsigned long)*8 - 4)) & 0xf]);
 		x = x << 4;
 	}
-	return ( sizeof(unsigned long) * 2 + 2 );
+	return ( sizeof(unsigned long) * 2 );
 }
 #endif
 
 void debug(int level, char *fmt, ...)
 /* works like printf has the format options %i, ...
  * all flags (#, 0, -, ' ', +, ' ... ) are not supported if not special noted
- * Also not supported are all options for foating-point numbers (not needed 
- * in qmail)
- * Supported conversion specifiers: diouxXcsSp%
+ * Also not supported are all options for foating-point numbers 
+ * (not needed in qmail)
+ * Supported conversion specifiers: diouxcsSp%
  * diux are for integer (long) conversions
  * c is a single unsigned char
  * s is a zero terminated string
- * S is a stralloc object (should not be zero terminated (else the zero will
- * be printed))
+ * S is a stralloc object (should not be zero terminated (else the zero 
+ *   will be printed))
  * p is the hex address of a generic pointer (void *)
  * % is the % sign */
 {
@@ -91,7 +93,12 @@ void debug(int level, char *fmt, ...)
 					break;
 				case 's':
 					s = va_arg(args, char *);
-					if ( !s ) s = nullString;
+					if ( !s ) {
+						 if ( substdio_put(&ssdeb, nullString, 
+									 		str_len(nullString) ) ) 
+							 return;
+						 break;
+					}
 					if ( substdio_put(&ssdeb, s, str_len(s) ) ) return;
 					break;
 				case 'S':
@@ -110,11 +117,13 @@ void debug(int level, char *fmt, ...)
 				case 'p':
 					p = va_arg(args, void *);
 					ul = (unsigned long) p;
+					if ( substdio_put(&ssdeb, "0x", 2) ) return;
 					if ( substdio_put(&ssdeb, num, fmt_hexulong(num, ul) ) ) 
 						return;
 					break;
 				case 'x':
 					ul = va_arg(args, unsigned long);
+					if ( substdio_put(&ssdeb, "0x", 2) ) return;
 					if ( substdio_put(&ssdeb, num, fmt_hexulong(num, ul) ) ) 
 						return;
 					break;
@@ -125,7 +134,7 @@ void debug(int level, char *fmt, ...)
 			}
 			start = ++cur; 
 		} else {
-			cur++;
+			++cur;
 		}
 	}
 	if ( substdio_put(&ssdeb, start, cur-start) == -1 ) return;
@@ -145,7 +154,8 @@ void init_debug(int fd, unsigned int maxlevel)
  * 16 = Debug, more information about authentication etc.
  * 32 = Debug^2 (more debug info), even more ...
  * 64 = LDAP-Debug, show everything in the ldap-module
- *128 = PASSWD-Debug, this shows the encrypted and clear text passwords
+ *128 = some more LDAP-Debug stuff (good for ldap test tool)
+ *256 = PASSWD-Debug, this shows the encrypted and clear text passwords
  *      so use it with care */
 {
 #ifdef DEBUG
@@ -212,3 +222,4 @@ char *qldap_err_str(int errno)
 	}
 #endif /* DEBUG */
 }
+

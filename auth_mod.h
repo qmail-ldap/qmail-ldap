@@ -11,8 +11,8 @@ void auth_init(int argc, char **argv, stralloc *login, stralloc *authdata);
  * argc and argv are the arguments of the next auth_module. */
 
 void auth_fail(int argc, char **argv, char *login);
-/* Checks if it was a hard fail (bad password) or just a soft error (user not found)
-   argc and argv are the arguments of the next auth_module. */
+/* Checks if it was a hard fail (bad password) or just a soft error 
+ * (user not found) argc and argv are the arguments of the next auth_module. */
 
 void auth_success(int argc, char **argv, char *login, int uid, int gid,
 	   			  char* home, char *homemaker, char *md);

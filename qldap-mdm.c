@@ -5,6 +5,7 @@
 
 int make_homedir(char *home, char *maildir, char *dirmaker)
 /* executes the file specified with dirmaker returns 0 on success */
+/* XXX ~control/dirmaker has to be only at max writeable for root */
 {
 #ifdef AUTOHOMEDIRMAKE
 	/* do the auto homedir creation */
@@ -40,5 +41,5 @@ int make_homedir(char *home, char *maildir, char *dirmaker)
 }
 
 /* XXX the maildirmake stuff is dirictly in qmail-local.c and qmail-pop3d.c
- * XXX this is simpler and better ;-) */
-
+ * XXX this is simpler and better (Perhaps I finde a better way sometimes) ;-) */
+/* int make_maildir(...) */

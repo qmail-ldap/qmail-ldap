@@ -16,7 +16,7 @@
 #define QLDAP_PORT LDAP_PORT
 
 /* system libraries for syscalls */
-#include <unistd.h>
+/* #include <unistd.h> */
 
 /* internal functions */
 static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info);
@@ -27,11 +27,11 @@ stralloc qldap_me = {0};				/* server name, also external visible */
 static stralloc qldap_server = {0};		/* name of ldap server */
 static stralloc qldap_basedn = {0};		/* the search basedn */
 static stralloc qldap_user = {0};		/* the ldap user ( for login ) */
-static stralloc qldap_password = {0};	/* the ldap login password (cleartext !!) */
+static stralloc qldap_password = {0};	/* the ldap login password */
 
 static stralloc qldap_uid = {0};		/* UID if not specified in db */
 static stralloc qldap_gid = {0};		/* UID if not specified in db */
-static stralloc qldap_messagestore = {0}; /* perfix for non absolute maildirpaths */
+static stralloc qldap_messagestore = {0}; /* perfix for maildirpaths */
 
 
 /* char replacement */
@@ -51,7 +51,7 @@ static unsigned int replace(char *s, register unsigned int len, char f, char r)
 
 int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 			  stralloc *dotmode, stralloc *quota, stralloc *quotawarning)
-/* reads all necesary control files and makes everything ready for a ldap lookup.
+/* reads all necesary control files and makes everything ready for a ldap lookup
  * Returns 0 if successful else -1 is returned and errno is set.
  * Localdelivery is set to 0 or 1 as in ~control/ldaplocaldelivery specified.
  * Also bind and cluster are set to 0 and 1 as in their files described */
@@ -67,14 +67,16 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 	if ( bind != 0 )
 		*bind = 0; /* bind normaly off */
 
-	/* change dir to ~qmail to read the control files, but save first the current
-	 * working directory. */
+	/* change dir to ~qmail to read the control files, but save first 
+	 * the current working directory. */
 	if ( (olddir = alloc(len)) == 0 ) return -1;
+	/* XXX check if this correct for all systems (BSD/Solaris) */
 	while ( getcwd(olddir, len ) == 0 && errno == ERANGE && i++ < 5) {
 	   	if ( alloc_re(&olddir, len, len*2) == 0 ) return -1;
 		len *=2;
 	}
-	if ( olddir == 0 ) return -1; /* giving up, normaly 8k should be enough for a path */
+	if ( olddir == 0 ) return -1; /* giving up, normaly 8k should be 
+								   * enough for a path */
 	if ( chdir(auto_qmail) == -1 ) return -1; /* chdir sets errno */
 	
 	if (control_rldef(&qldap_me,"control/me",0,"") == -1) return -1;
@@ -95,12 +97,14 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 	if (!stralloc_0(&qldap_user)) return -1;
 	debug(64, "init_ldap: control/ldaplogin: %s\n", qldap_user.s);
 
-	if (control_rldef(&qldap_password,"control/ldappassword",0,"") == -1) return -1;
+	if (control_rldef(&qldap_password,"control/ldappassword",0,"") == -1) 
+		return -1;
 	if (!stralloc_0(&qldap_password)) return -1;
 	debug(64, "init_ldap: control/ldappassword: %s\n", qldap_password.s);
 
 	if (localdelivery != 0) {
-		if (control_readint(localdelivery,"control/ldaplocaldelivery") == -1) return -1;
+		if (control_readint(localdelivery,"control/ldaplocaldelivery") == -1) 
+			return -1;
 		debug(64, "init_ldap: control/ldaplocaldelivery: %i\n", *localdelivery);
 	}
 	if (cluster != 0 ) {
@@ -120,10 +124,12 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 	if (!stralloc_0(&qldap_gid)) return -1;
 	debug(64, "init_ldap: control/ldapgid: %s\n", qldap_gid.s);
 
-	if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"") == -1) 
+	if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"")
+		   	== -1) 
 		return -1;
 	if (!stralloc_0(&qldap_messagestore)) return -1;
-	debug(64, "init_ldap: control/ldapmessagestore: %s\n", qldap_messagestore.s);
+	debug(64, "init_ldap: control/ldapmessagestore: %s\n", 
+			qldap_messagestore.s);
 
 	if ( hm != 0 ) {
 		if (control_rldef(hm,"control/dirmaker",0,"") == -1) return -1;
@@ -158,7 +164,8 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 	return 0;
 }
 
-int ldap_lookup(searchinfo *search, char **attrs, userinfo *info, extrainfo *extra)
+int ldap_lookup(searchinfo *search, char **attrs, userinfo *info, 
+				extrainfo *extra)
 /* searches a db entry as specified in search, and fills up info and extra with
  * the coresponding db entries or NULL if not available.
  * Returns 0 if a entry was found, 1 if more than one or no corresponding entry
@@ -167,51 +174,57 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info, extrainfo *ext
 	LDAP *ld;
 	LDAPMessage *res, *msg;
 	char *dn;
+	char *f;
 	int rc;
 	int version;
 	int num_entries;
 
-	debug(64, "ldap_lookup: ");
+	debug(128, "ldap_lookup: ");
 	/* allocate the connection */
 	if ( (ld = ldap_init(qldap_server.s,QLDAP_PORT)) == 0 ) {
 		qldap_errno = LDAP_INIT;
 		return -1;
 	}
-	debug(64, "init succesful");
+	debug(128, "init succesful");
 
 #ifdef LDAP_OPT_PROTOCOL_VERSION
 	/* set LDAP connection options (only with Mozilla LDAP SDK) */
 	version = LDAP_VERSION2;
-	if ( ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &version) != LDAP_SUCCESS ) {
+	if ( ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &version)
+		   	!= LDAP_SUCCESS ) {
 		qldap_errno = LDAP_INIT;
 		return -1;
 	}
-	debug(64, ", set_option succesful");
+	debug(128, ", set_option succesful");
 #endif
 
 	/* connect to the LDAP server */
-	if ( (rc = ldap_simple_bind_s(ld,qldap_user.s,qldap_password.s)) != LDAP_SUCCESS ) {
+	if ( (rc = ldap_simple_bind_s(ld,qldap_user.s,qldap_password.s)) 
+			!= LDAP_SUCCESS ) {
 		qldap_errno = LDAP_BIND;
 		return -1;
 	}
-	debug(64, ", bind succesful\n");
+	debug(128, ", bind succesful\n");
 
 	/* do the search for the login uid */
-	debug(64, "ldap_lookup: search for %s ", search->filter);
 	if ( (rc = ldap_search_s(ld, qldap_basedn.s, LDAP_SCOPE_SUBTREE,
-							 search->filter, attrs, 0, &res )) != LDAP_SUCCESS ) {
-		debug(64, "faild with %s\n", ldap_err2string(rc) );
+							 f, attrs, 0, &res )) != LDAP_SUCCESS ) {
+		alloc_free(f); /* free f */
+		debug(64, "ldap_lookup: search for %s faild (%s)\n", 
+				search->filter, ldap_err2string(rc) );
 		qldap_errno = LDAP_SEARCH;
 		return -1;
 	}
-	debug(64, "succeded\n");
+	alloc_free(f); /* free f */
+	debug(128, "ldap_lookup: search for %s succeded\n", search->filter);
 	
 	/* go to the first entry */
 	msg = ldap_first_entry(ld,res);
 
 	/* count the results, we must have exactly one */
 	if ( (num_entries = ldap_count_entries(ld,msg)) != 1) {
-		debug(64, "ldap_lookup: Too many (less) entries found (%i)\n", num_entries);
+		debug(64, "ldap_lookup: Too many (less) entries found (%i)\n", 
+				num_entries);
 		if ( num_entries )
 			qldap_errno = LDAP_COUNT;
 		else
@@ -223,21 +236,21 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info, extrainfo *ext
 	 * but first try to rebind with the password */
 	dn = ldap_get_dn(ld,msg);
 	if ( search->bindpw ) {
-		debug(64, "ldap_lookup: rebind with %s", dn);
 		if ( dn == 0 ) {
 			qldap_errno = LDAP_REBIND;
 			return -1;
 		}
-		/* add re-bind here */
+		/* do re-bind here */
 		if ( (rc = ldap_simple_bind_s(ld,dn,search->bindpw)) != LDAP_SUCCESS) {
 			free(dn);
-			debug(64, " faild (%s)\n", ldap_err2string(rc) );
+			debug(64, "ldap_lookup: rebind with %s faild (%s)", 
+					dn, ldap_err2string(rc) );
 			search->bind_ok = 0;
 			qldap_errno = LDAP_REBIND;
 			return -1;
 		}
 		search->bind_ok = 1;
-		debug(64, " succeded\n");
+		debug(128, "ldap_lookup: rebind with %s succeded", dn );
 	}
 	if ( dn != 0 ) free(dn);
 
@@ -251,19 +264,22 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info, extrainfo *ext
 
 	/* ok, we finished, lets clean up and disconnect from the LDAP server */
 	/* XXX we should also free msg and res */
+	ldap_msgfree(msg);
+	ldap_msgfree(res);
 	ldap_unbind_s(ld);
 	return 0;
 
 }
 
 static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
+/* NOTE: all default qldap_* strallocs are 0-terminated */
 {
 	char **vals;
 	int i;
 	int s;
 	
-	/* get those entries LDAP_QMAILUID, LDAP_QMAILGID, LDAP_MAILSTORE, LDAP_MAILHOST,
-	 * LDAP_ISACTIVE and LDAP_UID */
+	/* get those entries LDAP_QMAILUID, LDAP_QMAILGID, LDAP_MAILSTORE, 
+	 * LDAP_MAILHOST, LDAP_ISACTIVE and LDAP_UID */
 	debug(64, "ldap_get_userinfo: %s: ", LDAP_QMAILUID);
 	if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILUID)) != 0 ) {
 		if ( (info->uid = alloc( str_len( vals[0] ) + 1 ) ) == 0 ) {
@@ -320,7 +336,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 		debug(64, "%s (from server)\n", vals[0]);
 		str_copy( info->user, vals[0] );
 	} else {
-		debug(64, "undefined but NEEDED !!!!!!!!!!!!!!!\n", vals[0]);
+		debug(64, "undefined but NEEDED !!!!!!!\n", vals[0]);
 		qldap_errno = LDAP_NEEDED;
 		return -1;
 	}
@@ -330,8 +346,10 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 	debug(64, "ldap_get_userinfo: %s: ", LDAP_ISACTIVE);
 	if ( (vals = ldap_get_values(ld,msg,LDAP_ISACTIVE)) != 0 ) {
 		debug(64, "%s (from server)\n", vals[0]);
-		if ( !str_diff(ISACTIVE_BOUNCE, vals[0]) ) info->status = STATUS_BOUNCE;
-		else if ( !str_diff(ISACTIVE_NOPOP, vals[0]) ) info->status = STATUS_NOPOP;
+		if ( !str_diff(ISACTIVE_BOUNCE, vals[0]) ) 
+			info->status = STATUS_BOUNCE;
+		else if ( !str_diff(ISACTIVE_NOPOP, vals[0]) ) 
+			info->status = STATUS_NOPOP;
 		else info->status = STATUS_OK;
 	} else {
 		debug(64, "undefined\n", vals[0]);
@@ -357,7 +375,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 	if ( (vals = ldap_get_values(ld,msg,LDAP_MAILSTORE)) != 0 ) {
 		if ( vals[0][0] != '/' ) {
 			/* local path, use ldapmessagestore as prefix or return a error */
-			if ( !qldap_messagestore.s && qldap_messagestore.s[0] != '/' ) {
+			if ( !qldap_messagestore.s || qldap_messagestore.s[0] != '/' ) {
 				qldap_errno = LDAP_NEEDED;
 				return -1;
 			}
@@ -368,7 +386,8 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 				s = 0;
 			}
 			i = qldap_messagestore.len + s;
-			i += strlen( vals[0] ) + 1;
+			i += strlen( vals[0] ); /* don't have to add 1 because qldap_mms 
+									 * is 0-terminated (so 1 to long) */
 			if ( (info->mms = alloc( i ) ) == 0 ) {
 				qldap_errno = LDAP_ERRNO;
 				return -1;
@@ -386,7 +405,7 @@ static int ldap_get_userinfo(LDAP *ld, LDAPMessage *msg, userinfo *info)
 		}
 		debug(64, "%s\n", info->mms);
 	} else {
-		debug(64, "unspecified but NEEDED !!!!!!!!!!!!!!!\n", vals[0]);
+		debug(64, "unspecified but NEEDED !!!!!\n", vals[0]);
 		qldap_errno = LDAP_NEEDED;
 		return -1;
 	}
@@ -408,5 +427,61 @@ static int ldap_get_extrainfo(LDAP *ld, LDAPMessage *msg, extrainfo *info)
 		/* free info[i].vals with ldap_value_free(info[i].vals) */
 	}
 	return 0;
+}
+
+char* escape_forldap(char *toescape)
+/* returns the escaped string or NULL if not succesful, string needs to
+ * be freed later */
+/* Under LDAP, '(', ')', '\', '*' and '\0' have to be escaped with '\'
+ * NOTE: because we use just simple c-strings we do not allow a '\0' in the
+ * NOTE: search string, or better we ignore it, '\0' is the end of the string */
+{
+	register int len;
+	register char *t;
+	register char *s;
+	char *tmp;
+
+	len = str_len(toescape);
+	if ( ( tmp = alloc( len*2+1 ) ) == 0 ) return 0;
+
+	s = toescape;
+	t = tmp;
+	
+	for(;;) {
+#ifndef LDAP_ESCAPE_BUG
+		if(!len) break; 
+		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) 
+			*t++ = '\\' ;
+		*t++ = *s++;
+		len--;
+		if(!len) break; 
+		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) 
+			*t++ = '\\' ;
+		*t++ = *s++;
+		len--;
+		if(!len) break; 
+		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) 
+			*t++ = '\\' ;
+		*t++ = *s++;
+		len--;
+		if(!len) break; 
+		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) 
+			*t++ = '\\' ;
+		*t++ = *s++;
+		len--;
+#else
+#warning __LDAP_ESCAPE_BUG__IS__ON__
+		if(!len) break; 
+		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '_' ; 
+		else *t++ = *s++; 
+		len--;
+		if(!len) break; 
+		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '_' ; 
+		else *t++ = *s++; 
+		len--;
+#endif
+	}
+	*t = '\0';
+	return tmp;
 }
 

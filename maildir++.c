@@ -21,7 +21,8 @@ static void temp_nomem() { strerr_die1x(111,"Out of memory. (QUOTA #)"); }
 static int check_maxtime(char *dir, time_t time);
 static void calc_size(char *dir, long int *size, int *count, time_t *maxtime);
 static int parse_quota(substdio *ss, long int *size, int *count, int *lines);
-static unsigned int replace(char *s,register unsigned int len,register char f,register char r);
+static unsigned int replace(char *s, register unsigned int len,
+							register char f, register char r);
 
 static stralloc	foo = {0};
 static stralloc	foo2 = {0};
@@ -45,9 +46,11 @@ void quota_add(int fd, long int size, int count)
 	substdio_fdbuf(&ss,write,fd,buf,sizeof(buf));
 	/* create string of the form '1232 12\n' and add it to the quota */
 	if ( ! stralloc_ready(&foo2, 2*FMT_ULONG+2) ) temp_nomem();
-	if ( ! stralloc_copyb(&foo2, num, fmt_ulong(num, (long) size) ) ) temp_nomem();
+	if ( ! stralloc_copyb(&foo2, num, fmt_ulong(num, (long) size) ) ) 
+		temp_nomem();
 	if ( ! stralloc_cats(&foo2, " ") ) temp_nomem();
-	if ( ! stralloc_catb(&foo2, num, fmt_ulong(num, (long) count) ) ) temp_nomem();
+	if ( ! stralloc_catb(&foo2, num, fmt_ulong(num, (long) count) ) ) 
+		temp_nomem();
 	if ( ! stralloc_cats(&foo2, "\n") ) temp_nomem();
 	if (substdio_put(&ss, foo2.s, foo2.len) == -1) goto addfail;
 	if (substdio_flush(&ss) == -1) goto addfail; 
@@ -77,9 +80,11 @@ void quota_rm(int fd, long int size, int count)
 	/* create string of the form '-1232 -12\n' and add it to the quota */
 	if ( ! stralloc_ready(&foo2, 2*FMT_ULONG+4) ) temp_nomem();
 	if ( ! stralloc_copys(&foo2, "-") ) temp_nomem();
-	if ( ! stralloc_catb(&foo2, num, fmt_ulong(num, (long) size) ) ) temp_nomem();
+	if ( ! stralloc_catb(&foo2, num, fmt_ulong(num, (long) size) ) ) 
+		temp_nomem();
 	if ( ! stralloc_cats(&foo2, " -") ) temp_nomem();
-	if ( ! stralloc_catb(&foo2, num, fmt_ulong(num, (long) count) ) ) temp_nomem();
+	if ( ! stralloc_catb(&foo2, num, fmt_ulong(num, (long) count) ) ) 
+		temp_nomem();
 	if ( ! stralloc_cats(&foo2, "\n") ) temp_nomem();
 	if (substdio_put(&ss, foo2.s, foo2.len) == -1) goto rmfail;
 	if (substdio_flush(&ss) == -1) goto rmfail; 
@@ -94,7 +99,8 @@ rmfail:
 	_exit(111);
 }
 
-int quota_maildir(char *dir, char *quota, int *fd, long int mailsize, int mailcount)
+int quota_maildir(char *dir, char *quota, int *fd, long int mailsize, 
+				  int mailcount)
 /* quota dir and subdirs, return the percentage of the quota use (0-100)  *
  * -1 is an error (race condition). Add mailsize and mailcount to the     *
  * current calculations. Quota is the acctual quota in maildirsize fromat *
@@ -142,10 +148,14 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize, int mailco
 	errno = 0;	
 	if ( stat(maildirsize.s, &st) == -1 && errno != error_noent ) goto fail;
 
-	if (quota) get_quota(quota, &q_size, &q_count); /* if a quota was specified get the figures */
-	if ( errno == error_noent || st.st_size >= 5120 ) { /* get_quota dosn't change errno */
+	if (quota) 
+		get_quota(quota, &q_size, &q_count); 
+		/* if a quota was specified get the figures */
+	if ( errno == error_noent || st.st_size >= 5120 ) { 
+		/* get_quota dosn't change errno */
 		if ( !quota ) {
-			/* if no quota was specified, we can not calculate the current percentage */
+			/* if no quota was specified, we can not calculate 
+			 *  the current percentage */
 			*fd = -1;
 			return -1;
 		}
@@ -159,14 +169,16 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize, int mailco
 		substdio_fdbuf(&ss,read,*fd,buf,sizeof(buf));
 		/* get the first line and check if the entry is still correct */
 		if (getln(&ss,&foo,&match,'\n') != 0) {
-			/* abd thing happened ... */
-			if ( unlink(maildirsize.s) == -1 && errno != error_noent ) goto fail;
+			/* bad thing happened ... */
+			if ( unlink(maildirsize.s) == -1 && errno != error_noent ) 
+				goto fail;
 			newf = 1;
 			calc_size(dir, &size, &count, &maxtime);
 		} else {
 			if (!match && !foo.len) {
 				/* maildirsize seems to be empty ... */
-				if ( unlink(maildirsize.s) == -1 && errno != error_noent ) goto fail;
+				if ( unlink(maildirsize.s) == -1 && errno != error_noent ) 
+					goto fail;
 				newf = 1;
 				calc_size(dir, &size, &count, &maxtime);
 			} else {
@@ -178,20 +190,24 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize, int mailco
 					if ( size == q_size || count == q_count ) {
 						/* finaly parse the maildirsize */
 						size = 0; count = 0;
-						if ( parse_quota(&ss, &size, &count, &lines) == -1 || lines == 0 ) {
-							if ( unlink(maildirsize.s) == -1 && errno != error_noent ) goto fail;
+						if ( parse_quota(&ss, &size, &count, &lines) == -1 || 
+								lines == 0 ) {
+							if ( unlink(maildirsize.s) == -1 && 
+									errno != error_noent ) goto fail;
 							newf = 1;
 							calc_size(dir, &size, &count, &maxtime);
 						}
 					} else {
-						if ( unlink(maildirsize.s) == -1 && errno != error_noent ) goto fail;
+						if ( unlink(maildirsize.s) == -1 && 
+								errno != error_noent ) goto fail;
 						size = 0; count = 0;
 						/* rewrite and recalculate the file */
 						newf = 1;
 						calc_size(dir, &size, &count, &maxtime);
 					}
 				} else {
-					if ( parse_quota(&ss, &size, &count, &lines) == -1 || lines == 0 ) {
+					if ( parse_quota(&ss, &size, &count, &lines) == -1 || 
+							lines == 0 ) {
 						*fd = -1;
 						return -1;
 					}
@@ -212,7 +228,7 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize, int mailco
 			/* write maildirsize in standart Maildir manner */
 			sig_alarmcatch(sigalrm);
 			for (loop = 0; ; ++loop) {
-				maxtime= now();
+				maxtime = now();
 				pid = getpid();
 				if ( ! stralloc_copys(&foo, dir) ) temp_nomem();
 				if ( ! stralloc_cats(&foo, "/tmp/maildirsize.") ) temp_nomem();
@@ -235,15 +251,18 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize, int mailco
 			if (substdio_puts(&ss,quota) == -1) goto fail;
 			if (substdio_puts(&ss,"\n") == -1) goto fail;
 			if ( ! stralloc_ready(&foo2, 2*FMT_ULONG+2) ) temp_nomem();
-			if ( ! stralloc_copyb(&foo2, num, fmt_ulong(num, (long) size) ) ) temp_nomem();
+			if ( ! stralloc_copyb(&foo2, num, fmt_ulong(num, (long) size) ) ) 
+				temp_nomem();
 			if ( ! stralloc_cats(&foo2, " ") ) temp_nomem();
-			if ( ! stralloc_catb(&foo2, num, fmt_ulong(num, (long) count) ) ) temp_nomem();
+			if ( ! stralloc_catb(&foo2, num, fmt_ulong(num, (long) count) ) ) 
+			   temp_nomem();
 			if ( ! stralloc_cats(&foo2, "\n") ) temp_nomem();
 			if (substdio_put(&ss, foo2.s, foo2.len) == -1) goto fail;
 			if (substdio_flush(&ss) == -1) goto fail; 
 			if (fsync(*fd) == -1) goto fail; 
 			if (close(*fd) == -1) goto fail; /* NFS dorks */
-			if ( unlink(maildirsize.s) == -1 && errno != error_noent ) goto fail;
+			if ( unlink(maildirsize.s) == -1 && errno != error_noent ) 
+				goto fail;
 			if (link(foo.s,maildirsize.s) == -1) goto fail;
 			unlink(foo.s);
 			
@@ -269,10 +288,11 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize, int mailco
 	} else 
 		count = 0;
 	if ( count == 100 || size == 100 ) {
-		/* if over quota and maildirsize longer then 1 line or older then 15 min *
-		 * dump maildirsize and recalculate the quota */
+		/* if over quota and maildirsize longer then 1 line or older then 
+		 * 15 min dump maildirsize and recalculate the quota */
 		if ( !newf && (lines > 1 || tm > st.st_mtime + 15*60) ) {
-			if ( unlink(maildirsize.s) == -1 && errno != error_noent ) goto fail;
+			if ( unlink(maildirsize.s) == -1 && errno != error_noent ) 
+				goto fail;
 			return quota_maildir(dir, quota, fd, mailsize, mailcount);
 		}
 	}
@@ -285,7 +305,8 @@ int quota_maildir(char *dir, char *quota, int *fd, long int mailsize, int mailco
 	/* 100 is quota full 0 is quota empty */
 
 	fail: 
-		strerr_warn3("Problems while trying to get maildirsize: ",error_str(errno),". (QUOTA #)", 0);
+		strerr_warn3("Problems while trying to get maildirsize: ", 
+					 error_str(errno), ". (QUOTA #)", 0);
 		if ( match == -1 ) unlink(foo.s);
 		_exit(111);
 }
@@ -299,8 +320,8 @@ static int check_maxtime(char *dir, time_t time)
 	
 	dirp = opendir(dir);
 	while ( dirp && (dp = readdir(dirp)) != 0) {
-		if ( dp->d_name[0] == '.' && dp->d_name[1] != '\0' && dp->d_name[1] != '.' &&
-			 !str_diff( ".Trash", dp->d_name) ) {
+		if ( dp->d_name[0] == '.' && dp->d_name[1] != '\0' && 
+			   dp->d_name[1] != '.' && !str_diff( ".Trash", dp->d_name) ) {
 			if ( ! stralloc_copys(&foo, dir) ) temp_nomem();
 			if ( ! stralloc_cats(&foo, dp->d_name) ) temp_nomem();
 			if ( ! stralloc_cats(&foo, "/cur") ) temp_nomem();
@@ -360,7 +381,8 @@ static int get_file_size(char *dir, char *name, struct stat *st)
 }
 
 static void calc_curnew(char *dir, long int *size, int *count, time_t *maxtime)
-/* calculate the size of the two dirs new and cur of a maildir (uses get_file_size) */
+/* calculate the size of the two dirs new and cur of a maildir 
+ * (uses get_file_size) */
 {
 	struct dirent	*dp;
 	DIR				*dirp;
@@ -381,7 +403,7 @@ static void calc_curnew(char *dir, long int *size, int *count, time_t *maxtime)
 		f = dp->d_name;
 		if ( *f == '.' ) continue; /* ignore all dot-files */
 		while(*f) {
-			if ( *f != ':' || f[1] != '2' || f[2] == ',' ) {
+			if ( *f != ':' || f[1] != '2' || f[2] != ',' ) {
 				f++;
 			} else {
 				f += 3;
@@ -410,7 +432,7 @@ static void calc_curnew(char *dir, long int *size, int *count, time_t *maxtime)
 		f = dp->d_name;
 		if ( *f == '.' ) continue; /* ignore all dot-files */
 		while(*f) {
-			if ( *f != ':' || f[1] != '2' || f[2] == ',' ) {
+			if ( *f != ':' || f[1] != '2' || f[2] != ',' ) {
 				f++;
 			} else {
 				f += 3;
@@ -431,7 +453,8 @@ static void calc_curnew(char *dir, long int *size, int *count, time_t *maxtime)
 }
 
 static void calc_size(char *dir, long int *size, int *count, time_t *maxtime)
-/* one of the tow main calculating routines, get the size via a scan through all dirs */
+/* one of the tow main calculating routines, get the size via a scan through 
+ * all dirs */
 {
 	struct dirent *dp;
 	DIR *dirp;
@@ -441,8 +464,8 @@ static void calc_size(char *dir, long int *size, int *count, time_t *maxtime)
 	
 	dirp = opendir(dir);
 	while ( dirp && (dp = readdir(dirp)) != 0) {
-		if ( dp->d_name[0] == '.' && dp->d_name[1] != '\0' && dp->d_name[1] != '.' &&
-			 !str_diff( ".Trash", dp->d_name) ) {
+		if ( dp->d_name[0] == '.' && dp->d_name[1] != '\0' && 
+				dp->d_name[1] != '.' && !str_diff( ".Trash", dp->d_name) ) {
 			if ( ! stralloc_copys(&foo2, dir) ) temp_nomem();
 			if ( ! stralloc_cats(&foo2, dp->d_name) ) temp_nomem();
 			if ( ! stralloc_0(&foo2) ) temp_nomem();
@@ -522,12 +545,14 @@ void get_quota(char *quota, long int *size, int *count)
 				*count = i;
 				break;
 			default: /* perhaps we should ignore the rest ... */
-				strerr_die1x(100, "The quota specification has the wrong format. (QUOTA #)");
+				strerr_die1x(100, 
+					"The quota specification has the wrong format. (QUOTA #)");
 		}
 	}
 }
 
-static unsigned int replace(char *s,register unsigned int len,register char f,register char r)
+static unsigned int replace(char *s, register unsigned int len, 
+							register char f, register char r)
 /* char replacement */
 {
    register char *t;

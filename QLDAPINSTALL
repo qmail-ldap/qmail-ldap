@@ -14,19 +14,30 @@ ongoing - The big qmail-ldap picture
 done    - support for mail clusters
 planned - full code review
 planned - splitting the patch into smaler separate pieces
-planned - ldap authentication for courier-imap
+done    - ldap authentication for courier-imap
 
 NEWS:
+
+ to have the possibility to compare cleartextpasswords (password how are 
+ stored cleartext in ldap) define CLEARTEXTPASSWORD. Because this setting
+ is a security disaster it is normaly off. All other modes (hashed MD4, MD5,
+ SHA and the standart DES crypt) are not affected.
 
  Added new debug facility that is usable for the auth tools and qmail-lspawn.
  The debug-level can now be changed at runtime and everything gets logged via
  splogger or any other logger connected to stderr of the execution chain.
+ You can set the debug level easily with the DEUBUGLEVEL environment variable.
 
  Created a new auth tool for pop3 and imap. The old checkpassword is not 
  needed anymore. The new programs are auth_pop and auth_imap.
 
  Rewritten qmail-lspawn and the auth tools. Both programs use now the same
  debug and ldap functions, which are now moved to new files (qldap-*).
+ The complete ldap lookup is now more flexible, so you can easier add your 
+ special stuff.
+
+ The qmailUser ldap field and the corresponding conf file are no longer used,
+ they have been replaced with the uid field.
 
  Added maildir++ support, this means especially better quota support via the
  maildir++ maildirsize file. For more info have a look at courier-imap
@@ -39,7 +50,7 @@ INSTALL:
 2. Read this document
 
 3. You need the following compiled and installed
-    - OpenLDAP 1.2/1.2.1 (others might also work)
+    - OpenLDAP 1.2.x (others might also work)
     - Netscape LDAP sdk (tested libldapssl30 on Solaris 2.6)
 
    If you have problems with OpenLDAP look into their FAQ.
@@ -49,11 +60,11 @@ INSTALL:
    works ;-). There seems to be a problem with the original patch utility
    on Solaris based systems, use the gnu patch utility instead.
    A pre-compiled binary should be available at http://www.sunfreeware.com/
+   or on many mirrors around the world.
 
 5. Edit the conf-* files and the top of the Makefile (only the top ;-) )
    You can set/change:
-   - LDAPON=-DQLDAP (turns qmail-ldap on and off) +
-            -DQLDAP_CLUSTER (turns the cluster support on) +
+   - LDAPON=-DQLDAP_CLUSTER (turns the cluster support on) +
             -DLDAP_ESCAPE_BUG (see NOTE)
      NOTE: at the moment -DLDAP_ESCAPE_BUG is also defined, this should be
            added as long as the ldap servers have problems with the 
@@ -70,38 +81,54 @@ INSTALL:
      into the release, you need the ~control/dirmaker file to turn the 
      patch on, see CONFIG FILES)
 
-   - QLDAPBIND=-DQLDAP_BIND (when password are checked trought the
-     ldap-server (not checkpassword))
+   - QLDAPBIND=-DQLDAP_BIND (passwords a checked (compared) directly with the
+     ldap-server (not in the auth module), so you can make the passwd entry 
+     compare only)
    - SHADOWLIBS=-lshadow, SHADOWOPTS=-DPW_SHADOW are needed on some Systems
      (Solaris, Linux) for local password lookups (just like the original
      djb-checkpassword)
-   - DEBUG=-DQLDAPDEBUG (turns debugging of checkpassword on, see 6.1)
-
-   - LSPAWN_LOG=-DQLSPAWN_LOG -DLOG_LEVEL=3 (qmail-lspawn compiled with 
-     LSPAWN_LOG enabled does now some lspawn logging, only the number after
-     -DLOG_LEVEL= has to be changed)
-     WARNING: this Infos are logged throught splogger to the syslog AND when a
-              message is bounced the same informations are also included.
-              Do not use DEBUG_LEVEL/INFO_LEVEL on production machines.
+   - DEBUG=-DDEBUG (compiles debugging into the auth modules and qmail-ldap, 
+     see also 10.)
 
 5.1 Have a look at qmail-ldap.h, perhaps you want to change something there.
 
 6.  Compile and install the stuff (it's the same as in standard qmail
-    install -> read the INSTALL file !!!). 
-    Now everything should be installed.
+    install -> read the INSTALL file and the FAQ !!!).
+    Now everything should be installed with correct permisions.
 
-6.1 Enable DEBUG in the Makefile remove checkpassword.o and compile 
-    checkpassword again, this is for debugging your LDAP setup.
-    Use make checkpassword to compile checkpassword again
+7.  Create the LDAP user database and start the LDAP server
 
-     WARNING: don't make the debug version accessible to other users
+8.  Create the proper ~control/ldap* files for qldap
 
-7. Create the LDAP user database and start the LDAP server
+9.  Test, Debug and Enjoy!
 
-8. Create the proper ~control/ldap* files for qldap
+10. Debugging: as said befor you can compile qmail-lspawn and the auth modules 
+    with a flexible debuging facility (option DEBUG).
+    The debug output gets logged trough splogger or your favorite loggin tool 
+    connected to stderr for tcpserver-pop/imap chain.
+    To turn on debugging you need only to define the DEBUGLEVEL environment 
+    variable (e.g. with env, env DEBUGLEVEL=3 qmail-start ...)
+    There are these DEBUGLEVELs:
+    DEBUGLEVEL=1   -> Errors
+    DEBUGLEVEL=2   -> Warnings
+    DEBUGLEVEL=4   -> Info
+    DEBUGLEVEL=8   -> Info^2
+    DEBUGLEVEL=16  -> Debug
+    DEBUGLEVEL=32  -> Debug^2
+    DEBUGLEVEL=64  -> LDAP Debug
+    DEBUGLEVEL=128 -> LDAP Debug^2
+    DEBUGLEVEL=256 -> PASSWD, this level is normaly off because it shows
+                      critical data (unencrypted and crypted passwords). To
+                      turn it on edit checkpassword.c and increase the level
+                      for init_debug().
 
-9. Test, Debug and Enjoy!
-
+     WARNING: on production machines don't use levels over 3 or you will get 
+              incredible long logfiles.
+     NOTE: to high debuglevels are reduced to the maximum allowd debug level
+           if the level parameter form init_debug() is smaler.
+           Perhaps a compare with a bit mask will be added somewhen, so that
+           DEBUGLEVEL=3, warning and errors reports but DEBUGLEVEL=2 only
+           warnings.
 
 CONFIG FILES:
 
@@ -166,11 +193,7 @@ CONFIG FILES:
        the / at the end is needed!
 
 ~control/ldapusername
-
- The default username used in virtual users environments
- Default: NULL
- Example: popusers
- Note: Must be an existing username
+ NO LONGER USED, PLEASE REMOVE THE FILE
 
 ~control/ldapuid
 
@@ -272,10 +295,7 @@ mailAlternateAddress
  Example: jd@foo.bar
 
 qmailUser
-
- Username of the user on the mailsystem
- Example: jdoe
- Note: Can be omitted in a virtual users environment
+ NO LONGER USED, REMOVE IT FROM SOMEWHEN YOUR DATABASE
 
 qmailUID
 
@@ -345,7 +365,8 @@ deliveryMode
        purposes). reply is executed directly and does not interfere with
        the other settings.
        "normal", "nombox", "localdelivery" and "forwardonly" are set one after
-       the other (i.e. "nombox,localdelivery,normal" resets to a "normal" delivery).
+       the other (i.e. "nombox,localdelivery,normal" resets to a "normal"
+       delivery).
        There are some strange behavior when localdelivery and nombox/forwardonly
        are set, so handle them with care.
         
@@ -397,7 +418,6 @@ mail: opi@opi.flirtbox.ch
 mailHost: opi.flirtbox.ch
 mailMessageStore: /usr/home/opi/Maildir/
 mailQuota: 1000000S,100C
-qmailUser: opi
 qmailUID: 1001
 qmailGID: 1001
 uid: opi
@@ -435,7 +455,6 @@ objectclass qmailUser
                 userPassword
         allows
                 mailAlternateAddress,
-                qmailUser,
                 qmailUID,
                 qmailGID,
                 mailQuota,

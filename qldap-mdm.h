@@ -6,6 +6,5 @@ int make_homedir(char *home, char *maildir, char *dirmaker);
 /* executes the file specified with dirmaker returns 0 on success */
 
 
-
 #endif
 

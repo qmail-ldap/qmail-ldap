@@ -329,6 +329,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    int  reply;
    int  at;
    int  i;
+   char *f;
    char *r;
    stralloc filter = {0};
    unsigned long tid;
@@ -336,13 +337,13 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    /* check the mailaddress for illegal characters       *
     * escape '*', ,'\', '(' and ')' with a preceding '\' */
    /* XXX: also '\0' should be escaped but this is not done. */
-   if (!escape_forldap(mail)) _exit(QLX_NOMEM);
+   if (!(f = escape_forldap(mail->s)) ) _exit(QLX_NOMEM);
 
    /* build the search string for the email address */
    if (!stralloc_copys(&filter,"(|(mail=" ) ) _exit(QLX_NOMEM);
-   if (!stralloc_cat(&filter,mail)) _exit(QLX_NOMEM);
+   if (!stralloc_cats(&filter,f)) _exit(QLX_NOMEM);
    if (!stralloc_cats(&filter,")(mailalternateaddress=")) _exit(QLX_NOMEM);
-   if (!stralloc_cat(&filter,mail)) _exit(QLX_NOMEM);
+   if (!stralloc_cat(&filter,f)) _exit(QLX_NOMEM);
    if (!stralloc_cats(&filter,"))")) _exit(QLX_NOMEM);
    if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
    
@@ -365,9 +366,10 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    if ( ret != 0 && qldap_errno == LDAP_NOSUCH ) {
       /* this handles the "catch all" extension */
       at = 0;
-      r = mail->s;
-      i = mail->len;
-      for (at = i - 1; r[at] != '@' && at >= 0 ; at--) ; /* handels also mailwith 2 @ */
+      r = f;
+      i = str_len(f);
+      for (at = i - 1; r[at] != '@' && at >= 0 ; at--) ; 
+	     /* handels also mailwith 2 @ */
       /* build the search string for the email address */
       if (!stralloc_copys(&filter,"(|(mail=" ) ) _exit(QLX_NOMEM);
       if (!stralloc_cats(&filter,LDAP_CATCH_ALL)) _exit(QLX_NOMEM);
@@ -384,6 +386,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
       /* count the results, we must have exactly one */
    }
+   alloc_free(f);
    if ( ret != 0 ) {
       return 1;
    }
@@ -404,7 +407,6 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    if ( qldap_cluster && info.host && str_diff(qldap_me.s, info.host) ) {
       /* hostname is different, so I reconnect */
       forward_mail(info.host, mail, from, fdmess);
-      forward_session(info.host, login->s, authdata->s);
       /* that's it. Function does not return */
    }
 #endif
@@ -659,9 +661,9 @@ char *s; char *r; int at;
    stralloc ra = {0};
    int      rv;
    
-     /* XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
-        XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
-        XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX */
+     /* XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX 
+	  * DEBUG should be handled better, so that it will not be included
+	  * in maildelivery-failures mails */
    init_debug(fdout, -1); /* here are no critical data handled so debuglevel is free */
    
    /* copy the whole email address before the @ gets destroyed */

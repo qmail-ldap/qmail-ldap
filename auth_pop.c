@@ -86,13 +86,15 @@ void auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 		qldap_errno = ERRNO;
 		auth_error();
 	}
-
+	/* up no longer needed so delete it */
+	for ( i=0; i<UP_LEN; up[i++] = 0) ;
+	
 	auth_port = 110; /* pop3 port */
 }
 
 void auth_fail(int argc, char **argv, char *login)
-/* Checks if it was a hard fail (bad password) or just a soft error (user not found)
-   argc and argv are the arguments of the next auth_module. */
+/* Checks if it was a hard fail (bad password) or just a soft error 
+ * (user not found) argc and argv are the arguments of the next auth_module. */
 {
 	/* in the qmail-pop3 chain it is not possible to have multiples 
 	 * authentication modules. So lets exit with the correct number ... */
@@ -104,23 +106,20 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 	   			  char* home, char* homedirmake, char *md)
 /* starts the next auth_module, or what ever (argv ... ) */
 {
-	debug(16, "auth_success: login=%s, uid=%u, ",
-			login, uid);
+	debug(16, "auth_success: login=%s, uid=%u, ", login, uid);
 	debug(16, "gid=%u, home=%s, maildir=%s, aliasempty=%s, hdm=%s\n",
 			gid, home, md, argv[2], homedirmake );
 	
 	/* check the uid and the gid */
 	if ( UID_MIN > uid || uid > UID_MAX ) {
-		debug(2, 
-				"warning: auth_success: uid (%u) is to big or small (%u < uid < %u)\n",
+		debug(2, "warning: auth_success: uid (%u) is to big or small (%u < uid < %u)\n",
 				uid, UID_MIN, UID_MAX);
 		qldap_errno = AUTH_ERROR;
 		auth_error();
 	}
 	
 	if ( GID_MIN > gid || gid > GID_MAX ) {
-		debug(2, 
-				"warning: auth_success: gid (%u) is to big or small (%u < gid < %u)\n",
+		debug(2, "warning: auth_success: gid (%u) is to big or small (%u < gid < %u)\n",
 				gid, GID_MIN, GID_MAX);
 		qldap_errno = AUTH_ERROR;
 		auth_error();
@@ -143,8 +142,9 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 	if (chdir(home) == -1) {
 #ifdef AUTOHOMEDIRMAKE
 		/* XXX homedirmake is not everywhere #ifdef'd because this would be too
-		 * XXX hard. If you compile with a good compiler this should have the same
-		 * XXX effect or you are probably loosing a few bytes of free mem */
+		 * XXX hard. If you compile with a good compiler this should have the 
+		 * XXX same effect or you are probably loosing a few bytes of free mem 
+		 */
 		if ( homedirmake && *homedirmake ) {
 			int ret;
 			
@@ -169,8 +169,8 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 			}
 			if (chdir(home) == -1) {
 				debug(2, 
-						"warning: auth_success: chdir faild after dirmaker (%s)\n",
-						error_str(errno));
+					"warning: auth_success: chdir faild after dirmaker (%s)\n",
+					error_str(errno));
 				qldap_errno = MAILDIR_CORRUPT;
 				auth_error();
 			}
@@ -205,8 +205,7 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 		}
 	}	
 	
-	debug(32, 
-			"auth_success: environment successfully set: USER=%s, HOME=%s, MAILDIR=%s\n",
+	debug(32, "auth_success: environment successfully set: USER=%s, HOME=%s, MAILDIR=%s\n",
 			login, home, (md && *md)? md:"unset using aliasempty" ); 
 	
 	/* start qmail-pop3d */
@@ -289,7 +288,7 @@ static void get_ok(int fd)
 		for(i = 0; i < len; i++ ) {
 			if ( ok[i] == '\n' ) state++;
 		}
-		if ( pass++ > 10 ) {
+		if ( pass++ > 2 ) {
 			qldap_errno = BADCLUSTER;
 			auth_error();
 		}

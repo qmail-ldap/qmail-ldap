@@ -29,8 +29,10 @@
 #include "check.h"
 #include "qldap-debug.h"
 
-/* Edit the first lines in the Makefile to enable local passwd lookups and debug options.
- * To use shadow passwords under Solaris, uncomment the 'SHADOWOPTS' line in the Makefile.
+/* Edit the first lines in the Makefile to enable local passwd lookups 
+ * and debug options.
+ * To use shadow passwords under Solaris, uncomment the 'SHADOWOPTS' line 
+ * in the Makefile.
  * To use shadow passwords under Linux, uncomment the 'SHADOWOPTS' line and
  * the 'SHADOWLIBS=-lshadow' line in the Makefile.
  */
@@ -85,10 +87,10 @@ void main(int argc, char **argv)
 	unsigned long gid;
 
 	init_debug(STDERR, 64); /* XXX limited to 64 so it is not possible to get
-							 * XXX passwords via debug under normal systems */
+							 * XXX passwords via debug on normal systems */
 
 	auth_init(argc, argv, &login, &authdata);
-	debug(128, "auth_init: login=%s, authdata=%s\n", login.s, authdata.s);
+	debug(256, "auth_init: login=%s, authdata=%s\n", login.s, authdata.s);
 	
 	if ( init_ldap(&locald, &cluster, &rebind, &homemaker, 0, 0, 0) == -1 ) {
 		debug(1, "alert: init_ldap faild.\n");
@@ -119,31 +121,38 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	userinfo	info;
 	extrainfo	extra[2];
 	searchinfo	search;
-	int		ret;
-	char    *attrs[] = { LDAP_UID, /* the first 5 attrs are the default ones */
-						 LDAP_QMAILUID,
-						 LDAP_QMAILGID,
-						 LDAP_ISACTIVE,
-						 LDAP_MAILHOST,
-						 LDAP_MAILSTORE,
-						 LDAP_PASSWD, 0 }; /* passwd is extra */
+	int			ret;
+	char		*attrs[] = { LDAP_UID, /* the first 5 attrs are default */
+							 LDAP_QMAILUID,
+							 LDAP_QMAILGID,
+							 LDAP_ISACTIVE,
+							 LDAP_MAILHOST,
+							 LDAP_MAILSTORE,
+							 LDAP_PASSWD, 0 }; /* passwd is extra */
 
 	/* initalize the different info objects */
 	if ( rebind ) {
 		extra[0].what = 0;	/* under rebind mode no additional info is needed */
-		search.bindpw = authdata->s;	/* rebind on, check passwd via ldap rebind */ 
+		search.bindpw = authdata->s; 
+		/* rebind on, check passwd via ldap rebind */ 
 	} else {
 		extra[0].what = LDAP_PASSWD; /* need to get the crypted password */
 		search.bindpw = 0; 	/* rebind off */
 	}
 	extra[1].what = 0;		/* end marker for extra info */
 	
-	search.filter = make_filter(login);	/* create search filter */
+	if ( (search.filter = make_filter(login)) == 0 ) { 
+		/* create search filter */
+		debug(4, "warning: check_ldap: could not make a filter\n");
+		/* qldap_errno set by make_filter */
+		return -1;
+	}
 	
 	ret = ldap_lookup(&search, attrs, &info, extra);
 	free_filter(search.filter);	/* free the old filter */
 	if ( ret != 0 ) {
 		debug(4, "warning: check_ldap: ldap_lookup not successful!\n");
+		/* qldap_errno set by ldap_lookup */
 		return -1;
 	}
 	/* check the status of the account !!! */
@@ -168,11 +177,12 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 		qldap_errno = ERRNO;
 		return -1;
 	}
-	/* lets check the home path for his correctnes (no ../ and special chars) because 
+	/* lets check the home path for his correctnes (special chars) because 
 	 * the ldap-server could be returning fake entries (modified by a "hacker") 
-	 * There is still the possibility that one customer changes his mailmessagestore to
-	 * point to an other user/customer so don't let user/customer modifiy the 
-	 * mailmassagestore, uid, qmailUID, qmailGID ... */
+	 * There is still the possibility that one customer changes his 
+	 * mailmessagestore to point to an other user/customer so don't let 
+	 * user/customer modifiy the mailmassagestore, uid, qmailUID, 
+	 * qmailGID ... */
 	if ( !chck_pathb(home->s,home->len) ) {
 		debug(2, "warning: check_ldap: path contains illegal chars!\n");
 		qldap_errno = ILL_PATH;
@@ -190,17 +200,19 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	
 	if ( rebind && search.bind_ok ) {
 		debug(32, 
-				"check_ldap: ldap_lookup sucessfully authenticated with rebind\n");
-		return 0; /* if we got till here under rebind mode, the user is authenticated */
+			"check_ldap: ldap_lookup sucessfully authenticated with rebind\n");
+		return 0; 
+		/* if we got till here under rebind mode, the user is authenticated */
 	} else if ( rebind ) {
 		debug(32, 
-				"check_ldap: ldap_lookup not sucessfully authenticated with rebind\n");
+			"check_ldap: ldap_lookup authentication faild with rebind\n");
 		qldap_errno = AUTH_FAILD;
 		return -1; /* user authentification faild */
 	}
 	
 	if ( ! extra[0].vals ) {
-		debug(2, "warning: check_ldap: password is missing for uid %s\n", login);
+		debug(2, "warning: check_ldap: password is missing for uid %s\n", 
+				login);
 		qldap_errno = AUTH_NEEDED;
 		return -1; 
 	}
@@ -212,7 +224,7 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	return ret;
 }
 
-static int check_passwd(stralloc *login, stralloc *authdata, unsigned long *uid, 
+static int check_passwd(stralloc *login, stralloc *authdata, unsigned long *uid,
 				 unsigned long *gid, stralloc *home, stralloc *md)
 {
 	int ret;
@@ -234,9 +246,9 @@ static int check_passwd(stralloc *login, stralloc *authdata, unsigned long *uid,
 	*gid = pw->pw_gid;
 	*uid = pw->pw_uid;
 
-	/* here we don't check the home and maildir path, if a user has a faked passwd
-	 * entry, then you have a bigger problem on your system than just a guy how can
-	 * read the mail of other users/customers */
+	/* here we don't check the home and maildir path, if a user has a faked 
+	 * passwd entry, then you have a bigger problem on your system than just 
+	 * a guy how can read the mail of other users/customers */
 	if (!stralloc_copys(home, pw->pw_dir) ) {
 		qldap_errno = ERRNO;
 		return -1;
@@ -282,8 +294,9 @@ static int check_passwd(stralloc *login, stralloc *authdata, unsigned long *uid,
 
 static int cmp_passwd(char *clear, char *encrypted)
 {
-#define HASH_LEN 100 /* is this enough, I think yes *//* What do you think ? */
-	char hashed[HASH_LEN];
+#define HASH_LEN 100	/* XXX is this enough, I think yes */
+						/* What do you think ? */
+	char hashed[HASH_LEN]; /* these to buffers can not be used for exploits */
 	char salt[33];
 	int  shift;
 	
@@ -326,7 +339,7 @@ static int cmp_passwd(char *clear, char *encrypted)
 			return -1;
 		}
 		/* End getting correct hash-func hashed */
-		debug(128, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
+		debug(256, "cpm_passwd: comparing hashed passwd (%s == %s)\n", 
 				hashed, encrypted);
 		if (!*encrypted || str_diff(hashed,encrypted+shift) ) {
 			qldap_errno = AUTH_FAILD;
@@ -334,11 +347,13 @@ static int cmp_passwd(char *clear, char *encrypted)
 		}
 		/* hashed passwds are equal */
 	} else { /* crypt or clear text */
-		debug(128, "cpm_passwd: comparing standart passwd (%s == %s)\n", 
+		debug(256, "cpm_passwd: comparing standart passwd (%s == %s)\n", 
 				crypt(clear,encrypted), encrypted);
 		if (!*encrypted || str_diff(encrypted, crypt(clear,encrypted) ) ) {
 			/* CLEARTEXTPASSWD ARE NOT GOOD */
+			/* so they are disabled by default */
 #ifdef CLEARTEXTPASSWD
+#warning ___CLEARTEXT_PASSWORD_SUPPORT_IS_ON___
 			if (!*encrypted || str_diff(encrypted, clear) ) {
 #endif
 			qldap_errno = AUTH_FAILD;
@@ -380,6 +395,7 @@ static int get_local_maildir(stralloc *home, stralloc *maildir)
 		qldap_errno = ERRNO;
 		return -1;
 	}
+
 	substdio_fdbuf(&ss,read,fd,buf,sizeof(buf));
 	while (1) {
 		if (getln(&ss,&dotqmail,&match,'\n') != 0) goto tryclose;
@@ -397,9 +413,11 @@ static int get_local_maildir(stralloc *home, stralloc *maildir)
 		qldap_errno = ERRNO;
 		return -1;
 	}
+	for (match = 0; match<512; buf[match++]=0 ) ; /* trust nobody */
 	return 0;
 
 tryclose:
+	for (match = 0; match<512; buf[match++]=0 ) ; /* trust nobody */
 	match = errno; /* preserve errno */
 	close(fd);
 	errno = match;
@@ -408,6 +426,7 @@ tryclose:
 
 }
 
+#ifdef QLDAP_CLUSTER
 static void copyloop(int infd, int outfd, int timeout)
 {
 	fd_set iofds;
@@ -415,11 +434,8 @@ static void copyloop(int infd, int outfd, int timeout)
 	int maxfd;			/* Maximum numbered fd used */
 	struct timeval tv;
 	unsigned long bytes;
-	char buf[4096];		/* very big buffer ethernet pkgs are only 1500 bytes long */
-
-	/* Set up timeout */
-	tv.tv_sec = timeout;
-	tv.tv_usec = 0;
+	char buf[4096];		/* very big buffer ethernet pkgs are normaly
+						   around 1500 bytes long */
 
 	/* file descriptor bits */
 	FD_ZERO(&savedfds);
@@ -433,6 +449,10 @@ static void copyloop(int infd, int outfd, int timeout)
 	}
 
 	while(1) {
+		/* Set up timeout *//* because of LINUX this has to be done everytime */
+		tv.tv_sec = timeout;
+		tv.tv_usec = 0;
+
 		byte_copy(&iofds, sizeof(iofds), &savedfds);
 
 		if ( select( maxfd + 1, &iofds, (fd_set *)0, (fd_set *)0, &tv) <= 0 ) {
@@ -457,6 +477,7 @@ static void copyloop(int infd, int outfd, int timeout)
 	shutdown(outfd,0);
 	close(infd);
 	close(outfd);
+	for(bytes=0; bytes<4096; buf[bytes++] = 0 ) ; /* paranoia */
 	return;
 }
 
@@ -465,7 +486,7 @@ static void forward_session(char *host, char *name, char *passwd)
 	ipalloc ip = {0};
 	stralloc host_stralloc = {0};
 	int ffd;
-	int timeout = 60;
+	int timeout = 21*60; /* ~20 min timeout like qmail-pop3d */
 	int ctimeout = 20;
 	
 	if (!stralloc_copys(&host_stralloc, host)) {
@@ -509,23 +530,31 @@ static void forward_session(char *host, char *name, char *passwd)
 	auth_forward(ffd, name, passwd);
 	copyloop(0, ffd, timeout);
 
-	_exit(0); /* here all went ok, exit normaly */
+	_exit(0); /* all went ok, exit normaly */
 
 }
+#endif /* QLDAP_CLUSTER */
 
 static char* make_filter(stralloc *value)
 /* create a searchfilter, "(uid=VALUE)" */
 {
 	char *f;
 	char *filter;
+	char *t;
 	
-	f = alloc(value->len + 7 ); /* allocate a reagion that is big enough */
-	filter = f;
-	f += fmt_str(f, "(uid=");
-	f += fmt_strn(f, value->s, value->len);
-	f += fmt_str(f, ")"); *f++ = 0;
+	if ( (f = escape_forldap(value->s)) == 0 ) {
+		qldap_errno = ERRNO;
+		return 0;
+	}
+	/* allocate a reagion that is big enough */
+	filter = alloc( str_len(f) + 7 ); 
+	t = filter;
+	t += fmt_str(t, "(uid=");
+	t += fmt_str(t, f);
+	t += fmt_str(t, ")"); *t = 0;
+	alloc_free(f);
 
-	assert(f-filter <= value->len + 7); /* XXX remove if ok */
+	assert(t-filter != value->len + 7); /* XXX remove if ok */
 	return filter;
 }
 

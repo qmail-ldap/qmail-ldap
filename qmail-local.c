@@ -80,7 +80,7 @@ char buf[1024];
 char outbuf[1024];
 
 /* child process */
-char fntmptph[83 + FMT_ULONG * 2];
+char fntmptph[80 + FMT_ULONG * 2];
 char fnnewtph[83 + FMT_ULONG * 3];
 void tryunlinktmp() { unlink(fntmptph); }
 void sigalrm() { tryunlinktmp(); _exit(3); }
@@ -243,7 +243,7 @@ char *fn;
  struct stat mailst;
  int perc;
  int fd;
- int mailsize;
+ long int mailsize;
 
  if( quotastring && *quotastring ) {
    if (fstat(0, &mailst) != 0)
@@ -251,7 +251,7 @@ char *fn;
    mailsize = mailst.st_size;
    perc = quota_maildir(fn, quotastring, &fd, mailsize, 1);
    if ( perc == -1 ) {
-     /* seconde change */
+     /* second chance */
      sleep(3);
      perc = quota_maildir(fn, quotastring, &fd, mailsize, 1);
      if ( perc == -1 )
@@ -320,14 +320,13 @@ char *fn;
    if (stat(fn, &filest) == -1)
      if ( errno != error_noent) { /* FALSE if file doesn't exist */
        strerr_die5x(111,"Unable to quota ", fn, ": ",error_str(errno), ". (LDAP-ERR #2.4.5)");
-       filest.st_size = 0;        /* size of nonexisting maildir */
+       filest.st_size = 0;        /* size of nonexisting mailfile */
      }
    if (fstat(0, &mailst) != 0)
      strerr_die3x(111,"Unable to quota mail: ",error_str(errno), ". (LDAP-ERR #2.4.6)");
    
    totalsize = filest.st_size + mailst.st_size;
    if ( totalsize > quota ) {
-     /* probably we could do a second check (to deliver very big messages) */
      quota_bounce();
    } else if ( totalsize > (quota/100.0*QUOTA_WARNING_LEVEL) ) 
 	 /* drop a warning when mailbox is around 80% full */
@@ -802,7 +801,7 @@ char **argv;
 
    /* quota, dotmode and forwarding handling - part 1 */
    /* setting the quota */
-   if ( quotastring = env_get(ENV_QUOTA) ) {
+   if ( quotastring = env_get(ENV_QUOTA) && *quotastring ) {
       if (!flagdoit) sayit("quota defined as: ",quotastring,str_len(quotastring) );
    } else {
       if (!flagdoit) sayit("unlimited quota",quotastring,0 );
