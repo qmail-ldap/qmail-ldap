@@ -772,10 +772,22 @@ char **argv;
  flagforwardonly = 0; flagforwardonly2 = 0; allowldapprog = 0;
  flagnoforward = 0; flagnolocal = 0; flagnoprog = 0;
 
+ if (env_get(ENV_GROUP)) {
+   if (flagdoit) {
+     ++count_program;
+     if (!stralloc_copys(&foo,"qmail-group ")) temp_nomem();
+     if (!stralloc_cats(&foo,aliasempty)) temp_nomem();
+     if (!stralloc_0(&foo)) temp_nomem();
+     mailprogram(foo.s);
+   } else
+     sayit("group delivery","",0);
+   count_print();
+   _exit(0);
+ }
  /* quota, dotmode and forwarding handling - part 1 */
  /* setting the quota */
- if ( ( quotastring = env_get(ENV_QUOTA) ) && *quotastring ) {
-   if (!flagdoit) sayit("quota defined as: ",quotastring,str_len(quotastring) );
+ if ((quotastring = env_get(ENV_QUOTA) ) && *quotastring) {
+   if (!flagdoit) sayit("quota defined as: ",quotastring,str_len(quotastring));
  } else {
    if (!flagdoit) sayit("unlimited quota",quotastring,0 );
  }
@@ -824,8 +836,8 @@ char **argv;
          flagnoprog = 1;
        } else if (!case_diffs(MODE_REPLY, s)) {
          if(*sender) {
-           ++count_forward;
            if ((rt = env_get(ENV_REPLYTEXT))) {
+	     ++count_forward;
              if (flagdoit) {
                mailprogram("qmail-reply");
              } else {

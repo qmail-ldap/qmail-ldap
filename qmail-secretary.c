@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdio.h>
 #include <unistd.h>
 
 #include "base64.h"
@@ -30,8 +31,8 @@
 #define FATAL "qmail-secretary: fatal: "
 #define WARN  "qmail-secretary: warn: "
 
-const char *confirmmess = "Hi,\n\
-I'm qmail-secretatry an automated mail-handling program.\n\
+const char *confirmmess = "Hi,\n\n\
+I'm mailgroup secretatry, an automated mail-handling program.\n\
 I received a message from you addressed to %LIST%\n\
 for which I'm responsible. The top of your message is shown below.\n\
 \n\
@@ -49,12 +50,12 @@ I realize that this confirmation process is inconvenient. I'm sorry for\n\
 the hassle.\n\
 \n\
 Sincerely,\n\
-The qmail-secretary program\n\
+The mailgroup secretary program\n\
 \n\
 ";
 
-const char *approvemess = "Hi,\n\
-I'm qmail-secretatry an automated mail-handling program.\n\
+const char *approvemess = "Hi,\n\n\
+I'm mailgroup secretatry, an automated mail-handling program.\n\
 I need an approval that the attached message is allowed to be sent\n\
 to the %LIST% mailinglist.\n\
 \n\
@@ -65,7 +66,7 @@ To deny a message no action must be taken. The message will be rejected\n\
 automaticaliy after a few days.\n\
 \n\
 Sincerely,\n\
-The qmail-secretary program\n\
+The mailgroup secretary program\n\
 \n\
 ";
 
@@ -130,6 +131,7 @@ stralloc approvetext = {0};
 int flagconfirm = 0;
 int flagezmlm = 0;
 
+void nullsender(void);
 void qgroupinit(void);
 void ezmlminit(char *);
 void extractrcpt(stralloc *, stralloc *);
@@ -167,16 +169,6 @@ main(int argc, char **argv)
 	if (!local) strerr_die2x(100, FATAL, "LOCAL not set");
 	host = env_get("HOST");
 	if (!host) strerr_die2x(100, FATAL, "HOST not set");
-
-	if (!*sender)
-		strerr_die2x(100, FATAL,
-		    "I don't reply to bounce messages (#5.7.2)");
-	if (!sender[str_chr(sender,'@')])
-		strerr_die2x(100, FATAL,
-		    "I don't reply to senders without host names (#5.7.2)");
-	if (str_diff(sender,"#@[]") == 0)
-		strerr_die2x(100, FATAL,
-		    "I don't reply to bounce messages (#5.7.2)");
 
 	if (!stralloc_copys(&moderators, "")) temp_nomem();
 	modfile = 0;
@@ -236,11 +228,12 @@ main(int argc, char **argv)
 			dtline.s[i] = '_';
 	if (!stralloc_cats(&dtline,"\n")) temp_nomem();
 	
-	bouncefx();
 	
 	extractrcpt(&action, &hashid);
 
 	if (action.len == 0) {
+		nullsender();
+		bouncefx();
 		if (flagconfirm == 1) {
 			savemessage(&hashid, maildir, "new/");
 			sendconfirm(&hashid, 0);
@@ -251,6 +244,7 @@ main(int argc, char **argv)
 		clean(maildir);
 		_exit(99);
 	} else if (case_startb(action.s, action.len, "approve")) {
+		nullsender();
 		if (hashid.len == 0)
 			strerr_die2x(100, FATAL, "Approve message without id.");
 		checkmessage(&hashid, maildir, "cur/");
@@ -258,6 +252,7 @@ main(int argc, char **argv)
 		clean(maildir);
 		_exit(99);
 	} else if (case_startb(action.s, action.len, "confirm")) {
+		nullsender();
 		if (hashid.len == 0)
 			strerr_die2x(100, FATAL, "Confirm message without id.");
 		checkmessage(&hashid, maildir, "new/");
@@ -271,12 +266,10 @@ main(int argc, char **argv)
 	} else if (case_startb(action.s, action.len, "reject")) {
 		delmessage(&hashid, maildir, "new/");
 		clean(maildir);
-		strerr_die4x(99, WARN, "confirmation to sender ", sender,
-		    " bounced.");
+		strerr_die2x(99, WARN, "confirmation to sender bounced.");
 	} else if (case_startb(action.s, action.len, "bounce")) {
 		clean(maildir);
-		strerr_die4x(99, WARN, "message to moderator ", sender,
-		    " bounced.");
+		strerr_die2x(99, WARN, "message to moderator bounced.");
 	} else if (case_startb(action.s, action.len, "moderators")) {
 		clean(maildir);
 		die_badaddr();
@@ -285,6 +278,21 @@ main(int argc, char **argv)
 	strerr_warn3(WARN, "Unknown action: ", action.s, 0);
 	clean(maildir);
 	return 0;
+}
+
+void
+nullsender(void)
+{
+	if (!*sender)
+		strerr_die2x(100, FATAL,
+		    "I don't reply to bounce messages. (#5.7.2)");
+	if (!sender[str_chr(sender,'@')])
+		strerr_die2x(100, FATAL,
+		    "I don't reply to senders without host names."
+		    " (#5.7.2)");
+	if (str_diff(sender,"#@[]") == 0)
+		strerr_die2x(100, FATAL,
+		    "I don't reply to bounce messages. (#5.7.2)");
 }
 
 void
@@ -303,7 +311,7 @@ qgroupinit(void)
 	if (!stralloc_copys(&outhost, host)) temp_nomem();
 	
 	t = env_get("EXT");
-	if (t != 0) {
+	if (t != 0 && *t != '\0') {
 		if (!stralloc_copyb(&inlocal, local,
 			    str_len(local) - str_len(t) - 1))
 			temp_nomem();
@@ -442,7 +450,7 @@ fromaddr(const char *a)
 {
 	static stralloc from;
 
-	if (!stralloc_copys(&from, "The qmail-secretary program <"))
+	if (!stralloc_copys(&from, "The mailgroup secretary <"))
 		temp_nomem();
 	if (!stralloc_cats(&from, a)) temp_nomem();
 	if (!stralloc_cats(&from, ">\n")) temp_nomem();
@@ -472,8 +480,8 @@ moderatoraddr(void)
 struct mheader mheader[] = {
 	{ "To:", 0, FORCE, 0 },
 	{ "From:", 0, FORCE, 0 }, /* envelope sender is fixed */
+	{ "Subject:", 0, ALLOW, 0 },
 //	{ "Reply-To:", 0, FORCE, 0 }, /* controversial RFC2076 */
-	{ "Subject:", "qmail secretary notice", SUBJECT, 0 },
 	{ "MIME-Version:", "1.0", FORCE, 0 },
 	{ "Content-Type:", 0, FORCE, 0 },
 	{ "Content-Transfer-Encoding:", 0, FORCE, 0 },
@@ -497,6 +505,7 @@ sendconfirm(stralloc *hash, int fd)
 	
 	mheader[0].v = sender;
 	mheader[1].v = fromaddr(replyaddr(hash, "confirm"));
+	mheader[2].v = "Message sender confirmation";
 
 	r = headermagic(&confirmtext, &header, 0, mheader);
 	if (r == -1)
@@ -535,6 +544,7 @@ sendmoderator(stralloc *hash, int fd)
 	
 	mheader[0].v = moderatoraddr();
 	mheader[1].v = fromaddr(replyaddr(hash, "approve"));
+	mheader[2].v = "Moderation request";
 
 	r = headermagic(&approvetext, &header, 0, mheader);
 	if (r == -1)
@@ -851,7 +861,7 @@ void savemessage(stralloc *hash, const char *maildir, const char *subdir)
 
 	for (loop = 0;; ++loop) {
 		createhash(0, hash);
-		s = createname(&nname, maildir, "new/", hash);
+		s = createname(&nname, maildir, subdir, hash);
 		t = createname(&fname, maildir, "tmp/", hash);
 		if (stat(s, &st) == -1 && errno == error_noent)
 			if (stat(t, &st) == -1 && errno == error_noent)

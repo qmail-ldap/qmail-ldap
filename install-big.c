@@ -169,6 +169,7 @@ void hier()
   c(auto_qmail,"bin","pbsdbd",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","qmail-forward",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","qmail-secretary",auto_uido,auto_gidq,0755);
+  c(auto_qmail,"bin","qmail-group",auto_uido,auto_gidq,0755);
   
   c(auto_qmail,"man/man5","addresses.5",auto_uido,auto_gidq,0644);
   c(auto_qmail,"man/cat5","addresses.0",auto_uido,auto_gidq,0644);

@@ -229,7 +229,7 @@ blast(void)
 		qmail_put(&qqt, line.s, line.len);
 	} while (match);
 
-	if (!stralloc_copys(&line,local)) temp_nomem();
+	if (!stralloc_copy(&line,&base)) temp_nomem();
 	if (!stralloc_cats(&line,"-return-@")) temp_nomem();
 	if (!stralloc_cats(&line,host)) temp_nomem();
 	if (!stralloc_cats(&line,"-@[]")) temp_nomem();
@@ -306,7 +306,7 @@ secretary(char *maildir, int flagmoderate)
 		    s < smax; s += str_len(s) + 1) {
 			args[i++] = "-m";
 			args[i++] = s;
-			if (i + 2 >= numargs)
+			if (i + 2 > numargs)
 			       strerr_die2x(111, FATAL, "internal error.");	
 		}
 	}
@@ -326,7 +326,7 @@ secretary(char *maildir, int flagmoderate)
 			strerr_die2sys(111, FATAL,
 			    "Unable to run secretary: fd_move: ");
 		sig_pipedefault();
-		execv(*args, args);
+		execvp(*args, args);
 		strerr_die3x(111,"Unable to run secretary: ",
 		    error_str(errno), ". (#4.3.0)");
 	}
@@ -358,7 +358,7 @@ secretary(char *maildir, int flagmoderate)
 				else
 					continue;
 			}
-			if (!stralloc_append(&fname, sbuf[i])) temp_nomem();
+			if (!stralloc_append(&fname, &sbuf[i])) temp_nomem();
 		}
 		close(pi[0]);
 		reopen();
@@ -682,6 +682,7 @@ extract_addrsdn(qldap *q, qldap *sq, const char *attr,
 	char *s, *smax;
 	int r;
 
+	if (!stralloc_copys(&tmpval, "")) { r = ERRNO; goto fail; }
 	r = qldap_get_attr(q, attr, &ldapval, MULTI_VALUE);
 	switch (r) {
 	case OK:
@@ -747,6 +748,7 @@ extract_addrsfilter(qldap *q, qldap *sq, const char *attr,
 	char *s, *smax;
 	int r;
 
+	if (!stralloc_copys(&tmpval, "")) { r = ERRNO; goto fail; }
 	r = qldap_get_attr(q, attr, &ldapval, MULTI_VALUE);
 	switch (r) {
 	case OK:
@@ -765,8 +767,8 @@ extract_addrsfilter(qldap *q, qldap *sq, const char *attr,
 		if (r == NOSUCH) continue;
 		if (r != OK) goto fail;
 		r = qldap_first(sq);
-		if (r != OK) goto fail;
-		if (r != NOSUCH) {
+		if (r != OK && r != NOSUCH) goto fail;
+		if (r == NOSUCH) {
 			qldap_free_results(sq);
 			continue;
 		}

@@ -447,7 +447,7 @@ int qldap_get(stralloc *mail, int at, int fdmess)
      int ext, i;
      for (ext = 0, i = 0; i < rv && ext < at; ext++)
        if (mail->s[ext] == *auto_break) i++;
-     if (!stralloc_catb(&nughde, mail->s+i+1,at-ext-1)) cae(q, QLX_NOMEM);
+     if (!stralloc_catb(&nughde, mail->s+ext,at-ext)) cae(q, QLX_NOMEM);
    }
    if (!stralloc_0(&nughde)) cae(q, QLX_NOMEM);
 
