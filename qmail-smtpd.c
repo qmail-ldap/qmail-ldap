@@ -739,9 +739,6 @@ void smtp_data() {
 #ifdef TLS
   if(ssl){
    if (!stralloc_copys(&protocolinfo, SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
-#   if (!stralloc_ready(&protocolinfo,protocolinfo.len + 16)) die_nomem();
-#   byte_copy(protocolinfo.s+protocolinfo.len,16," encrypted SMTP");
-#   protocolinfo.len += 16;
    if (!stralloc_catb(&protocolinfo, " encrypted SMTP", 15)) die_nomem();
    if (clientcert.len){
      if (!stralloc_catb(&protocolinfo," cert ", 6)) die_nomem();
