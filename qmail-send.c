@@ -1481,7 +1481,7 @@ int getcontrols() { if (control_init() == -1) return 0;
  if (!stralloc_0(&doublebounceto)) return 0;
  if (control_readfile(&custombouncetext,"control/custombouncetext",0) == -1) return 0;
  replace(custombouncetext.s, custombouncetext.len, '\0', '\n');
- if (! stralloc_0(&custombouncetext) ) return 0;
+ if (!stralloc_0(&custombouncetext) ) return 0;
  if (control_readfile(&locals,"control/locals",1) != 1) return 0;
  if (!constmap_init(&maplocals,locals.s,locals.len,0)) return 0;
  switch(control_readfile(&percenthack,"control/percenthack",0))
