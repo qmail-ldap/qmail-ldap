@@ -5,6 +5,7 @@
 #include "getln.h"
 #include "stralloc.h"
 #include "substdio.h"
+#include "subfd.h"
 #include "alloc.h"
 #include "open.h"
 #include "prioq.h"
@@ -34,8 +35,26 @@ int qfd;
 	 4 = verbose
  */
 int loglevel = 0;
+stralloc logs_pidhostinfo = {0};
+unsigned long log_bytes = 0;
 
-void log_quit();
+void log(int l, char *s) { if(l <= loglevel) substdio_puts(&subfderr,s);}
+void logf(int l, char *s) {
+	if(l > loglevel) return;
+	substdio_puts(&subfderr,s);
+	substdio_putsflush(&subfderr,"\n");
+}
+
+void log_quit()
+{
+  char strnum[FMT_ULONG];
+
+  log(2, "acct:");
+  log(2, logs_pidhostinfo.s);
+  log(2, "logout ");
+  strnum[fmt_ulong(strnum,log_bytes)] = 0;
+  log(2, strnum); logf(2, " bytes transferred");
+}
 
 void die() { log_quit(); _exit(0); }
 
@@ -106,27 +125,6 @@ void printfn(fn) char *fn;
 {
   fn += 4;
   put(fn,str_chr(fn,':'));
-}
-
-stralloc logs_pidhostinfo = {0};
-unsigned long log_bytes = 0;
-
-void log(int l, char *s) { if(l <= loglevel) substdio_puts(&ssfderr,s);}
-void logf(int l, char *s) {
-	if(l > loglevel) return;
-	substdio_puts(&ssfderr,s);
-	substdio_putsflush(&ssfderr,"\n");
-}
-
-void log_quit()
-{
-  char strnum[FMT_ULONG];
-
-  log(2, "acct:");
-  log(2, logs_pidhostinfo.s);
-  log(2, "logout ");
-  strnum[fmt_ulong(strnum,log_bytes)] = 0;
-  log(2, strnum); logf(2, " bytes transferred");
 }
 
 void log_init()
