@@ -291,11 +291,16 @@ void main()
   do_int("ldaplocaldelivery","1","local passwd lookup is "," (1 = on, 0 = off)");
   do_int("ldaprebind","0","ldap rebinding is "," (1 = on, 0 = off)");
   do_int("ldapcluster","0","clustering is "," (1 = on, 0 = off)");
+
   do_lst("quotawarning","No quotawarning.","","");
   do_lst("custombouncetext","No custombouncetext.","","");
+  do_int("maxrcptcount","0",""," RCPT TOs are accepted before sending 553 (0 = off)");
   do_int("tarpitcount","0",""," RCPT TOs are accepted before tarpitting (0 = off)");
   do_int("tarpitdelay","5",""," seconds of delay to introduce after each subsequent RCPT TO");
   do_lst("badrcptto","Any RCPT TO is allowed.",""," not accepted in RCPT TO");
+  do_lst("relaymailfrom","Relaymailfrom not enabled.","Envelope senders allowed to relay: ",".");
+  do_lst("rbllist","No RBL listed.","RBL to check: ",".");
+
   substdio_puts(subfdout,"\n");
   
   
