@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20000701 ($Date: 2000/06/25 01:05:43 $)
+RELEASE: 20000701 ($Date: 2000/09/29 12:15:30 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -232,14 +232,16 @@ CONFIG FILES:
 
 ~control/ldapuid
 
- The default UID used in virtual users environments
+ The default UID used in virtual users environments. This value will be
+ used for ldap entries with no LDAP_QMAILUID (see below) field
  Default: NULL
  Example: 1010
  Note: should be a real UID, must be above 100
 
 ~control/ldapgid
 
- The default GID used in virtual users environments
+ The default GID used in virtual users environments. This value will be
+ used for ldap entries with no LDAP_QMAILGID (see below) field
  Default: NULL
  Example: 1010
  Note: should be a real GID, must be above 100
@@ -344,13 +346,14 @@ LDAP_QMAILUID (default: "qmailUID")
  UID of the user on the mailsystem
  Example: 1010
  Note: Can be omitted in a virtual users environment
-
+       but only if it is defined via the control file ~control/ldapuid 
 
 LDAP_QMAILGID (default: "qmailGID")
 
  GID of the user on the mailsystem
  Example: 1010
  Note: Can be omitted in a virtual users environment
+       but only if it is defined via the control file ~control/ldapgid 
 
 
 LDAP_PASSWD (default: "userPassword")
