@@ -754,6 +754,8 @@ char **argv;
        default:
          strerr_die3x(111,s,": exited non zero",". (LDAP-ERR #2.3.0)");
        }
+       if (chdir(homedir) == -1) 
+          strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
      } else {
        strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
      }
