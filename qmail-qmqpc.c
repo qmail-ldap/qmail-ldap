@@ -203,7 +203,7 @@ char **argv;
   if (control_rldef(&outgoingip, "control/qmqpcip", 0, "0.0.0.0") == -1)
 	  die_control();
   if (!stralloc_0(&outgoingip)) nomem();
-  if (ip_scan(outgoingip.s,&outip)) die_control();
+  if (!ip_scan(outgoingip.s,&outip)) die_control();
 
   getmess();
 
