@@ -107,7 +107,7 @@ void logpid(level) int level;
 void logline(level,string) int level; char *string;
 {
   if (level > loglevel) return;
-  logpid();
+  logpid(level);
   substdio_puts(subfderr,string);
   substdio_puts(subfderr,"\n");
   substdio_flush(subfderr);
@@ -136,7 +136,7 @@ void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n")
 
 void err_bmf() { out("553 syntax error, please forward to your postmaster (#5.7.1)\r\n"); }
 void err_hard(arg) char *arg; { out("554 syntax error, "); out(arg); out(" (#5.5.4)\r\n"); }
-void err_rbl(arg) { out("553 sorry, your mailserver is listed in "); out(arg); out(", mail from your location is not accepted here (#5.7.1)\r\n"); }
+void err_rbl(arg) char *arg; { out("553 sorry, your mailserver is listed in "); out(arg); out(", mail from your location is not accepted here (#5.7.1)\r\n"); }
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
 #ifdef TLS
@@ -447,11 +447,12 @@ int rbl_lookup(char *base)
          return 1; /* found match */
          break;
   }
+  return 1; /* should never get here */
 }
 
 int rblcheck()
 {
-  int r;
+  int r = 1;
   char *p;
 
   rbl_init();
@@ -463,18 +464,18 @@ int rblcheck()
     r = rbl_lookup(p);
       if (r == 2)
       {
-        logstring(2,"temporary DNS error"); logflush();
+        logstring(2,"temporary DNS error"); logflush(2);
         return 2;
       }
       if (r == 1)
       {
-        logstring(2,"found match, sender is blocked"); logflush();
+        logstring(2,"found match, sender is blocked"); logflush(2);
         stralloc_copys(&rblmessage,p);
         stralloc_0(&rblmessage);
         return 1;
       }
     /* continue */
-    logstring(2,"no match found, continue"); logflush();
+    logstring(2,"no match found, continue"); logflush(2);
     p = p+strlen(p);
     p++;
   }
