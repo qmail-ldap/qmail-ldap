@@ -859,7 +859,7 @@ void smtp_rcpt(arg) char *arg; {
     logline(1,"message denied because of more 'RCPT TO' than allowed by MAXRCPTCOUNT");
     return;
   }
-  if ( rcptcount > 1 && (addr.s[0] || str_diff("#@[]", addr.s)) )
+  if ( rcptcount > 1 && (!mailfrom.s[0] || !str_diff("#@[]", mailfrom.s)) )
   {
     err_badbounce();
     logline(1,"bounce message denied because it has more than one recipient");
