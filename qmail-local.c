@@ -669,9 +669,10 @@ char **argv;
  int qmode;
  int mboxdelivery;
  int localdelivery;
+ int ldapprogdelivery;
  char *s;
  
- mboxdelivery = 1; localdelivery = 0;
+ mboxdelivery = 1; localdelivery = 0; ldapprogdelivery = 0;
 #endif
 
 
@@ -855,13 +856,17 @@ char **argv;
    if ( s = env_get(ENV_DOTMODE) ) {
       case_lowers(s);
       if ( !str_diff(DOTMODE_LDAPONLY, s) ) {
-         if (!flagdoit) sayit("ldaponly ",s,0);
+         if (!flagdoit) sayit("DOTMODE_LDAPONLY ",s,0);
          qmode = DO_LDAP;
+      } else if ( !str_diff(DOTMODE_LDAPWITHPROG, s) ) {
+         if (!flagdoit) sayit("DOTMODE_LDAPWITHPROG ",s,0);
+         qmode = DO_LDAP;
+         ldapprogdelivery = 1;
       } else if ( !str_diff(DOTMODE_DOTONLY, s) ) {
-         if (!flagdoit) sayit("dotonly ",s,0);
+         if (!flagdoit) sayit("DOTMODE_DOTONLY ",s,0);
          qmode = DO_DOT;
       } else if ( !str_diff(DOTMODE_BOTH, s) ) {
-         if (!flagdoit) sayit("both ",s,0);
+         if (!flagdoit) sayit("DOTMODE_BOTH ",s,0);
          qmode = DO_BOTH;
       } else if ( !str_diff(DOTMODE_NONE, s) ){
          ++count_file;
@@ -962,7 +967,7 @@ char **argv;
        j = byte_chr(s,slen,0); if (j++ == slen) break; s += j; slen -= j;
      }
    }
-   if ( s = env_get(ENV_PROGRAM) ) {
+   if ( ldapprogdelivery && (s = env_get(ENV_PROGRAM)) ) {
      if (!stralloc_copys(&foo, s)) temp_nomem();
      if (!stralloc_0(&foo)) temp_nomem();
      replace(foo.s, foo.len, ',', '\0');

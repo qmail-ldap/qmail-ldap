@@ -41,6 +41,7 @@
 #define ENV_PROGRAM "QMAILDELIVERYPROGRAM"
 
 #define DOTMODE_LDAPONLY "ldaponly"
+#define DOTMODE_LDAPWITHPROG "ldapwithprog"
 #define DOTMODE_DOTONLY "dotonly"
 #define DOTMODE_BOTH "both"
 #define DOTMODE_NONE "none"

@@ -719,6 +719,9 @@ int qldap_get( stralloc *mail )
       if ( !str_diff(DOTMODE_LDAPONLY, vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_LDAPONLY) ) _exit(QLX_NOMEM);
          DEBUG(ENV_DOTMODE,": ",DOTMODE_LDAPONLY, "\n");
+      } else if ( !str_diff(DOTMODE_LDAPWITHPROG, vals[0]) ) {
+         if ( !env_put2(ENV_DOTMODE, DOTMODE_LDAPWITHPROG) ) _exit(QLX_NOMEM);
+         DEBUG(ENV_DOTMODE,": ",DOTMODE_LDAPWITHPROG, "\n");
       } else if ( !str_diff(DOTMODE_DOTONLY, vals[0]) ) {
          if ( !env_put2(ENV_DOTMODE, DOTMODE_DOTONLY) ) _exit(QLX_NOMEM);
          DEBUG(ENV_DOTMODE,": ",DOTMODE_DOTONLY, "\n");
