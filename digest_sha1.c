@@ -41,11 +41,11 @@
  * I got the idea of expanding during the round function from SSLeay
  */
 #ifdef __LITTLE_ENDIAN__
-#warning __LITTLE_ENDIAN__
+/* #warning __LITTLE_ENDIAN__ */
 # define blk0(i) (block->l[i] = (rol(block->l[i],24)&0xFF00FF00) \
     |(rol(block->l[i],8)&0x00FF00FF))
 #else  /* __BIG_ENDIAN__ */
-#warning __BIG_ENDIAN__
+/* #warning __BIG_ENDIAN__ */
 # define blk0(i) block->l[i]
 #endif /* __LITTLE_ENDIAN__ */
 

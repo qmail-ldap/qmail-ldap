@@ -47,11 +47,11 @@
  */
 
 #include <sys/types.h>
-//#include <sys/param.h>
-//#include <netinet/in.h>
-
+/*#include <sys/param.h>
+  #include <netinet/in.h>
+*/
 #include <ctype.h>
-//#include <stdio.h>
+/* #include <stdio.h> */
 #ifndef NULL
 #define NULL (void*) 0
 #endif

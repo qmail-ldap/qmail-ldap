@@ -350,10 +350,10 @@ void RMD160Update(context, data, nbytes)
                 ofs = 64 - context->buflen;
                 (void)memcpy(context->bbuffer + context->buflen, data, ofs);
 #ifdef __LITTLE_ENDIAN__
-#warning __LITTLE_ENDIAN__
+/* #warning __LITTLE_ENDIAN__ */
                 (void)memcpy(X, context->bbuffer, sizeof(X));
 #else  /* __BIG_ENDIAN__ */
-#warning __BIG_ENDIAN__
+/* #warning __BIG_ENDIAN__ */
                 for (j=0; j < 16; j++)
                         X[j] = BYTES_TO_DWORD(context->bbuffer + (4 * j));
 #endif /* __LITTLE_ENDIAN__ */
