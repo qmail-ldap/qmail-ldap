@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/11/25 13:12:47 $ ($Revision: 1.75 $)
+RELEASE: $Date: 2002/11/27 16:58:40 $ ($Revision: 1.76 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,9 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ On exit qmail-todo behaves now like qmail-[rl]spawn and stays alive
+ until qmail-send exits. All zombies have been slayered.
 
  On a hup qmail-send rereads more ~control files. Now bouncemaxbytes,
  custombouncetext, locals and virtualdomains are reloaded.
