@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/05/01 21:25:41 $ ($Revision: 1.56 $)
+RELEASE: $Date: 2002/05/02 09:41:44 $ ($Revision: 1.57 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -25,7 +25,7 @@ NEWS for current stuff:
   - NOBOUNCE to reject null sender bounces
   - SANITYCHECK to reject messages without @, no . in TLD, too short/long TLD
   - RETURNMXCHECK to check if the sender has an MX
-  - BLOCKRELAYPROBE to block rcptto containing !%@ before @ from Russel Nelson
+  - BLOCKRELAYPROBE to block rcptto containing !%@ before @ from Russell Nelson
   - RBL to check RBLs
   - RBLONLYHEADER to only add a X-RBL header
 
@@ -39,7 +39,7 @@ NEWS for current stuff:
  status notification was dropped and therefor qmail-send did not close the job.
 
  qmail-remote supports the smtp size extension as specified by rfc 1870.
- If the EHLO extension size is set qmail-remote sends size in the mail form
+ If the EHLO extension size is set qmail-remote sends size in the mail from
  commando. It does not parse the EHLO size argument to check if the size is
  OK, the remote smtp server should decide if it is OK.
 
