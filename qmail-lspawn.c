@@ -658,7 +658,6 @@ ldap_fail:
      if ( !env_put2(ENV_MODE, MODE_FORWARD) ) _exit(QLX_NOMEM);
    }
    /* ok, we finished, lets clean up and disconnect from the LDAP server */
-   /* XXX qldap_ldapclose() */
    return 0;
 }
 /* end -- LDAP server query routines */
