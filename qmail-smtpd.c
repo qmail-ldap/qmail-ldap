@@ -186,6 +186,7 @@ char *relayclient;
 char *relayok;
 char *denymail;
 char *rblenabled;
+char *rblonlyheader;
 int  spamflag = 0;
 
 stralloc helohost = {0};
@@ -206,6 +207,7 @@ int rmfok = 0;
 stralloc rmf = {0};
 struct constmap maprmf;
 int rblok = 0;
+int rblohok = 0;
 stralloc rbl = {0};
 stralloc rblmessage = {0};
 int tarpitcount = 0;
@@ -262,9 +264,15 @@ void setup()
 
   rblok = control_readfile(&rbl,"control/rbllist",0);
   if (rblok == -1) die_control();
-  if (rblok)
+  if (rblok) {
     rblenabled = env_get("RBL");
-  
+
+    rblohok = control_readint(&rblonlyheader,"control/rblonlyheader",0);
+    if (rblohok == -1) die_control();
+    rblonlyheader = env_get("RBLONLYHEADER");
+    if (rblonlyheader) logline(2,"Log RBL match only in header, do not reject message");
+  }
+
   if (control_readint(&databytes,"control/databytes") == -1) die_control();
   x = env_get("DATABYTES");
   if (x) { scan_ulong(x,&u); databytes = u; }
@@ -635,10 +643,14 @@ void smtp_mail(arg) char *arg;
         err_dns();
         return;
       case 1: /* host is listed in RBL */
-        err_rbl(rblmessage.s);
-        return;
+        if (rblonlyheader)
+          rblheader(qqt,remoteip,rblmessage.s);
+        else {
+         err_rbl(rblmessage.s);
+         return;
+         }
       default: /* ok, go ahead */
-    logline(3,"RBL checking completed without match");
+    logline(3,"RBL checking completed without match or listed in header");
     }
   }
 

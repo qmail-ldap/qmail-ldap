@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/04/19 16:06:34 $)
+RELEASE: current ($Date: 2001/04/20 20:35:02 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -342,9 +342,22 @@ CONFIG FILES:
 
  Rbllist contains a number of RBL's to check for the given senders IP address.
  Default: none
- Example: rbl.maps.vix.com
+ Example: blackholes.mail-abuse.org
+ Example: dialups.mail-abuse.org
+ Example: relays.mail-abuse.org
+ Example: spamsources.orbs.org
  Note: Multiline. To activate RBL checks you have to set RBL in qmail-smtpd's
        environment (with tcpserver).
+
+~control/rblonlyheader
+
+ Rblonlyheader causes qmail-smtpd not to reject the message but to add a
+ line with it's findings to the mail header.
+ Default: none
+ Example: 1
+ Note: Add's a "X-RBL: IP[] is listed by RBL[]" header to the message for
+       later filtering. Can also be activated if you set RBLONLYHEADER in
+       qmail-smtpd's environment (with tcpserver).
 
 ~control/badrcptto
 
@@ -383,7 +396,35 @@ CONFIG FILES:
 
 ================================================================================
 
-Environment variables without control file:
+Environment variables with control files (see control file for description):
+
+ TARPITCOUNT
+ TARPITDELAY
+ MAXRCPTCOUNT
+ RBL
+ RBLONLYHEADER
+
+Environment variables *without* control file:
+
+DENYMAIL
+
+ Heavy sanity checking of the envelope sender address
+ Default: none
+ Affects: qmail-smtpd
+ Example: DNSCHECK
+ Note: The following variables are supported:
+        SPAM     -> refuse all mail
+        NOBOUNCE -> refuse null mail from
+        DNSCHECK -> validate that envelope senders domain has an MX or A record
+                    plus check for other invalid envelope sender constructs
+
+LOGLEVEL
+
+ Level of log verbosity in qmail-smtpd
+ Default: none
+ Affects: qmail-smtpd
+ Example: 3
+ Note: integer value from 0-3, everything will be logged through tcpserver
 
 DEBUGLEVEL
 
@@ -409,26 +450,6 @@ DEBUGLEVEL
        The DEBUGLEVEL is compare with a bit mask, so that
        DEBUGLEVEL=3 will report warnings and errors but DEBUGLEVEL=2 will
        only report warnings.
-
-LOGLEVEL
-
- Level of log verbosity in qmail-smtpd
- Default: none
- Affects: qmail-smtpd
- Example: 3
- Note: integer value from 0-3, everything will be logged through tcpserver
-
-DENYMAIL
-
- Heavy sanity checking of the envelope sender address
- Default: none
- Affects: qmail-smtpd
- Example: DNSCHECK
- Note: The following variables are supported:
-        SPAM     -> refuse all mail
-        NOBOUNCE -> refuse null mail from
-        DNSCHECK -> validate that envelope senders domain has an MX or A record
-                    plus check for other invalid envelope sender constructs
 
 ================================================================================
 

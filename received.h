@@ -2,5 +2,6 @@
 #define RECEIVED_H
 
 extern void received();
+extern void rblheader();
 
 #endif

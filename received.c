@@ -82,3 +82,17 @@ char *rcptto;
   datetime_tai(&dt,now());
   qmail_put(qqt,buf,date822fmt(buf,&dt));
 }
+
+void
+rblheader(qqt,remoteip,rbl)
+struct qmail *qqt;
+char *remoteip;
+char *rbl;
+{
+  qmail_puts(qqt,"X-RBL: ");
+  if (*remoteip) safeput(qqt,remoteip);
+  qmail_puts(qqt," is listed by ");
+  if (*rbl) safeput(qqt,rbl);
+  qmail_puts(qqt,"\n");
+}
+
