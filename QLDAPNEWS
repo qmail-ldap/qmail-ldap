@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/05/21 14:08:56 $ ($Revision: 1.60 $)
+RELEASE: $Date: 2002/05/23 13:28:44 $ ($Revision: 1.61 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,10 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Fix buffer overflow in qmail-quotawarn.c. I changed the filename generation
+ without resizing the file name buffers, shame on me. 
+ NOTE: This overflow can not be exlpoited.
 
  better handling of virtual/ldap .qmail handling.
  The ldap .qmail arguments are now exected in the following way:
