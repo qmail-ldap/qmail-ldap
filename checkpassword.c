@@ -26,7 +26,6 @@
 #include "ipme.h"
 #include "ndelay.h"
 #include "qldap-cluster.h"
-#include "readwrite.h"
 #include "select.h"
 #include "timeoutconn.h"
 #endif

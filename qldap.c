@@ -841,9 +841,13 @@ qldap_set_option(qldap *q, int forceV2)
 		/*
 		 * currently we support referrals only with OpenLDAP >= 2.x
 		 * 1.x does not support it and the other SDKs have other
-		 * rebind funktions.
+		 * rebind functions.
 		 */
+#if LDAP_VENDOR_VERSION > 20100
 		rc = ldap_set_rebind_proc(q->ld, dorebind, (void *)0);
+#else
+		rc = ldap_set_rebind_proc(q->ld, dorebind);
+#endif
 		if (rc == LDAP_OPT_SUCCESS) {
 			rc = ldap_set_option(q->ld, LDAP_OPT_REFERRALS,
 			    LDAP_OPT_ON);

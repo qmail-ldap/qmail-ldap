@@ -115,7 +115,7 @@ Rotation is separate from addition to prevent recomputation.
   a multiple of 4.
  */
 static void
-Encode(void *, size_t, const void *);
+Encode(void *out, size_t len, const void *in)
 {
   unsigned char *output = out;
   size_t i, j;
@@ -133,7 +133,7 @@ Encode(void *, size_t, const void *);
   a multiple of 4.
  */
 static void
-Decode(void *, size_t, const void *);
+Decode(void *out, size_t len, const void *in)
 {
   uint32 *output = out;
   const unsigned char *input = in;

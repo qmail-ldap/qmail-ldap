@@ -2,23 +2,24 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "readwrite.h"
-#include "stralloc.h"
-#include "str.h"
-#include "open.h"
-#include "substdio.h"
-#include "getln.h"
-#include "error.h"
-#include "direntry.h"
-#include "strerr.h"
-#include "fmt.h"
-#include "scan.h"
-#include "now.h"
-#include "seek.h"
-#include "sig.h"
-#include "maildir++.h"
+
 #include "alloc.h"
 #include "byte.h"
+#include "direntry.h"
+#include "error.h"
+#include "fmt.h"
+#include "getln.h"
+#include "now.h"
+#include "open.h"
+#include "scan.h"
+#include "seek.h"
+#include "sig.h"
+#include "str.h"
+#include "stralloc.h"
+#include "strerr.h"
+#include "substdio.h"
+
+#include "maildir++.h"
 
 static void temp_nomem() { strerr_die1x(111,"Out of memory. (QUOTA #1.0.1)"); }
 

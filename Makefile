@@ -1531,7 +1531,7 @@ getopt.a strerr.a substdio.a fs.a str.a alloc.a
 
 qmail-ldaplookup.o: \
 compile qmail-ldaplookup.c qmail-ldap.h qldap-errno.h stralloc.h \
-alloc.h error.h str.h qldap-debug.h qldap-ldaplib.h check.h substdio.h \
+alloc.h error.h str.h qldap-debug.h check.h substdio.h \
 fmt.h scan.h readwrite.h byte.h getln.h digest_md4.h auto_qmail.h \
 digest_md5.h digest_rmd160.h digest_sha1.h open.h uint32.h auto_break.h
 	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(DEBUG) qmail-ldaplookup.c

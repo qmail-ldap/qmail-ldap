@@ -17,7 +17,6 @@
 #include "open.h"
 #include "qmail.h"
 #include "qmail-ldap.h"
-#include "readwrite.h"
 #include "seek.h"
 #include "sgetopt.h"
 #include "sig.h"

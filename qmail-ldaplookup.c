@@ -1,7 +1,6 @@
 /* qmail-ldaplookup.c, jeker@n-r-g.com, best viewed with tabsize = 4 */
 #include "qmail-ldap.h"
 #include "qldap-errno.h"
-#include "qldap-ldaplib.h"
 #include "stralloc.h"
 #include "alloc.h"
 #include "error.h"
