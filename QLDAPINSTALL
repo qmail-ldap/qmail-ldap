@@ -1,4 +1,4 @@
-/MAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
+QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998,1999,2000,2001,2002 Internet Business Solutions Ltd.
 
@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2003/06/09 09:58:56 $)
+RELEASE: current ($Date: 2003/06/30 11:07:12 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -401,25 +401,26 @@ CONFIG FILES:
 ~control/rbllist
 
  Rbllist contains a number of RBL's to check for the given senders IP address.
- The file consists of four TAB separated fields.
+ The file consists of four tab or space separated fields.
    basedomain: base domain address to lookup (e.g. relays.ordb.org)
-   action: one of addheader or reject. 
+   action: one of addheader or reject.
            addheader will just create a X-RBL: header whereas
            reject will reject the smtp connection instantly with a 553 error.
    matchon: any or IP-Address, if a IP-Address is specified the action is only
-            taken if the returned address form basedomain is equal to 
+            taken if the returned address form basedomain is equal to
             IP-Address. With any all returned IP-Address will match.
    message: message to be included in X-RBL: headers and 553 errors.
 
- Example:
-   basedomain            action     matchon    message
-   ========================================================================
-   relays.ordb.org       reject     any        see http://ordb.org
-   spamguard.leadmon.net addheader  127.0.0.2  address is a dialup address
+ Possible example:
+  # baseaddress    action    matchon      Message
+  #========================================================================
+       sbl.spamhaus.org reject    127.0.0.2 See http://www.spamhaus.org/SBL
+        relays.ordb.org addheader 127.0.0.2 See http://www.ordb.org/faq/
+          list.dsbl.org addheader 127.0.0.2 See http://dsbl.org/main
+         bl.spamcop.net addheader 127.0.0.2 See http://spamcop.net/
+        relays.ordb.org reject    any       see http://ordb.org
+  spamguard.leadmon.net addheader 127.0.0.2 address is a dialup address
 
- NOTE: for readability we replaced the tabs between the four fields basedoamin,
-       action, matchon and message with spaces (so you can not copy paste the
-       example. (Also the first two lines are not part of the file)
  Default: none
  Note: Multiline. To activate RBL checks you have to set RBL in qmail-smtpd's
        environment (with tcpserver). See this website for more information on

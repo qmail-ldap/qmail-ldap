@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/06/09 10:06:05 $ ($Revision: 1.98 $)
+RELEASE: $Date: 2003/06/30 11:07:12 $ ($Revision: 1.99 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,9 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ New control/rbllist parser, it is no longer needed to use one tab as
+ separator. Lines starting with a # are comments and will be ignored.
 
  New delivery mode noforward to disable all forwarding entries in ldap
  and .qmail. The deliveryMode attributes need some major overwork becasue
