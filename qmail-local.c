@@ -840,7 +840,8 @@ char **argv;
          flagnoprog = 1;
        } else if (!case_diffs(MODE_LOCAL, s) ||
 		  !case_diffs(MODE_FORWARD, s) ||
-		  !case_diffs(MODE_FORWARD, s)) {
+		  !case_diffs(MODE_PROG, s) ||
+		  !case_diffs(MODE_NOREPLY, s)) {
 	       /* ignore */;
        } else strerr_warn3("Warning: undefined mail delivery mode: ",
                      s," (ignored).", 0);

@@ -66,7 +66,7 @@
 #define LDAP_DOTMODE		"qmailDotMode"
 #define LDAP_UID		"uid"
 #define LDAP_PASSWD		"userPassword"
-#define LDAP_OBJECTCLASS	"objectclass"
+#define LDAP_OBJECTCLASS	"objectClass"
 #define LDAP_ISACTIVE		"accountStatus"
 #define LDAP_PURGE		"qmailAccountPurge"
 
@@ -86,6 +86,7 @@
 #define MODE_LOCAL		"local"
 #define MODE_FORWARD		"forward"
 #define MODE_PROG		"program"
+#define MODE_NOREPLY		"noreply"
 
 #define ISACTIVE_BOUNCE		"disabled"
 #define ISACTIVE_DELETE		"deleted"

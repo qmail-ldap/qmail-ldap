@@ -75,7 +75,7 @@ check_ldap(stralloc *login, stralloc *authdata,
 {
 	static	stralloc ld = {0};
 	qldap	*q;
-	char	*filter = {0};
+	char	*filter;
 	int	r, status, pwok;
 	const	char	*attrs[] = {
 				LDAP_UID, /* the first 6 attrs are default */
@@ -85,7 +85,7 @@ check_ldap(stralloc *login, stralloc *authdata,
 				LDAP_MAILHOST,
 				LDAP_MAILSTORE,
 				LDAP_HOMEDIR,
-				LDAP_PASSWD, 0 }; /* passwd is extra */
+				LDAP_PASSWD, 0}; /* passwd is extra */
 
 	/* TODO more debug output is needed */
 	q = qldap_new();

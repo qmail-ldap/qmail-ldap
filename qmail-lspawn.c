@@ -260,7 +260,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
                       LDAP_REPLYTEXT,
                       LDAP_DOTMODE, 
 		      LDAP_MAXMSIZE,
-		      LDAP_OBJECTCLASS, 0 };
+		      LDAP_OBJECTCLASS, 0};
    char num[FMT_ULONG];
    char *escaped;
    char *f;
@@ -427,9 +427,8 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
    rv = qldap_get_mailstore(q, &homedir, &maildir);
    switch (rv) {
    case OK:
-     if (maildir.len > 0) {
+     if (maildir.len > 0)
        aliasempty = maildir.s;
-     }
      break;
    case NEEDED:
      /*
