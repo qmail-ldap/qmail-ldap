@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/03/01 13:32:09 $ ($Revision: 1.176 $)
+RELEASE: $Date: 2004/03/03 15:29:01 $ ($Revision: 1.177 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,10 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Fix bugs in qmail-group. The moderation feature was broken and in some
+ header fields a char of the local address was chopped of. Noticed by
+ different people.
 
  Fix endless lopp in qmail-ldaplookup noticed by Tomas Kuliavas.
 

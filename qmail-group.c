@@ -89,16 +89,15 @@ main(int argc, char **argv)
 	bouncefx();
 	
 	flagc = flags = flagS = flagm = 0;
-	qlc = ldapgroup(dname, &flagc, &flags, &flagS, &flagS);
+	qlc = ldapgroup(dname, &flagc, &flags, &flagS, &flagm);
 	/* need to distinguish between new messages and responses */
 
 	if (flagc)
 		secretary(maildir, 0);
 	if (flags)
 		subscribed(qlc, flagS);
-	if (flagm) {
+	if (flagm)
 		secretary(maildir, 1);
-	}
 
 	explode(qlc);
 	qldap_free(qlc);
@@ -165,7 +164,7 @@ init(void)
 
 	
 	t = env_get("EXT");
-	if (t != 0) {
+	if (t != 0 && *t != '\0') {
 		if (!stralloc_copyb(&base, local,
 			    str_len(local) - str_len(t) - 1))
 			temp_nomem();
@@ -589,7 +588,7 @@ ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
 	r = qldap_count(q);
 	if (r != 1) {
 		/* TOOMANY should be impossible with SCOPE_BASE */
-		r = r==0?NOSUCH:TOOMANY;
+		r = r==0 ? NOSUCH : TOOMANY;
 		goto fail;
 	}
 	r = qldap_first(q); /* and only */
