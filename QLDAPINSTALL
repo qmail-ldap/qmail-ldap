@@ -1,12 +1,12 @@
 QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
-(c) 1998,1999,2000,2001,2002 Internet Business Solutions Ltd.
+(c) 1998,1999,2000,2001,2002,2003 Internet Business Solutions AG
 
 This LDAP patches for qmail come with NO WARRANTY.
 
-These patches are under the BSD license.
+These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/08/31 13:57:07 $)
+RELEASE: current ($Date: 2003/08/31 15:08:44 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -724,7 +724,8 @@ LDAP_PASSWD (default: "userPassword")
 
  The password for POP3/IMAP authentication
  Example: {MD5}uSI59Zyfa5lapBLGfJrD+g==
- Note: Can be encrypted with {SHA}, {MD4}, {MD5}, {RMD160}, {NS-MTA-MD5}, 
+ Note: Can be encrypted with {SHA}, {SSHA}, {MD5}, {SMD5}, {MD4}, {RMD160},
+       {RMD160}, {NS-MTA-MD5},
        {crypt} crypt (without {crypt} prefix) or cleartext (only if compiled 
        with -DCLEARTEXTPASSWD (a bad idea on production systems)).
        If you rebind to the ldapserver don't use {NS-MTA-MD5}, {RMD160} and
@@ -769,7 +770,7 @@ LDAP_MAXMSIZE (default: "mailSizeMax")
 
  The maximum size (in bytes) that a single message may have. Everything over
  this size gets bounced.
- Example: 102400 (100kB)
+ Example: 102400
  Note: mailSizeMax has no influence on the datasize control file for the
        smtp daemon. The mailSizeMax decision is not take until the mail is
        delivered localy (by qmail-lspawn).
@@ -779,7 +780,9 @@ LDAP_FORWARDS (default: "mailForwardingAddress")
 
  Address(es) to forward all incoming messages for this user to.
  Example: jdoe@new.place
- Note: multifield
+ Note: multifield. Forwards are done in addition to local (maildir/mbox)
+       delivery. Forwardings can be disabled without having to remove
+       the entries. See deliveryMode for more information on both.
 
 
 LDAP_PROGRAM (default: "deliveryProgramPath")
@@ -791,31 +794,41 @@ LDAP_PROGRAM (default: "deliveryProgramPath")
        With ldaponly set deliveryProgramPath is silently ignored.
        Before using it have a look at QLDAPNEWS, qmail-ldap.h, check.c and
        see also 5.2.
-
+       Program delivery is done in addition to local (maildir/mbox) delivery.
+       Program delivery can be disabled without having to remove the
+       entries. See deliveryMode for more information on both.
 
 LDAP_MODE (default: "deliveryMode")
 
  multi field entries of these keywords
- - normal: resets to the normal .qmail behavior
-           (Maildir/box delivery only if no forwards or programs are executed)
- - forwardonly: is equal to set the execute bit of .qmail
-                so only forwards are allowed
- - noforward: ignore all forwarding entries in ldap (LDAP_FORWARDS) and .qmail
- - nombox: ignore all maildir/mbox deliveries
- - localdelivery: forces maildir/mbox delivery (into $HOME/$ALIASEMPTY)
- - reply: send also an auto_reply mail with text from mailReplyText 
+ - (normal): put message into maildir/mbox, plus forward and program delivery
+ - noforward: do not forward (ignores forwarding entries in ldap and .qmail)
+ - nolocal: do not put message into maildir/mbox (ignores also .qmail)
+ - noprogram: do not do program deliveries (ignores deliveryprogrampath, .qmail)
+ - reply: send an auto_reply mail with text from mailReplyText
  - echo: something very strange, just echo the message (nothing else)
- Default: no QMAILMODE is eq to QMAILMODE=normal other stuff is ignored (with
-          warning)
- Note: echo exits immediatly after the "echoing" (only useful for testing
-       purposes). reply is executed directly and does not interfere with
-       the other settings.
-       "normal", "nombox", "localdelivery" "forwardonly" and "noforward" are 
-       set one after the other (i.e. "nombox,localdelivery,normal" resets to
-       a "normal" delivery).
-       There are some strange behavior when localdelivery and nombox or
-       forwardonly and noforward are set, so handle them with care.
-       
+ Default: no QMAILMODE is equal to QMAILMODE=normal
+ Example: noforward
+          noprogram
+ Note: The behaviour changed compared with previous qmail-ldap versions
+       (20030801 and earlier)!
+       Setting a mailForwardingAddress no longer disables local delivery.
+       This is the most important change.
+
+       Normal is no longer a real mode. It is just a placeholder for the
+       default behaviour.
+       Local delivery is now always done, except when explicitly disabled
+       with nolocal.
+
+       Noforward and noprogram disable forwardings and program deliveries
+       even if mailForwardingsAddress or deliveryProgramPath attributes
+       exist. This way you can keep programs and forwards but turn them
+       off if you don't need them, instead of removing their attributes.
+
+       If no mode to the contrary set, forwards, program deliveries, local
+       deliveries are all done if existent. Reply and echo are not automatic
+       and have to enabled explicitly.
+
 
 LDAP_REPLYTEXT (default: "mailReplyText")
 
@@ -895,22 +908,23 @@ objectClass: person
 objectClass: inetOrgPerson
 objectClass: qmailUser
 mail: opi@opi.flirtbox.ch
+mailAlternateAddress: andre@opi.flirtbox.ch
 mailHost: opi.flirtbox.ch
 mailMessageStore: /usr/home/opi/Maildir/
-mailQuota: 1000000S,100C
+mailForwardingAddress: opi@nrg4u.com
+deliveryProgramPath: /usr/home/opi/bin/smsinformer -q
+deliveryMode: noprogram
+mailQuotaSize: 1000000
+mailQuotaCount: 1000
 qmailUID: 1001
 qmailGID: 1001
 uid: opi
-userPassword: {MD5}b28a87511da157f147ed4766b0474a8a
+userPassword: {SMD5}b28a87511da157f147ed4766b0474a8a
+accountStatus: active
 
 ================================================================================
 
 EXAMPLE SLAPD.CONF FILE:
-
-include         /usr/local/etc/ldap/slapd.at.conf
-include         /usr/local/etc/ldap/slapd.oc.conf
-schemacheck     on
-#referral       ldap://ldap.itd.umich.edu
 
 #######################################################################
 # ldbm database definitions
@@ -921,37 +935,13 @@ suffix          "o=Internet Pipeline, c=CH"
 directory       /var/qmail/users
 rootdn          "cn=root, o=Internet Pipeline, c=CH"
 rootpw          secret
-index           objectclass,mail,mailAlternateAddress,uid
-index           default none
+index           objectclass,mail,mailAlternateAddress,uid  eq,sub
+index		accountStatus,mailHost,deliveryMode  eq
+index           default sub
 
 ================================================================================
 
-ADD THIS SCHEMA TO SLAPD.OC.CONF (for OpenLDAP 1.2.x)
-
-objectclass qmailUser
-        requires
-                objectclass,
-                mail,
-                uid
-        allows
-                mailMessageStore,
-                homeDirectory,
-                userPassword,
-                mailAlternateAddress,
-                qmailUID,
-                qmailGID,
-                mailQuota,
-                mailHost,
-                mailForwardingAddress,
-                deliveryProgramPath,
-                qmailDotMode,
-                deliveryMode,
-                mailReplyText,
-                accountStatus,
-                qmailAccountPurge
-
-
-FOR OpenLDAP 2.x DO THIS INSTEAD:
+FOR OpenLDAP 2.x DO THIS:
 
 Copy qmail.schema to your OpenLDAP installation location and add this
 to your slapd.conf:

@@ -1,12 +1,12 @@
 QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
-(c) 1998,1999,2000,2001,2002,2003 Internet Business Solutions Ltd.
+(c) 1998,1999,2000,2001,2002,2003 Internet Business Solutions AG
 
 This LDAP patches for qmail come with NO WARRANTY.
 
-These patches are under the BSD license.
+These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/08/19 13:37:12 $ ($Revision: 1.108 $)
+RELEASE: $Date: 2003/08/31 15:08:44 $ ($Revision: 1.109 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,7 +18,24 @@ TODO:
 
 NEWS for current stuff:
 
- Have a look at QLDAPTODO to see what still needs to be done.
+ WARNING: This release is NOT fully backwards compatible! We have made
+ certain changes for clarity and cleanup.
+
+ Removed some qmail-smtpd control files (tarpitcount/delay, maxrcptcount,
+ rblonlyheader). The only and right way to set them is environment variables
+ with tcpserver.
+
+ Changed deliveryMode significantly. Before the setting of a forwarding
+ would have disabled local delivery. This is no longer the case. Each of
+ the modes has to be explicitly disabled (local, forward, program) or
+ enabled (reply, echo). There are no longer contradicting modes which
+ makes it much more logical.
+ This change probably has a great impact on many administrative frontends!
+
+ Quota definitions are new format only. ~control/ldapdefaultquota, mailQuota
+ serve no meaning anymore. Also the string quota format (10000S,100C) is no
+ longer supported. Use ~control/ldapdefaultquota[size|count] and mailQuotaSize
+ and mailQuotaCount instead.
 
  New tool qmail-secretary. This is the swiss army knife for mail group and
  mailing list handling. It is used by the upcoming qmail-group tool but has
@@ -75,7 +92,11 @@ NEWS for current stuff:
  for multiple concurrent connections, more flexible support for ldap attribute
  handling and upcomming filter functions that can handle mutliple results.
 
- major cleanup actually a huge cleanup, currently over 75 modified or added
+ compile time option to enable ZLIB compression for QMQP cluster communication.
+ this is useful when cluster hosts are in different locations and have slow
+ or metered connections between them. Enable in Makefile with -DQMQPZ.
+
+ major cleanup, actually a huge cleanup, currently over 75 modified or added
  files.
 
 NEWS for 20030801 stuff:
