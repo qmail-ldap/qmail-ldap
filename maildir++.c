@@ -108,7 +108,7 @@ int quota_calc(char *dir, int *fd, quota_t *q)
 	if ( ! (bigbuf = alloc(5120) )  ) temp_nomem();
 
 	while ( mailfolder() ) {
-		if ( ! stralloc_cats(&path, "/..") ) temp_nomem();
+		if ( ! stralloc_cats(&path, "/../") ) temp_nomem();
 		if ( i++ > 1 ) strerr_die1x(111, 
 				"Unable to calc quota: recursive maildir++ (QUOTA #1.1.1)");
 	}
@@ -140,7 +140,7 @@ int quota_recalc(char *dir, int *fd, quota_t *q, unsigned long size,
 	if ( ! (bigbuf = alloc(5120) )  ) temp_nomem();
 
 	while ( mailfolder() ) {
-		if ( ! stralloc_cats(&path, "/..") ) temp_nomem();
+		if ( ! stralloc_cats(&path, "/../") ) temp_nomem();
 		if ( i++ > 1 ) strerr_die1x(111, 
 				"Unable to calc quota: recursive maildir++ (QUOTA #1.1.1)");
 	}
@@ -399,15 +399,23 @@ static int quota_writesize(quota_t *q, int *fd, time_t maxtime)
 
 	substdio_fdbuf(&ss,write,*fd,writebuf,sizeof(writebuf));
 	
-	if ( substdio_put(&ss, num, fmt_ulong(num, q->quota_size) ) == -1 )
+	if (q->quota_size != 0) {
+		if ( substdio_put(&ss, num, fmt_ulong(num, q->quota_size) ) == -1 )
+			goto fail;
+		if ( substdio_puts(&ss,"S") == -1 )
+			goto fail;
+		if (q->quota_count != 0)
+			if ( substdio_puts(&ss,",") == -1 )
+				goto fail;
+	}
+	if (q->quota_count != 0) {
+		if ( substdio_put(&ss, num, fmt_ulong(num, q->quota_count) ) == -1 )
+			goto fail;
+		if ( substdio_puts(&ss,"C") == -1 )
+			goto fail;
+	}
+	if ( substdio_puts(&ss,"\n") == -1 )
 		goto fail;
-	if ( substdio_puts(&ss,"S,") == -1 )
-		goto fail;
-	if ( substdio_put(&ss, num, fmt_ulong(num, q->quota_count) ) == -1 )
-		goto fail;
-	if ( substdio_puts(&ss,"C\n") == -1 )
-		goto fail;
-	
 	if ( substdio_put(&ss, num, fmt_ulong(num, q->size) ) == -1 )
 		goto fail;
 	if ( substdio_puts(&ss, " ") == -1 )
@@ -463,6 +471,7 @@ static int check_maxtime(time_t time)
 	dirp = opendir(path.s);
 	path.len = slen;
 	
+	i = 0;
 	while ( dirp && (dp = readdir(dirp)) != 0) {
 		if ( dp->d_name[0] == '.' && dp->d_name[1] != '\0' && 
 			   dp->d_name[1] != '.' && str_diff( ".Trash", dp->d_name) ) {
@@ -500,7 +509,6 @@ static int check_maxtime(time_t time)
 			}
 		}
 	}
-	i = 0;
 	path.len = slen;
 	closedir(dirp);
 	return i;
@@ -614,6 +622,8 @@ static int read5120(char* fn, char* buf, int *len)
 	if ( ( fd = open(fn, O_RDWR | O_NDELAY | O_APPEND, 
 					0600) ) == -1 ) {
 		if ( errno == error_noent ) return -1;
+		strerr_die3x(111, "Unable to open maildirsize: ", 
+				error_str(errno), " (QUOTA #1.5.1)");
 	}
 	
 	*len = 0;
