@@ -330,7 +330,7 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
          _exit(1);
          } else {
 #ifdef QLDAPDEBUG
-         printf(" ldap search results \t: no GID found, taking control/ldapuid\n");
+         printf(" ldap search results \t: no GID found, taking control/ldapgid\n");
 #endif
          }
       *gid = chck_idb(qldap_gid.s,qldap_gid.len);
