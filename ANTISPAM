@@ -1,0 +1,55 @@
+The antispam patch included adds some features qmail's SMTP daemon:
+
+It is an update by Lindsay Haisley of Rask Lambertsen's excellent
+antispam patch for qmail v1.01, based on Lionel Widdifield's patch.
+
+                         Envelope address filtering.
+                         ---------------------------
+
+qmail-smtpd will read the DENYMAIL environment variable to determine how to
+handle sender addresses:
+
+DENYMAIL set to anything
+The address will be rejected if
+ - it doesn't contain a '@'.
+ - it contains a bang path without a host name ("user!@domain").
+ - the domain part has no '.' in it.
+ - the top level domain has fewer than 2 or more than 3 characters in it.
+
+DENYMAIL set to DNSCHECK
+The address will be rejected if
+ - there are no MX or A records in the DNS for the domain part (= you can't
+   send a reply). Note that in case of temporary DNS errors, the address will
+   be rejected with a temporary error code so the remote MTA will try again
+   later.
+
+DENYMAIL set to NOBOUNCE
+Bounces (envelope sender empty or "#@[]") will be rejected.
+
+DENYMAIL set to SPAM
+All addresses will be rejected.
+
+The patch extends the syntax of control/badmailfrom. In addition to the
+
+   user@domain
+   @domain
+
+syntax, you can also use
+
+   user@
+
+to reject all sender addresses witha user part of "user".
+
+The patch allows the use of a new control file, control/badrcptto. This file
+lists recipient addresses that should be rejected. You can use
+
+   user@domain
+
+and
+
+   @domain
+
+to specify invalid addresses. This can be useful if a spammer sends lots of
+messages to a nonexistant user from an invalid address, as otherwise,
+postmaster will get lots of double bounces.
+
