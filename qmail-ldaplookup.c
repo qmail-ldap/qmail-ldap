@@ -188,7 +188,7 @@ int main(int argc, char **argv)
 			output("Will try a local password lookup\n");
 			local_lookup(argv[2], argv[3]);
 		} else {
-			output("%s\n", mode==uid?"only uid lookups can be local":
+			output("%s\n", mode!=uid?"only uid lookups can be local":
 									"localdelivery of so no local lookup");
 			exit(111);
 		}

@@ -334,6 +334,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    int  reply;
    int  at;
    int  i;
+   int  force_forward;
    char *r;
    stralloc filter = {0};
    unsigned long tid;
@@ -436,6 +437,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    alloc_free(info.gid);
 
    /* get the path of the maildir or mbox */
+   force_forward = 0;
    if ( info.homedir ) {
       if (!chck_paths(info.homedir) ) return 23;
       if (!stralloc_cats(&nughde, info.homedir)) _exit(QLX_NOMEM);
@@ -458,6 +460,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       }
       if (!stralloc_cats(&nughde, pw->pw_dir)) _exit(QLX_NOMEM);      
       aliasempty = ALIASDEVNULL;
+      force_forward = 1;
    }
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
 
@@ -574,6 +577,11 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    debug(32, "%s: %s\n", ENV_DOTMODE, env_get(ENV_DOTMODE) );
    ldap_value_free(extra[5].vals);
 
+   if ( force_forward ) {
+     /* XXX forcing forward only for useres with no homedir */
+     if ( !env_put2(ENV_DOTMODE, DOTMODE_LDAPONLY) ) _exit(QLX_NOMEM);
+     if ( !env_put2(ENV_MODE, MODE_FORWARD) ) _exit(QLX_NOMEM);
+   }
    /* ok, we finished, lets clean up and disconnect from the LDAP server */
    return 0;
 }

@@ -199,6 +199,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	int version;
 	int num_entries;
 
+#ifndef USE_CLDAP
 	debug(128, "ldap_lookup: ");
 	/* allocate the connection */
 	if ( (ld = ldap_init(qldap_server.s,QLDAP_PORT)) == 0 ) {
@@ -235,6 +236,26 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		qldap_errno = LDAP_SEARCH;
 		return -1;
 	}
+#else /* USE_CLDAP */
+	debug(128, "ldap_lookup: ");
+	/* allocate the connection */
+	if ( (ld = cldap_open(qldap_server.s,QLDAP_PORT)) == 0 ) {
+		qldap_errno = LDAP_INIT;
+		return -1;
+	}
+	debug(128, "cldap_open succesful\n");
+	/* do the search for the login uid */
+	if ( (rc = cldap_search_s(ld, qldap_basedn.s, LDAP_SCOPE_SUBTREE,
+					search->filter, attrs, 0, &res, qldap_user.s )) 
+					!= LDAP_SUCCESS )
+	{
+		debug(64, "ldap_lookup: csearch for %s failed (%s)\n",
+				search->filter, ldap_err2string(rc) );
+		qldap_errno = LDAP_SEARCH;
+		return -1;
+	}
+#endif
+
 	debug(128, "ldap_lookup: search for %s succeeded\n", search->filter);
 	
 	/* go to the first entry */
@@ -285,7 +306,11 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	/* XXX we should also free msg and res */
 	/* ldap_msgfree(msg); */ /* with this I get segv's :-( don't ask me why */
 	ldap_msgfree(res);
+#ifndef USE_CLDAP
 	ldap_unbind_s(ld);
+#else /* USE_CLDAP */
+	cldap_close(ld);
+#endif
 	return 0;
 
 }
