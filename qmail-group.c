@@ -645,7 +645,7 @@ ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
 		switch (r) {
 		case OK:
 			*flagS = 1;
-			goto done;
+			return q;
 		case NOSUCH:
 			break;
 		default:
@@ -656,7 +656,7 @@ ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
 		switch (r) {
 		case OK:
 			*flagS = 1;
-			goto done;
+			return q;
 		case NOSUCH:
 			break;
 		default:
@@ -667,17 +667,15 @@ ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
 		switch (r) {
 		case OK:
 			*flagS = 1;
-			goto done;
+			return q;
 		case NOSUCH:
 			break;
 		default:
 			goto fail;
 		}
-done:
 	}
-	
-	return q;
 
+	return q;
 fail:
 	qldap_free(q);
 	strerr_die3x(111, FATAL, "get ldap group entry: ", qldap_err_str(r));
