@@ -892,38 +892,38 @@ char **argv;
             if ( !str_diff("forwardonly", s) ) {
                if (!flagdoit) sayit("forwardonly ",s,0);
                flagforwardonly = 1;
-	         } else if ( !str_diff("reply", s) ) {
-	            if( *sender ) {
-	               ++count_forward;
-	               if ( s = env_get("QMAILREPLYTEXT") ) {
-	                  if ( flagdoit ) {
-	                     mailprogram("qmail-reply");
-	                  } else {
-	                     sayit("reply to ",sender,str_len(sender));
-	                     sayit("replytext ",s,str_len(s));
-	                  }
-	               } else {
-	                  strerr_warn("AARRG: Reply mode is on but QMAILREPLYTEXT is not set (ignored). (LDAP-ERR #2.0.3)");
-	               }
-	            }
-	         } else if ( !str_diff("echo", s) ) {
-	            if (*sender) {
-	               ++count_forward;
-	               recips_env = (char **) alloc(2 * sizeof(char *));
-	               recips_env[0] = sender;
-	               recips_env[1] = 0;
-	               if (flagdoit) {
-	                  mailforward(recips_env);
-	               } else sayit("echo to ",sender,str_len(sender));
-	            }
-	            count_print();
-	            _exit(0);
-	         } else if ( !str_diff("nombox", s) ) {
-	            if (!flagdoit) sayit("no mbox delivery ",s,0);
-	            mboxdelivery = 0;
-	         }
-	         n = byte_chr(s,slen,0); if (n++ == slen) break; s += n; slen -= n;
-	      }
+	    } else if ( !str_diff("reply", s) ) {
+	       if( *sender ) {
+	          ++count_forward;
+	          if ( s = env_get("QMAILREPLYTEXT") ) {
+	             if ( flagdoit ) {
+	                mailprogram("qmail-reply");
+	             } else {
+	                sayit("reply to ",sender,str_len(sender));
+	                sayit("replytext ",s,str_len(s));
+	             }
+	          } else {
+	             strerr_warn("AARRG: Reply mode is on but QMAILREPLYTEXT is not set (ignored). (LDAP-ERR #2.0.3)");
+	          }
+	       }
+	    } else if ( !str_diff("echo", s) ) {
+	       if (*sender) {
+	          ++count_forward;
+	          recips_env = (char **) alloc(2 * sizeof(char *));
+	          recips_env[0] = sender;
+	          recips_env[1] = 0;
+	          if (flagdoit) {
+	             mailforward(recips_env);
+	          } else sayit("echo to ",sender,str_len(sender));
+	       }
+	       count_print();
+	       _exit(0);
+	    } else if ( !str_diff("nombox", s) ) {
+	       if (!flagdoit) sayit("no mbox delivery ",s,0);
+	       mboxdelivery = 0;
+	    }
+	    n = byte_chr(s,slen,0); if (n++ == slen) break; s += n; slen -= n;
+	 }
       }
    
       if ( s = env_get("QMAILFORWARDS") ) {
