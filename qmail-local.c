@@ -869,7 +869,7 @@ char **argv;
      for( ; i > 0; i--) {
        if ( !str_diff(MODE_FORWARD, s) ) {
          if (!flagdoit) sayit("forwardonly ",s,0);
-         flagforwardonly = 0;
+         flagforwardonly = 1;
        } else if ( !str_diff(MODE_REPLY, s) ) {
          if( *sender ) {
            ++count_forward;

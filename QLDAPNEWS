@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2003/02/03 22:13:16 $ ($Revision: 1.80 $)
+RELEASE: $Date: 2003/02/23 17:14:40 $ ($Revision: 1.81 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,12 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Bug fix in qmail-local: flagforwardonly was set to 0 instead of 1 if 
+ deliverymode was forwardonly.
+
+ Bug fix in maildir++ code: At two places a closedir was missing. Thanks to
+ Reinin Oyama.
 
  Bug fix because of a gratuitous recycling of a var in qmail-quotawarn if
  the DOTMODE_NONE was used. Thanks to Chris Maxwell.
