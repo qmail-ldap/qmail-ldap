@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20001201 ($Date: 2000/11/25 17:18:45 $)
+RELEASE: 20001201 ($Date: 2000/11/28 12:59:32 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -59,7 +59,7 @@ INSTALL:
    You can set/change:
    - LDAPFLAGS=-DQLDAP_CLUSTER (turns the cluster support on) +
                -DLDAP_ESCAPE_BUG (see NOTE) +
-               -DCLEARTEXTPASSWD (for cleartext passwords in ldap bad idea)
+               -DCLEARTEXTPASSWD (for cleartext passwords in ldap, bad idea)
      NOTE: at the moment -DLDAP_ESCAPE_BUG is not defined, this should be
            added if your ldap server has problems with the escapeing of 
            LDAP filters (fixed as of OpenLDAP 1.2.8 and higher)
@@ -104,8 +104,8 @@ INSTALL:
 
 7.  Create the LDAP user database and start the LDAP server
 
-8.  Create the proper ~control/ldap* files for qldap
-    At least ldapserver and ldapbasedn must exist (and also me)
+8.  Create the proper ~control/ldap* files for qmail-ldap
+    At least ldapserver and ldapbasedn must exist (and also 'me')
 
 9.  Test and Enjoy!
 
@@ -148,7 +148,7 @@ CONFIG FILES:
 ~control/ldapbasedn
 
  The base DN from where the search in the LDAP tree begins
- Most times required
+ Required
  Default: NULL
  Example: o=Internet Pipeline, c=CH
  Note: Referrals are ignored
@@ -169,8 +169,8 @@ CONFIG FILES:
 
 ~control/ldaplocaldelivery
 
- If on do a lookup on the local passwd file. This affects qmail-lspawn and
- checkpassword if the LDAP lookup returns nothing.
+ To lookup the local passwd file if the LDAP lookup finds no match. This
+ affects qmail-lspawn and checkpassword if the LDAP lookup returns nothing.
  Default: enabled
  Example: 1
  Note: boolean, use 0 (zero) or 1 (one)
@@ -186,14 +186,13 @@ CONFIG FILES:
 ~control/ldapcluster
 
  Turn clustering on and off. Needs a qmail-ldap compiled with 
- -DQLDAP_CLUSTER else nothing will happen. Also don't forget to set up
+ -DQLDAP_CLUSTER or nothing will happen. Also don't forget to set up
  qmail-qmqpd on all servers in the cluster.
  Default: disabled
  Example: 1
  Note: boolean, use 0 (zero) or 1 (one)
  ATTN: the control files me, rcpthosts and locals have to be set carfully
-       or you will have big problems. Right now there is no loop detection
-       in the clustering code.
+       or you will have big problems.
 
 ~control/ldapdefaultquota
 
@@ -202,7 +201,8 @@ CONFIG FILES:
  count 'S') and count (a file count 'C')
  Default: unlimited
  Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
- Note: is overridden by mailQuota
+ Note: is overridden by mailQuota, make sure to have set ~control/quotowarning
+       otherwise you wont quota warning messages
 
 ~control/ldapdefaultdotmode
 
@@ -215,7 +215,7 @@ CONFIG FILES:
 
 ~control/ldapmessagestore
 
- The default prefix for pathes in mailMessageStore without trailing /
+ The default prefix for path's in mailMessageStore without trailing /
  Default: NULL
  Example: /maildisk/
  Note: Used in virtual users environments
@@ -339,7 +339,7 @@ LOGLEVEL
  Default: none
  Affects: qmail-smtpd
  Example: 3
- Note: integer value from 0-3, 
+ Note: integer value from 0-3, everything will be logged through tcpserver
 
 DENYMAIL
 
@@ -435,12 +435,13 @@ LDAP_QUOTA (default: "mailQuota")
  The mailQuota is a string of the form figures type (S or C) and a ',' separating
  multiple entries.
  Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
- Note: overrides ldapdefaultquota, the old format is still supported
+ Note: overrides ldapdefaultquota, the old format (only a number representing
+       the amount of bytes allowed) is still supported
 
 
 LDAP_FORWARDS (default: "mailForwardingAddress")
 
- Address(es) to forward all incoming messages to.
+ Address(es) to forward all incoming messages for this user to.
  Example: jdoe@new.place
  Note: multifield
 
