@@ -458,6 +458,7 @@ void sendmail(void)
 	
 	qmail_put(&qqt,dtline.s,dtline.len);
 	qmail_puts(&qqt, "Precedence: junk\n");
+	/* XXX Date: qmail uses GMT based dates which is sometimes confusing */
 	/* message-id and date line */
 	starttime = now();
 	if (!newfield_datemake(starttime)) goto fail_nomem;
@@ -544,8 +545,15 @@ void sendmail(void)
 		case 'f': /* From: */
 		case 'T':
 		case 't': /* To: */
+		case 'D':
+		case 'd': /* Date: */
+		case 'P':
+		case 'p': /* Precedence: */
 			if (case_diffb("From:", sizeof("From:") - 1, s) == 0 ||
-			    case_diffb("To:", sizeof("To:") - 1, s) == 0)
+			    case_diffb("To:", sizeof("To:") - 1, s) == 0 ||
+			    case_diffb("Date:", sizeof("Date:") - 1, s) == 0 ||
+			    case_diffb("Precedence:", 
+				sizeof("Precedence:") - 1, s) == 0)
 				break;
 			/* FALLTHROUGH */
 		default:			
@@ -577,7 +585,6 @@ next:
 	/* Subject: */
 	qmail_puts(&qqt, "Subject: ");
 	qmail_puts(&qqt, resubject.s); /* resubject allready has a '\n' at the end */
-	/* XXX Date: qmail uses GMT based dates which is sometimes confusing */
 	/* Content-* */
 	qmail_puts(&qqt, "Content-type: ");
 	if (ct.s != (char *)0 && ct.len > 0)
