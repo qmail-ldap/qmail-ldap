@@ -17,8 +17,13 @@
 #define LDAP_DOTMODE "qmailDotMode"
 #define LDAP_UID "uid"
 #define LDAP_PASSWD "userPassword"
+#define LDAP_ISACTIVE "accountStatus"
 
-#define LDAP_DEFAULT "\\*"  /* this is the "catch all" string *
+#define ISACTIVE_BOUNCE "disabled"
+#define ISACTIVE_NOPOP "nopop"
+#define ISACTIVE_ACTIVE "active"
+
+#define LDAP_CATCH_ALL "\\*"  /* this is the "catch all" string *
  * ATTN: escape the string correctly, remember             *
  * '(', ')', '\', '*' and '\0' have to be escaped with '\' */
 

@@ -373,6 +373,22 @@ int len;
          substdio_puts(ss, "DLDAP attribute mailMessageStore is not given but mandatory. (LDAP-ERR #215)\n");
       REPORT_RETURN;
 
+      case 220:
+         substdio_puts(ss, "DLDAP attribute mailForwardingAddress contains illegal characters. (LDAP-ERR #220)\n");
+      REPORT_RETURN;
+
+      case 221:
+         substdio_puts(ss, "DLDAP attribute deliveryProgramPath contains illegal characters. (LDAP-ERR #221)\n");
+      REPORT_RETURN;
+
+      case 222:
+         substdio_puts(ss, "DError while reading ~control files. (LDAP-ERR #222)\n");
+      REPORT_RETURN;
+
+      case 225:
+         substdio_puts(ss, "DMailaddress is administrativley disabled. (LDAP-ERR #220)\n");
+      REPORT_RETURN;
+
       case 230:
          substdio_puts(ss, "ZConfiguration file ~control/ldapusername is missing/empty and LDAP qmailUser is not given. (LDAP-ERR #230)\n");
       REPORT_RETURN;
@@ -403,19 +419,6 @@ int len;
 
       case 237:
          substdio_puts(ss, "ZConfiguration file ~control/ldapmessagestore does not end with an / or is empty. (LDAP-ERR #237)\n");
-      REPORT_RETURN;
-
-
-      case 220:
-         substdio_puts(ss, "DLDAP attribute mailForwardingAddress contains illegal characters. (LDAP-ERR #220)\n");
-      REPORT_RETURN;
-
-      case 221:
-         substdio_puts(ss, "DLDAP attribute deliveryProgramPath contains illegal characters. (LDAP-ERR #221)\n");
-      REPORT_RETURN;
-
-      case 222:
-         substdio_puts(ss, "DError while reading ~control files. (LDAP-ERR #222)\n");
       REPORT_RETURN;
 
 #endif /* end -- report LDAP errors */
@@ -510,7 +513,7 @@ int qldap_get( stralloc *mail )
    r = mail->s;
    /* count the results, we must have exactly one */
    if ( (num_entries = ldap_count_entries(ld,res)) != 1) {
-#if 0 /* this handles the "catch all" extension */
+      /* this handles the "catch all" extension */
       i = mail->len;
       for (at = i - 1; r[at] != '@' && at >= 0 ; at--) ;
       /* build the search string for the email address */
@@ -523,7 +526,7 @@ int qldap_get( stralloc *mail )
       if (!stralloc_cats(&filter,"))")) _exit(QLX_NOMEM);
       if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
       DEBUG("def-filter: ", filter.s, "\n", 0);
-           
+       
       /* do the search for the email address */
       if ( (rc = ldap_search_s(ld,qldap_basedn.s,LDAP_SCOPE_SUBTREE,filter.s,attrs,0,&res)) != LDAP_SUCCESS ) {
          ERROR("ldap_search_ext_s: ", ldap_err2string(rc), "\n", 0);
@@ -532,10 +535,7 @@ int qldap_get( stralloc *mail )
       }
       if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
       /* count the results, we must have exactly one */
-      if ( (num_entries = ldap_count_entries(ld,res)) == 1) break;
-      if (num_entries != 1) 
-#endif
-      return 1;
+      if ( (num_entries = ldap_count_entries(ld,res)) != 1) return 1;
    }
    
 
@@ -551,6 +551,12 @@ int qldap_get( stralloc *mail )
 
    /* go through the attributes and set the proper args for qmail-local  *
     * this can probably done with some sort of loop, but hey, how cares? */
+
+   /* check if the ldap entry is active */
+   if ( (vals = ldap_get_values(ld,msg,LDAP_ISACTIVE)) != NULL ) {
+      DEBUG("is_active: ", vals[0], "\n", 0);
+      if ( !str_diff(ISACTIVE_BOUNCE, vals[0]) ) _exit(225); 
+   }
 
    /* get the username for delivery on the local system */
    if ( (vals = ldap_get_values(ld,msg,LDAP_QMAILUSER)) != NULL ) {

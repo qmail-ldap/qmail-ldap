@@ -234,7 +234,16 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
    /* go to the first entry */
    msg = ldap_first_entry(ld,res);
 
-   /* get the dn and free it (we dont need it, to prevent memory leaks) */
+   /* check if the ldap entry is active */
+   if ( (vals = ldap_get_values(ld,msg,LDAP_ISACTIVE)) != NULL ) {
+      debug_msg(OUTPUT,"accountStatus is: %s\n", vals[0]);
+      if ( !str_diff(ISACTIVE_BOUNCE, vals[0]) ) _exit(1);
+      if ( !str_diff(ISACTIVE_NOPOP, vals[0]) ) _exit(1);
+   }
+
+   /* get the dn and free it (we dont need it, to prevent memory leaks) *
+    * but first try to rebind with the password (only if compiled with  *
+    * QLDAP_BIND.                                                       */
    dn = ldap_get_dn(ld,msg);
 #ifdef QLDAP_BIND
    if ( dn == NULL ) _exit(1);
