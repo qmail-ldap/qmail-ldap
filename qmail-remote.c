@@ -536,8 +536,9 @@ void qmtp()
   int i;
   int n;
   unsigned char ch;
+  unsigned char rv;
   char num[FMT_ULONG];
-  int flagallok;
+  int flagbother;
 
   if (fstat(0,&st) == -1) quit("Z", " unable to fstat stdin");
   len = st.st_size;
@@ -575,7 +576,7 @@ void qmtp()
   substdio_put(&smtpto,",",1);
   substdio_flush(&smtpto);
 
-  flagallok = 1;
+  flagbother = 0;
 
   for (i = 0;i < reciplist.len;++i) {
     len = 0;
@@ -590,38 +591,37 @@ void qmtp()
     get(&ch); --len;
     if ((ch != 'Z') && (ch != 'D') && (ch != 'K')) temp_proto();
 
-    if (!stralloc_copyb(&smtptext,&ch,1)) temp_proto();
-    if (!stralloc_cats(&smtptext,"qmtp: ")) temp_nomem();
+    rv = ch;
+    if (!stralloc_copys(&smtptext,"qmtp: ")) temp_nomem();
 
+    /* read message */
     while (len > 0) {
       get(&ch);
       --len;
-    }
-
-    for (len = 0;len < smtptext.len;++len) {
-      ch = smtptext.s[len];
-      if ((ch < 32) || (ch > 126)) smtptext.s[len] = '?';
     }
     get(&ch);
     if (ch != ',') temp_proto();
     smtptext.s[smtptext.len-1] = '\n';
 
-    if (smtptext.s[0] == 'K') out("r");
-    else if (smtptext.s[0] == 'D') {
-      out("h");
-      flagallok = 0;
+    switch (rv) {
+      case 'K':
+        out("r"); zero();
+	flagbother = 1;
+	break;
+      case 'D':
+        out("h"); outhost(); out("  does not like recipient.\n");
+	outsmtptext(); zero();
+	break;
+      case 'Z':
+        out("h"); outhost(); out("  does not like recipient.\n");
+	outsmtptext(); zero();
+	break;
     }
-    else { /* if (smtptext.s[0] == 'Z') */
-      out("s");
-      flagallok = 0;
-    }
-    if (substdio_put(subfdoutsmall,smtptext.s+1,smtptext.len-1) == -1) temp_noconn();
-    zero();
   }
-  if (!flagallok) {
-    out("ZGiving up on ");outhost();out("\n");
+  if (!flagbother) {
+    out("DGiving up on "); outhost(); out(".\n"); outsmtptext();
   } else {
-    out("KAll received okay by ");outhost();out("\n");
+    out("K");outhost();out(" accepted message.\n"); outsmtptext();
   }
   zerodie();
 }
