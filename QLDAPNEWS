@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/30 13:33:24 $ ($Revision: 1.128 $)
+RELEASE: $Date: 2003/09/30 13:46:55 $ ($Revision: 1.129 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,9 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ announce the ehlo starttls option only if we have a chance to do tls
+ encryption. In other word if the file control/cert.pem exists.
 
  control/ldapserver is now read with control_readfile. Multiple servers
  are now specified one per line. Using # for comments is allowed and empty

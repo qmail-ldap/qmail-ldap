@@ -276,6 +276,7 @@ int needauth = 0;
 int needssl = 0;
 int authenticated = 0;
 char *authprepend;
+int sslenabled = 0;
 
 void setup()
 {
@@ -303,6 +304,11 @@ void setup()
 
   if (control_readint(&timeout,"control/timeoutsmtpd") == -1) die_control();
   if (timeout <= 0) timeout = 1;
+
+  if (control_readint(&sslenabled, "control/cert.pem") == -1)
+    sslenabled = 0;
+  else
+    sslenabled = 1;
 
   x = env_get("TARPITCOUNT");
   if (x) { scan_ulong(x,&u); tarpitcount = u; };
@@ -407,6 +413,7 @@ void setup()
   logpid(2);
   logstring(2, "enabled options: ");
   if (greeting550) logstring(2,"greeting550");
+  if (sslenabled) logstring(2, "starttls");
   if (relayclient) logstring(2,"relayclient ");
   if (sanitycheck) logstring(2,"sanitycheck ");
   if (returnmxcheck) logstring(2,"returnmxcheck ");
@@ -780,7 +787,7 @@ void smtp_ehlo(arg) char *arg;
   out("250-DATAZ\r\n");
 #endif
 #ifdef TLS_SMTPD
-  if (!ssl)
+  if (!ssl && sslenabled)
     out("250-STARTTLS\r\n");
 #endif
 #ifdef TLS_SMTPD
@@ -1560,6 +1567,11 @@ RSA *tmp_rsa_cb(ssl,export,keylength) SSL *ssl; int export; int keylength;
 void smtp_tls(arg) char *arg; 
 {
   SSL_CTX *ctx;
+
+  if (!sslenabled) {
+    err_unimpl();
+    return;
+  }
 
   if (*arg)
   {
