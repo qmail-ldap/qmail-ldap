@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/09/09 20:15:08 $)
+RELEASE: current ($Date: 2003/09/10 07:54:29 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -709,6 +709,18 @@ SANITYCHECK
  Example: "" (any value will do)
  Note: Rejects stuff which you probably don't want on your mailserver
        because it's highly likely that it'll bounce later.
+
+550GREETING
+
+ Rejects a connection right away with an 550 in the greeting line and
+ closes the connection.
+ Default: off
+ Affects: qmail-smtpd
+ Example: ""
+ Example: "Go away!"
+ Note: You can set this in tcpserver if you want to reject messages from
+       an ip address permanently. If no string is given it will default
+       to "your message has been administratively denied".
 
 SMTP550DISCONNECT
 

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/09 20:09:03 $ ($Revision: 1.118 $)
+RELEASE: $Date: 2003/09/10 07:54:29 $ ($Revision: 1.119 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -21,6 +21,10 @@ NEWS for current stuff:
  smtp recipient verify.
 
  smtp sender verify.
+
+ 550greeting to reject smtp connections right away in the smtp
+ greeting message. Use this to permanently reject all messages coming
+ from a particular ip address.
 
  smtpclustercookie feature for large smtp MX clusters behind load
  balancers or NAT devices. The cookie is presentented in the smtp

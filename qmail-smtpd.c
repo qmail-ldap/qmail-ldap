@@ -173,6 +173,7 @@ void smtp_greet(code) char *code;
   substdio_puts(&ssout,me.s);
   substdio_puts(&ssout," ESMTP ");
   substdio_put(&ssout,greeting.s,greeting.len);
+  substdio_puts(&ssout," ");
   substdio_put(&ssout,cookie.s,cookie.len);
   out("\r\n");
 }
@@ -180,7 +181,9 @@ void smtp_line(code) char *code;
 {
   substdio_puts(&ssout,code);
   substdio_puts(&ssout,me.s);
+  substdio_puts(&ssout," ");
   substdio_put(&ssout,greeting.s,greeting.len);
+  out("\r\n");
 }
 void smtp_help()
 {
@@ -190,7 +193,7 @@ void smtp_help()
 }
 void smtp_quit()
 {
-  smtp_line("221 "); out("\r\n");
+  smtp_line("221 ");
   logline(3,"quit, closing connection");
   flush(); _exit(0);
 }
@@ -206,7 +209,7 @@ char *remoteinfo;
 char *local;
 char *relayclient;
 char *relayok;
-char *denymail;
+char *550greeting;
 int  spamflag = 0;
 
 stralloc helohost = {0};
@@ -266,7 +269,7 @@ void setup()
     die_control();
   if (stralloc_0(&me)) die_nomem();
 
-  if (control_rldef(&greeting,"control/smtpgreeting",1,(char *) 0) != 1)
+  if (control_readline(&greeting,"control/smtpgreeting") == -1)
     die_control();
 
   if (control_readline(&cookie,"control/smtpclustercookie") == -1)
@@ -343,6 +346,7 @@ void setup()
   }
   if (env_get("RCPTCHECK")) rcptcheck = 1;
   if (env_get("LDAPSOFTOK")) ldapsoftok = 1;
+  550greeting = env_get("550GREETING");
   relayok = relayclient = env_get("RELAYCLIENT");
 
 #ifdef SMTPEXECCHECK
@@ -373,6 +377,7 @@ void setup()
 
   logpid(2);
   logstring(2, "enabled options: ");
+  if (550greeting) logstring(2,"550greeting");
   if (relayclient) logstring(2,"relayclient ");
   if (sanitycheck) logstring(2,"sanitycheck ");
   if (returnmxcheck) logstring(2,"returnmxcheck ");
@@ -671,7 +676,7 @@ int relayprobe() /* relay probes trying stupid old sendwhale bugs */
 
 void smtp_helo(arg) char *arg;
 {
-  smtp_line("250 "); out("\r\n");
+  smtp_line("250 ");
   seenmail = 0; dohelo(arg);
   logpid(3); logstring(3,"remote helo: "); logstring(3,arg); logflush(3);
 }
@@ -679,7 +684,7 @@ void smtp_helo(arg) char *arg;
 char smtpsize[FMT_ULONG];
 void smtp_ehlo(arg) char *arg;
 {
-  smtp_line("250-"); out("\r\n");
+  smtp_line("250-");
   out("250-PIPELINING\r\n");
   smtpsize[fmt_ulong(smtpsize,(unsigned long) databytes)] = 0;
   out("250-SIZE "); out(smtpsize); out("\r\n");
@@ -1437,6 +1442,14 @@ void main()
   if (chdir(auto_qmail) == -1) die_control();
   setup();
   if (ipme_init() != 1) die_ipme();
+  if (550greeting)
+  {
+    stralloc_copys(&greeting,550greeting);
+    if (!greeting.len)
+      stralloc_copys(&greeting,"sorry, your mail was administratively denied. (#5.7.1)");
+    smtp_line("553 ");
+    err_quit();
+  }
   smtp_greet("220 ");
   if (commands(&ssin,&smtpcommands) == 0) die_read();
   die_nomem();
