@@ -181,7 +181,7 @@ register int len;
 
 #ifdef QLDAP_CLUSTER
 /* declaration of the mail forwarder function */
-void forward_mail(char *host, stralloc *to, char* from, int fdmess);
+void forward_mail(char *host, stralloc *to, char *from, int fdmess);
 #endif
 
 /* read the various LDAP control files */
@@ -432,18 +432,18 @@ int len;
          substdio_puts(ss, "ZConfiguration file ~control/ldapmessagestore does not end with an / or is empty. (LDAP-ERR #237)\n");
       REPORT_RETURN;
 		
-		case 238:
-			substdio_puts(ss, "ZAACK: qmail-qmqpc (as mail forwarder) crashed (LDAP-ERR #238)\n");
-		REPORT_RETURN;
+      case 238:
+	 substdio_puts(ss, "ZAACK: qmail-qmqpc (as mail forwarder) crashed (LDAP-ERR #238)\n");
+      REPORT_RETURN;
 
 #ifdef QLDAP_CLUSTER
-		case 239:
-			substdio_puts(ss, "ZTemporary error in qmail-qmqpc (as mail forwarder) (LDAP-ERR #239)\n");
-		REPORT_RETURN;
+      case 239:
+	 substdio_puts(ss, "ZTemporary error in qmail-qmqpc (as mail forwarder) (LDAP-ERR #239)\n");
+      REPORT_RETURN;
 		
-		case 240:
-			substdio_puts(ss, "DPermanet error in qmail-qmqpc (as mail forwarder) (LDAP-ERR #240)\n");
-		REPORT_RETURN;
+      case 240:
+         substdio_puts(ss, "DPermanet error in qmail-qmqpc (as mail forwarder) (LDAP-ERR #240)\n");
+      REPORT_RETURN;
 #endif /* QLDAP_CLUSTER */
 #endif /* end -- report LDAP errors */
 
@@ -483,7 +483,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
                                 LDAP_MODE,
                                 LDAP_REPLYTEXT,
                                 LDAP_DOTMODE,
-										  LDAP_MAILHOST,
+				LDAP_MAILHOST,
                                 LDAP_ISACTIVE, NULL };
 
    int            version, at,
