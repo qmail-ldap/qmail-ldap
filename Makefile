@@ -1237,7 +1237,7 @@ compile qldap-errno.c qldap-errno.h error.h
 
 qldap-ldaplib.o: \
 compile qmail-ldap.h qldap-errno.h qldap-ldaplib.h alloc.h stralloc.h \
-error.h control.h auto_qmail.h str.h qldap-ldaplib.c byte.h
+error.h control.h auto_qmail.h str.h qldap-ldaplib.c byte.h fmt.h
 	./compile $(LDAPFLAGS) $(LDAPINCLUDES) $(DEBUG) qldap-ldaplib.c
 
 qldap-mdm.o: \

@@ -85,6 +85,7 @@ int main(int argc, char **argv)
 							 LDAP_ISACTIVE,
 							 LDAP_MAILHOST,
 							 LDAP_MAILSTORE,
+							 LDAP_HOMEDIR,
 							 LDAP_QUOTA, /* the last 6 are extra infos */
 							 LDAP_MAIL,
 							 LDAP_MAILALTERNATE,
@@ -119,12 +120,13 @@ int main(int argc, char **argv)
 	
 	output( "init_ldap:\tpasswords are %scompared via rebind\n",
 			rebind?"":"not ");
-	output( "\t\t\tlocaldelivery:\t%s\n\t\tclustering:\t%s\n",
+	output( "\t\tlocaldelivery:\t%s\n\t\tclustering:\t%s\n",
 			locald?"on":"off", cluster?"on":"off");
-	output( "\t\t\thomedirmaker:\t%s\n", homemaker.s);
-	output( "\t\t\tdefaultDotMode:\t%s\n", defdot.s);
-	output( "\t\t\tdefaultQuota:\t%s\n", defquota.s);
-	output( "\t\t\tQuotaWarning:\n%s\n", quotawarning.s);
+	output( "\t\thomedirmaker:\t%s\n", homemaker.len?homemaker.s:"undefined");
+	output( "\t\tdefaultDotMode:\t%s\n", defdot.s);
+	output( "\t\tdefaultQuota:\t%s\n", defquota.s);
+	output( "\t\tQuotaWarning:\n------\n%s\n------\n", 
+			quotawarning.len?quotawarning.s:"undefined");
 
 	/* initalize the different objects */
 	extra[9].what = 0; /* end marker for extra info */
@@ -212,10 +214,16 @@ int main(int argc, char **argv)
 			info.status==STATUS_BOUNCE?ISACTIVE_BOUNCE:
 			info.status==STATUS_NOPOP?ISACTIVE_NOPOP:
 			info.status==STATUS_OK?ISACTIVE_ACTIVE:"undefined");
+
 	output( "\t\t%s: %s\n", LDAP_MAILSTORE, info.mms);
 	if ( !chck_paths(info.mms) ) {
 		output( "\tWARNING %s contains illegal chars!\n", LDAP_MAILSTORE);
 	}
+	output( "\t\t%s: %s\n", LDAP_HOMEDIR, info.homedir);
+	if ( !chck_paths(info.homedir) ) {
+		output( "\tWARNING %s contains illegal chars!\n", LDAP_HOMEDIR);
+	}
+
 	output( "\t\t%s: %s\n", LDAP_MAILHOST, info.host);
 	if ( cluster && info.host && str_diff(qldap_me.s, info.host) ) {
 		/* hostname is different, so I would reconnect */
@@ -227,6 +235,7 @@ int main(int argc, char **argv)
 	alloc_free(info.uid);
 	alloc_free(info.gid);
 	alloc_free(info.mms);
+	alloc_free(info.homedir);
 	alloc_free(info.host);
 	
 	for ( i = 0; extra[i].what != 0; i++ ) {
@@ -234,8 +243,9 @@ int main(int argc, char **argv)
 			output( "\t\t%s: %s\n", extra[i].what, extra[i].vals[0]);
 			for ( j = 1; extra[i].vals[j] != 0; j++ ) {
 				output( "\t\t\t\t %s\n", extra[i].vals[j]);
-				if ( i == 4 && !chck_progs(extra[i].vals) ) { 
-					output( "\tWARNING %s contains illegal chars!\n", LDAP_PROGRAM);
+				if ( i == 4 && !chck_progs(extra[i].vals[j]) ) { 
+					output( "\tWARNING %s contains illegal chars!\n", 
+							LDAP_PROGRAM);
 				}
 			}
 			ldap_value_free(extra[i].vals);

@@ -278,23 +278,24 @@ void main()
 
 
   substdio_puts(subfdout,"\nnow the qmail-ldap specific files\n");
+  do_str("ldapserver",0,"undefined! Uh-oh","My LDAP Server is ");
   do_str("ldapbasedn",0,"NULL","LDAP basedn: ");
   do_str("ldaplogin",0,"NULL","LDAP login: ");
   do_str("ldappassword",0,"NULL","LDAP password: ");
+  do_str("ldapuid",0,"not defined","Default UID is: ");
+  do_str("ldapgid",0,"not defined","Default GID is: ");
+  do_str("ldapmessagestore",0,"not defined","Prefix for non absolute paths: ");
+  do_str("ldapdefaultdotmode",0,"not defined","Default dot mode for ldap users: ");
+  do_str("ldapdefaultquota",0,"not defined","Default quota for ldap users: ");
+  do_str("dirmaker",0,"not defined","Location of programm to create homedirs: ");
   do_int("ldaplocaldelivery","1","local passwd lookup is "," (1 = on, 0 = off)");
   do_int("ldaprebind","0","ldap rebinding is "," (1 = on, 0 = off)");
   do_int("ldapcluster","0","clustering is "," (1 = on, 0 = off)");
-  do_str("ldapdefaultquota",0,"not defined","Default quota for ldap users: ");
-  do_str("ldapdefaultdotmode",0,"not defined","Default dot mode for ldap users: ");
-  do_str("ldapmessagestore",0,"not defined","Prefix for non absolute paths: ");
-  do_str("ldapuid",0,"not defined","Default UID is: ");
-  do_str("ldapgid",0,"not defined","Default GID is: ");
-  do_lst("custombouncetext","No custombouncetext.","","");
   do_lst("quotawarning","No quotawarning.","","");
+  do_lst("custombouncetext","No custombouncetext.","","");
   do_int("tarpitcount","0",""," RCPT TOs are accepted before tarpitting (0 = off)");
   do_int("tarpitdelay","5",""," seconds of delay to introduce after each subsequent RCPT TO");
   do_lst("badrcptto","Any RCPT TO is allowed.",""," not accepted in RCPT TO");
-  do_str("dirmaker",0,"not defined","Location of programm to create homedirs: ");
   substdio_puts(subfdout,"\n");
   
   

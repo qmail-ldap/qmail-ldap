@@ -47,11 +47,14 @@
  */
 
 #include <sys/types.h>
-#include <sys/param.h>
-#include <netinet/in.h>
+//#include <sys/param.h>
+//#include <netinet/in.h>
 
 #include <ctype.h>
-#include <stdio.h>
+//#include <stdio.h>
+#ifndef NULL
+#define NULL (void*) 0
+#endif
 
 #define Assert(Cond) if (!(Cond)) abort()
 
@@ -275,7 +278,7 @@ b64_pton(src, target, targsize)
 
 		case 2:		/* Valid, means one byte of info */
 			/* Skip any number of spaces. */
-			for (NULL; ch != '\0'; ch = *src++)
+			for (; ch != '\0'; ch = *src++)
 				if (!isspace(ch))
 					break;
 			/* Make sure there is another trailing = sign. */
@@ -290,7 +293,7 @@ b64_pton(src, target, targsize)
 			 * We know this char is an =.  Is there anything but
 			 * whitespace after it?
 			 */
-			for (NULL; ch != '\0'; ch = *src++)
+			for (; ch != '\0'; ch = *src++)
 				if (!isspace(ch))
 					return (-1);
 

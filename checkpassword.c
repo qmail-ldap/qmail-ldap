@@ -52,7 +52,8 @@ static int check_ldap(stralloc *login,
 	   				  stralloc *authdata,
 					  unsigned long *uid,
 					  unsigned long *gid,
-					  stralloc *home);
+					  stralloc *home,
+					  stralloc *maildir);
 
 static int check_passwd(stralloc *login,
 	   					stralloc *authdata,
@@ -97,7 +98,7 @@ void main(int argc, char **argv)
 	debug(64, "init_ldap: ld=%i, cluster=%i, rebind=%i, hdm=%s\n", 
 			locald, cluster, rebind, homemaker.s);
 	
-	if ( check_ldap(&login, &authdata, &uid, &gid, &home) ) {
+	if ( check_ldap(&login, &authdata, &uid, &gid, &home, &maildir) ) {
 		debug(16, "authentication with ldap was not successful\n");
 		if ( locald == 1 && qldap_errno == LDAP_NOSUCH ) {
 			debug(16, "trying to authenticate with the local passwd db\n");
@@ -114,7 +115,7 @@ void main(int argc, char **argv)
 }
 
 int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid, 
-			   unsigned long *gid, stralloc *home)
+			   unsigned long *gid, stralloc *home, stralloc *maildir)
 {
 	userinfo	info;
 	extrainfo	extra[2];
@@ -127,6 +128,7 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 							 LDAP_ISACTIVE,
 							 LDAP_MAILHOST,
 							 LDAP_MAILSTORE,
+							 LDAP_HOMEDIR,
 							 LDAP_PASSWD, 0 }; /* passwd is extra */
 
 	/* initalize the different info objects */
@@ -174,22 +176,45 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 
 	scan_ulong(info.uid, uid);	/* get uid, gid and home */
 	scan_ulong(info.gid, gid);	/* the values are checked later */
-	if ( ! stralloc_copys(home, info.mms) ) {	/* ... the same for the path */
-		qldap_errno = ERRNO;
-		return -1;
+	if ( info.mms == 0 && info.homedir == 0 ) {
+		qldap_errno = AUTH_FAILD;
+		return -1; /* user authentification faild no homedir defined */
 	}
-	/* lets check the home path for his correctnes (special chars) because 
-	 * the ldap-server could be returning fake entries (modified by a "hacker") 
-	 * There is still the possibility that one customer changes his 
-	 * mailmessagestore to point to an other user/customer so don't let 
-	 * user/customer modifiy the mailmassagestore, uid, qmailUID, 
-	 * qmailGID ... */
+	if ( info.homedir ) {
+		if ( ! stralloc_copys(home, info.homedir) ) {
+			qldap_errno = ERRNO;
+			return -1;
+		}
+		if ( info.mms ) {
+			if ( ! stralloc_copys(maildir, info.mms) ) {
+				qldap_errno = ERRNO;
+				return -1;
+			}
+			/* XXX have a look at check.c and qmail-ldap.h for chck_pathb */
+			if ( !chck_pathb(maildir->s,maildir->len) ) {
+				debug(2, "warning: check_ldap: path contains illegal chars!\n");
+				qldap_errno = ILL_PATH;
+				return -1;
+			}
+		}
+		
+	} else {
+		if ( ! stralloc_copys(home, info.mms) ) {
+			qldap_errno = ERRNO;
+			return -1;
+		}
+	}
+	/* XXX have a look at check.c and qmail-ldap.h for chck_pathb */
 	if ( !chck_pathb(home->s,home->len) ) {
 		debug(2, "warning: check_ldap: path contains illegal chars!\n");
 		qldap_errno = ILL_PATH;
 		return -1;
 	}
 	if (!stralloc_0(home) ) {
+		qldap_errno = ERRNO;
+		return -1;
+	}
+	if (!stralloc_0(maildir) ) {
 		qldap_errno = ERRNO;
 		return -1;
 	}

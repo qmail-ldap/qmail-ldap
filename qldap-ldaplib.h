@@ -4,12 +4,13 @@
 #include "stralloc.h"
 
 typedef struct userinfo_t {
+	int		status;
 	char	*user;
 	char	*uid;
 	char	*gid;
 	char	*mms;
+	char	*homedir;
 	char	*host;
-	int		status;
 } userinfo;
 
 typedef struct extrainfo_t {

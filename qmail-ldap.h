@@ -26,6 +26,10 @@
 /* 1 = restriced sanitycheck; 0 = less restriced sanitycheck */
 #define RESTRICT_PROG 1
 
+/* ALIASDEVNULL replacement for the std. aliasempty for user with
+ * neither homeDirectory nor mailMessageStore defined */
+#define ALIASDEVNULL "/dev/null"
+
 /*********************************************************************
         ldap variables used in qmail-lspawn and checkpassword
 *********************************************************************/
@@ -34,6 +38,7 @@
 #define LDAP_QMAILUID		"qmailUID"
 #define LDAP_QMAILGID		"qmailGID"
 #define LDAP_MAILSTORE		"mailMessageStore"
+#define LDAP_HOMEDIR		"homeDirectory"
 #define LDAP_QUOTA			"mailQuota"
 #define LDAP_FORWARDS		"mailForwardingAddress"
 #define LDAP_PROGRAM		"deliveryProgramPath"

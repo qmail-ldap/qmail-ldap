@@ -323,6 +323,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
                       LDAP_ISACTIVE,
                       LDAP_MAILHOST,
                       LDAP_MAILSTORE,
+                      LDAP_HOMEDIR,
                       LDAP_QUOTA, /* the last 6 are extra infos */
                       LDAP_FORWARDS,
                       LDAP_PROGRAM,
@@ -395,8 +396,9 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
 
    /* go through the attributes and set the proper args for qmail-local  *
     * this can probably done with some sort of loop, but hey, how cares? */
-   debug(32, "found: user='%s' uid=%s gid=%s mms='%s' host='%s' status=%i\n",
-              info.user, info.uid, info.gid, info.mms, info.host, info.status);
+   debug(32, "found: user='%s' uid=%s gid=%s homedir='%s' mms='%s' host='%s' status=%i\n", 
+		   info.user, info.uid, info.gid, info.homedir, 
+		   info.mms, info.host, info.status);
 
    /* check if the ldap entry is active */
    if ( info.status == STATUS_BOUNCE ) {
@@ -434,10 +436,30 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    alloc_free(info.gid);
 
    /* get the path of the maildir or mbox */
-   if (!chck_paths(info.mms) ) return 23;
-   if (!stralloc_cats(&nughde, info.mms)) _exit(QLX_NOMEM);
+   if ( info.homedir ) {
+      if (!chck_paths(info.homedir) ) return 23;
+      if (!stralloc_cats(&nughde, info.homedir)) _exit(QLX_NOMEM);
+      alloc_free(info.homedir);
+	  if ( info.mms ) {
+         if (!chck_paths(info.mms) ) return 23;
+         aliasempty = info.mms;
+	  }
+   } else if ( info.mms ) {
+      if (!chck_paths(info.mms) ) return 23;
+      if (!stralloc_cats(&nughde, info.mms)) _exit(QLX_NOMEM);
+      alloc_free(info.mms);
+   } else {
+      /* XXX nothing defined use ~alias as home and 
+       * XXX ALIASDEVNULL as aliasempty */
+      struct passwd *pw;
+      pw = getpwnam(auto_usera);
+      if (!pw) {
+         _exit(QLX_NOALIAS);
+      }
+      if (!stralloc_cats(&nughde, pw->pw_dir)) _exit(QLX_NOMEM);      
+      aliasempty = ALIASDEVNULL;
+   }
    if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
-   alloc_free(info.mms);
 
    /* At the moment we ignore the dash-field and the extension field *
     * so we fill up the nughde structure with '\0'                   */

@@ -1,5 +1,6 @@
 #include "qmail-ldap.h"
 #include "check.h"
+#include "str.h"
 
 extern unsigned char testvektor[128];
 
@@ -153,7 +154,7 @@ unsigned char testvektor[128] = {
 	/* 61	'='			*/	ALLOW_PROG|ALLOW_PATH,
 	/* 62	'>'			*/	ALLOW_PROG&PARANOIA,
 	/* 63	'?'			*/	ALLOW_PROG&PARANOIA,
-	/* 64	'@'			*/	ALLOW_USER|ALLOW_PATH|ALLOW_PROG&PARANOIA, /*XXX*/
+	/* 64	'@'			*/	ALLOW_USER|ALLOW_PATH|ALLOW_PROG, /*XXX*/
 	/* 65	'A'			*/	ALLOW_ALL,
 	/* 66	'B'			*/	ALLOW_ALL,
 	/* 67	'C'			*/	ALLOW_ALL,
