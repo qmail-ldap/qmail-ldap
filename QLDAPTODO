@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/09/03 22:11:09 $ ($Revision: 1.18 $)
+RELEASE: $Date: 2001/09/22 16:12:46 $ ($Revision: 1.19 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -26,18 +26,20 @@ planned - make it possible to have locals and rcpthosts in ldap
 
 
 ALSO ON THE LIST: (priority list ???)
+- force to alias if only mail and mailforwardingaddress is set (no uid).
 - enhancement to debug code (almost done)
 - benchmarking the code
 - test what happens if only uid and mail is defiend in ldap or similar uncommon
   cases (seems to be no problem, or?)
 - add better documentation. (man files)
 - make the current code rock solid (even if it is not perfect)
-- clean up and strip of the digest_*.c files so that it get more platform
-  independent.  Target is to remove the "ugly" compatibility.h (DONE)
+- better TLS support (better written??) (tls for pop???)
+- SMTP-after-POP/IMAP and SMTP_AUTH
 - make the complete lookup code modular so that it should be possible to add 
   diffrent backends.
   It should also be so flexible that other auth services (smtp-auth/SASL) 
   are possible without rewriting to much.
 - use connectionless ldap for lookups (done some work but it seems that the
-  udp support of slapd is just unusable, have to wait)
+  udp support of slapd is just unusable, have to wait). Other possibility is
+  ldap over a local socket...
 

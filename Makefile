@@ -4,6 +4,8 @@
 # -DLDAP_ESCAPE_BUG should be added as long as the ldap servers have 
 # problems with the escapeing of LDAP filters (fixed with OpenLDAP 1.2.7)
 # -DQLDAP_CLUSTER for enabling cluster support
+# to enable the dash_ext patch for extended mail addresses add
+# -DDASH_EXT to the LDAPFLAGS
 # to use cleartext passwords (a bad idea on production systems) add
 # -DCLEARTEXTPASSWD to the LDAPFLAGS
 #LDAPFLAGS=-DQLDAP_CLUSTER
@@ -12,8 +14,8 @@
 LDAPLIBS=-L/usr/local/lib -lldap -llber
 # and change the location of the include files here
 LDAPINCLUDES=-I/usr/local/include
-# on Slowaris you need -lresolv added like this:
-#LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber -lresolv
+# on Slowaris you need -lresolv and probably a LD_RUN_PATH added like this:
+#LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber -lresolv -R/opt/OpenLDAP/lib
 # for example on my Linux box I use:
 #LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
 # if you need a special include-directory for ldap headers enable this
@@ -1391,18 +1393,18 @@ qmail-ldaplookup: \
 load qmail-ldaplookup.o stralloc.a error.a qldap-ldaplib.o qldap-debug.o \
 qldap-errno.o str.a alloc.a check.o control.o env.a fs.a open.a \
 base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-auto_qmail.o getln.a substdio.a strerr.a output.o
+auto_qmail.o getln.a substdio.a strerr.a output.o getopt.a auto_break.o
 	./load qmail-ldaplookup qldap-ldaplib.o  control.o error.a \
 	getln.a stralloc.a qldap-debug.o output.o qldap-errno.o check.o fs.a \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-	open.a env.a strerr.a substdio.a str.a alloc.a \
-	auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS)
+	open.a env.a getopt.a strerr.a substdio.a str.a alloc.a \
+	auto_qmail.o auto_break.o $(LDAPLIBS) $(SHADOWLIBS)
 
 qmail-ldaplookup.o: \
 compile qmail-ldaplookup.c qmail-ldap.h qldap-errno.h stralloc.h \
 alloc.h error.h str.h qldap-debug.h qldap-ldaplib.h check.h substdio.h \
-fmt.h scan.h readwrite.h byte.h getln.h digest_md4.h \
-digest_md5.h digest_rmd160.h digest_sha1.h open.h 
+fmt.h scan.h readwrite.h byte.h getln.h digest_md4.h auto_qmail.h \
+digest_md5.h digest_rmd160.h digest_sha1.h open.h uint32.h auto_break.h
 	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(DEBUG) qmail-ldaplookup.c
 
 qmail-lspawn: \
@@ -1410,12 +1412,12 @@ load qmail-lspawn.o spawn.o prot.o slurpclose.o coe.o control.o check.o \
 sig.a strerr.a getln.a wait.a case.a cdb.a fd.a open.a stralloc.a \
 alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_uids.o \
 auto_spawn.o auto_usera.o env.a qldap-ldaplib.o qldap-debug.o \
-qldap-errno.o seek.a output.o
+qldap-errno.o seek.a output.o auto_break.o
 	./load qmail-lspawn spawn.o prot.o slurpclose.o coe.o control.o \
 	check.o qldap-ldaplib.o qldap-debug.o output.o sig.a strerr.a getln.a \
 	wait.a case.a cdb.a fd.a seek.a open.a env.a stralloc.a alloc.a \
 	substdio.a str.a qldap-errno.o error.a fs.a auto_qmail.o \
-	auto_uids.o auto_usera.o auto_spawn.o $(LDAPLIBS)
+	auto_uids.o auto_usera.o auto_spawn.o auto_break.o $(LDAPLIBS)
 
 qmail-lspawn.0: \
 qmail-lspawn.8
@@ -1426,7 +1428,7 @@ compile qmail-lspawn.c fd.h wait.h prot.h substdio.h stralloc.h \
 gen_alloc.h scan.h exit.h fork.h error.h cdb.h uint32.h case.h \
 slurpclose.h auto_qmail.h auto_uids.h qlx.h qmail-ldap.h check.h \
 qldap-ldaplib.h qldap-errno.h qldap-debug.h env.h auto_usera.h \
-auto_uids.h fmt.h sig.h seek.h 
+auto_uids.h fmt.h sig.h seek.h auto_break.h
 	./compile $(LDAPFLAGS) $(HDIRMAKE) $(LDAPINCLUDES) $(DEBUG) qmail-lspawn.c
 
 qmail-newmrh: \
@@ -2137,7 +2139,7 @@ compile chkspawn spawn.c sig.h wait.h substdio.h byte.h str.h \
 stralloc.h gen_alloc.h select.h exit.h coe.h open.h error.h \
 auto_qmail.h auto_uids.h auto_spawn.h
 	./chkspawn
-	./compile spawn.c
+	./compile $(DEBUG) spawn.c
 
 splogger: \
 load splogger.o substdio.a error.a str.a fs.a syslog.lib socket.lib

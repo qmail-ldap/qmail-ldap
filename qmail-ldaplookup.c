@@ -22,8 +22,9 @@
 #include "digest_rmd160.h"
 #include "digest_sha1.h"
 #include "open.h"
-
-#include <stdarg.h>
+#include "sgetopt.h"
+#include "env.h"
+#include "auto_break.h"
 
 /* Edit the first lines in the Makefile to enable local passwd lookups 
  * and debug options.
@@ -40,7 +41,7 @@
 #include <userpw.h>
 #endif
 
-typedef enum mode_d { uid, mail} mode_d;
+typedef enum mode_d { unset=0, uid, mail} mode_d;
 
 extern stralloc qldap_me;
 extern stralloc qldap_objectclass;
@@ -64,60 +65,81 @@ char buffer[LEN];
 
 static int cmp_passwd(unsigned char *clear, char *encrypted);
 static void local_lookup(char *username, char *passwd);
+int create_mail_filter();
+int create_uid_filter();
 
 void usage() 
 {
-	output(&ssout, "qmail-ldaplookup: usage qmail-ldaplookup {-u uid | -m mail}\n");
-	_exit(1);
+	output(&ssout, "usage: qmail-ldaplookup [-d level] {-u uid [-p passwd] | -m mail}\n", optprogname);
+	output(&ssout, "\t-d level:\tsets log-level to level\n\
+\t-u uid: \tsearch for user id uid (pop3/imap lookup)\n\
+\t-p passwd:\tpassword for user id lookups (XXX only root)\n\
+\t-m mail:\tlookup the mailaddress\n");
+			_exit(1);
 }
 
 int main(int argc, char **argv)
 {
-	mode_d mode;
+	mode_d mode = unset;
 	userinfo	info;
 	extrainfo	extra[10];
 	searchinfo	search;
 	int			ret, i, j;
 	unsigned long tid;
-	char		*attrs[] = { LDAP_UID, /* the first 6 attrs are default */
-							 LDAP_QMAILUID,
-							 LDAP_QMAILGID,
-							 LDAP_ISACTIVE,
-							 LDAP_MAILHOST,
-							 LDAP_MAILSTORE,
-							 LDAP_HOMEDIR,
-							 LDAP_QUOTA, /* the last 6 are extra infos */
-							 LDAP_MAIL,
-							 LDAP_MAILALTERNATE,
-							 LDAP_FORWARDS,
-							 LDAP_PROGRAM,
-							 LDAP_MODE,
-							 LDAP_REPLYTEXT,
-							 LDAP_DOTMODE,
-							 LDAP_PASSWD, 0 }; /* passwd is extra */
+	char		*attrs[] = { 
+							LDAP_UID, /* the first 6 attrs are default */
+							LDAP_QMAILUID,
+							LDAP_QMAILGID,
+							LDAP_ISACTIVE,
+							LDAP_MAILHOST,
+							LDAP_MAILSTORE,
+							LDAP_HOMEDIR,
+							LDAP_QUOTA, /* the last 6 are extra infos */
+							LDAP_MAIL,
+							LDAP_MAILALTERNATE,
+							LDAP_FORWARDS,
+							LDAP_PROGRAM,
+							LDAP_MODE,
+							LDAP_REPLYTEXT,
+							LDAP_DOTMODE,
+							LDAP_PASSWD, 0 }; /* passwd is extra */
+	char* passwd = 0;
+	int opt;
+	int done;
 
-	
-	log_init(STDERR, -1, 0);
+
 	substdio_fdbuf(&ssout, write, STDOUT, buffer, sizeof(buffer) );
-	
-	if (!argv[1] || !argv[2]) {
-		usage();
-	}
-	
-	if ( ! stralloc_copys(&value, argv[2]) ) {
-		strerr_die2x(1, "ERROR: ", error_str(errno));
-	}
-	if (!str_diff(argv[1], "-u") ) {
-		mode = uid;
-	} else if (!str_diff(argv[1], "-m") ) {
-		mode = mail;
-	} else usage();
-	
+
+	while ( ( opt = getopt(argc, argv, "d:u:m:p:") ) != opteof)
+		switch (opt) {
+			case 'd':
+				if ( env_put2("LOGLEVEL", optarg) == 0 )
+					strerr_die2x(1, "ERROR: setting loglevel", error_str(errno));
+				break;
+			case 'u':
+			case 'm':
+				if ( mode != unset ) usage();
+				mode = opt=='u'?uid:mail;
+				if ( ! stralloc_copys(&value, optarg) ) {
+					strerr_die2x(1, "ERROR: ", error_str(errno));
+				}
+				break;
+			case 'p':
+				if ( mode != uid ) usage();
+				passwd = optarg;
+				break;
+			default:
+				usage();
+		}
+	if ( argc != optind || mode == unset ) usage();
+
+	log_init(STDERR, -1, 0);
+
 	if ( init_ldap( &locald, &cluster, &rebind, &homemaker, &defdot, &defquota,
-					&quotawarning) == -1 ) {
+				&quotawarning) == -1 ) {
 		strerr_die2x(1, "ERROR: init_ldap failed: ", qldap_err_str(qldap_errno));
 	}
-	
+
 	output(&ssout, "init_ldap:\tpasswords are %scompared via rebind\n",
 			rebind?"":"not ");
 	output(&ssout, "\t\tlocaldelivery:\t %s\n\t\tclustering:\t %s\n",
@@ -131,19 +153,19 @@ int main(int argc, char **argv)
 
 	/* initalize the different objects */
 	extra[9].what = 0; /* end marker for extra info */
+	extra[0].what = LDAP_MAIL;
+	extra[1].what = LDAP_MAILALTERNATE;
 	extra[2].what = LDAP_QUOTA;
 	extra[3].what = LDAP_FORWARDS;
 	extra[4].what = LDAP_PROGRAM;
+	extra[5].what = LDAP_DOTMODE;
 	extra[6].what = LDAP_MODE;
 	extra[7].what = LDAP_REPLYTEXT;
-	extra[5].what = LDAP_DOTMODE;
-	extra[0].what = LDAP_MAIL;
-	extra[1].what = LDAP_MAILALTERNATE;
 	if ( mode == mail ) {
 		extra[8].what = 0; /* under mail lookups no passwords are compared */
 		attrs[15] = 0;
 		search.bindpw = 0; /* rebind off */
-	} else if (!argv[3] || rebind ) {
+	} else if (!passwd || rebind ) {
 		extra[8].what = 0; /* passwd lookup not needed */
 		attrs[15] = 0;
 		search.bindpw = 0; /* rebind off */
@@ -157,85 +179,47 @@ int main(int argc, char **argv)
 	if ( !escape_forldap(&value) ) {
 		strerr_die2x(1, "ERROR: escape_forldap failed: ", error_str(errno) );
 	}
-	if ( !stralloc_copys(&filter,"(") ) {
-		strerr_die2x(1, "ERROR: can not create a filter: ",
-				error_str(errno));
-	}
-	if ( mode == mail) {
-		/* build the search string for the email address */
-		if ( qldap_objectclass.len && (
-			 !stralloc_cats(&filter,"&(") ||
-			 !stralloc_cats(&filter,LDAP_OBJECTCLASS) ||
-			 !stralloc_cats(&filter,"=") ||
-			 !stralloc_cat(&filter,&qldap_objectclass) ||
-			 !stralloc_cats(&filter,")(") ) ) {
-			strerr_die2x(1, "ERROR: can not create a filter: ",
-				   error_str(errno));
-		}
-		if ( !stralloc_cats(&filter,"|(" ) ||
-			 !stralloc_cats(&filter, LDAP_MAIL ) || 
-			 !stralloc_cats(&filter, "=" ) ||
-			 !stralloc_cat(&filter,&value) ||
-			 !stralloc_cats(&filter,")(" ) || 
-			 !stralloc_cats(&filter,LDAP_MAILALTERNATE ) ||
-			 !stralloc_cats(&filter, "=") ||
-			 !stralloc_cat(&filter,&value) ||
-			 !stralloc_cats(&filter,"))") ) {
-			strerr_die2x(1, "ERROR: can not create a filter: ", 
-					error_str(errno));
-		}
-		if ( qldap_objectclass.len &&
-			 !stralloc_cats(&filter,")") ) {
-			strerr_die2x(1, "ERROR: can not create a filter: ",
-				   error_str(errno));
-		}
-		if ( !stralloc_0(&filter) ) {
-			strerr_die2x(1, "ERROR: can not create a filter: ",
-				   error_str(errno));
-		}
-	} else {
-		if ( qldap_objectclass.len && (
-			 !stralloc_cats(&filter,"&(" ) || 
-			 !stralloc_cats(&filter,LDAP_OBJECTCLASS) ||
-			 !stralloc_cats(&filter,"=") ||
-			 !stralloc_cat(&filter,&qldap_objectclass) ||
-			 !stralloc_cats(&filter,")(") ) ) {
-			strerr_die2x(1, "ERROR: can not create a filter: ",
-				   error_str(errno));
-		}
-		if ( !stralloc_cats(&filter, LDAP_UID) ||
-			 !stralloc_cats(&filter, "=") ||
-			 !stralloc_cat(&filter, &value) ||
-			 !stralloc_cats(&filter, ")") ) {
-			strerr_die2x(1, "ERROR: can not create a filter: ", 
-					error_str(errno));
-		}
-		if ( qldap_objectclass.len &&
-			 !stralloc_cats(&filter,")") ) {
-			strerr_die2x(1, "ERROR: can not create a filter: ",
-				   error_str(errno));
-		}
-		if ( !stralloc_0(&filter) ) {
-			strerr_die2x(1, "ERROR: can not create a filter: ",
-				   error_str(errno));
-		}
-	}
-	search.filter = filter.s;
-	output(&ssout, "ldap_lookup:\tsearching with %s\n", filter.s);
-	ret = ldap_lookup(&search, attrs, &info, extra);
-	if ( ret != 0 ) {
-		output(&ssout, "ERROR: ldap_lookup not successful: ", 
+
+	ret = qldap_open();
+	if ( ret != 0 ) 
+		strerr_die2x(1, "qldap_open:\tNOT successful: ", 
 				qldap_err_str(qldap_errno));
+
+	do {
+		if ( mode == mail )
+			done = create_mail_filter();
+		else
+			done = create_uid_filter();
+		
+		search.filter = filter.s;
+		output(&ssout, "qldap_lookup:\tsearching with %s\n", filter.s);
+		ret = qldap_lookup(&search, attrs, &info, extra);
+		if ( ret != 0 ) {
+			output(&ssout, "qldap_lookup:\tNOT successful: %s\n", 
+					qldap_err_str(qldap_errno));
+		} else {
+			output(&ssout, "qldap_lookup:\tsucceeded, found:\n");
+			break;
+		}
+	} while ( !done ) ;
+	qldap_close(); /* now close the ldap (TCP) connection */
+
+
+	if ( ret != 0 ) {
 		if ( mode == uid && locald ) {
 			output(&ssout, "Will try a local password lookup\n");
-			local_lookup(argv[2], argv[3]);
+			if ( !stralloc_0(&value) ) {
+				strerr_die2x(1, "ERROR: ",
+						error_str(errno));
+			}
+			local_lookup(value.s, passwd);
 		} else {
-			output(&ssout, "%s\n", mode!=uid?"only uid lookups can be local":
-									"localdelivery of so no local lookup");
+			output(&ssout, "%s\n", mode!=uid?"user not found giving up":
+					"localdelivery off, so no local lookup");
 			exit(111);
 		}
 	}
-	output(&ssout, "ldap_lookup:\tsucceeded, found:\n");
+
 	output(&ssout, "\t\t%s: %s\n", LDAP_UID, info.user);
 	if (!chck_users(info.user) ) {
 		output(&ssout, "\tWARNING %s contains illegal chars!\n", LDAP_UID);
@@ -280,7 +264,7 @@ int main(int argc, char **argv)
 	if (info.mms) alloc_free(info.mms);
 	if (info.homedir) alloc_free(info.homedir);
 	alloc_free(info.host);
-	
+
 	for ( i = 0; extra[i].what != 0; i++ ) {
 		if ( extra[i].vals != 0 ) {
 			output(&ssout, "\t\t%s: %s\n", extra[i].what, extra[i].vals[0]);
@@ -295,10 +279,11 @@ int main(int argc, char **argv)
 			output(&ssout, "\t\t%s: no entry in the database\n", extra[i].what);
 		}
 	}
-	
-	if ( mode == uid && argv[3] && !rebind ) {
-		ret = cmp_passwd((unsigned char *) argv[3], extra[8].vals[0] );
-		output(&ssout, "ldap_lookup:\tpassword compare was %s\n", 
+
+	if ( mode == uid && passwd && !rebind && 
+			extra[8].vals && extra[8].vals[0] ) {
+		ret = cmp_passwd((unsigned char *) passwd, extra[8].vals[0] );
+		output(&ssout, "qldap_lookup:\tpassword compare was %s\n", 
 				ret==0?"successful":"not successful");
 	}
 	/* now it's save to free the entries, thanks to Sascha Gresk for the indication */
@@ -306,6 +291,132 @@ int main(int argc, char **argv)
 		ldap_value_free(extra[i].vals);
 
 	return 0;
+}
+
+int create_mail_filter()
+{
+	static int at = 0;
+	static int i = 0;
+	char* s = value.s;
+	int len = value.len;
+
+	if ( at == 0 ) { /* first round */
+		for (at = len - 1; s[at] != '@' && at >= 0 ; at--) ; 
+		/* handels also mail with 2 @ */
+		/* at = index to last @ sign in mail address */
+		/* s = mailaddress, len = lenght of address */
+		/* i = position of current '-' */
+		if ( at == -1 ) {
+			strerr_die1x(1, "ERROR: invalid mailaddress: no '@' present"); 
+		}	
+		i = at;
+	}
+
+	/* this handles the "catch all" and "-default" extension */
+	/* but also the normal eMail address */
+
+	/* build the search string for the email address */
+	if (!stralloc_copys(&filter,"(" ) ) goto nomem;
+	/* optional objectclass */
+	if ( qldap_objectclass.len ) { 
+		if (!stralloc_cats(&filter,"&(")) goto nomem;
+		if (!stralloc_cats(&filter,LDAP_OBJECTCLASS)) goto nomem;
+		if (!stralloc_cats(&filter,"=")) goto nomem;
+		if (!stralloc_cat(&filter,&qldap_objectclass)) goto nomem;
+		if (!stralloc_cats(&filter,")(")) goto nomem;
+	} /* end */
+
+	/* mail address */
+	if (!stralloc_cats(&filter,"|(")) goto nomem;
+	if (!stralloc_cats(&filter,LDAP_MAIL)) goto nomem;
+	if (!stralloc_cats(&filter,"=")) goto nomem;
+	/* username till current '-' */
+	if (!stralloc_catb(&filter,s, i)) goto nomem;
+	if ( i != at ) { /* do not append catchall in the first round */
+		/* catchall or default */
+		if ( i != 0 ) /* add '-' */
+			if (!stralloc_cats(&filter,auto_break)) goto nomem;
+		if (!stralloc_cats(&filter,LDAP_CATCH_ALL)) goto nomem;
+	}
+	/* @damin.com */
+	if (!stralloc_catb(&filter,s+at, len-at)) goto nomem;
+
+	/* mailalternate address */
+	if (!stralloc_cats(&filter,")(")) goto nomem;
+	if (!stralloc_cats(&filter,LDAP_MAILALTERNATE)) goto nomem;
+	if (!stralloc_cats(&filter,"=")) goto nomem;
+	/* username till current '-' */
+	if (!stralloc_catb(&filter,s, i)) goto nomem;
+	if ( i != at ) { /* do not append catchall in the first round */
+		/* catchall or default */
+		if ( i != 0 ) /* add '-' */
+			if (!stralloc_cats(&filter,auto_break)) goto nomem;
+	if (!stralloc_cats(&filter,LDAP_CATCH_ALL)) goto nomem;
+	}
+	/* @damin.com */
+	if (!stralloc_catb(&filter,s+at, len-at)) goto nomem;
+	if (!stralloc_cats(&filter,"))")) goto nomem;
+
+	/* optional objectclass */
+	if ( qldap_objectclass.len ) { 
+		if (!stralloc_cats(&filter,")")) goto nomem;
+	} /* end */
+	if (!stralloc_0(&filter)) goto nomem;
+
+	if ( i == 0 ) return 1;
+
+	/* this is for the next turn */
+#ifdef DASH_EXT
+	/* XXX if mail starts with a - it will probably not work as expected */
+	while ( i != 0 ) {
+		i--;
+		if ( s[i] == *auto_break ) break;
+	}
+#else
+	/* normal qmial-ldap behavior test for username@domain.com and
+	   catchall@domain.com */
+	i = 0;
+#endif
+	return 0;
+
+nomem:
+	strerr_die2x(1, "ERROR: can not create a filter: ",
+			error_str(errno));
+	return 1; /* to make gcc happy */
+}
+
+int create_uid_filter()
+{
+	if ( !stralloc_copys(&filter,"(") ) {
+		strerr_die2x(1, "ERROR: can not create a filter: ",
+				error_str(errno));
+	}		
+	if ( qldap_objectclass.len && (
+		!stralloc_cats(&filter,"&(" ) || 
+		!stralloc_cats(&filter,LDAP_OBJECTCLASS) ||
+		!stralloc_cats(&filter,"=") ||
+		!stralloc_cat(&filter,&qldap_objectclass) ||
+		!stralloc_cats(&filter,")(") ) ) {
+		strerr_die2x(1, "ERROR: can not create a filter: ",
+				error_str(errno));
+	}
+	if ( !stralloc_cats(&filter, LDAP_UID) ||
+		!stralloc_cats(&filter, "=") ||
+		!stralloc_cat(&filter, &value) ||
+		!stralloc_cats(&filter, ")") ) {
+		strerr_die2x(1, "ERROR: can not create a filter: ", 
+				error_str(errno));
+	}
+	if ( qldap_objectclass.len &&
+		!stralloc_cats(&filter,")") ) {
+		strerr_die2x(1, "ERROR: can not create a filter: ",
+				error_str(errno));
+	}
+	if ( !stralloc_0(&filter) ) {
+		strerr_die2x(1, "ERROR: can not create a filter: ",
+				error_str(errno));
+	}
+	return 1;
 }
 
 static int get_local_maildir(stralloc *home, stralloc *maildir);
@@ -320,7 +431,7 @@ static void local_lookup(char *username, char *passwd)
 #ifdef AIX
 	struct userpw *spw;
 #endif
-	
+
 	pw = getpwnam(username);
 	if (!pw) {
 		/* XXX: unfortunately getpwnam() hides temporary errors */
@@ -348,13 +459,13 @@ static void local_lookup(char *username, char *passwd)
 		strerr_die2x(1, "ERROR: local_lookup: ", 
 				error_str(errno));
 	}
-	
+
 	if ( get_local_maildir(&home, &md) == -1 ) {
 		strerr_die2x(1, "ERROR: local_lookup: ", 
 				qldap_err_str(qldap_errno));
 	}
 	output(&ssout, "\t\tmaildir: %s (from ~/.qmail)\n", md.s);
-	
+
 	if ( !passwd ) {
 		output(&ssout, "No more information available\n");
 		_exit(0);
@@ -393,11 +504,11 @@ static void local_lookup(char *username, char *passwd)
 static int cmp_passwd(unsigned char *clear, char *encrypted)
 {
 #define HASH_LEN 100	/* XXX is this enough, I think yes */
-						/* What do you think ? */
+	/* What do you think ? */
 	char hashed[HASH_LEN]; /* these to buffers can not be used for exploits */
 	char salt[33];
 	int  shift;
-	
+
 	if (encrypted[0] == '{') { /* hashed */
 		if (!str_diffn("{crypt}", encrypted, 7) ) {
 			/* CRYPT */
@@ -457,8 +568,8 @@ static int cmp_passwd(unsigned char *clear, char *encrypted)
 #warning ___CLEARTEXT_PASSWORD_SUPPORT_IS_ON___
 			if (!*encrypted || str_diff(encrypted, clear) ) {
 #endif
-			qldap_errno = AUTH_FAILED;
-			return -1;
+				qldap_errno = AUTH_FAILED;
+				return -1;
 #ifdef CLEARTEXTPASSWD
 			}
 #endif
@@ -477,7 +588,7 @@ static int get_local_maildir(stralloc *home, stralloc *maildir)
 	char buf[512];
 	int match;
 	int fd;
-	
+
 	if ( ! stralloc_copy(&dotqmail, home) ) {
 		qldap_errno = ERRNO;
 		return -1;
@@ -490,7 +601,7 @@ static int get_local_maildir(stralloc *home, stralloc *maildir)
 		qldap_errno = ERRNO;
 		return -1;
 	}
-	
+
 	if ( ( fd = open_read(dotqmail.s) ) == -1 ) {
 		if ( errno == error_noent ) return 0;
 		qldap_errno = ERRNO;
@@ -502,13 +613,13 @@ static int get_local_maildir(stralloc *home, stralloc *maildir)
 		if (getln(&ss,&dotqmail,&match,'\n') != 0) goto tryclose;
 		if (!match && !dotqmail.len) break;
 		if ( (dotqmail.s[0] == '.' || dotqmail.s[0] == '/') && 
-			  dotqmail.s[dotqmail.len-2] == '/' ) { /* is a maildir line ? */
+				dotqmail.s[dotqmail.len-2] == '/' ) { /* is a maildir line ? */
 			if ( ! stralloc_copy(maildir, &dotqmail) ) goto tryclose;
 			maildir->s[maildir->len-1] = '\0';
 			break;
 		}		
 	}
-	
+
 	close(fd);
 	for (match = 0; match<512; buf[match++]=0 ) ; /* trust nobody */
 	return 0;

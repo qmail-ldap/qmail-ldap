@@ -159,11 +159,14 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	}
 	search.filter = filter.s;
 	
-	ret = ldap_lookup(&search, attrs, &info, extra);
+	if ( (ret = qldap_open() ) != -1 ) {
+		ret = qldap_lookup(&search, attrs, &info, extra);
+		qldap_close();
+	}
 	free_stralloc(&filter);	/* free the old filter */
 	if ( ret != 0 ) {
-		log(4, "warning: check_ldap: ldap_lookup not successful!\n");
-		/* qldap_errno set by ldap_lookup */
+		log(4, "warning: check_ldap: qldap_lookup not successful!\n");
+		/* qldap_errno set by qldap_lookup */
 		return -1;
 	}
 	/* check the status of the account !!! */
@@ -235,12 +238,12 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	
 	if ( rebind && search.bind_ok ) {
 		log(32, 
-			"check_ldap: ldap_lookup sucessfully authenticated with rebind\n");
+			"check_ldap: qldap_lookup sucessfully authenticated with rebind\n");
 		return 0; 
 		/* if we got till here under rebind mode, the user is authenticated */
 	} else if ( rebind ) {
 		log(32, 
-			"check_ldap: ldap_lookup authentication failed with rebind\n");
+			"check_ldap: qldap_lookup authentication failed with rebind\n");
 		qldap_errno = AUTH_FAILED;
 		return -1; /* user authentification failed */
 	}

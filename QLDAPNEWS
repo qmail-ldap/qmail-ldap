@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/09/06 14:01:33 $ ($Revision: 1.42 $)
+RELEASE: $Date: 2001/09/22 16:12:46 $ ($Revision: 1.43 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,29 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ added a variation of Henning Brauer's dash-ext patch. The main
+ difference is the way it handels the extensions.
+ Example lookup scheme:
+   aaaa-bbbb-cccc@domain.tld
+   aaaa-bbbb-CATCHALL@domain.tld
+   aaaa-CATCHALL@domain.tld
+   CATCHALL@domain.tld
+ where CATCHALL is replaced with the value of LDAP_CATCH_ALL defined
+ in qmail-ldap.h. If CATCHALL is set to "default" instead of the standart
+ "catchall" it is allmost stock qmails behaviour.
+ The dash-ext stuff can be turned on with the -DDASH_EXT option in Makefile.
+
+ some rewrite of qmail-ldaplookup. See qmail-ldaplookup -h.
+
+ Makefile bug fixed, spawn.c was compiled without -DDEBUG. Not in 0802i.
+
+ Changes in qldap-ldaplib.*:
+  added qldap_open to open the ldap connection
+  added qldap_close to close the ldap connection
+  renamed ldap_lookup to qldap_lookup
+ Now it is possible to use one ldap (TCP) connection for multiple queries, so
+ the connection overhead with DASH_EXT is drastically reduced.
 
  new debug/log handling. In qmail-lspawn the debug output is no 
  longer added to bounce mails.

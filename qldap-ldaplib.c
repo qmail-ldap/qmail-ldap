@@ -205,23 +205,18 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 	return 0;
 }
 
-int ldap_lookup(searchinfo *search, char **attrs, userinfo *info, 
-				extrainfo *extra)
-/* searches a db entry as specified in search, and fills up info and extra with
- * the coresponding db entries or NULL if not available.
- * Returns 0 if a entry was found, 1 if more than one or no corresponding entry
- * was found. On error it returns -1 and sets the appropriate qldap_errno. */
+static LDAP *ld;
+/* XXX THIS IS A UGLY HACK */
+
+int qldap_open(void)
+/* Open a connection to the ldap server */
+/* XXX THIS IS A UGLY HACK */
 {
-	LDAP *ld;
-	LDAPMessage *res, *msg;
-	char *dn;
 	int rc;
 	int version;
-	int num_entries;
-	struct timeval ldaptimeout = {0};
 
 #ifndef USE_CLDAP
-	log(128, "ldap_lookup: ");
+	log(128, "qldap_open: ");
 	/* allocate the connection */
 	if ( (ld = ldap_init(qldap_server.s,PORT_LDAP)) == 0 ) {
 		qldap_errno = LDAP_INIT;
@@ -262,6 +257,22 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		}
 	}
 	log(128, ", bind successful\n");
+	return 0;
+}
+
+
+int qldap_lookup(searchinfo *search, char **attrs, userinfo *info, 
+				extrainfo *extra)
+/* searches a db entry as specified in search, and fills up info and extra with
+ * the coresponding db entries or NULL if not available.
+ * Returns 0 if a entry was found, 1 if more than one or no corresponding entry
+ * was found. On error it returns -1 and sets the appropriate qldap_errno. */
+{
+	LDAPMessage *res, *msg;
+	char *dn;
+	int rc;
+	int num_entries;
+	struct timeval ldaptimeout = {0};
 
         /* set up the ldap search timeout */
         ldaptimeout.tv_sec = qldap_timeout;
@@ -270,7 +281,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	/* do the search for the login uid */
 	if ( (rc = ldap_search_st(ld, qldap_basedn.s, LDAP_SCOPE_SUBTREE,
 		search->filter, attrs, 0, &ldaptimeout, &res )) != LDAP_SUCCESS ) {
-		log(64, "ldap_lookup: search for %s failed (%s)\n", 
+		log(64, "qldap_lookup: search for %s failed (%s)\n", 
 				search->filter, ldap_err2string(rc) );
 
 		/* probably more detailed information should be returned, eg.:
@@ -298,7 +309,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		return -1;
 	}
 #else /* USE_CLDAP */
-	log(128, "ldap_lookup: ");
+	log(128, "qldap_lookup: ");
 	/* allocate the connection */
 	if ( (ld = cldap_open(qldap_server.s,PORT_LDAP)) == 0 ) {
 		qldap_errno = LDAP_INIT;
@@ -310,21 +321,21 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 					search->filter, attrs, 0, &res, qldap_user.s )) 
 					!= LDAP_SUCCESS )
 	{
-		log(64, "ldap_lookup: csearch for %s failed (%s)\n",
+		log(64, "qldap_lookup: csearch for %s failed (%s)\n",
 				search->filter, ldap_err2string(rc) );
 		qldap_errno = LDAP_SEARCH;
 		return -1;
 	}
 #endif
 
-	log(128, "ldap_lookup: search for %s succeeded\n", search->filter);
+	log(128, "qldap_lookup: search for %s succeeded\n", search->filter);
 	
 	/* go to the first entry */
 	msg = ldap_first_entry(ld,res);
 
 	/* count the results, we must have exactly one */
 	if ( (num_entries = ldap_count_entries(ld,msg)) != 1) {
-		log(64, "ldap_lookup: Too many (less) entries found (%i)\n", 
+		log(64, "qldap_lookup: Too many (less) entries found (%i)\n", 
 				num_entries);
 		if ( num_entries )
 			qldap_errno = LDAP_COUNT;
@@ -344,14 +355,14 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		/* do re-bind here */
 		if ( (rc = ldap_simple_bind_s(ld,dn,search->bindpw)) != LDAP_SUCCESS) {
 			alloc_free(dn);
-			log(64, "ldap_lookup: rebind with %s failed (%s)", 
+			log(64, "qldap_lookup: rebind with %s failed (%s)", 
 					dn, ldap_err2string(rc) );
 			search->bind_ok = 0;
 			qldap_errno = LDAP_REBIND;
 			return -1;
 		}
 		search->bind_ok = 1;
-		log(128, "ldap_lookup: rebind with %s succeeded", dn );
+		log(128, "qldap_lookup: rebind with %s succeeded", dn );
 	}
 	if ( dn != 0 ) alloc_free(dn);
 
@@ -367,13 +378,19 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	/* XXX we should also free msg and res */
 	/* ldap_msgfree(msg); */ /* with this I get segv's :-( don't ask me why */
 	ldap_msgfree(res);
+	return 0;
+}
+
+int qldap_close(void)
+/* Close a established ldap connection */
+/* XXX THIS IS A UGLY HACK */
+{
 #ifndef USE_CLDAP
 	ldap_unbind_s(ld);
 #else /* USE_CLDAP */
 	cldap_close(ld);
 #endif
 	return 0;
-
 }
 
 static int ldap_get_mms(char **mmsval, char **hdval, char **mms, char **homedir);

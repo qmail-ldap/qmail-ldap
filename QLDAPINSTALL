@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2001/09/03 22:11:09 $)
+RELEASE: current ($Date: 2001/09/22 16:12:46 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -24,6 +24,11 @@ NEWS:
  see QLDAPNEWS
 
 IMPORTANT NEWS:
+
+ new commandline options for qmail-ldaplookup
+
+ variation of Henning Brauer's dash_ext patch. See Section 5.3 and 
+ have a look at the QLDAPNEWS.
 
  new logging facilities for qmail-lspawn and auth_*
 
@@ -60,6 +65,7 @@ INSTALL:
    - LDAPFLAGS=-DQLDAP_CLUSTER (turns the cluster support on) +
                -DLDAP_ESCAPE_BUG (see NOTE) +
                -DCLEARTEXTPASSWD (for cleartext passwords in ldap, bad idea)
+               -DDASH_EXT (turn on dash_ext support see 5.3)
      NOTE: at the moment -DLDAP_ESCAPE_BUG is not defined, this should be
            added if your ldap server has problems with the escapeing of 
            LDAP filters (fixed as of OpenLDAP 1.2.8 and higher)
@@ -68,7 +74,7 @@ INSTALL:
      NOTE: on Solaris Systems you probably need also -lnsl -lsocket
            newer OpenLDAP libs my need also -lresolv (DNS support).
            It is also good to set the ld runpath with the -R switch
-           for more info man ld or man gcc.
+           for more info ld(1) or gcc(1).
    - LDAPINCLUDES: perhaps you need a special include-path for ldap
 
    - MNW=-DMAKE_NETSCAPE_WORK (turns on the patch that fixes the problem 
@@ -88,6 +94,19 @@ INSTALL:
    - TLS* stuff for TLS (SMTP encryption) mostly self explaining
 
 5.1 Have a look at qmail-ldap.h, perhaps you want to change something there.
+     LDAP_CATCH_ALL: used for catching mails for a specific domain.
+                     Also used for extension nameing with DASH_EXT.
+     QUOTA_WARNING_LEVEL: triger level for quotawarning in percent.
+     *ID_{MAX,MIN}:  upper and lower limit for uid's and gid's.
+     RESTRICT_PROG:  restrict delivery programm pathes to non special shell
+                     characters. See also next section 5.2
+     ALIASDEVNULL:   replacement for the std. aliasempty for user with
+                     neither homeDirectory nor mailMessageStore defined.
+     QLDAP_TIMEOUT:  Default ldap search timeout. In seconds.
+     LDAP_*:         Names of the ldap fields used for lookups.
+     DOTMODE_*:      Names for the different dot modes.
+     MODE_*:         Names for the different delivery modes.
+     ISACTIVE_*:     Names for the account status.
 
 5.2 Have a look at check.c if you want to change the ldap field check behaviour
     In the standart patch we check for this (in regexp form):
@@ -97,6 +116,18 @@ INSTALL:
      prog: [a-zA-Z0-9@_./:=\\\t\n "'+,][a-zA-Z0-9@_.-/:=\\\t\n "'+,]* 
            (for LDAP_PROGRAM with RESTRICT_PROG on)
      NOTE: have a look at QLDAPNEWS for more info
+
+5.3 Note on DASH_EXT:
+    Finally we added a variation of Henning Brauer's dash-ext patch. The main
+    difference is the way it handels the extensions.
+    Example lookup scheme:
+      aaaa-bbbb-cccc@domain.tld
+      aaaa-bbbb-CATCHALL@domain.tld
+      aaaa-CATCHALL@domain.tld
+      CATCHALL@domain.tld
+    where CATCHALL is replaced with the value of LDAP_CATCH_ALL defined
+    in qmail-ldap.h. If CATCHALL is set to "default" instead of the standart
+    "catchall" it is allmost stock qmails behaviour.
 
 6.  Compile and install the stuff (it's the same as in standard qmail
     install -> HINT: read the INSTALL and the FAQ file!!! :) ).
@@ -117,29 +148,33 @@ INSTALL:
     with a flexible debugging facility (option DEBUG).
     The debug output gets logged through splogger or your favorite logging tool 
     connected to stderr for tcpserver-pop/imap chain.
-    To turn on debugging you need only to define the DEBUGLEVEL environment 
-    variable (e.g. with env, env DEBUGLEVEL=3 qmail-start ...)
-    There are these DEBUGLEVELs:
-    DEBUGLEVEL=1   -> Errors
-    DEBUGLEVEL=2   -> Warnings
-    DEBUGLEVEL=4   -> Info
-    DEBUGLEVEL=8   -> Info^2
-    DEBUGLEVEL=16  -> Debug
-    DEBUGLEVEL=32  -> Debug^2
-    DEBUGLEVEL=64  -> LDAP Debug
-    DEBUGLEVEL=128 -> LDAP Debug^2
-    DEBUGLEVEL=256 -> PASSWD, this level is normaly off because it shows
-                      critical data (unencrypted and crypted passwords). To
-                      turn it on edit checkpassword.c and increase the level
-                      for init_debug().
+    To turn on debugging you need only to define the LOGLEVEL environment 
+    variable (e.g. with env, env LOGLEVEL=3 qmail-start ...)
+    There are these LOGLEVEL:
+    LOGLEVEL=1   -> Errors
+    LOGLEVEL=2   -> Warnings
+    LOGLEVEL=4   -> Info
+    LOGLEVEL=8   -> Info^2
+    LOGLEVEL=16  -> Debug
+    LOGLEVEL=32  -> Debug^2
+    LOGLEVEL=64  -> LDAP Debug
+    LOGLEVEL=128 -> LDAP Debug^2
+    LOGLEVEL=256 -> PASSWD, this level is normaly off because it shows
+                    critical data (unencrypted and crypted passwords). To
+                    turn it on edit checkpassword.c and increase the level
+                    for init_debug().
 
      WARNING: on production machines don't use levels higher 3 or you will get 
               incredible huge logfiles.
      NOTE: too high debuglevels are reduced to the maximum allowed debug level
            if the level parameter in init_debug() is smaler.
-           The DEBUGLEVEL is compare with a bit mask, so that
-           DEBUGLEVEL=3 will report warnings and errors but DEBUGLEVEL=2 will
+           The LOGLEVEL is compare with a bit mask, so that
+           LOGLEVEL=3 will report warnings and errors but LOGLEVEL=2 will
            only report warnings.
+           With the new log support the environment variable is LOGLEVEL but
+           the old DEBUGLEVEL is still supported.
+           The new log support will no longer add the log output to bounce
+           messages.
 
 11. NOTE ABOUT POP/IMAP services
     The stock qmail recomends that you use a program by the name 'checkpassword'
@@ -149,7 +184,7 @@ INSTALL:
        /var/qmail/bin/qmail-popup qmail-popup \
        YOURHOST /bin/checkpassword /var/qmail/bin/qmail-pop3d Maildir
 
-    With the use of the LDAP patch, this have been slightly altered. We now uses
+    With the use of the LDAP patch, this have been slightly altered. We now use
     a program by the name 'auth_pop' instead... Something like this (replacement
     inetd.conf line):
 
@@ -158,10 +193,10 @@ INSTALL:
        YOURHOST /var/qmail/bin/auth_pop /var/qmail/bin/qmail-pop3d Maildir
 
 
-    Same goes for the command 'auth_imap' if you IMAP server can use a external
-    program for authentication. auth_imap was designed for courier-IMAP and
-    should work with it out of the box. There is also a auth_ldap modul in 
-    courier-imap that should work.
+    Same goes for the command 'auth_imap' if your IMAP server can use an 
+    external program for authentication. auth_imap was designed for 
+    courier-IMAP and should work with it out of the box. 
+    There is also a auth_ldap modul in courier-imap that should work too.
     You can get courier-imap from http://www.inter7.com
 
     auth_pop and auth_imap are part of this patch and will be installed with the
@@ -425,30 +460,31 @@ LOGLEVEL
  Example: 3
  Note: integer value from 0-3, everything will be logged through tcpserver
 
-DEBUGLEVEL
+LOGLEVEL or DEBUGLEVEL
 
  Level of log verbosity in qmail-lspawn, auth_*
  Default: none (0)
  LEVELS:
-    DEBUGLEVEL=1   -> Errors
-    DEBUGLEVEL=2   -> Warnings
-    DEBUGLEVEL=4   -> Info
-    DEBUGLEVEL=8   -> Info^2
-    DEBUGLEVEL=16  -> Debug
-    DEBUGLEVEL=32  -> Debug^2
-    DEBUGLEVEL=64  -> LDAP Debug
-    DEBUGLEVEL=128 -> LDAP Debug^2
-    DEBUGLEVEL=256 -> PASSWD, this level is normaly off because it shows
-                      critical data (unencrypted and crypted passwords). To
-                      turn it on edit checkpassword.c and increase the level
-                      for init_debug().
+    LOGLEVEL=1   -> Errors
+    LOGLEVEL=2   -> Warnings
+    LOGLEVEL=4   -> Info
+    LOGLEVEL=8   -> Info^2
+    LOGLEVEL=16  -> Debug
+    LOGLEVEL=32  -> Debug^2
+    LOGLEVEL=64  -> LDAP Debug
+    LOGLEVEL=128 -> LDAP Debug^2
+    LOGLEVEL=256 -> PASSWD, this level is normaly off because it shows
+                    critical data (unencrypted and crypted passwords). To
+                    turn it on edit checkpassword.c and increase the level
+                    for init_debug().
  WARNING: on production machines don't use levels higher 3 or you will get 
           incredible huge logfiles.
  NOTE: too high debuglevels are reduced to the maximum allowed debug level
        if the level parameter in init_debug() is smaler.
-       The DEBUGLEVEL is compare with a bit mask, so that
-       DEBUGLEVEL=3 will report warnings and errors but DEBUGLEVEL=2 will
+       The LOGLEVEL is compare with a bit mask, so that
+       LOGLEVEL=3 will report warnings and errors but LOGLEVEL=2 will
        only report warnings.
+       Both names are supported with LOGLEVEL having the higher priority.
 
 ================================================================================
 
@@ -725,9 +761,11 @@ To subscribe just write a mail to qmail-ldap-subscribe@argus.pipeline.ch.
 The qmail-ldap mailinglist archive can be found at
 http://www.suares.com/qmail-ldap/archive
 
+There is also a life with qmail-ldap homepage at:
+http://www.lifewithqmail.org/ldap
 
 If you have a problem with the patch or there seems to be a bug in the code
-please add some output of qmail-ldap with DEBUGLEVEL set to something higher
+please add some output of qmail-ldap with LOGLEVEL set to something higher
 then 2 (255 is a good setting to see all possible problems).
 It is impossible to know where the problem is when somebody writes a mail like:
 I have a problem with the patch. No mail gets send to the user in the ldap db.
