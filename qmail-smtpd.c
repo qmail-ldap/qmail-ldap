@@ -21,19 +21,61 @@
 #include "now.h"
 #include "exit.h"
 #include "rcpthosts.h"
+#ifndef TLS
 #include "timeoutread.h"
 #include "timeoutwrite.h"
+#endif
 #include "commands.h"
 #include "dns.h"
+#ifdef TLS
+#include <openssl/ssl.h>
+SSL *ssl = NULL;
+#endif
 
 #define MAXHOPS 100
 unsigned int databytes = 0;
 int timeout = 1200;
 
+#ifdef TLS
+int flagtimedout = 0;
+void sigalrm()
+{
+ flagtimedout = 1;
+}
+int ssl_timeoutread(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
+{
+ int r; int saveerrno;
+ if (flagtimedout) { errno = error_timeout; return -1; }
+ alarm(timeout);
+ if (ssl) r = SSL_read(ssl,buf,n); else r = read(fd,buf,n);
+ saveerrno = errno;
+ alarm(0);
+ if (flagtimedout) { errno = error_timeout; return -1; }
+ errno = saveerrno;
+ return r;
+}
+int ssl_timeoutwrite(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
+{
+ int r; int saveerrno;
+ if (flagtimedout) { errno = error_timeout; return -1; }
+ alarm(timeout);
+ if (ssl) r = SSL_write(ssl,buf,n); else r = write(fd,buf,n);
+ saveerrno = errno;
+ alarm(0);
+ if (flagtimedout) { errno = error_timeout; return -1; }
+ errno = saveerrno;
+ return r;
+}
+#endif
+
 int safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
+#ifdef TLS
+  r = ssl_timeoutwrite(timeout,fd,buf,len);
+#else
   r = timeoutwrite(timeout,fd,buf,len);
+#endif
   if (r <= 0) _exit(1);
   return r;
 }
@@ -351,7 +393,13 @@ void smtp_helo(arg) char *arg;
 }
 void smtp_ehlo(arg) char *arg;
 {
-  smtp_greet("250-"); out("\r\n250-PIPELINING\r\n250 8BITMIME\r\n");
+  smtp_greet("250-"); 
+#ifdef TLS
+  if (ssl) out("\r\n250-PIPELINING\r\n250 8BITMIME\r\n");
+  else out("\r\n250-PIPELINING\r\n250-STARTTLS\r\n250 8BITMIME\r\n");
+#else
+  out("\r\n250-PIPELINING\r\n250 8BITMIME\r\n");
+#endif
   seenmail = 0; dohelo(arg);
   logpid(3); logstring(3,"remote ehlo ="); logstring(3,arg); logflush(3);
 }
@@ -511,7 +559,11 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   flush();
+#ifdef TLS
+  r = ssl_timeoutread(timeout,fd,buf,len);
+#else
   r = timeoutread(timeout,fd,buf,len);
+#endif
   if (r == -1) if (errno == error_timeout) die_alarm();
   if (r <= 0) die_read();
   return r;
@@ -617,6 +669,9 @@ void smtp_data() {
   unsigned long qp;
   char *qqx;
   char buf[FMT_ULONG];
+#ifdef TLS
+  stralloc protocolinfo = {0};
+#endif
  
   logline(3,"smtp data");
   if (!seenmail) { err_wantmail(); return; }
@@ -626,8 +681,18 @@ void smtp_data() {
   if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
   qp = qmail_qp(&qqt);
   out("354 go ahead\r\n"); logline(3,"go ahead");
- 
+
+#ifdef TLS
+  if(ssl){
+   if (!stralloc_copys(&protocolinfo, SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
+   if (!stralloc_ready(&protocolinfo,protocolinfo.len + 16)) die_nomem();
+   byte_copy(protocolinfo.s+protocolinfo.len,16," encrypted SMTP");
+   protocolinfo.len += 16;
+  } else if (!stralloc_copyb(&protocolinfo,"SMTP",5)) die_nomem();
+  received(&qqt,protocolinfo.s,local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
+#else 
   received(&qqt,"SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
+#endif
   blast(&hops);
 
   receivedbytes[fmt_ulong(receivedbytes,(unsigned long) bytesreceived)] = 0;
@@ -655,6 +720,53 @@ void smtp_data() {
   out("\r\n");
 }
 
+#ifdef TLS
+RSA *tmp_rsa_cb(ssl,export,keylength) SSL *ssl; int export; int keylength; 
+{
+  RSA* rsa;
+  BIO* in;
+
+  if (!export || keylength == 512)
+   if (in=BIO_new(BIO_s_file_internal()))
+    if (BIO_read_filename(in,"control/rsa512.pem") > 0)
+     if (rsa=PEM_read_bio_RSAPrivateKey(in,NULL,NULL,NULL))
+      return rsa;
+  return (RSA_generate_key(export?keylength:512,RSA_F4,NULL,NULL));
+}
+
+void smtp_tls(arg) char *arg; 
+{
+  SSL_CTX *ctx;
+
+  if (*arg)
+   {out("501 Syntax error (no parameters allowed) (#5.5.4)\r\n");
+    return;}
+
+  SSLeay_add_ssl_algorithms();
+  if(!(ctx=SSL_CTX_new(SSLv23_server_method())))
+   {out("454 TLS not available: unable to initialize ctx (#4.3.0)\r\n"); 
+    return;}
+  if(!SSL_CTX_use_RSAPrivateKey_file(ctx, "control/cert.pem", SSL_FILETYPE_PEM))
+   {out("454 TLS not available: missing RSA private key (#4.3.0)\r\n"); 
+    return;}
+  if(!SSL_CTX_use_certificate_file(ctx, "control/cert.pem", SSL_FILETYPE_PEM))
+   {out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
+    return;}
+  SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_cb);
+ 
+  out("220 ready for tls\r\n"); flush();
+
+  if(!(ssl=SSL_new(ctx))) die_read();
+  SSL_set_fd(ssl,0);
+  if(SSL_accept(ssl)<=0) die_read();
+  substdio_fdbuf(&ssout,SSL_write,ssl,ssoutbuf,sizeof(ssoutbuf));
+
+  remotehost = env_get("TCPREMOTEHOST");
+  if (!remotehost) remotehost = "unknown";
+  dohelo(remotehost);
+}
+#endif
+
 struct commands smtpcommands[] = {
   { "rcpt", smtp_rcpt, 0 }
 , { "mail", smtp_mail, 0 }
@@ -664,6 +776,9 @@ struct commands smtpcommands[] = {
 , { "ehlo", smtp_ehlo, flush }
 , { "rset", smtp_rset, 0 }
 , { "help", smtp_help, flush }
+#ifdef TLS
+, { "starttls", smtp_tls, flush }
+#endif
 , { "noop", err_noop, flush }
 , { "vrfy", err_vrfy, flush }
 , { 0, err_unimpl, flush }
@@ -671,6 +786,7 @@ struct commands smtpcommands[] = {
 
 void main()
 {
+  sig_alarmcatch(sigalrm);
   sig_pipeignore();
   if (chdir(auto_qmail) == -1) die_control();
   setup();
