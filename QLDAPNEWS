@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/03/03 19:22:34 $ ($Revision: 1.180 $)
+RELEASE: $Date: 2004/03/03 19:35:54 $ ($Revision: 1.181 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -22,7 +22,8 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
 NEWS for current stuff:
 
  Fix buffer overflow noticed by Georgi Guninski in qmail-qmtpd.c.
- There is no easy way to exploit it.
+ There is no easy way to exploit it. Additionally the same issue is
+ patched in qmail-qmqpd.c.
 
  Fix an issue in qmail-remote.c with TLSDEBUG defined. Noticed by
  Oskar Eyb and Rainer Hartenthaler.

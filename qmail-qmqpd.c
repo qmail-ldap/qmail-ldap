@@ -66,6 +66,7 @@ void compression_done(void)
 #endif
 
 void resources() { _exit(111); }
+void badproto() { _exit(100); }
 
 int safewrite(int fd, void *buf, int len)
 {
@@ -152,8 +153,9 @@ unsigned long getlen()
 
   for (;;) {
     getbyte(&ch);
-    if (ch == ':') return len;
     if (len > 200000000) resources();
+    if (ch == ':') return len;
+    if (ch < '0' || ch > '9') badproto();
     len = 10 * len + (ch - '0');
   }
 }
@@ -162,7 +164,7 @@ void getcomma()
 {
   char ch;
   getbyte(&ch);
-  if (ch != ',') _exit(100);
+  if (ch != ',') badproto();
 }
 
 struct qmail qq;
