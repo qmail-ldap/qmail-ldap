@@ -162,10 +162,10 @@ MD5Init(MD5_CTX *context)
 void
 MD5Update(MD5_CTX *context, const unsigned char *input, size_t inputLen)
 {
-  unsigned int i, index, partLen;
+  unsigned int i, idx, partLen;
 
   /* Compute number of bytes mod 64 */
-  index = (unsigned int)((context->count[0] >> 3) & 0x3F);
+  idx = (unsigned int)((context->count[0] >> 3) & 0x3F);
 
   /* Update number of bits */
   if ( (context->count[0] += ((uint32)inputLen << 3)) /* lower part of count */
@@ -174,23 +174,23 @@ MD5Update(MD5_CTX *context, const unsigned char *input, size_t inputLen)
 
   context->count[1] += ((uint32)inputLen >> 29); /* update high part of count */
 
-  partLen = 64 - index;
+  partLen = 64 - idx;
 
   /* Transform as many times as possible. */
   if (inputLen >= partLen) {
-    byte_copy ((POINTER)&context->buffer[index], partLen, input);
+    byte_copy ((POINTER)&context->buffer[idx], partLen, input);
     MD5Transform (context->state, context->buffer);
 
     for (i = partLen; i + 63 < inputLen; i += 64)
       MD5Transform (context->state, &input[i]);
 
-    index = 0;
+    idx = 0;
   }
   else
     i = 0;
 
   /* Buffer remaining input */
-  byte_copy ((POINTER)&context->buffer[index], inputLen-i, &input[i]);
+  byte_copy ((POINTER)&context->buffer[idx], inputLen-i, &input[i]);
 }
 
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
@@ -200,7 +200,7 @@ void
 MD5Final(unsigned char digest[MD5_LEN], MD5_CTX *context)
 {
   unsigned char bits[8];
-  unsigned int index;
+  unsigned int idx;
   size_t padLen;
   uint32 hi, lo;
 
@@ -211,8 +211,8 @@ MD5Final(unsigned char digest[MD5_LEN], MD5_CTX *context)
   Encode (bits + 4, 4, &hi);
 
   /* Pad out to 56 mod 64. */
-  index = (unsigned int)((context->count[0] >> 3) & 0x3f);
-  padLen = (index < 56) ? (56 - index) : (120 - index);
+  idx = (unsigned int)((context->count[0] >> 3) & 0x3f);
+  padLen = (idx < 56) ? (56 - idx) : (120 - idx);
   MD5Update (context, PADDING, padLen);
 
   /* Append length (before padding) */
