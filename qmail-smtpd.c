@@ -413,8 +413,8 @@ void setup()
 
   logpid(2);
   logstring(2, "enabled options: ");
-  if (greeting550) logstring(2,"greeting550");
-  if (sslenabled) logstring(2, "starttls");
+  if (greeting550) logstring(2,"greeting550 ");
+  if (sslenabled) logstring(2, "starttls ");
   if (relayclient) logstring(2,"relayclient ");
   if (sanitycheck) logstring(2,"sanitycheck ");
   if (returnmxcheck) logstring(2,"returnmxcheck ");
