@@ -627,6 +627,7 @@ void smtp(void)
   } else if (auth_login.len && auth_passwd.len) {
     quit("ZConnected to "," but no SMTP AUTH support detected but needed.");
   }
+
   substdio_puts(&smtpto,"MAIL FROM:<");
   substdio_put(&smtpto,sender.s,sender.len);
   substdio_puts(&smtpto,">");
@@ -637,7 +638,7 @@ void smtp(void)
     len += len>>5; /* add some size for the \r chars see rcf 1870 */
     substdio_put(&smtpto,num,fmt_ulong(num,len+1));
   }
-  if (flagauth) {
+  if (flagauth && auth_login.len && auth_passwd.len) {
     substdio_puts(&smtpto, " AUTH=<");
     substdio_put(&smtpto,sender.s,sender.len);
     substdio_puts(&smtpto,">");
