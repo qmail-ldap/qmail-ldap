@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/02 18:05:51 $ ($Revision: 1.31 $)
+RELEASE: $Date: 2003/09/07 12:29:08 $ ($Revision: 1.32 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -35,6 +35,7 @@ ALSO ON THE LIST: (priority list)
 - SMTP recipient verify (only if recipientdomain is in locals, with ldap)
 - SMTP sender verify (only if senderdomain is in locals, with ldap)
 - use pbstools for enhanced tarpit idea
+- make full example for qmailaccountpurge.sh
 - docu cleanup
 
 older stuff still on the list:
