@@ -31,11 +31,6 @@
 #include "byte.h"
 #include "digest_md4.h"
 
-/* some systems don't have NULL defined */
-#ifndef NULL
-#define NULL (void*) 0
-#endif
-
 /* POINTER defines a generic pointer type */
 typedef unsigned char *POINTER;
 
@@ -210,7 +205,7 @@ MD4Final(unsigned char digest[MD4_LEN], MD4_CTX *context)
   /* Append length (before padding) */
   MD4Update (context, bits, 8);
 
-  if (digest != NULL) {
+  if (digest != (unsigned char *)0) {
     /* Store state in digest */
     Encode (digest, 16, context->state);
 

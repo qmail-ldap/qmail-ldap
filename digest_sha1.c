@@ -27,11 +27,6 @@
 #include "byte.h"
 #include "digest_sha1.h"
 
-/* some systems don't have NULL defined */
-#ifndef NULL
-#define NULL (void*) 0
-#endif
-
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
 
 /*

@@ -464,7 +464,7 @@ qldap_first(qldap *q)
 	/* get first match of a qldap_filter search */
 
 	q->msg = ldap_first_entry(q->ld, q->res);
-	if (q->msg == NULL) {
+	if (q->msg == (LDAPMessage *)0) {
 		if (ldap_count_entries(q->ld, q->res) == 0)
 			return NOSUCH;
 		else
@@ -482,7 +482,7 @@ qldap_next(qldap *q)
 	if (q->msg == 0) return FAILED;
 
 	q->msg = ldap_next_entry(q->ld, q->msg);
-	if (q->msg == NULL)
+	if (q->msg == (LDAPMessage*)0)
 		return NOSUCH;
 	q->state = EXTRACT;
 	return OK;

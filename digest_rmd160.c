@@ -29,11 +29,6 @@
 #include "byte.h"
 #include "digest_rmd160.h"
 
-/* some systems don't have NULL defined */
-#ifndef NULL
-#define NULL (void*) 0
-#endif
-
 /* macro definitions */
 
 /* collect four bytes into one word: */
@@ -404,7 +399,7 @@ RMD160Final(unsigned char digest[RMD160_LEN], RMD160_CTX *context)
             (context->length[1] << 3);
         RMD160Transform(context->state, X);
 
-        if (digest != NULL) {
+        if (digest != (unsigned char*)0) {
                 for (i = 0; i < 20; i += 4) {
                         /* extracts the 8 least significant bits. */
                         digest[i]     =  context->state[i>>2];

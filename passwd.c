@@ -85,7 +85,7 @@ make_passwd(const char *want, char *clear, stralloc *result)
 
 	for (i = 0; algo[i].scheme != 0; i++) {
 		if (case_diffb(want, algo[i].slen, algo[i].scheme) == 0) {
-			r = algo[i].func(clear, NULL);
+			r = algo[i].func(clear, (char *) 0);
 			if (r != OK) return r;
 			if (!stralloc_copy(result, &hashed)) return ERRNO;
 			return OK;

@@ -41,7 +41,7 @@
 int (*checkfunc[])(stralloc *, stralloc *, struct credentials *, int) = {
 	check_ldap,
 	check_passwd,
-	NULL
+	0
 };
 
 int
@@ -49,7 +49,7 @@ check(stralloc *login, stralloc *authdata, struct credentials *c, int fast)
 {
 	int	i, r;
 
-	for (i = 0; checkfunc[i] != NULL; i++)
+	for (i = 0; checkfunc[i] != 0; i++)
 		switch (r = checkfunc[i](login, authdata, c, fast)) {
 		case OK:
 		case FORWARD:
@@ -238,7 +238,7 @@ chdir_or_make(char *home, char *maildir)
 {
 	char	*md;
 
-	if (maildir == NULL)
+	if (maildir == (char *)0)
 		md = auth_aliasempty();
 	else
 		md = maildir;

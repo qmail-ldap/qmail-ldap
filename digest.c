@@ -72,8 +72,8 @@ main(int argc, char *argv[])
 	char	*clear, *encrypted;
 	const char *cformat;
 	
-	clear = NULL;
-	encrypted = NULL;
+	clear = (char *)0;
+	encrypted = (char *)0;
 	m = 0;
 	cformat = "XX";
 	while ((opt = getopt(argc, argv, "5bcf:s:S:v")) != opteof)

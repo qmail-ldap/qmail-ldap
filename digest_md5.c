@@ -32,11 +32,6 @@ documentation and/or software.
 #include "byte.h"
 #include "digest_md5.h"
 
-/* some systems don't have NULL defined */
-#ifndef NULL
-#define NULL (void*) 0
-#endif
-
 /* POINTER defines a generic pointer type */
 typedef unsigned char *POINTER;
 
@@ -223,7 +218,7 @@ MD5Final(unsigned char digest[MD5_LEN], MD5_CTX *context)
   /* Append length (before padding) */
   MD5Update (context, bits, 8);
 
-  if (digest != NULL) {
+  if (digest != (unsigned char *)0) {
     /* Store state in digest */
     Encode (digest, 16, context->state);
 
