@@ -315,9 +315,9 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    userinfo   info;
    extrainfo  extra[7];
    searchinfo search;
-   char *attrs[] = {  /* LDAP_MAIL, */ /* not needed, we search for those values */
+   char *attrs[] = {  /* LDAP_MAIL, */ /* not needed */
                       /* LDAP_MAILALTERNATE, */
-                      LDAP_UID, /* the first 5 attrs are the default ones */
+                      LDAP_UID, /* the first 6 attrs are the default ones */
                       LDAP_QMAILUID,
                       LDAP_QMAILGID,
                       LDAP_ISACTIVE,
@@ -333,21 +333,19 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
    int  reply;
    int  at;
    int  i;
-   char *f;
    char *r;
    stralloc filter = {0};
    unsigned long tid;
 
    /* check the mailaddress for illegal characters       *
     * escape '*', ,'\', '(' and ')' with a preceding '\' */
-   /* XXX: also '\0' should be escaped but this is not done. */
-   if (!(f = escape_forldap(mail->s)) ) _exit(QLX_NOMEM);
+   if (!escape_forldap(mail) ) _exit(QLX_NOMEM);
 
    /* build the search string for the email address */
    if (!stralloc_copys(&filter,"(|(mail=" ) ) _exit(QLX_NOMEM);
-   if (!stralloc_cats(&filter,f)) _exit(QLX_NOMEM);
+   if (!stralloc_cat(&filter,mail)) _exit(QLX_NOMEM);
    if (!stralloc_cats(&filter,")(mailalternateaddress=")) _exit(QLX_NOMEM);
-   if (!stralloc_cat(&filter,f)) _exit(QLX_NOMEM);
+   if (!stralloc_cat(&filter,mail)) _exit(QLX_NOMEM);
    if (!stralloc_cats(&filter,"))")) _exit(QLX_NOMEM);
    if (!stralloc_0(&filter)) _exit(QLX_NOMEM);
    
@@ -366,12 +364,13 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
 
    /* do the search for the email address */
    ret = ldap_lookup(&search, attrs, &info, extra);
-   if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
+   if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM); 
+   /* XXX doesn't free mem */
    if ( ret != 0 && qldap_errno == LDAP_NOSUCH ) {
       /* this handles the "catch all" extension */
       at = 0;
-      r = f;
-      i = str_len(f);
+      r = mail->s;
+      i = mail->len;
       for (at = i - 1; r[at] != '@' && at >= 0 ; at--) ; 
 	     /* handels also mailwith 2 @ */
       /* build the search string for the email address */
@@ -387,17 +386,16 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       debug(16, "retry with filter '%s'\n", filter.s);
       /* do the search for the email address */
       ret = ldap_lookup(&search, attrs, &info, extra);
-      if (!stralloc_copys(&filter, "")) _exit(QLX_NOMEM);
       /* count the results, we must have exactly one */
    }
-   alloc_free(f);
+   alloc_free(filter.s); filter.s = 0;
    if ( ret != 0 ) {
       return 1;
    }
 
    /* go through the attributes and set the proper args for qmail-local  *
     * this can probably done with some sort of loop, but hey, how cares? */
-   debug(32, "found: user='%s', uid=%s, gid=%s, mms='%s', host='%s', status=%i\n",
+   debug(32, "found: user='%s' uid=%s gid=%s mms='%s' host='%s' status=%i\n",
               info.user, info.uid, info.gid, info.mms, info.host, info.status);
 
    /* check if the ldap entry is active */
@@ -486,7 +484,7 @@ int qldap_get( stralloc *mail, char *from, int fdmess)
       if (!stralloc_copys(&foo, "")) _exit(QLX_NOMEM);
       for ( i = 0; extra[2].vals[i] != 0; i++ ) {
          /* append */
-         if (!chck_paths(extra[2].vals[i]) ) return 31;
+         if (!chck_paths(extra[2].vals[i]) ) return 31; /* XXX */
          if (!stralloc_cats(&foo, extra[2].vals[i])) _exit(QLX_NOMEM);
          if (extra[2].vals[i+1] == 0 ) break;
          if (!stralloc_cats(&foo, ",") ) _exit(QLX_NOMEM);
@@ -668,7 +666,8 @@ char *s; char *r; int at;
      /* XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX 
 	  * DEBUG should be handled better, so that it will not be included
 	  * in maildelivery-failures mails */
-   init_debug(fdout, -1); /* here are no critical data handled so debuglevel is free */
+   init_debug(fdout, -1); /* here are no critical data handled 
+                           * so debuglevel is free */
    
    /* copy the whole email address before the @ gets destroyed */
    sig_hangupdefault(); /* clear the hup sig handler for the child */

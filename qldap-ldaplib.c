@@ -11,6 +11,7 @@
 #include "control.h"
 #include "auto_qmail.h"
 #include "str.h"
+#include "byte.h"
 #include "qldap-debug.h"
 
 #define QLDAP_PORT LDAP_PORT
@@ -174,7 +175,6 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 	LDAP *ld;
 	LDAPMessage *res, *msg;
 	char *dn;
-	char *f;
 	int rc;
 	int version;
 	int num_entries;
@@ -208,14 +208,12 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 
 	/* do the search for the login uid */
 	if ( (rc = ldap_search_s(ld, qldap_basedn.s, LDAP_SCOPE_SUBTREE,
-							 f, attrs, 0, &res )) != LDAP_SUCCESS ) {
-		alloc_free(f); /* free f */
+							 search->filter, attrs, 0, &res )) != LDAP_SUCCESS ) {
 		debug(64, "ldap_lookup: search for %s faild (%s)\n", 
 				search->filter, ldap_err2string(rc) );
 		qldap_errno = LDAP_SEARCH;
 		return -1;
 	}
-	alloc_free(f); /* free f */
 	debug(128, "ldap_lookup: search for %s succeded\n", search->filter);
 	
 	/* go to the first entry */
@@ -242,7 +240,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		}
 		/* do re-bind here */
 		if ( (rc = ldap_simple_bind_s(ld,dn,search->bindpw)) != LDAP_SUCCESS) {
-			free(dn);
+			alloc_free(dn);
 			debug(64, "ldap_lookup: rebind with %s faild (%s)", 
 					dn, ldap_err2string(rc) );
 			search->bind_ok = 0;
@@ -252,7 +250,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		search->bind_ok = 1;
 		debug(128, "ldap_lookup: rebind with %s succeded", dn );
 	}
-	if ( dn != 0 ) free(dn);
+	if ( dn != 0 ) alloc_free(dn);
 
 	if ( ldap_get_userinfo(ld, msg, info) == -1 ) {
 		return -1; /* function sets qldap_errno */
@@ -264,7 +262,7 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 
 	/* ok, we finished, lets clean up and disconnect from the LDAP server */
 	/* XXX we should also free msg and res */
-	ldap_msgfree(msg);
+	/* ldap_msgfree(msg); */ /* with this I get segv's :-( don't ask me why */
 	ldap_msgfree(res);
 	ldap_unbind_s(ld);
 	return 0;
@@ -422,66 +420,55 @@ static int ldap_get_extrainfo(LDAP *ld, LDAPMessage *msg, extrainfo *info)
 	for ( i = 0; info[i].what != 0 ; i++ ) {
 		debug(64, "ldap_get_extrainfo: %s: ", info[i].what);
 		info[i].vals = ldap_get_values(ld,msg,info[i].what);
-		debug(64, " %s (only the first value)\n", 
+		debug(64, " %s\n", 
 					info[i].vals?info[i].vals[0]:"nothing found");
 		/* free info[i].vals with ldap_value_free(info[i].vals) */
 	}
 	return 0;
 }
 
-char* escape_forldap(char *toescape)
-/* returns the escaped string or NULL if not succesful, string needs to
- * be freed later */
-/* Under LDAP, '(', ')', '\', '*' and '\0' have to be escaped with '\'
- * NOTE: because we use just simple c-strings we do not allow a '\0' in the
- * NOTE: search string, or better we ignore it, '\0' is the end of the string */
+int escape_forldap(stralloc *toescape)
+/* Under LDAP, '(', ')', '\', '*' and '\0' have to be escaped with '\' */
 {
-	register int len;
-	register char *t;
-	register char *s;
+	unsigned int len;
+	unsigned int newlen;
+	char x;
+	char *t;
+	char *s;
 	char *tmp;
 
-	len = str_len(toescape);
-	if ( ( tmp = alloc( len*2+1 ) ) == 0 ) return 0;
+	newlen = 0;
+	len = toescape->len;
+	s = toescape->s;
 
-	s = toescape;
+	if ( s[len-1] == '\0' ) len-- ; /* this handles \0 terminated strallocs */
+
+	if ( ( tmp = alloc( len*2 ) ) == 0 ) return 0;
 	t = tmp;
 	
 	for(;;) {
 #ifndef LDAP_ESCAPE_BUG
 		if(!len) break; 
-		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) 
-			*t++ = '\\' ;
+		x = *s;
+		if (x == '*' || x == '(' || x == ')' || x == '\\' || x == '\0' ) {
+			*t++ = '\\' ; newlen++;
+		}
 		*t++ = *s++;
-		len--;
-		if(!len) break; 
-		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) 
-			*t++ = '\\' ;
-		*t++ = *s++;
-		len--;
-		if(!len) break; 
-		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) 
-			*t++ = '\\' ;
-		*t++ = *s++;
-		len--;
-		if(!len) break; 
-		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) 
-			*t++ = '\\' ;
-		*t++ = *s++;
-		len--;
+		len--; newlen++;
 #else
 #warning __LDAP_ESCAPE_BUG__IS__ON__
 		if(!len) break; 
-		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '_' ; 
+		x = *s;
+		if (x == '*' || x == '(' || x == ')' || x == '\\' || x == '\0' ) 
+			*t++ = '_' ; 
 		else *t++ = *s++; 
-		len--;
-		if(!len) break; 
-		if (*s == '*' || *s == '(' || *s == ')' || *s == '\\' ) *t++ = '_' ; 
-		else *t++ = *s++; 
-		len--;
+		len--; newlen++;
 #endif
 	}
-	*t = '\0';
-	return tmp;
+	if (!stralloc_ready(toescape, newlen) ) return 0;
+	toescape->len = newlen;
+	byte_copy(toescape->s, newlen, tmp);
+	alloc_free(tmp);
+	return 1;
 }
 

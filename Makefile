@@ -23,6 +23,8 @@ LDAPINCLUDES=-I/usr/local/include
 #TLSINCLUDES=-I/usr/local/include
 # Path to OpenSSL libraries
 #TLSLIBS=-L/usr/local/lib -lssl -lcrypto
+# Path to OpenSSL binary
+#OPENSSLBIN=/usr/local/bin/openssl
 
 # to make the Netscape download progress bar work with qmail-pop3d
 # uncomment the next line (allready done)
@@ -34,8 +36,10 @@ MNW=-DMAKE_NETSCAPE_WORK
 # to enable the auto-homedir-make feature uncomment the next line
 #HDIRMAKE=-DAUTOHOMEDIRMAKE
 
-# on FreeBSD and OpenBSD systems we need this to make checkpassword
+# on most systems we need this to make checkpassword
 SHADOWLIBS=-lcrypt
+# OpenBSD Systems seems to have no libcrypt, so comment the line out if you
+# get linking problems
 # To use shadow passwords under some Linux OS, uncomment the next two lines.
 #SHADOWLIBS=-lcrypt -lshadow
 #SHADOWOPTS=-DPW_SHADOW
@@ -56,7 +60,7 @@ SHELL=/bin/sh
 
 default: it qldap
 
-qldap: qmail-quotawarn qmail-reply auth_pop auth_imap digest
+qldap: qmail-quotawarn qmail-reply auth_pop auth_imap digest qmail-ldaplookup
 
 addresses.0: \
 addresses.5
@@ -387,8 +391,7 @@ compile checkpassword.c qmail-ldap.h stralloc.h auth_mod.h qldap-ldaplib.h \
 qldap-errno.h readwrite.h error.h str.h open.h substdio.h getln.h select.h \
 compatibility.h digest_md4.h digest_md5.h digest_rmd160.h digest_sha1.h dns.h \
 ipalloc.h timeoutconn.h byte.h scan.h fmt.h alloc.h qldap-debug.h
-	./compile $(LDAPFLAGS) ${TLSON} $(SHADOWOPTS) $(PWOPTS) $(QLDAPBIND) \
-	$(DEBUG) $(LDAPINCLUDES) checkpassword.c
+	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(LDAPINCLUDES) checkpassword.c
 
 chkshsgr: \
 load chkshsgr.o
@@ -1222,7 +1225,7 @@ substdio.h open.h byte.h str.h headerbody.h hfield.h env.h exit.h
 	./compile qbiff.c
 
 qldap-debug.o: \
-compile qldap-debug.c stralloc.h substdio.h fmt.h str.h byte.h readwrite.h \
+compile qldap-debug.c stralloc.h substdio.h fmt.h str.h readwrite.h \
 error.h qldap-errno.h env.h scan.h qldap-debug.h
 	./compile $(LDAPFLAGS) $(DEBUG) qldap-debug.c
 
@@ -1232,7 +1235,7 @@ compile qldap-errno.c qldap-errno.h error.h
 
 qldap-ldaplib.o: \
 compile qmail-ldap.h qldap-errno.h qldap-ldaplib.h alloc.h stralloc.h \
-error.h control.h auto_qmail.h str.h qldap-ldaplib.c
+error.h control.h auto_qmail.h str.h qldap-ldaplib.c byte.h
 	./compile $(LDAPFLAGS) $(LDAPINCLUDES) $(DEBUG) qldap-ldaplib.c
 
 qldap-mdm.o: \
@@ -1364,6 +1367,24 @@ qmail-log.0: \
 qmail-log.5
 	nroff -man qmail-log.5 > qmail-log.0
 
+qmail-ldaplookup: \
+load qmail-ldaplookup.o stralloc.a error.a qldap-ldaplib.o qldap-debug.o \
+qldap-errno.o str.a alloc.a check.o control.o env.a fs.a open.a \
+base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
+auto_qmail.o getln.a substdio.a strerr.a
+	./load qmail-ldaplookup qldap-ldaplib.o  control.o error.a \
+	getln.a stralloc.a qldap-debug.o qldap-errno.o check.o fs.a \
+	open.a env.a strerr.a substdio.a str.a alloc.a \
+	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
+	auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS)
+
+qmail-ldaplookup.o: \
+compile qmail-ldaplookup.c qmail-ldap.h qldap-errno.h stralloc.h \
+alloc.h error.h str.h qldap-debug.h qldap-ldaplib.h check.h substdio.h \
+fmt.h scan.h readwrite.h byte.h getln.h compatibility.h digest_md4.h \
+digest_md5.h digest_rmd160.h digest_sha1.h open.h 
+	./compile $(LDAPFLAGS) $(SHADOWOPTS) qmail-ldaplookup.c
+
 qmail-lspawn: \
 load qmail-lspawn.o spawn.o prot.o slurpclose.o coe.o control.o check.o \
 sig.a strerr.a getln.a wait.a case.a cdb.a fd.a open.a stralloc.a \
@@ -1386,8 +1407,7 @@ gen_alloc.h scan.h exit.h fork.h error.h cdb.h uint32.h case.h \
 slurpclose.h auto_qmail.h auto_uids.h qlx.h qmail-ldap.h check.h \
 qldap-ldaplib.h qldap-errno.h qldap-debug.h env.h auto_usera.h \
 auto_uids.h fmt.h sig.h  
-	./compile $(LDAPFLAGS) $(HDIRMAKE) $(DEBUG) \
-	$(LDAPINCLUDES) qmail-lspawn.c
+	./compile $(LDAPFLAGS) $(HDIRMAKE) $(LDAPINCLUDES) qmail-lspawn.c
 
 qmail-newmrh: \
 load qmail-newmrh.o cdbmss.o getln.a open.a cdbmake.a seek.a case.a \
@@ -2342,22 +2362,22 @@ wait_pid.o: \
 compile wait_pid.c error.h haswaitp.h
 	./compile wait_pid.c
 
-#cert:
-#	/usr/local/bin/openssl req -new -x509 -nodes \
-#	-out /var/qmail/control/cert.pem -days 366 \
-#	-keyout /var/qmail/control/cert.pem
-#	chmod 640 /var/qmail/control/cert.pem
-#	chown qmaild:qmail /var/qmail/control/cert.pem
+cert:
+	${OPENSSLBIN} req -new -x509 -nodes \
+	-out `head -1 conf-qmail`/control/cert.pem -days 366 \
+	-keyout `head -1 conf-qmail`/control/cert.pem
+	chmod 640 `head -1 conf-qmail`/control/cert.pem
+	chown qmaild:qmail `head -1 conf-qmail`/control/cert.pem
 
-#cert-req:
-#	/usr/local/bin/openssl req -new -nodes \
-#	-out req.pem \
-#	-keyout /var/qmail/control/cert.pem
-#	chmod 640 /var/qmail/control/cert.pem
-#	chown qmaild:qmail /var/qmail/control/cert.pem
-#	@echo
-#	@echo "Send req.pem to your CA to obtain signed_req.pem, and do:"
-#	@echo "cat signed_req.pem >> /var/qmail/control/cert.pem"
+cert-req:
+	${OPENSSLBIN} req -new -nodes \
+	-out req.pem \
+	-keyout `head -1 conf-qmail`/control/cert.pem
+	chmod 640 `head -1 conf-qmail`/control/cert.pem
+	chown qmaild:qmail `head -1 conf-qmail`/control/cert.pem
+	@echo
+	@echo "Send req.pem to your CA to obtain signed_req.pem, and do:"
+	@echo "cat signed_req.pem >> `head -1 conf-qmail`/control/cert.pem"
 
 backup: \
 clean

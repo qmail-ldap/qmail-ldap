@@ -409,4 +409,6 @@ qldap-ldaplib.o
 qldap-mdm.o
 auth_imap
 auth_pop
-
+qldap-errno.o
+qmail-ldaplookup.o
+qmail-ldaplookup

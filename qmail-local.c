@@ -801,7 +801,7 @@ char **argv;
 
    /* quota, dotmode and forwarding handling - part 1 */
    /* setting the quota */
-   if ( quotastring = env_get(ENV_QUOTA) && *quotastring ) {
+   if ( ( quotastring = env_get(ENV_QUOTA) ) && *quotastring ) {
       if (!flagdoit) sayit("quota defined as: ",quotastring,str_len(quotastring) );
    } else {
       if (!flagdoit) sayit("unlimited quota",quotastring,0 );

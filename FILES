@@ -465,4 +465,5 @@ qldap-ldaplib.c
 qldap-ldaplib.h
 qldap-mdm.c
 qldap-mdm.h
-
+qldap-errno.c
+qmail-ldaplookup.c

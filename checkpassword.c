@@ -25,7 +25,6 @@
 #include "scan.h"
 #include "fmt.h"
 #include "alloc.h"
-#include <assert.h>
 #include "check.h"
 #include "qldap-debug.h"
 
@@ -71,8 +70,8 @@ static void copyloop(int infd, int outfd, int timeout);
 static void forward_session(char *host, char *name, char *passwd);
 #endif
 
-static char* make_filter(stralloc *value);
-static void free_filter(char* filter);
+static int make_filter(stralloc *value, stralloc *filter);
+static void free_stralloc(stralloc *sa);
 
 void main(int argc, char **argv)
 {
@@ -120,8 +119,9 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	userinfo	info;
 	extrainfo	extra[2];
 	searchinfo	search;
+	stralloc    filter = {0};
 	int			ret;
-	char		*attrs[] = { LDAP_UID, /* the first 5 attrs are default */
+	char		*attrs[] = { LDAP_UID, /* the first 6 attrs are default */
 							 LDAP_QMAILUID,
 							 LDAP_QMAILGID,
 							 LDAP_ISACTIVE,
@@ -132,7 +132,8 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	/* initalize the different info objects */
 	if ( rebind ) {
 		extra[0].what = 0;	/* under rebind mode no additional info is needed */
-		search.bindpw = authdata->s; 
+		search.bindpw = authdata->s;
+		attrs[6] = 0;
 		/* rebind on, check passwd via ldap rebind */ 
 	} else {
 		extra[0].what = LDAP_PASSWD; /* need to get the crypted password */
@@ -140,15 +141,16 @@ int check_ldap(stralloc *login, stralloc *authdata, unsigned long *uid,
 	}
 	extra[1].what = 0;		/* end marker for extra info */
 	
-	if ( (search.filter = make_filter(login)) == 0 ) { 
+	if ( !make_filter(login, &filter ) ) { 
 		/* create search filter */
 		debug(4, "warning: check_ldap: could not make a filter\n");
 		/* qldap_errno set by make_filter */
 		return -1;
 	}
+	search.filter = filter.s;
 	
 	ret = ldap_lookup(&search, attrs, &info, extra);
-	free_filter(search.filter);	/* free the old filter */
+	free_stralloc(&filter);	/* free the old filter */
 	if ( ret != 0 ) {
 		debug(4, "warning: check_ldap: ldap_lookup not successful!\n");
 		/* qldap_errno set by ldap_lookup */
@@ -408,17 +410,15 @@ static int get_local_maildir(stralloc *home, stralloc *maildir)
 	}
 	
 	close(fd);
-	if ( ! stralloc_copys(&dotqmail, "") ) {
-		qldap_errno = ERRNO;
-		return -1;
-	}
 	for (match = 0; match<512; buf[match++]=0 ) ; /* trust nobody */
+	free_stralloc(&dotqmail);
 	return 0;
 
 tryclose:
 	for (match = 0; match<512; buf[match++]=0 ) ; /* trust nobody */
 	match = errno; /* preserve errno */
 	close(fd);
+	free_stralloc(&dotqmail);
 	errno = match;
 	qldap_errno = ERRNO;
 	return -1;
@@ -485,7 +485,7 @@ static void forward_session(char *host, char *name, char *passwd)
 	ipalloc ip = {0};
 	stralloc host_stralloc = {0};
 	int ffd;
-	int timeout = 21*60; /* ~20 min timeout like qmail-pop3d */
+	int timeout = 31*60; /* ~30 min timeout RFC1730 */
 	int ctimeout = 20;
 	
 	if (!stralloc_copys(&host_stralloc, host)) {
@@ -534,31 +534,37 @@ static void forward_session(char *host, char *name, char *passwd)
 }
 #endif /* QLDAP_CLUSTER */
 
-static char* make_filter(stralloc *value)
+static int make_filter(stralloc *value, stralloc *filter)
 /* create a searchfilter, "(uid=VALUE)" */
 {
-	char *f;
-	char *filter;
-	char *t;
+	stralloc tmp = {0};
 	
-	if ( (f = escape_forldap(value->s)) == 0 ) {
+	
+	if ( !stralloc_copy(&tmp, value) ) {
 		qldap_errno = ERRNO;
 		return 0;
 	}
-	/* allocate a reagion that is big enough */
-	filter = alloc( str_len(f) + 7 ); 
-	t = filter;
-	t += fmt_str(t, "(uid=");
-	t += fmt_str(t, f);
-	t += fmt_str(t, ")"); *t = 0;
-	alloc_free(f);
-
-	assert(t-filter != value->len + 7); /* XXX remove if ok */
-	return filter;
+	if ( !escape_forldap(&tmp) ) {
+		qldap_errno = ERRNO;
+		return 0;
+	}
+	if ( !stralloc_copys(filter, "(") ||
+		 !stralloc_cats(filter, LDAP_UID) ||
+		 !stralloc_cats(filter, "=") ||
+		 !stralloc_cat(filter, &tmp) ||
+		 !stralloc_cats(filter, ")") || 
+		 !stralloc_0(filter) ) {
+		qldap_errno = ERRNO;
+		return 0;
+	}
+	free_stralloc(&tmp);
+	return 1;
 }
 
-static void free_filter(char* filter)
+static void free_stralloc(stralloc* sa)
 {
-	alloc_free(filter);
+	alloc_free(sa->s);
+	sa->s = 0;
+	return;
 }
 

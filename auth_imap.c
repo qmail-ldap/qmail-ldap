@@ -390,8 +390,8 @@ static void get_ok(int fd, char *tag)
 	s = ok + str_len(tag); /* skip tag */
 	while ( *s == ' ' || *s == '\t' ) s++; /* skip all spaces */
 	
-	if ( str_diffn(ok, "OK", 2 ) == 0 ) return;
-	else if ( str_diffn(ok, "BAD", 3) == 0 || str_diffn(ok, "NO", 2) == 0 ) {
+	if ( str_diffn(s, "OK", 2 ) == 0 ) return;
+	else if ( str_diffn(s, "BAD", 3) == 0 || str_diffn(s, "NO", 2) == 0 ) {
 		qldap_errno = BADCLUSTER; /* other server not happy */
 		auth_error();
 	}
@@ -436,11 +436,11 @@ void auth_forward(int fd, char *login, char *passwd)
 	
 	get_ok(fd, "*");
 	allwrite(write, fd, tag, str_len(tag) );
-	allwrite(write, fd, " login ", 5); 
+	allwrite(write, fd, " login ", 7); 
 	allwrite(write, fd, login, str_len(login) ); 
 	allwrite(write, fd, " ", 1);
 	allwrite(write, fd, passwd, str_len(passwd) ); 
-	allwrite(write, fd, "\n",1);
+	allwrite(write, fd, "\n\r",1);
 
 }
 

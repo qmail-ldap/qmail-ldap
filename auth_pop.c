@@ -86,6 +86,7 @@ void auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 		qldap_errno = ERRNO;
 		auth_error();
 	}
+
 	/* up no longer needed so delete it */
 	for ( i=0; i<UP_LEN; up[i++] = 0) ;
 	
@@ -327,11 +328,11 @@ void auth_forward(int fd, char *login, char *passwd)
 	get_ok(fd);
 	allwrite(write, fd, "user ", 5); 
 	allwrite(write, fd, login, str_len(login) );
-	allwrite(write, fd, "\n", 1);
+	allwrite(write, fd, "\n\r", 1);
 	get_ok(fd);
 	allwrite(write, fd, "pass ", 5); 
 	allwrite(write, fd, passwd, str_len(passwd) ); 
-	allwrite(write, fd, "\n",1);
+	allwrite(write, fd, "\n\r",1);
 
 }
 

@@ -22,7 +22,6 @@
 /* ldap variables used in qmail-lspawn and checkpassword */
 #define LDAP_MAIL			"mail"
 #define LDAP_MAILALTERNATE	"mailAlternateAddress"
-#define LDAP_QMAILUSER		"qmailUser"
 #define LDAP_QMAILUID		"qmailUID"
 #define LDAP_QMAILGID		"qmailGID"
 #define LDAP_MAILSTORE		"mailMessageStore"
@@ -40,6 +39,7 @@
 #define ISACTIVE_BOUNCE	"disabled"
 #define ISACTIVE_NOPOP	"nopop"
 #define ISACTIVE_ACTIVE	"active"
+/* normaly you can stop editing here */
 /* the same values as ints */
 #define STATUS_BOUNCE	2
 #define STATUS_NOPOP	1

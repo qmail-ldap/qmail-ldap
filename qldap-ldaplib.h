@@ -37,11 +37,9 @@ int ldap_lookup(searchinfo *search, char **attrs, userinfo *info,
  * Returns 0 if a entry was found, 1 if more than one or no corresponding entry
  * was found. On error it returns -1 and sets the appropriate qldap_errno. */
 
-char* escape_forldap(char *toescape);
-/* returns the escaped string or NULL if not succesful */
+int escape_forldap(stralloc *toescape);
 /* Under LDAP, '(', ')', '\', '*' and '\0' have to be escaped with '\'
- * NOTE: because we use just simple c-strings we do not allow a '\0' in the
- * NOTE: search string, or better we ignore it, '\0' is the end of the string */
+ * on success returns 1 else 0 */
 
 extern void ldap_value_free();
 /* LDAP function to free **vals */

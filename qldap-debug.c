@@ -3,7 +3,6 @@
 #include "substdio.h"
 #include "fmt.h"
 #include "str.h"
-#include "byte.h"
 #include "qldap-errno.h"
 #include "error.h"
 #include "env.h"
