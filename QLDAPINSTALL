@@ -1,6 +1,6 @@
-Betacode 19991007 by Andre Oppermann <opi@nrg4u.com>,
+Betacode 20000117 by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
-(c) 1998,1999 Internet Business Solutions Ltd.
+(c) 1998,1999,2000 Internet Business Solutions Ltd.
 
 This LDAP patches for qmail come with NO WARRANTY.
 
@@ -17,6 +17,16 @@ planned - splitting the patch into smaler separate pieces
 planned - ldap authentication for courier-imap
 
 NEWS:
+
+ Added new debug facility that is usable for the auth tools and qmail-lspawn.
+ The debug-level can now be changed at runtime and everything gets logged via
+ splogger or any other logger connected to stderr of the execution chain.
+
+ Created a new auth tool for pop3 and imap. The old checkpassword is not 
+ needed anymore. The new programs are auth_pop and auth_imap.
+
+ Rewritten qmail-lspawn and the auth tools. Both programs use now the same
+ debug and ldap functions, which are now moved to new files (qldap-*).
 
  Added maildir++ support, this means especially better quota support via the
  maildir++ maildirsize file. For more info have a look at courier-imap
