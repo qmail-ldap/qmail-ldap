@@ -1287,7 +1287,7 @@ qmail-lspawn: \
 load qmail-lspawn.o spawn.o prot.o slurpclose.o coe.o control.o check.o \
 sig.a strerr.a getln.a wait.a case.a cdb.a fd.a open.a stralloc.a \
 alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_uids.o \
-auto_spawn.o auto_usera.o
+auto_spawn.o auto_usera.o env.a
 	./load qmail-lspawn spawn.o prot.o slurpclose.o coe.o control.o \
 	check.o sig.a strerr.a getln.a wait.a case.a cdb.a fd.a open.a \
 	env.a stralloc.a alloc.a substdio.a error.a str.a fs.a \

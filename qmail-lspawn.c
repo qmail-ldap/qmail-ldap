@@ -62,6 +62,26 @@ stralloc    qldap_gid = {0};
 int         qldap_localdelivery = 1;
 /* init done */
 
+/* char replacement */
+unsigned int replace(s, len, f, r)
+char *s;
+register unsigned int len;
+char f;
+char r;
+{
+   register char *t;
+   register int count = 0;
+
+   t=s;
+   for(;;) {
+      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
+      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
+      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
+      if (!len) return count; if (*t == f) { *t=r; count++; } ++t; --len;
+   }
+}
+
+
 /* read the various LDAP control files */
 void get_qldap_controls()
 {
@@ -96,6 +116,7 @@ void get_qldap_controls()
    if (control_rldef(&qldap_uid,"../../control/ldapuid",0,"") != 1);
    if (control_rldef(&qldap_gid,"../../control/ldapgid",0,"") != 1);
    if (control_readfile(&qldap_quotawarning,"../../control/quotawarning",0) == 1 ) {
+      replace(qldap_quotawarning.s, qldap_quotawarning.len, '\0', '\n');
       if (!stralloc_0(&qldap_quotawarning)) _exit(QLX_NOMEM);
       if ( !env_put2("QMAILQUOTAWARNING", qldap_quotawarning.s )) _exit(QLX_NOMEM);
    } else {

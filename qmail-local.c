@@ -165,9 +165,9 @@ void quota_warning(char *fn)
  char *(args[3]);
  int wstat;
 
- if ( env_get("QMAILQUOTAWARNING") ) return;
+ if (!env_get("QMAILQUOTAWARNING") ) return;
  if (!stralloc_copys(&temp, auto_qmail)) temp_nomem();
- if (!stralloc_copys(&temp, "/bin/qmail-quotawarn")) temp_nomem();
+ if (!stralloc_cats(&temp, "/bin/qmail-quotawarn")) temp_nomem();
  if (!stralloc_0(&temp)) temp_nomem();
 
  if (seek_begin(0) == -1) temp_rewind();

@@ -170,7 +170,7 @@ void send_reply(stralloc *dtl, stralloc *to, stralloc *from, stralloc *subject, 
  int wstat;
  
  if (!stralloc_copys(&prog, auto_qmail)) temp_nomem();
- if (!stralloc_copys(&prog, "/bin/datemail")) temp_nomem();
+ if (!stralloc_cats(&prog, "/bin/datemail")) temp_nomem();
  if (!stralloc_0(&prog)) temp_nomem();
  
  if (pipe(pi) == -1) _exit(QLX_SYS);
