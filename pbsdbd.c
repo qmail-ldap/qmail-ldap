@@ -29,7 +29,7 @@ unsigned long oldest;
 unsigned long unused;
 
 
-static unsigned char buf[512];
+static unsigned char buf[1024];
 static int len;
 
 #define fatal "pbsdbd: fatal: "
@@ -142,18 +142,21 @@ unsigned long hash(const unsigned char *key,unsigned int keylen)
   return result;
 }
 
-/* to be stored: 4-byte link, 4-byte timestamp, 1-byte size and size-byte Address */
+/* to be stored: 4-byte link, 4-byte timestamp, 4-byte envsize, 1-byte size,
+   size-byte Address and envsize-byte Environment */
 /* see also dnscache */
-void setaddr(const unsigned char *key,unsigned int keylen, unsigned long timenow)
+void setaddr(const unsigned char *key,unsigned int keylen,
+    unsigned long timenow, char *env, unsigned int envlen)
 {
   unsigned int entrylen;
+  unsigned int tmplen;
   unsigned int keyhash;
   unsigned long pos;
 
   if (!cache) return;
   if ( keylen > 255 ) return;
   
-  entrylen = 9 + keylen;
+  entrylen = 13 + keylen + envlen;
   
   while (writer + entrylen > oldest) {
     if (oldest == unused) {
@@ -166,8 +169,9 @@ void setaddr(const unsigned char *key,unsigned int keylen, unsigned long timenow
     pos = get4(oldest);
     set4(pos,get4(pos) ^ oldest);
   
-    if (oldest + 9 > cachesize ) cache_impossible();
-    oldest += 9 + *(cache + oldest + 8);
+    if (oldest + 13 > cachesize ) cache_impossible();
+    tmplen = get4(oldest + 8);
+    oldest += 13 + tmplen + *(cache + oldest + 12);
     if (oldest > unused) cache_impossible();
     if (oldest == unused) {
       unused = cachesize;
@@ -182,16 +186,19 @@ void setaddr(const unsigned char *key,unsigned int keylen, unsigned long timenow
     set4(pos,get4(pos) ^ keyhash ^ writer);
   set4(writer,pos ^ keyhash);
   set4(writer + 4,timenow + timeout);
-  if (writer + 9 > cachesize ) cache_impossible();
-  *(cache + writer + 8) = keylen;
-  byte_copy(cache + writer + 9,keylen,key);
+  set4(writer + 8,envlen);
+  if (writer + 13 > cachesize ) cache_impossible();
+  *(cache + writer + 12) = keylen;
+  byte_copy(cache + writer + 13,keylen,key);
+  byte_copy(cache + writer + 13 + keylen,envlen,env);
 
   set4(keyhash,writer);
 
   writer += entrylen;
 }
 
-int checkaddr(const unsigned char *key,unsigned int keylen,unsigned long timenow)
+int checkaddr(const unsigned char *key,unsigned int keylen,
+    unsigned long timenow, char **env, unsigned int *envlen)
 {
   unsigned long pos;
   unsigned long prevpos;
@@ -204,17 +211,22 @@ int checkaddr(const unsigned char *key,unsigned int keylen,unsigned long timenow
   prevpos = hash(key,keylen);
   pos = get4(prevpos);
   loop = 0;
+  *env = 0;
+  *envlen = 0;
 
   while (pos) {
-    if (pos + 9 > cachesize ) cache_impossible();
-    if (*(cache + pos + 8) == keylen) {
-      if (pos + 9 + keylen > cachesize) cache_impossible();
-      if (byte_equal(key,keylen,cache + pos + 9)) {
+    if (pos + 13 > cachesize ) cache_impossible();
+    if (*(cache + pos + 12) == keylen) {
+      if (pos + 13 + keylen > cachesize) cache_impossible();
+      if (byte_equal(key,keylen,cache + pos + 13)) {
         u = get4(pos + 4);
 	if (u < timenow) {
 //	  strerr_warn2(info, "cache hit but timed out", 0);
 	  return 0;
         }
+	*envlen = get4(pos + 8);
+	if ( pos + 13 + keylen + *envlen > cachesize) cache_impossible();
+	*env = cache + pos + 13 + keylen;
 	return 1;
       }
     }
@@ -236,8 +248,11 @@ static int doit(void)
 {
   unsigned char *sec;
   unsigned int sec_len;
+  unsigned char *env;
   unsigned long timenow;
-
+  unsigned int envlen;
+  unsigned int i;
+  
   if ( buf[1] + 2 >= len ) {
     strerr_warn2(warning, "bad packet", 0);
     return 0;
@@ -248,8 +263,15 @@ static int doit(void)
   switch(buf[0]) {
     case 'Q':
 //      strerr_warn2(info, "query packet", 0);
-      if ( checkaddr(&buf[2], buf[1], timenow) ) {
+      if (checkaddr(&buf[2], buf[1], timenow, (char**)&env, &envlen)) {
 	*(buf + 2 + buf[1]) = 'R';
+	if ( envlen + buf[1] + 3 > 1024 ) {
+	  strerr_warn2(warning, 
+	      "environment would exceed package size, dropped", 0);
+	  return 0;
+	}
+	byte_copy(buf+3+buf[1], envlen, env);
+	len += envlen;
       } else {
 	*(buf + 2 + buf[1]) = 'N';
       }
@@ -267,7 +289,21 @@ static int doit(void)
 	strerr_warn2(warning, "no authorized add packet", 0);
 	return 0;
       }
-      setaddr(&buf[2], buf[1], timenow);
+      env = buf + 3 + buf[1] + *(buf + 2 + buf[1]);
+      envlen = 1;
+      for (i=0; i < *env; i++) {
+	envlen += env[envlen] + 1;
+	if ( buf + len < env + envlen ) {
+	  strerr_warn2(warning, 
+	      "environment would exceed package size, dropped", 0);
+	  return 0;
+	}
+      }
+      if ( buf + len != env + envlen ) {
+	strerr_warn2(warning, "trailing garbadge at end of packet, dropped", 0);
+	return 0;
+      }
+      setaddr(&buf[2], buf[1], timenow, env, envlen);
       return 0;
     case 'R':
       strerr_warn2(warning, "response recived", 0);

@@ -7,7 +7,7 @@ This patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/04/18 17:32:10 $)
+RELEASE: current ($Date: 2002/05/06 10:04:49 $)
 
 POP-Before-SMTP:
 ======================
@@ -121,6 +121,15 @@ CONFIG FILES
  Default: 600
  Example: 900
  
+~control/pbsenv
+
+ Additional environment variables to include.
+ pbscheck will set these variables to the values pbsadd returned.
+ Multiline.
+ Default: none
+ Example: TCPREMOTEINFO
+          HOME
+
 ================================================================================
 
 SETUP
