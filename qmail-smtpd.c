@@ -1303,7 +1303,7 @@ struct commands smtpcommands[] = {
 , { "starttls", smtp_tls, flush }
 #endif
 #ifdef DATA_COMPRESS
-, { "dataz", smtp_compress, flush }
+, { "dataz", smtp_dataz, flush }
 #endif
 , { "noop", err_noop, flush }
 , { "vrfy", err_vrfy, flush }
