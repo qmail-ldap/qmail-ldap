@@ -29,12 +29,13 @@
 #include "gfrom.h"
 #include "auto_patrn.h"
 
-#define QLDAP /* enable LDAP for qmail */
+/* #define QLDAP *//* enable LDAP for qmail, done by the Makefile */
 
 #ifdef QLDAP /* includes for LDAP mode */
-#include <dirent.h>
-#include <stdlib.h>
-#include "qlx.h"
+ #include <dirent.h>
+ #include "qlx.h"
+ #include "auto_qmail.h"
+ #include "control.h"
 #endif
 
 void usage() { strerr_die1x(100,"qmail-local: usage: qmail-local [ -nN ] user homedir local dash ext domain sender aliasempty"); }
@@ -62,7 +63,7 @@ char *sender;
 char *aliasempty;
 
 #ifdef QLDAP /* define the quota variable */
-unsigned long int quota;
+ unsigned long int g_quota;
 #endif
 
 stralloc safeext = {0};
@@ -149,11 +150,57 @@ char *dir;
 /* end child process */
 
 #ifdef QLDAP /* quota handling maildir */
-void quota_bounce(void) { strerr_die1x(100, "The users mailbox is full."); }
+void mailreply(); /* we need this function (once I've to move it up) :) */
 
-void quota_warning(void) { ; }
+void quota_bounce(void) { strerr_die1x(100, "The users mailbox has overdrawn the quota."); }
 
-unsigned long int maildirsize (char *dir)
+void quota_warning(void)
+{
+ stralloc warning = {0};
+ stralloc temp = {0};
+ stralloc subject = {0};
+ stralloc path = {0};
+ char *qmailcontrol = "/control/quotawarning";
+ /*the leading / is needed because auto_qmail doesn't end with a / */
+ 
+ /*setting the subject */
+ if (!stralloc_copys(&subject,"qmail quota notice")) temp_nomem();
+ if (!stralloc_0(&subject)) temp_nomem();
+ 
+ /* setting env QMAILUSER to MAILER-DEAMON so you get the mail from there */
+ if (!env_put2("QMAILUSER","MAILER-DEAMON")) temp_nomem();
+ 
+ /* now getting the warning from the file ~control/quotawarning if it exist
+  * else a standard message is used */
+ if (!stralloc_copys(&path, auto_qmail) ) temp_nomem();
+ if (!stralloc_cats(&path, qmailcontrol) ) temp_nomem();
+ if (!stralloc_0(&path)) temp_nomem();
+
+ if (!stralloc_copys(&warning,"Hi. This is the qmail-send program at ") ) temp_nomem();
+ if (!stralloc_cats(&warning,host) ) temp_nomem();
+ if (!stralloc_cats(&warning,".\n") ) temp_nomem();
+
+ switch (control_readfile(&temp,path.s,0) ) {
+   case -1:
+     strerr_warn3("Unable to read ~control/quotawarning: ",error_str(errno),". (#4.3.0)",0);
+   case 0:
+     if (!stralloc_cats(&warning,"\
+     Your mailbox here is getting to big and will overdrawn the set quota soon.\n\
+     To recive further messages please delete some old messages out of your mailbox.\n\
+     \n") ) temp_nomem();
+   break;
+   case 1:
+     if (!stralloc_cat(&warning, &temp) ) temp_nomem();
+   break;
+ }
+ if (!stralloc_0(&warning) ) temp_nomem();
+
+ /* last but not least sending the mail */
+ mailreply(local, &warning, &subject);
+}
+
+unsigned long int maildirsize (dir)
+char *dir;
 {
    struct dirent *dp;
    DIR *dirp;
@@ -161,9 +208,9 @@ unsigned long int maildirsize (char *dir)
    stralloc file = {0};
    unsigned long int temp = 0;
    
-   if ( (dirp = opendir(dir)) == NULL)
-     strerr_die1x(111,"Unable to quota maildir. (#4.2.1)");
-   while ((dp = readdir(dirp)) != NULL) {
+   if ( (dirp = opendir(dir)) == 0 )
+     strerr_die1x(111,"Unable to quota open maildir. (#4.3.0)");
+   while ((dp = readdir(dirp)) != 0) {
      if (!stralloc_copys(&file,dir)) temp_nomem();
      if (!stralloc_cats(&file,dp->d_name)) temp_nomem();
      if (!stralloc_0(&file)) temp_nomem();
@@ -171,7 +218,7 @@ unsigned long int maildirsize (char *dir)
        if ( S_ISREG(filest.st_mode) )
          temp += filest.st_size;
      } else {
-       strerr_die5x(111,"Unable to quota ", file.s, ": ",error_str(errno),". (#4.2.1)");
+       strerr_die5x(111,"Unable to quota ", file.s, ": ",error_str(errno),". (#4.3.0)");
      }
    }
    closedir(dirp);
@@ -193,7 +240,7 @@ char *fn;
 
  if (seek_begin(0) == -1) temp_rewind();
 
- if(quota != 0 ) {
+ if(g_quota != 0 ) {
    if (fstat(0, &pipest) != 0)
        strerr_die5x(111,"Unable to quota ", "mail", ": ",error_str(errno),". (#4.2.1)");
 
@@ -211,10 +258,10 @@ char *fn;
    size += maildirsize(dir.s);
    
    totalsize = size + pipest.st_size;
-   if ( totalsize > quota ) {
+   if ( totalsize > g_quota ) {
      /* probably we could do a second check (to deliver very big messages) */
      quota_bounce();
-   } else if ( totalsize > quota*80UL/100UL )
+   } else if ( totalsize > g_quota/100UL*80UL )
      quota_warning();
  }
  
@@ -260,17 +307,18 @@ char *fn;
 
  if (seek_begin(0) == -1) temp_rewind();
  
- if(quota != 0 ) {
-   if (stat(fn, &filest) != 0)
+ if(g_quota != 0 ) {
+   if (stat(fn, &filest) == -1)
+     if ( errno != error_noent) /* FALSE if file doesn't exist */
        strerr_die5x(111,"Unable to quota ", fn, ": ",error_str(errno),". (#4.2.1)");
    if (fstat(0, &pipest) != 0)
-       strerr_die5x(111,"Unable to quota ", "mail", ": ",error_str(errno),". (#4.2.1)");
+     strerr_die5x(111,"Unable to quota ", "mail (pipe)", ": ",error_str(errno),". (#4.2.1)");
    
    totalsize = filest.st_size + pipest.st_size;
-   if ( totalsize > quota ) {
+   if ( totalsize > g_quota ) {
      /* probably we could do a second check (to deliver very big messages) */
      quota_bounce();
-   } else if ( totalsize > quota*80UL/100UL )
+   } else if ( totalsize > g_quota/100UL*80UL )
      quota_warning();
  }
  
@@ -547,7 +595,11 @@ int len;
 #ifdef QLDAP /* various handling routines for LDAP stuff */
 
 /* char replacement */
-unsigned int replace(char *s, register unsigned int len, char f, char r)
+unsigned int replace(s, len, f, r)
+char *s;
+register unsigned int len;
+char f;
+char r;
 {
    register char *t;
    register int count = 0;
@@ -562,44 +614,57 @@ unsigned int replace(char *s, register unsigned int len, char f, char r)
 }
 
 /* get the subject, for replymode */
-stralloc subject = {0};
-int getsubject(void)
+void getsubject(subject)
+stralloc *subject;
 {
  substdio ss;
- int match, len;
+ int match;
+ int len;
  stralloc temp = {0};
  stralloc line = {0};
 
  if (seek_begin(0) == -1) temp_rewind();
  substdio_fdbuf(&ss, read, 0, buf, sizeof(buf) );
  do {
-  if( getln(&ss, &line, &match, '\n') != 0 ) return 0; 
+  if( getln(&ss, &line, &match, '\n') != 0 ) {
+    strerr_warn3("Unable to read message: ",error_str(errno),". (#4.3.0)",0);
+    break; /* something bad happend, but we ignore it :-( */
+  }
   case_lowerb(line.s, (len = byte_chr(line.s,line.len,':') ) );
-  if( !str_diff("subject:", line.s) ) {
-    temp.s = line.s+len+1; temp.len = line.len-len-2;
-    stralloc_copys(&subject, "Re:");
-    stralloc_cat(&subject, &temp);
-    temp.s = NULL;
-    stralloc_0(&subject);
-    return 1;
+  if( !str_diffn("subject:", line.s, len+1) ) {
+    temp.s = line.s+len+1; /* cut away "subject:" without ' ' */
+    temp.len = line.len-len-2; /* reducing lenght: amount lenght of "subject:" and this &*"! '\n' */
+    if (temp.len <= 1 ) break; /* subject has to be more than 1 char (normaly a space) */
+    if (!stralloc_copys(subject, "Re:")) temp_nomem();
+    if (!stralloc_cat(subject, &temp)) temp_nomem();
+    temp.s = 0;
+    if (!stralloc_0(subject)) temp_nomem();
+    return;
   }
  } while (match);
- return 0;
+ /* no "good" subject found setting something "silly" */
+ if (!stralloc_copys(subject, "Re: your mail")) temp_nomem();
+ if (!stralloc_0(subject)) temp_nomem();
+ return;
 }
 
 /* reply function */
-void mailreply(to, replytext)
-char *to; stralloc *replytext;
+void mailreply(to, replytext, subject)
+char *to;
+stralloc *replytext;
+stralloc *subject;
 {
  char *(args[4]);
- char *app = "/var/qmail/bin/mailsubj";
- int child, pi[2];
+ int child;
+ int pi[2];
  int wstat;
- 
- if (! getsubject() ) {
-    stralloc_copys(&subject, "Re: your mail");
-    stralloc_0(&subject);
- }
+ stralloc path = {0};
+ char *mailsubj = "/bin/mailsubj";
+ /*the leading / is needed because auto_qmail doesn't end with a / */
+
+ if (!stralloc_copys(&path, auto_qmail) ) temp_nomem();
+ if (!stralloc_cats(&path, mailsubj) ) temp_nomem();
+ if (!stralloc_0(&path)) temp_nomem();
  
  if (pipe(pi) == -1) _exit(QLX_SYS);
  switch( child = fork() )
@@ -609,10 +674,10 @@ char *to; stralloc *replytext;
   case 0:
     close(pi[1]);
     if(fd_move(0,pi[0]) == -1) _exit(QLX_SYS);
-    args[0]=app; args[1]=subject.s; args[2]=to; args[3]=NULL;
+    args[0]=path.s; args[1]=subject->s; args[2]=to; args[3]=0;
     sig_pipedefault();
     execv(*args,args);
-    strerr_die5x(111,"Unable to run ",app,": ",error_str(errno),"(#9.0.0)");
+    strerr_die5x(111,"Unable to run ",path.s,": ",error_str(errno),"(#4.3.0)");
  }
 
  close(pi[0]);
@@ -633,7 +698,8 @@ char *to; stralloc *replytext;
 
 /* set up the forwarding-env for the qmail-local native funtion */
 int dummy(numforward_env, recips_env)
-int numforward_env; char **recips_env;
+int numforward_env;
+char **recips_env;
 { 
    if (numforward_env) if (flagdoit) {
       recips_env[numforward_env] = 0;
@@ -662,15 +728,17 @@ char **argv;
  char *x;
 
 #ifdef QLDAP /* set up the variables */
- int reply, n, slen;
- int numprog, qmode;
+ int n, slen;
+ int qmode;
  int numforward_env=0, c;
  char *s;
  char **recips_env;
  stralloc forwarder = {0};
  stralloc program = {0};
  stralloc replytext = {0};
+ stralloc subj = {0};
 #endif
+
 
  umask(077);
  sig_pipeignore();
@@ -800,11 +868,11 @@ char **argv;
 #ifdef QLDAP /* quota, dotmode and forwarding handling - part 1 */
    /* setting the quota */
    if ( s = env_get("QMAILQUOTA") ) {
-      scan_ulong(s, &quota);
-      quota *= 1024; /* we need bytes not kbytes as quota */
+      scan_ulong(s, &g_quota);
+      g_quota *= 1024; /* we need bytes not kbytes as quota */
       if (!flagdoit) sayit("quota ",s,str_len(s) );
    } else {
-      quota = 0;
+      g_quota = 0;
       if (!flagdoit) sayit("unlimited quota",s,0 );
    }
    
@@ -851,7 +919,9 @@ char **argv;
                if ( flagdoit ) {
                   if ( s = env_get("QMAILREPLYTEXT") ) {
                      if (!stralloc_copys(&replytext, s)) temp_nomem();
-                     mailreply( sender, &replytext );
+                     getsubject(&subj);
+                     if (!env_put2("QMAILUSER",local)) temp_nomem(); /* setting the right reply-user */
+                     mailreply( sender, &replytext, &subj);
                   }
                } else { 
                   sayit("reply to ",sender,str_len(sender));

@@ -1,4 +1,4 @@
-Betacode 19981114 by Andre Oppermann <opi@nrg4u.com>,
+Betacode 19981231 by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998 Internet Business Solutions Ltd.
 
@@ -9,13 +9,13 @@ These patches are under the BSD license.
 
 TODO:
 
-done    - Implement working checkpassword with plaintext/cryt passwords
+done    - Implement working checkpassword with plaintext/crypt passwords
 done    - Implement crypto checkpassword (SHA, MD5, MD4, RMD160, crypt())
 done    - Build a complete debug facilities into checkpassword
 done    - Tool for generating crypto passwords
 done    - Implement some more ~control/ldap* files
 done    - Pass list of requested attributes to ldap_search_ext_s
-ongoing - Lot of code clean up's (debugging code needs to be debugged :)
+ongoing - Lot of code clean up (debugging code needs to be debugged :)
 ongoing - Make qmail-lspawn debug messages work (again)
 ongoing - Debugging and testing, testing, testing
 ongoing - The big qmail-ldap picture
@@ -29,9 +29,21 @@ NEWS:
  digest computes MD4, MD5, RMD160 and SHA1 passwords (compatible to Netscape)
   Usage: ./digest POPPassword
 
+ solved a problem on big endian machines that caused wrong SHA, MD5, MD4, RMD160
+ passwords. (Added an endian testprogram to solve those probs)
+ 
+ added a working version of the "MAKE_NETSCAPE_WORK" patch under qmail-pop3d.
+ The download bar should now work correctly.
+ 
+ Added some compile options in the Makefile for easier configuration (see 5.)
+ 
+ Fixed the bugs in qmail-lspawn. Changed starlloc_catb to stralloc_cat. 
+ Thanks to Franky Van Liedekerke <franky.van.liedekerke@telenet.be>
+
+
 INSTALL:
 
-1. Make shure you have fairly good knowledge of qmail and LDAP
+1. Make sure you have fairly good knowledge of qmail and LDAP
 
 2. Read this document
 
@@ -48,21 +60,43 @@ INSTALL:
 
 4. Apply the qmail-ldap patches to a clean qmail-1.03 source tree
 
-5. Compile and install the stuff (it's the same as in standard qmail
+5. Edit the conf-* files and the top of the Makefile (only the top ;) )
+   You can set/change:
+   - LDAPON=-DQLDAP (turns qmail-ldap on and of, don't change the part
+                     behind the '=' )
+   - LDAPLIBS: the libraries you need for ldap, e.g. -lldap -llber
+   - LDAPINCLUDES: perhaps you need a special include-path for ldap
+   - PWOPTS=-DLOOK_UP_PASSWD (turns local password lookups on)
+   - DEBUG=-DQLDAPDEBUG (turns debugging of checkpassword on see 5.3)
+   - SHADOWLIBS=-lshadow, SHADOWOPTS=-DPW_SHADOW are needed on some Systems
+     (Solaris, Linux) for local password lookups (just like the original
+     djb-checkpassword)
+
+5.1 Compile and install the stuff (it's the same as in standard qmail
    install)
 
-5.1 "make checkpassword" in the qmail directory and install checkpassword
+5.2 "make checkpassword" in the qmail directory and install checkpassword
+    * Under Linux or Solaris, do you want to use shadow passwords? If so,
+      uncomment the appropriate lines in Makefile
+    How to install:
+       1. Compile the checkpassword program:
+          # make checkpassword
+       2. Install the checkpassword program:
+          # cp checkpassword /bin/checkpassword
+          # chmod 700 /bin/checkpassword
+     WARNING: checkpassword should only be runable by root
+              don't make the debug version accessible to other users
 
-5.2 Enable QLDAPDEBUG in checkpassword and compile it again, this is for
+5.3 Enable DEBUG in the Makefile and compile checkpassword again, this is for
     debugging your LDAP setup
 
-5.3 "make digest" in the qmail directory
+5.4 "make digest" in the qmail directory
 
 6. Create the LDAP user database and start the LDAP server
 
 7. Create the proper ~control/ldap* files for qldap
 
-8. Test and Debug!
+8. Test, Debug and Enjoy!
 
 
 CONFIG FILES:
@@ -90,7 +124,7 @@ CONFIG FILES:
 
  Password for the LDAP server connection
  Default: NULL
- Note: The passwort is in clear text
+ Note: The password is in clear text
 
 ~control/ldaplocaldelivery
 
@@ -104,11 +138,11 @@ CONFIG FILES:
  The default amount of space one user can use
  Default: unlimited
  Example: 1000
- Note: Is written in KBytes, is overided by mailQuota
+ Note: Is written in KBytes, is overridden by mailQuota
 
 ~control/ldapdefaultdotmode
 
- The default interpretion of .qmail files
+ The default interpretation of .qmail files
  Default: ldaponly
  Example: both
  Values: both, dotonly, ldaponly, none
@@ -116,7 +150,7 @@ CONFIG FILES:
 
 ~control/ldapmessagestore
 
- The default prepend path for mailMessageStore without trailing /
+ The default added path for mailMessageStore without trailing /
  Default: NULL
  Example: /maildisk/
  Note: Used in virtual users environments
@@ -144,7 +178,7 @@ CONFIG FILES:
 
 ~control/custombouncetext
 
- Additional custom text in bounce messages, eg. for providing contact
+ Additional custom text in bounce messages, e.g. for providing contact
  information of your ISP or messages in your language
  Default: NULL
  Example: You can contact us at (555) 555 5555
@@ -152,12 +186,19 @@ CONFIG FILES:
 
 ~control/quotawarning
 
- Custom text in quota waring message, eg. for providing contact information
+ Custom text in quota warning message, e.g. for providing contact information
  of your ISP
  Default: NULL
  Example: You can contact us at (555) 555 5555
  Note: Multiline
 
+~control/ldappasswdappend
+
+ The default appendix to homedir-pathes form local passwd lookups
+ Default: ./
+ Example: ./Maildir/
+ Note: Only needed if you start qmail with something other and overwrite
+       this with a .qmail file in every homedir
 
 LDAP PARAMETER FIELDS:
 
@@ -176,31 +217,31 @@ qmailUser
 
  Username of the user on the mailsystem
  Example: jdoe
- Note: Can be omitted in an virtual users environment
+ Note: Can be omitted in a virtual users environment
 
 qmailUID
 
  UID of the user on the mailsystem
  Example: 1010
- Note: Can be omitted in an virtual users environment
+ Note: Can be omitted in a virtual users environment
 
 qmailGID
 
  GID of the user on the mailsystem
  Example: 1010
- Note: Can be omitted in an virtual users environment
+ Note: Can be omitted in a virtual users environment
 
 mailMessageStore
 
  Path to the maildir/mbox on the mail system
  Example: /home/jdoe/
- Note: Can be written relative in an virtual users environment
+ Note: Can be written relative in a virtual users environment
 
 mailQuota
 
  The amount of space the user can use until all further msg get bounced
  Example: 1000
- Note: In KBytes, overides ldapdefaultquota
+ Note: In KBytes, overrides ldapdefaultquota
 
 mailForwardingAddress
 
@@ -210,19 +251,33 @@ mailForwardingAddress
 
 deliveryProgramPath
 
- 
+ Program to execute with all incoming messages
+ Example: /usr/bin/program -c -s
+ Note: the same as |/usr/bin/program -c -s in .qmail
 
 deliveryMode
 
- 
+ Switch to enable some special features:
+ - normal or unset: the normal behavior
+                    (Maildir/box delivery, forward, program-executing)
+ - forwardonly: only forwards are allowed
+ - reply: like normal but send an auto_reply mail with text from mailReplyText 
+ - echo: something very strange, just echo the message (nothing else)
+ Default: everything else is treated as normal (normally not set)
 
 mailReplyText
 
- 
+ A reply text for every incoming message (multiline)
+ Example: Sorry, but I'm not working today
+ Note: works only if deliveryMode is set to reply
 
 qmailDotMode
 
- 
+ The default interpretation of .qmail files
+ Values: both, dotonly, ldaponly, none (just Maildir/box delivery)
+ Default: set by file ldapdefaultdotmode
+ Note: Works only for deliveries based on LDAP lookups,
+       overrides ldapdefaultdotmode
 
 uid
 

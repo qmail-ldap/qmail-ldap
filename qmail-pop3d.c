@@ -17,7 +17,7 @@
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 
-// #define MAKE_NETSCAPE_WORK /* make the Netscape download progress bar work with qmail-pop3d */
+#define MAKE_NETSCAPE_WORK /* make the Netscape download progress bar work with qmail-pop3d */
 
 void die() { _exit(0); }
 
@@ -259,6 +259,9 @@ void pop3_top(arg) char *arg;
   int i;
   unsigned long limit;
   int fd;
+#ifdef MAKE_NETSCAPE_WORK /* Based on a patch by sven@megabit.net */
+  char foo[21];  /* should be enough to hold a 64bit-ulong */
+#endif
  
   i = msgno(arg);
   if (i == -1) return;

@@ -1,6 +1,3 @@
-#ifdef SOLARIS
-#include <solaris.h>
-#endif
 #include <errno.h>
 #define QLDAP_PORT LDAP_PORT
 #include "control.h"
@@ -15,22 +12,24 @@
 #include "check.h"
 #include "case.h"
 #include "qlx.h"
+#include "compatibility.h"
 #include "digest_md4.h"
 #include "digest_md5.h"
 #include "digest_rmd160.h"
 #include "digest_sha1.h"
 #include "str.h"
 
-#define QLDAPDEBUG
-#define LOOK_UP_PASSWD
+#ifdef QLDAPDEBUG
+#warning __checkpassword_DEBUG_version_set_in_Makefile__
+#warning __you_need_a_none_debug_version_to_run_with_qmail-pop3d__
+#endif
 
+/* Edit the first lines in the Makefile to enable local passwd lookups and debug options.
+ * To use shadow passwords under Solaris, uncomment the 'SHADOWOPTS' line in the Makefile.
+ * To use shadow passwords under Linux, uncomment the 'SHADOWOPTS' line and
+ * the 'SHADOWLIBS=-lshadow' line in the Makefile.
+ */
 #ifdef LOOK_UP_PASSWD
-/* To use shadow passwords under Solaris, uncomment the '#define PW_SHADOW'    *
- * line. To use shadow passwords under Linux, uncomment the '#define PW_SHADOW'*
- * and add the '-lshadow' for checkpassword in the Makefile.                   */
-
-// #define PW_SHADOW
-
 #include <pwd.h>
 #ifdef PW_SHADOW
 #include <shadow.h>
@@ -65,6 +64,7 @@ stralloc    qldap_password = {0};
 stralloc    qldap_uid = {0};
 stralloc    qldap_gid = {0};
 stralloc    qldap_messagestore = {0};
+stralloc    qldap_passwdappend = {0};
 /* init done */
 
 /* read the various LDAP control files */
@@ -86,36 +86,41 @@ void get_qldap_controls()
    printf(" control/ldapserver \t: %s\n",qldap_server.s);
 #endif
 
-   if (control_rldef(&qldap_basedn,"control/ldapbasedn",0,"") != 1);
+   if (control_rldef(&qldap_basedn,"control/ldapbasedn",0,"") == -1) _exit(1);
    if (!stralloc_0(&qldap_basedn)) _exit(QLX_NOMEM);
 #ifdef QLDAPDEBUG
    printf(" control/ldapbasedn \t: %s\n",qldap_basedn.s);
 #endif
 
-   if (control_rldef(&qldap_user,"control/ldaplogin",0,"") != 1);
+   if (control_rldef(&qldap_user,"control/ldaplogin",0,"") == -1) _exit(1);
    if (!stralloc_0(&qldap_user)) _exit(QLX_NOMEM);
 #ifdef QLDAPDEBUG
    printf(" control/ldaplogin \t: %s\n",qldap_user.s);
 #endif
 
-   if (control_rldef(&qldap_password,"control/ldappassword",0,"") != 1);
+   if (control_rldef(&qldap_password,"control/ldappassword",0,"") == -1) _exit(1);
    if (!stralloc_0(&qldap_password)) _exit(QLX_NOMEM);
 #ifdef QLDAPDEBUG
    printf(" control/ldappassword \t: %s\n",qldap_password.s);
 #endif
 
-   if (control_rldef(&qldap_uid,"control/ldapuid",0,"") != 1);
+   if (control_rldef(&qldap_uid,"control/ldapuid",0,"") == -1) _exit(1);
 #ifdef QLDAPDEBUG
    printf(" control/ldapuid \t: %s\n",sa2s(qldap_uid) );
 #endif
-   if (control_rldef(&qldap_gid,"control/ldapgid",0,"") != 1);
+   if (control_rldef(&qldap_gid,"control/ldapgid",0,"") == -1) _exit(1);
 #ifdef QLDAPDEBUG
    printf(" control/ldapgid \t: %s\n",sa2s(qldap_gid) );
 #endif
 
-   if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"/home/") != 1);
+   if (control_rldef(&qldap_messagestore,"control/ldapmessagestore",0,"/home/") == -1) _exit(1);
 #ifdef QLDAPDEBUG
    printf(" control/ldapmessagestore: %s\n",sa2s(qldap_messagestore) );
+#endif
+
+   if (control_rldef(&qldap_passwdappend,"control/ldappasswdappend",0,"./") == -1) _exit(1);
+#ifdef QLDAPDEBUG
+   printf(" control/ldappasswdappend: %s\n",sa2s(qldap_passwdappend) );
 #endif
 #ifdef QLDAPDEBUG
    printf("\naction: reading control files done successful\n");
@@ -134,8 +139,8 @@ int qldap_get( char *login, stralloc *passwd, unsigned int *uid, unsigned int *g
                                 "qmailGID",
                                 "mailMessagestore", NULL };
 
-   int            version,
-                  rc,
+   int            rc,
+                  version,
                   num_entries = 0;
 
    stralloc       filter = {0};
@@ -405,17 +410,16 @@ void main(argc,argv)
 int argc;
 char **argv;
 {
- char hashed[40];
+ char hashed[40] = "0000000000000000000000000000000000000000";
  char *login,
       *encrypted,
       *entredpassword;
 
- unsigned int i,
-              r,
+#warning __do_not_remove_one_of_this_variables_all_are_somehow_used__
+ unsigned int i, r,
               uid,
               gid,
-              shift,
-              numenv;
+              shift;
 
  stralloc password={0};
  stralloc homedir={0};
@@ -508,12 +512,12 @@ char **argv;
     spw = getspnam(login);
     if (!spw) {
   #ifdef QLDAPDEBUG
-     printf(" passwd-file lookup \t: login '%s' not found in shadow file",login);
+     printf(" passwd-file lookup \t: login '%s' not found in shadow file\n",login);
   #endif
       _exit(1); /* XXX: again, temp hidden */
     } else {
   #ifdef QLDAPDEBUG
-     printf(" passwd-file lookup \t: login '%s' found in shadow file",login);
+     printf(" passwd-file lookup \t: login '%s' found in shadow file\n",login);
   #endif
     }
     if (!stralloc_copys(&password, spw->sp_pwdp) ) _exit(QLX_NOMEM);
@@ -522,12 +526,12 @@ char **argv;
     spw = getuserpw(login);
     if (!spw) {
   #ifdef QLDAPDEBUG
-     printf(" passwd-file lookup \t: login '%s' not found in shadow file",login);
+     printf(" passwd-file lookup \t: login '%s' not found in shadow file\n",login);
   #endif
       _exit(1); /* XXX: and again */
     } else {
   #ifdef QLDAPDEBUG
-     printf(" passwd-file lookup \t: login '%s' found in shadow file",login);
+     printf(" passwd-file lookup \t: login '%s' found in shadow file\n",login);
   #endif
     }
     if (!stralloc_copys(&password, spw->upw_passwd) ) _exit(QLX_NOMEM);
@@ -550,6 +554,9 @@ char **argv;
   #endif
 
     if (!stralloc_copys(&homedir, pw->pw_dir) ) _exit(QLX_NOMEM);
+    if (homedir.s[homedir.len -1] != '/') 
+       if (!stralloc_cats(&homedir, "/") ) _exit(QLX_NOMEM);
+    if (!stralloc_cat(&homedir, &qldap_passwdappend) ) _exit(QLX_NOMEM);
     if (!stralloc_0(&homedir) ) _exit(QLX_NOMEM);
   #ifdef QLDAPDEBUG
     printf(" passwd-file lookup \t: homedir path is '%s'\n",homedir.s);
@@ -701,7 +708,6 @@ char **argv;
 
 #ifndef QLDAPDEBUG
  /* set up the environment for the execution of qmail-pop3d */
- numenv = 0;
 
  if (!env_put2("USER",login)) _exit(111);
  if (!env_put2("HOME",homedir.s)) _exit(111);

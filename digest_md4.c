@@ -34,6 +34,7 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/uio.h>
+#include "compatibility.h"
 #include "digest_md4.h"
 #include "base64.h"
 
@@ -57,13 +58,15 @@ typedef unsigned char *POINTER;
 
 static void MD4Transform __P ((u_int32_t [4], const unsigned char [64]));
 
-#if BYTE_ORDER == LITTLE_ENDIAN
+#ifdef __LITTLE_ENDIAN__
+#warning __LITTLE_ENDIAN__
 #define Encode memcpy
 #define Decode memcpy
-#else /* BIG_ENDIAN */
+#else  /* __BIG_ENDIAN__ */
+#warning __BIG_ENDIAN__
 static void Encode __P ((void *, const void *, size_t));
 static void Decode __P ((void *, const void *, size_t));
-#endif /* LITTLE_ENDIAN */
+#endif /* __LITTLE_ENDIAN__ */
 
 static unsigned char PADDING[64] = {
   0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -96,7 +99,7 @@ static unsigned char PADDING[64] = {
     (a) = ROTATE_LEFT ((a), (s)); \
   }
 
-#if BYTE_ORDER != LITTLE_ENDIAN
+#ifdef __BIG_ENDIAN__
 /* Encodes input (u_int32_t) into output (unsigned char). Assumes len is
      a multiple of 4.
  */
@@ -133,7 +136,7 @@ size_t len;
     output[i] = ((u_int32_t)input[j]) | (((u_int32_t)input[j+1]) << 8) |
       (((u_int32_t)input[j+2]) << 16) | (((u_int32_t)input[j+3]) << 24);
 }
-#endif /* !LITTLE_ENDIAN */
+#endif /* __BIG_ENDIAN__ */
 
 /* MD4 initialization. Begins an MD4 operation, writing a new context.
  */

@@ -3,15 +3,15 @@
 
 #include "str.h"
 
-extern int chck_mailb(char *s, register unsigned int len);
-extern int chck_userb(char *s, register unsigned int len);
-extern long chck_idb(char *s, register unsigned int len);
-extern int chck_pathb(char *s, register unsigned int len);
+extern int chck_mailb();
+extern int chck_userb();
+extern long chck_idb();
+extern int chck_pathb();
 
-extern int chck_mails(char *s);
-extern int chck_users(char *s);
-extern long chck_ids(char *s);
-extern int chck_paths(char *s);
+extern int chck_mails();
+extern int chck_users();
+extern long chck_ids();
+extern int chck_paths();
 
 
 #endif

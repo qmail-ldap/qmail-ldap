@@ -1,3 +1,29 @@
+# Edit this few lines to configure your ldap stuff and checkpassword
+
+# to enable qmail-ldap uncomment next line
+LDAPON=-DQLDAP
+ 
+# Perhaps you have different ldap libraries, change them here
+LDAPLIBS=-lldap -llber
+# for example on my Linux box I use:
+#LDAPLIBS=-L/opt/ldap/lib -lpthread -lldapssl30
+# if you need a special include-directory for ldap headers enable this
+#LDAPINCLUDES=-I/opt/ldap/include
+
+# uncomment the next line if you need also local passwd lookups
+PWOPTS=-DLOOK_UP_PASSWD
+
+# checkpassword compiled with DEBUG endabled does now complete LDAP debugging
+#DEBUG=-DQLDAPDEBUG
+# WARNING: you need a NONE DEBUG checkpassword to run with qmail-pop3d
+
+# To use shadow passwords under Linux, uncomment the next two lines.
+#SHADOWLIBS=-lshadow
+#SHADOWOPTS=-DPW_SHADOW
+# To use shadow passwords under Solaris, uncomment the SHADOWOPTS line.
+
+# STOP editing HERE !!!
+
 # Don't edit Makefile! Use conf-* for configuration.
 
 SHELL=/bin/sh
@@ -138,7 +164,7 @@ compile auto_usera.c
 
 base64.o: \
 compile base64.c base64.h
-	./compile base64.c
+	./compile $(LDAPON) base64.c
 
 binm1: \
 binm1.sh conf-qmail
@@ -289,20 +315,23 @@ it man
 
 check.o: \
 compile check.c check.h str.h str_len.c
-	./compile check.c
+	./compile $(LDAPON) check.c
 
 checkpassword: \
 load checkpassword.o check.o control.o case.a sig.a strerr.a getln.a \
-wait.a fs.a open.a stralloc.a auto_qmail.o alloc.a substdio.a error.a env.a str.a \
-base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o
+wait.a fs.a open.a stralloc.a auto_qmail.o alloc.a substdio.a error.a env.a \
+str.a base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o
 	./load checkpassword check.o control.o case.a getln.a fs.a open.a \
 	stralloc.a alloc.a substdio.a error.a env.a str.a auto_qmail.o \
 	base64.o digest_md4.o digest_md5.o digest_rmd160.o digest_sha1.o \
-        -L/usr/lib -lldap -llber -lcrypt
+        $(LDAPLIBS) -lcrypt $(SHADOWLIBS)
 
 checkpassword.o: \
-compile checkpassword.c
-	./compile checkpassword.c
+compile checkpassword.c stralloc.h env.h control.h auto_usera.h auto_uids.h \
+auto_qmail.h fmt.h check.h qlx.h compatibility.h digest_md4.h digest_md5.h \
+digest_rmd160.h digest_sha1.h
+	./compile $(LDAPON) $(SHADOWOPTS) $(PWOPTS) $(DEBUG) $(LDAPINCLUDES) \
+	checkpassword.c
 
 chkshsgr: \
 load chkshsgr.o
@@ -414,24 +443,24 @@ digest_sha1.o base64.o
 	digest_sha1.o base64.o
 
 digest.o: \
-compile digest.c
-	./compile digest.c
+compile digest.c compatibility.h
+	./compile $(LDAPON) digest.c
 
 digest_md4.o: \
-compile digest_md4.c digest_md4.h
-	./compile digest_md4.c
+compile endian digest_md4.c digest_md4.h compatibility.h
+	./compile $(LDAPON) `./endian` digest_md4.c
 
 digest_md5.o: \
-compile digest_md5.c digest_md5.h
-	./compile digest_md5.c
+compile endian digest_md5.c digest_md5.h compatibility.h
+	./compile $(LDAPON) `./endian` digest_md5.c
 
 digest_rmd160.o: \
-compile digest_rmd160.c digest_rmd160.h
-	./compile digest_rmd160.c
+compile endian digest_rmd160.c digest_rmd160.h compatibility.h
+	./compile $(LDAPON) `./endian` digest_rmd160.c
 
 digest_sha1.o: \
-compile digest_sha1.c digest_sha1.h
-	./compile digest_sha1.c
+compile endian digest_sha1.c digest_sha1.h compatibility.h
+	./compile $(LDAPON) `./endian` digest_sha1.c
 
 direntry.h: \
 compile trydrent.c direntry.h1 direntry.h2
@@ -538,6 +567,14 @@ warn-auto.sh elq.sh conf-qmail conf-break conf-split
 	| sed s}SPLIT}"`head -1 conf-split`"}g \
 	> elq
 	chmod 755 elq
+
+endian: \
+load endian.o
+	./load endian
+
+endian.o: \
+compile endian.c
+	./compile $(LDAPON) endian.c
 
 env.a: \
 makelib env.o envread.o
@@ -853,8 +890,8 @@ qmail-pop3d qmail-popup qmail-qmqpc qmail-qmqpd qmail-qmtpd \
 qmail-smtpd sendmail tcp-env qmail-newmrh config config-fast dnscname \
 dnsptr dnsip dnsmxip dnsfq hostname ipmeprint qreceipt qsmhook qbiff \
 forward preline condredirect bouncesaying except maildirmake \
-maildir2mbox maildirwatch qail elq pinq idedit checkpassword \
-install-big install instcheck home home+df proc proc+df binm1 \
+maildir2mbox maildirwatch qail elq pinq idedit install-big \
+install instcheck home home+df proc proc+df binm1 \
 binm1+df binm2 binm2+df binm3 binm3+df
 
 load: \
@@ -1238,7 +1275,7 @@ open.h wait.h lock.h seek.h substdio.h getln.h strerr.h subfd.h \
 substdio.h sgetopt.h subgetopt.h alloc.h error.h stralloc.h \
 gen_alloc.h fmt.h str.h now.h datetime.h case.h quote.h qmail.h \
 substdio.h slurpclose.h myctime.h gfrom.h auto_patrn.h
-	./compile qmail-local.c
+	./compile $(LDAPON) qmail-local.c
 
 qmail-log.0: \
 qmail-log.5
@@ -1253,7 +1290,7 @@ auto_spawn.o auto_usera.o
 	check.o sig.a strerr.a getln.a wait.a case.a cdb.a fd.a open.a \
 	env.a stralloc.a alloc.a substdio.a error.a str.a fs.a \
 	auto_qmail.o auto_uids.o auto_usera.o \
-	auto_spawn.o -L/usr/lib -lldap -llber
+	auto_spawn.o $(LDAPLIBS)
 
 qmail-lspawn.0: \
 qmail-lspawn.8
@@ -1264,7 +1301,7 @@ compile qmail-lspawn.c fd.h wait.h prot.h substdio.h stralloc.h \
 gen_alloc.h scan.h exit.h fork.h error.h cdb.h uint32.h case.h \
 slurpclose.h auto_qmail.h auto_uids.h qlx.h check.c check.h str.h \
 getln.c getln2.c
-	./compile qmail-lspawn.c
+	./compile $(LDAPON) $(LDAPINCLUDES) qmail-lspawn.c
 
 qmail-newmrh: \
 load qmail-newmrh.o cdbmss.o getln.a open.a cdbmake.a seek.a case.a \
@@ -1334,7 +1371,7 @@ compile qmail-pop3d.c commands.h sig.h getln.h stralloc.h gen_alloc.h \
 substdio.h alloc.h open.h prioq.h datetime.h gen_alloc.h scan.h fmt.h \
 str.h exit.h maildir.h strerr.h readwrite.h timeoutread.h \
 timeoutwrite.h
-	./compile qmail-pop3d.c
+	./compile $(LDAPON) qmail-pop3d.c
 
 qmail-popup: \
 load qmail-popup.o commands.o timeoutread.o timeoutwrite.o now.o \
@@ -1559,7 +1596,7 @@ substdio.h alloc.h error.h stralloc.h gen_alloc.h str.h byte.h fmt.h \
 scan.h case.h auto_qmail.h trigger.h newfield.h stralloc.h quote.h \
 qmail.h substdio.h qsutil.h prioq.h datetime.h gen_alloc.h constmap.h \
 fmtqfn.h readsubdir.h direntry.h
-	./compile qmail-send.c
+	./compile $(LDAPON) qmail-send.c
 
 qmail-showctl: \
 load qmail-showctl.o auto_uids.o control.o open.a getln.a stralloc.a \

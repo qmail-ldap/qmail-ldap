@@ -14,8 +14,8 @@
 #include "auto_uids.h"
 #include "qlx.h"
 
-#define QLDAP           /* enable LDAP for qmail */
-// #define QLDAPDEBUG     /* We should set this with the -D option of gcc */
+/* #define QLDAP        */ /* enable LDAP for qmail, done by the Makefile  */
+/* #define QLDAPDEBUG   */ /* We should set this with the -D option of gcc */
 
 #ifdef QLDAP /* Includes needed to make LDAP work */
 
@@ -233,7 +233,7 @@ int len;
       return;
 
       case 204:
-         substdio_puts(ss, "DInternal in ldap_search_ext_s.\n");
+         substdio_puts(ss, "DInternal error in ldap_search_ext_s.\n");
       return;
 
 
@@ -420,7 +420,7 @@ int qldap_get( stralloc *mail )
       /* ...or set the default one (or break) */
       if (!qldap_username.len) return 40;
       if (!chck_userb(qldap_username.s,qldap_username.len)) return 41;
-      if (!stralloc_copyb(&nughde, qldap_username)) _exit(QLX_NOMEM);
+      if (!stralloc_copy(&nughde, &qldap_username)) _exit(QLX_NOMEM);
    }
    ldap_value_free(vals);
    
@@ -436,7 +436,7 @@ int qldap_get( stralloc *mail )
    } else {
       if (!qldap_uid.len) return 42;
       if (100 > chck_idb(qldap_uid.s,qldap_uid.len) ) return 43;
-      if (!stralloc_catb(&nughde, qldap_uid)) _exit(QLX_NOMEM);
+      if (!stralloc_cat(&nughde, &qldap_uid)) _exit(QLX_NOMEM);
    }
    ldap_value_free(vals);
 
@@ -452,7 +452,7 @@ int qldap_get( stralloc *mail )
    } else {
       if (!qldap_gid.len) return 44;
       if ( 100 > chck_idb(qldap_gid.s,qldap_gid.len) ) return 45;
-      if (!stralloc_catb(&nughde, qldap_gid)) _exit(QLX_NOMEM);
+      if (!stralloc_cat(&nughde, &qldap_gid)) _exit(QLX_NOMEM);
    }
    ldap_value_free(vals);
    
@@ -468,7 +468,7 @@ int qldap_get( stralloc *mail )
          if (qldap_messagestore.s[qldap_messagestore.len -1] != '/') return 47;
          if (!stralloc_cats(&qldap_messagestore, vals[0])) _exit(QLX_NOMEM);
          if (!chck_pathb(qldap_messagestore.s,qldap_messagestore.len) ) return 24;
-         if (!stralloc_catb(&nughde, qldap_messagestore)) _exit(QLX_NOMEM);
+         if (!stralloc_cat(&nughde, &qldap_messagestore)) _exit(QLX_NOMEM);
       } else {
          if (!chck_paths(vals[0]) ) return 23;
          if (!stralloc_cats(&nughde, vals[0])) _exit(QLX_NOMEM);

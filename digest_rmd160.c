@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include "compatibility.h"
 #include "digest_rmd160.h"
 #include "base64.h"
 
@@ -327,9 +328,9 @@ void RMD160Update(context, data, nbytes)
         u_int32_t X[16];
         u_int32_t ofs = 0;
         u_int32_t i;
-#if BYTE_ORDER != LITTLE_ENDIAN
+#ifdef __BIG_ENDIAN__
         u_int32_t j;
-#endif
+#endif /* __BIG_ENDIAN__ */
 
         /* update length[] */
         if (context->length[0] + nbytes < context->length[0])
@@ -348,23 +349,25 @@ void RMD160Update(context, data, nbytes)
                 /* process first block */
                 ofs = 64 - context->buflen;
                 (void)memcpy(context->bbuffer + context->buflen, data, ofs);
-#if BYTE_ORDER == LITTLE_ENDIAN
+#ifdef __LITTLE_ENDIAN__
+#warning __LITTLE_ENDIAN__
                 (void)memcpy(X, context->bbuffer, sizeof(X));
-#else
+#else  /* __BIG_ENDIAN__ */
+#warning __BIG_ENDIAN__
                 for (j=0; j < 16; j++)
                         X[j] = BYTES_TO_DWORD(context->bbuffer + (4 * j));
-#endif
+#endif /* __LITTLE_ENDIAN__ */
                 RMD160Transform(context->state, X);
                 nbytes -= ofs;
 
                 /* process remaining complete blocks */
                 for (i = 0; i < (nbytes >> 6); i++) {
-#if BYTE_ORDER == LITTLE_ENDIAN
+#ifdef __LITTLE_ENDIAN__
                         (void)memcpy(X, data + (64 * i) + ofs, sizeof(X));
-#else
+#else  /* __BIG_ENDIAN__ */
                         for (j=0; j < 16; j++)
                                 X[j] = BYTES_TO_DWORD(data + (64 * i) + (4 * j) + ofs);
-#endif
+#endif /* __LITTLE_ENDIAN__ */
                         RMD160Transform(context->state, X);
                 }
 
@@ -382,21 +385,21 @@ void RMD160Final(digest, context)
 {
         u_int32_t i;
         u_int32_t X[16];
-#if BYTE_ORDER != LITTLE_ENDIAN
+#ifdef __BIG_ENDIAN__
         u_int32_t j;
-#endif
+#endif /* __BIG_ENDIAN__ */
 
         /* append the bit m_n == 1 */
         context->bbuffer[context->buflen] = '\200';
 
         (void)memset(context->bbuffer + context->buflen + 1, 0,
                 63 - context->buflen);
-#if BYTE_ORDER == LITTLE_ENDIAN
+#ifdef __LITTLE_ENDIAN__
         (void)memcpy(X, context->bbuffer, sizeof(X));
-#else
+#else  /* __BIG_ENDIAN__ */
         for (j=0; j < 16; j++)
                 X[j] = BYTES_TO_DWORD(context->bbuffer + (4 * j));
-#endif
+#endif /* __LITTLE_ENDIAN__ */
         if ((context->buflen) > 55) {
                 /* length goes to next block */
                 RMD160Transform(context->state, X);

@@ -56,7 +56,8 @@ stralloc bouncehost = {0};
 stralloc doublebounceto = {0};
 stralloc doublebouncehost = {0};
 
-#define QLDAP /* this patch comes with the LDAP patches */
+/* #define QLDAP */ /* this patch comes with the LDAP patches 
+                     * and is set by the Makefile */
 #ifdef QLDAP
 stralloc custombouncetext = {0};
 
