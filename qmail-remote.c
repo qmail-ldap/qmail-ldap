@@ -413,6 +413,9 @@ char **argv;
  
     smtpfd = socket(AF_INET,SOCK_STREAM,0);
     if (smtpfd == -1) temp_oserr();
+
+    /* performace hack to send TCP ACK's without delay */
+    setsockopt(smtpfd, IPPROTO_TCP, TCP_NODELAY, &smtpfd, sizeof smtpdfd);
  
     if (timeoutconn(smtpfd,&ip.ix[i].ip,(unsigned int) port,timeoutconnect) == 0) {
       tcpto_err(&ip.ix[i].ip,0);
