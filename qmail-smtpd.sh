@@ -6,6 +6,7 @@ exec 2>&1
 QMAIL="%QMAIL%"
 ME="`head -1 $QMAIL/control/me`"
 CONCURRENCY=${CONCURRENCY:=50}
+QUSER="qmaild"
 
 PATH="$QMAIL/bin:$PATH"
 
@@ -18,7 +19,7 @@ eval `env - PATH=$PATH envdir ./env awk '\
 	}'`
 
 # enforce some sane defaults
-USER=${USER:="qmaild"}
+QUSER=${QUSER:="qmaild"}
 PBSTOOL=${PBSTOOL:="$QMAIL/bin/pbscheck"}
 
 if [ X${NOPBS+"true"} = X"true" ]; then
@@ -26,7 +27,7 @@ if [ X${NOPBS+"true"} = X"true" ]; then
 fi
 
 exec \
-	envuidgid $USER \
+	envuidgid $QUSER \
 	tcpserver -v -URl $ME -x$QMAIL/control/qmail-smtpd.cdb \
 	    ${CONCURRENCY:+"-c$CONCURRENCY"} ${BACKLOG:+"-b$BACKLOG"} 0 smtp \
 	$PBSTOOL \

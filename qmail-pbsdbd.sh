@@ -4,6 +4,7 @@ exec 2>&1
 # pop before smtp database daemon
 #
 QMAIL="%QMAIL%"
+QUSER="qmaild"
 
 PATH="$QMAIL/bin:$PATH"
 
@@ -16,9 +17,9 @@ eval `env - PATH=$PATH envdir ./env awk '\
 	}'`
 
 # enforce some sane defaults
-USER=${USER:="qmaild"}
+QUSER=${QUSER:="qmaild"}
 
 exec \
-	setuidgid $USER \
+	setuidgid $QUSER \
 	$QMAIL/bin/pbsdbd
 
