@@ -420,7 +420,7 @@ int qldap_get( stralloc *mail )
 #endif
 
    /* do the search for the email address */
-   if ( (rc = ldap_search_ext_s(ld,qldap_basedn.s,LDAP_SCOPE_SUBTREE,filter.s,attrs,0,NULL,NULL,NULL,1,&res)) != LDAP_SUCCESS ) {
+   if ( (rc = ldap_search_s(ld,qldap_basedn.s,LDAP_SCOPE_SUBTREE,filter.s,attrs,0,&res)) != LDAP_SUCCESS ) {
 #ifdef QLDAPDEBUG 
       printf("ldap_search_ext_s: %s\n", ldap_err2string(rc));
 #endif
@@ -434,7 +434,11 @@ int qldap_get( stralloc *mail )
    msg = ldap_first_entry(ld,res);
 
    /* get the dn and free it (we dont need it, to prevent memory leaks) */
+#ifdef LDAP_OPT_PROTOCOL_VERSION /* (only with Mozilla LDAP SDK) */
    if ( (dn = ldap_get_dn(ld,msg)) != NULL ) ldap_memfree(dn);
+#else
+   if ( (dn = ldap_get_dn(ld,msg)) != NULL ) free(dn);
+#endif
 
    /* go through the attributes and set the proper args for qmail-local  *
     * this can probably done with some sort of loop, but hey, how cares? */

@@ -1,6 +1,6 @@
-Betacode 19981231 by Andre Oppermann <opi@nrg4u.com>,
+Betacode 19990425 by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
-(c) 1998 Internet Business Solutions Ltd.
+(c) 1998,1999 Internet Business Solutions Ltd.
 
 This LDAP patches for qmail come with NO WARRANTY.
 
@@ -16,6 +16,7 @@ done    - Tool for generating crypto passwords
 done    - Implement some more ~control/ldap* files
 done    - Pass list of requested attributes to ldap_search_ext_s
 ongoing - Lot of code clean up (debugging code needs to be debugged :)
+done    - Make it work with OpenLDAP
 ongoing - Make qmail-lspawn debug messages work (again)
 ongoing - Debugging and testing, testing, testing
 ongoing - The big qmail-ldap picture
@@ -51,6 +52,9 @@ NEWS:
 
  Fixed a few things in qmail-local and also enhanced the Makefile
 
+ Should now link with the OpenLDAP libraries
+
+
 INSTALL:
 
 1. Make sure you have fairly good knowledge of qmail and LDAP
@@ -58,15 +62,9 @@ INSTALL:
 2. Read this document
 
 3. You need the following compiled and installed
-    - Mozilla Directory SDK (LDAP libs)
-    - OpenLDAP server (others might also work)
+    - OpenLDAP 1.2 (others might also work)
 
-   Don't ask me if you have compile|install problems with Directory SDK or
-   OpenLDAP!
-
-   QLDAP needs the Mozilla Libs because it uses ldap_search_ext_s
-   which supports LDAPv3. Very little tweaking is needed to replace
-   it with ldap_search_s.
+   Don't ask me if you have compile|install problems with OpenLDAP!
 
 4. Apply the qmail-ldap patches to a clean qmail-1.03 source tree
    normaly "cd qmail-1.03_source_tree; patch -p1 < location_of_patch"
