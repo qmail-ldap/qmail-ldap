@@ -681,27 +681,28 @@ char **argv;
  if (*argv) usage();
 
  if (homedir[0] != '/') usage();
- if (chdir(homedir) == -1 && env_get("QLDAPAUTOMAILDIRMAKE") )
- {
-   if (errno == error_noent) {
-     umask(077);
-     if (mkdir(homedir,0700) == -1)
+ if (chdir(homedir) == -1) {
+   if (!env_get("QLDAPAUTOMAILDIRMAKE")) {
+     strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
+     } else {
+     if (errno == error_noent) {
+       umask(077);
+       if (mkdir(homedir,0700) == -1)
+         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
+       if (chdir(homedir) == -1)
+         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
+       if (mkdir("tmp",0700) == -1)
+         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
+       if (mkdir("new",0700) == -1)
+         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
+       if (mkdir("cur",0700) == -1)
+         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
+       if (chdir(homedir) == -1)
+         strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
+     } else {
        strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-     if (chdir(homedir) == -1)
-       strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-     if (mkdir("tmp",0700) == -1)
-       strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-     if (mkdir("new",0700) == -1)
-       strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-     if (mkdir("cur",0700) == -1)
-       strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-     if (chdir(homedir) == -1)
-       strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
-   } else {
-     strerr_die5x(111,"Error while creating homedir ",homedir,": ",error_str(errno),". (#4.3.0)");
+     }
    }
- } else {
-   strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
  }
  checkhome();
 
