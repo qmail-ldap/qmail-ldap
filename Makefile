@@ -4,23 +4,25 @@
 LDAPON=-DQLDAP
  
 # Perhaps you have different ldap libraries, change them here
-LDAPLIBS=-lldap -llber
+LDAPLIBS=-L/usr/local/lib -lldap -llber
+# and change the location of the include files here
+LDAPINCLUDE=-I/usr/local/inlcude
 # for example on my Linux box I use:
 #LDAPLIBS=-L/opt/ldap/lib -lpthread -lldapssl30
 # if you need a special include-directory for ldap headers enable this
 #LDAPINCLUDES=-I/opt/ldap/include
 
-# uncomment the next line if you need also local passwd lookups
+# comment out the next line if you don't need local passwd lookups
 PWOPTS=-DLOOK_UP_PASSWD
-
-# checkpassword compiled with DEBUG endabled does now complete LDAP debugging
-#DEBUG=-DQLDAPDEBUG
-# WARNING: you need a NONE DEBUG checkpassword to run with qmail-pop3d
 
 # To use shadow passwords under Linux, uncomment the next two lines.
 #SHADOWLIBS=-lshadow
 #SHADOWOPTS=-DPW_SHADOW
 # To use shadow passwords under Solaris, uncomment the SHADOWOPTS line.
+
+# checkpassword compiled with DEBUG endabled does now complete LDAP debugging
+#DEBUG=-DQLDAPDEBUG
+# WARNING: you need a NONE DEBUG checkpassword to run with qmail-pop3d
 
 # STOP editing HERE !!!
 

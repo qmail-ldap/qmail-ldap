@@ -1,4 +1,4 @@
-Betacode 19990425 by Andre Oppermann <opi@nrg4u.com>,
+Betacode 19990428 by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998,1999 Internet Business Solutions Ltd.
 
@@ -27,7 +27,7 @@ NEWS:
  checkpassword compiled with QLDAPDEBUG now does complete LDAP debugging.
   Usage: ./checkpassword POPLogin POPPassword
 
- digest computes MD4, MD5, RMD160 and SHA1 passwords (compatible to Netscape)
+ digest computes MD4, MD5, RMD160 and SHA passwords (compatible to Netscape)
   Usage: ./digest POPPassword
 
  solved a problem on big endian machines that caused wrong SHA, MD5, MD4, RMD160
@@ -52,8 +52,9 @@ NEWS:
 
  Fixed a few things in qmail-local and also enhanced the Makefile
 
- Should now link with the OpenLDAP libraries
+ Supports OpenLDAP now
 
+ WARNING: {SHA1} changed to {SHA} according to the standard
 
 INSTALL:
 
@@ -64,7 +65,7 @@ INSTALL:
 3. You need the following compiled and installed
     - OpenLDAP 1.2 (others might also work)
 
-   Don't ask me if you have compile|install problems with OpenLDAP!
+   If you have problems with OpenLDAP look into their FAQ.
 
 4. Apply the qmail-ldap patches to a clean qmail-1.03 source tree
    normaly "cd qmail-1.03_source_tree; patch -p1 < location_of_patch"
@@ -105,15 +106,15 @@ INSTALL:
        If needed something like this should do the trick:
           # chmod 755 `head -1 conf-qmail`/bin/qmail-reply
           # chmod 755 `head -1 conf-qmail`/bin/qmail-quotawarn
-          # chown root:root `head -1 conf-qmail`/bin/qmail-reply
-          # chown root:root `head -1 conf-qmail`/bin/qmail-quotawarn
+          # chown root:qmail `head -1 conf-qmail`/bin/qmail-reply
+          # chown root:qmail `head -1 conf-qmail`/bin/qmail-quotawarn
 
      WARNING: checkpassword should only be runable by root
               don't make the debug version accessible to other users
 
 5.3 Enable DEBUG in the Makefile and compile checkpassword again, this is for
-    debugging your LDAP setup
-    use make checkpassword to compile checkpassword again
+    debugging your LDAP setup.
+    Use make checkpassword to compile checkpassword again
 
 6. Create the LDAP user database and start the LDAP server
 

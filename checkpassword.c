@@ -12,7 +12,11 @@
 #include "check.h"
 #include "case.h"
 #include "qlx.h"
-#include "compatibility.h"
+#ifndef u_int32_t
+ #include <sys/types.h>
+#else
+ #include "compatibility.h"
+#endif
 #include "digest_md4.h"
 #include "digest_md5.h"
 #include "digest_rmd160.h"
@@ -603,12 +607,12 @@ char **argv;
 #ifdef QLDAPDEBUG
       printf(" comparing passwords \t: calculated  '{MD5}%s'\n",hashed);
 #endif
-   } else if (!str_diffn("{SHA1}", password.s, 6) ) {
-   /* SHA1 */
+   } else if (!str_diffn("{SHA}", password.s, 6) ) {
+   /* SHA */
       shift = 6;
       SHA1DataBase64(entredpassword,strlen(entredpassword),hashed,sizeof(hashed));
 #ifdef QLDAPDEBUG
-      printf(" comparing passwords \t: calculated  '{SHA1}%s'\n",hashed);
+      printf(" comparing passwords \t: calculated  '{SHA}%s'\n",hashed);
 #endif
    } else  if (!str_diffn("{RMD160}", password.s, 8) ) {
    /* RMD160 */

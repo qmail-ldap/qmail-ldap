@@ -5,8 +5,11 @@
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
-
-#include "compatibility.h"
+#ifndef u_int32_t
+ #include <sys/types.h>
+#else
+ #include "compatibility.h"
+#endif
 #include "digest_md4.h"
 #include "digest_md5.h"
 #include "digest_rmd160.h"
@@ -27,7 +30,7 @@ int main(int argc, char *argv[])
      printf("{RMD160}%s\n",buffer);
 
      SHA1DataBase64(argv[1],strlen(argv[1]),buffer,sizeof(buffer));
-     printf("{SHA1}%s\n",buffer);
+     printf("{SHA}%s\n",buffer);
 
      exit(0);
    } else {
