@@ -660,7 +660,11 @@ int parseheader(/* TODO names for to/cc checking */ void)
 		case 'x': /* X-RBL: */
 			if (case_startb(s, len, "X-RBL:")) {
 				return 1;
-				/* don't reply to mailing-lists */
+				/* don't reply to messages tagged as spam */
+			}
+			if (case_startb(s, len, "X-Spam-Status: Yes")) {
+				return 1;
+				/* don't reply to messages tagged as spam */
 			}
 			break;
 		case ' ':

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/11/26 21:51:14 $ ($Revision: 1.153 $)
+RELEASE: $Date: 2003/11/27 10:14:12 $ ($Revision: 1.154 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,9 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ qmail-reply does no longer reply to messages tagged with a spamassassin
+ "X-Spam-Status: Yes" header.
 
  The dynamic data compression done in qmail-qmqpd can be explicitly disabled.
  If the environment variable NOCOMPRESS is set the feature is disabled.
