@@ -1,4 +1,4 @@
-# Edit this few lines to configure your ldap stuff and checkpassword
+# Edit this few lines to configure your ldap stuff
 
 # to enable some additional for qmail-ldap stuff put it on the LDAPFLAGS line
 #
@@ -51,7 +51,7 @@ MNW=-DMAKE_NETSCAPE_WORK
 # to enable the auto-homedir-make feature uncomment the next line
 #HDIRMAKE=-DAUTOHOMEDIRMAKE
 
-# on most systems we need this to make checkpassword
+# on most systems we need this to make auth_pop and auth_imap
 SHADOWLIBS=-lcrypt
 # OpenBSD Systems seems to have no libcrypt, so comment the line out if you
 # get linking problems
