@@ -19,9 +19,9 @@ char *remoteip;
 {
 	if (!rblenabled) return;
 	if (!rblprintheader) return;
-  qmail_puts(qqt,"X-RBL-Check: ");
+  qmail_puts(qqt,"X-RBL-Check: IP ");
   if (*remoteip) safeput(qqt,remoteip);
-  qmail_puts(qqt," tagged by ");
+  qmail_puts(qqt,": ");
   if (*rblmessage.s) safeput(qqt,rblmessage.s);
   qmail_puts(qqt,"\n");
 }
@@ -108,7 +108,7 @@ int rblcheck(char* remoteip, char** why)
     if (r == 2) {
 			logstring(2,"temporary DNS error, ignored."); logflush(2);
 		} else if (r == 1) {
-			logstring(2,"found match, ");
+			logstring(2,"found match,");
 			stralloc_copys(&rblmessage,rbl[i].message);
 			stralloc_0(&rblmessage);
 			*why = rbl[i].message;
@@ -131,14 +131,14 @@ int rblcheck(char* remoteip, char** why)
     logstring(2,"no match found, continue."); logflush(2);
   }
 
-  return r;
+  return 0; /* either tagged or allowed */
 }
 
 stralloc rbldata = {0};
 
 int rblinit(void)
 {
-	char*** x;
+	char** x;
 	int on;
 	int i;
 	int j;
@@ -154,27 +154,29 @@ int rblinit(void)
   rblenabled = env_get("RBL");
 	if (!rblenabled) return 0;
 
-	for(i = 0, numrbl = 1; i < rbldata.len; ++i) {
+	for(i = 0, numrbl = 0; i < rbldata.len; ++i) {
 		if ( rbldata.s[i] == '\0' ) ++numrbl;
 	}
 	rbl = (struct rbl*)alloc(numrbl*sizeof(struct rbl));
 	if (!rbl) return -1;
-	x = (char***)rbl;
 	
+	x = (char **)&rbl[0]; x[0] = rbldata.s;
 	for(i=0, j=0, k=0; i < rbldata.len; ++i) {
 		if ( rbldata.s[i] == '\t' ) {
 			rbldata.s[i] = '\0';
-			x[k][++j] = rbldata.s + i + 1;
+			x[++j] = rbldata.s + i + 1;
 		} else if ( rbldata.s[i] == '\0' )
 			if (j == 3) {
-				k++;
+				if ( ++k >= numrbl ) break;
+				x = (char**)&rbl[k];
+				x[0] = rbldata.s + i + 1;
 				j = 0;
 			} else {
 				logline(2,"parse error in rbllist");
 				return -1;
 			}
 	}
-	if (j != numrbl) {
+	if (k != numrbl) {
 		logline(2,"parse error in rbllist");
 		return -1;
 	}
