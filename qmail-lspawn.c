@@ -888,7 +888,7 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
    for (i = 0;i < dtline.len;++i) if (dtline.s[i] == '\n') dtline.s[i] = '_';
    if (!stralloc_cats(&dtline,"\n")) _exit(QLX_NOMEM);
 
-   bouncexf();
+   bouncexf(fdmess);
    
    if (seek_begin(fdmess) == -1) _exit(QLX_SYS);
    if (pipe(pi) == -1) _exit(QLX_SYS);
