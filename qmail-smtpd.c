@@ -264,7 +264,7 @@ void setup()
   if (rblok == -1) die_control();
   if (rblok)
     if (!constmap_init(&maprbl,rbl.s,rbl.len,0)) die_nomem();
-      else rblenabled = env_get("RBL");
+  rblenabled = env_get("RBL");
  
   if (control_readint(&databytes,"control/databytes") == -1) die_control();
   x = env_get("DATABYTES");
@@ -386,13 +386,13 @@ int badmxcheck(dom) char *dom;
 
 /* RBL */
 
-char *ip_env;
 stralloc ip_reverse;
 
 void rbl_init()
 {
   unsigned int i;
   unsigned int j;
+  char *ip_env;
 
   ip_env = remoteip;
   if (!ip_env) ip_env = "";
@@ -409,22 +409,30 @@ void rbl_init()
   }
 }
 
-stralloc rbltext;
-
 int rbl_lookup(char *base)
 {
   stralloc tmp;
+  ipalloc rblsa = {0};
+
   if (!stralloc_copy(&tmp,&ip_reverse)) die_nomem();
   if (!stralloc_cats(&tmp,base)) die_nomem();
-  if (dns_txt(&rbltext,&tmp) == -1) {
-   /* dns_ip4() */
-    if (!stralloc_copys(&rbltext,"temporary RBL lookup error")) die_nomem();
-    return 2;
+
+  dns_init(0);
+  switch (dns_ip(&rblsa,&tmp))
+  {
+    case DNS_MEM:
+    case DNS_SOFT:
+         return 2; /* soft error */
+         break;
+
+    case DNS_HARD:
+         return 0; /* found no match */
+         break;
+
+    default:
+         return 1; /* found match */
+         break;
   }
-  if (rbltext.len)
-    return 1;
-  else
-    return 0;
 }
 
 int rblcheck()
@@ -593,12 +601,11 @@ void smtp_mail(arg) char *arg;
     {
       case 2: /* soft error lookup */
         err_dns();
-        break;
+        return;
       case 1: /* host is listed in RBL */
         err_rbl();
-        break;
-      default: /* ok, go ahead */
         return;
+      default: /* ok, go ahead */
     }
   }
 
@@ -794,11 +801,11 @@ void smtp_rcpt(arg) char *arg; {
 #endif
 
   }
+  ++rcptcount;
+  if (maxrcptcount && rcptcount > maxrcptcount) err_maxrcpt(); return;
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
   if (!stralloc_0(&rcptto)) die_nomem();
-  ++rcptcount;
-  if (maxrcptcount && rcptcount >= maxrcptcount) err_maxrcpt();
   if (tarpitcount && rcptcount >= tarpitcount)
   {
     logline(2,"tarpitting");
