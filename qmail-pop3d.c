@@ -18,8 +18,10 @@
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 
-#include "maildir++.h"
 #include "env.h"
+#include "maildir++.h"
+#include "qmail-ldap.h"
+
 int qfd;
  
 /* level 0 = no logging

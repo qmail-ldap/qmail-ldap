@@ -134,7 +134,6 @@ void dropped() {
 int timeoutconnect = 60;
 int smtpfd;
 int timeout = 1200;
-stralloc cookie = {0};
 
 #ifdef TLS_REMOTE
 int flagtimedout = 0;
@@ -361,8 +360,8 @@ char *append;
 #if defined(TLS_REMOTE) && defined(TLSDEBUG)
 #define ONELINE_NAME(X) X509_NAME_oneline(X,NULL,0)
 
- if(ssl){
- X509 *peer;
+ if (ssl) {
+  X509 *peer;
 
   out("STARTTLS proto="); out(SSL_get_version(ssl));
   out("; cipher="); out(SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)));
@@ -431,6 +430,7 @@ void blast()
   substdio_flush(&smtpto);
 }
 
+stralloc cookie = {0};
 stralloc recip = {0};
 
 void smtp()
@@ -458,12 +458,12 @@ void smtp()
   if (code >= 400) return;
   if (code != 220) quit("ZConnected to "," but greeting failed");
 
-  if (smtptext.len > cookie.len+2)
-  {
-    if (case_diffb(cookie.s, cookie.len, smtptext.s+smtptext.len-cookie.len-2))
-      perm_looping();
-  }
- 
+  if (cookie.len > 0)
+    if (smtptext.len > cookie.len + 1)
+      if (!str_diffn(smtptext.s + smtptext.len - cookie.len - 1,
+		  cookie.s, cookie.len))
+        perm_looping();
+  
   flagsize = 0;
   substdio_puts(&smtpto,"EHLO ");
   substdio_put(&smtpto,helohost.s,helohost.len);
@@ -781,8 +781,8 @@ int flagcname;
 void getcontrols()
 {
   if (control_init() == -1) temp_control();
-  if (control_readline(&cookie,"control/smtpclustercookie") == -1)
-    die_control();
+  if (control_rldef(&cookie,"control/smtpclustercookie",0,"") == -1)
+    temp_control();
   if (cookie.len > 32) cookie.len = 32;
   if (control_readint(&timeout,"control/timeoutremote") == -1) temp_control();
   if (control_readint(&timeoutconnect,"control/timeoutconnect") == -1)

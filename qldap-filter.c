@@ -78,7 +78,9 @@ filter_mail(char *mail, int *done)
 {
 	static char	*escaped;
 	static int	at, ext, len = 0;
+#ifdef DASH_EXT
 	int i;
+#endif
 
 	if (mail == (char *)0) return 0;
 

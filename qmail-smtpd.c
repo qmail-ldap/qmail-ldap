@@ -26,6 +26,7 @@
 #include "timeoutwrite.h"
 #include "commands.h"
 #include "dns.h"
+#include "smtpcall.h"
 #ifdef SMTPEXECCHECK
 #include "execcheck.h"
 #endif
@@ -48,11 +49,11 @@ void sigalrm()
 {
  flagtimedout = 1;
 }
-int ssl_timeoutread(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
+int ssl_timeoutread(int tout, int fd, char *buf, int n)
 {
  int r; int saveerrno;
  if (flagtimedout) { errno = error_timeout; return -1; }
- alarm(timeout);
+ alarm(tout);
  r = SSL_read(ssl,buf,n);
  saveerrno = errno;
  alarm(0);
@@ -60,11 +61,11 @@ int ssl_timeoutread(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
  errno = saveerrno;
  return r;
 }
-int ssl_timeoutwrite(timeout,fd,buf,n) int timeout; int fd; char *buf; int n;
+int ssl_timeoutwrite(int tout, int fd, char *buf, int n)
 {
  int r; int saveerrno;
  if (flagtimedout) { errno = error_timeout; return -1; }
- alarm(timeout);
+ alarm(tout);
  r = SSL_write(ssl,buf,n);
  saveerrno = errno;
  alarm(0);
@@ -145,7 +146,7 @@ void err_ldapsoft() { out("451 temporary ldap lookup failure, try again later\r\
 void err_bmf() { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
 void err_bmfunknown() { out("553 sorry, your mail from a host without RR DNS was administratively denied. (#5.7.1)\r\n"); }
 void err_maxrcpt() { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
-void err_nogateway(arg) char *arg; { out("553 sorry, relaying denied from your location ["); out(arg); out("] (#5.7.1)\r\n"); }
+void err_nogateway(char *arg) { out("553 sorry, relaying denied from your location ["); out(arg); out("] (#5.7.1)\r\n"); }
 void err_badbounce() { out("550 sorry, I don't accept bounce messages with more than one recipient. Go read RFC2821. (#5.7.1)\r\n"); }
 void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command: "); logstring(3,arg); logflush(3); }
 void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because: 'SMTP SIZE' too big"); }
@@ -160,7 +161,7 @@ void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n");
 void err_rbl(arg) char *arg; { out("553 sorry, your mailserver is rejected by "); out(arg); out("\r\n"); }
 void err_deny() { out("553 sorry, mail from your location is administratively denied (#5.7.1)\r\n"); }
 void err_badrcptto() { out("553 sorry, mail to that recipient is not accepted (#5.7.1)\r\n"); }
-void err_554msg(arg) char *arg; { out("554 sorry, "); out(arg); out("\r\n"); logstring(3,"message denied because: "); logstring(3,arg); logflush(3); }
+void err_554msg(const char *arg) { out("554 sorry, "); out(arg); out("\r\n"); logstring(3,"message denied because: "); logstring(3,arg); logflush(3); }
 
 
 stralloc me = {0};
@@ -173,8 +174,10 @@ void smtp_greet(code) char *code;
   substdio_puts(&ssout,me.s);
   substdio_puts(&ssout," ESMTP ");
   substdio_put(&ssout,greeting.s,greeting.len);
-  substdio_puts(&ssout," ");
-  substdio_put(&ssout,cookie.s,cookie.len);
+  if (cookie.len > 0) {
+    substdio_puts(&ssout," ");
+    substdio_put(&ssout,cookie.s,cookie.len);
+  }
   out("\r\n");
 }
 void smtp_line(code) char *code;
@@ -209,7 +212,7 @@ char *remoteinfo;
 char *local;
 char *relayclient;
 char *relayok;
-char *550greeting;
+char *greeting550;
 int  spamflag = 0;
 
 stralloc helohost = {0};
@@ -254,6 +257,11 @@ int maxrcptcount = 0;
 int sendercheck = 0;
 int rcptcheck = 0;
 int ldapsoftok = 0;
+int flagauth = 0;
+int needauth = 0;
+int needssl = 0;
+int authenticated = 0;
+char *authprepend;
 
 void setup()
 {
@@ -267,12 +275,12 @@ void setup()
 
   if (control_readline(&me,"control/me") != 1)
     die_control();
-  if (stralloc_0(&me)) die_nomem();
+  if (!stralloc_0(&me)) die_nomem();
 
-  if (control_readline(&greeting,"control/smtpgreeting") == -1)
+  if (control_rldef(&greeting,"control/smtpgreeting", 0, "") == -1)
     die_control();
 
-  if (control_readline(&cookie,"control/smtpclustercookie") == -1)
+  if (control_rldef(&cookie,"control/smtpclustercookie", 0, "") == -1)
     die_control();
   if (cookie.len > 32) cookie.len = 32;
 
@@ -341,13 +349,20 @@ void setup()
   if (env_get("SENDERCHECK"))
   {
     sendercheck = 1;
-    if (!str_diff("LOOSE",env_get("SENDERCHECK"))) sendercheck = 2;
-    if (!str_diff("STRICT",env_get("SENDERCHECK"))) sendercheck = 3;
+    if (!case_diffs("LOOSE",env_get("SENDERCHECK"))) sendercheck = 2;
+    if (!case_diffs("STRICT",env_get("SENDERCHECK"))) sendercheck = 3;
   }
   if (env_get("RCPTCHECK")) rcptcheck = 1;
   if (env_get("LDAPSOFTOK")) ldapsoftok = 1;
-  550greeting = env_get("550GREETING");
+  greeting550 = env_get("550GREETING");
   relayok = relayclient = env_get("RELAYCLIENT");
+
+  if (env_get("SMTPAUTH")) {
+    flagauth = 1;
+    if (!case_diffs("TLSREQUIRED", env_get("SMTPAUTH"))) needssl = 1;
+  }
+  if (env_get("AUTHREQUIRED")) needauth = 1;
+  authprepend = env_get("AUTHPREPEND");
 
 #ifdef SMTPEXECCHECK
   execcheck_setup();
@@ -377,7 +392,7 @@ void setup()
 
   logpid(2);
   logstring(2, "enabled options: ");
-  if (550greeting) logstring(2,"550greeting");
+  if (greeting550) logstring(2,"greeting550");
   if (relayclient) logstring(2,"relayclient ");
   if (sanitycheck) logstring(2,"sanitycheck ");
   if (returnmxcheck) logstring(2,"returnmxcheck ");
@@ -385,11 +400,16 @@ void setup()
   if (nobounce) logstring(2,"nobounce ");
   if (rblok) logstring(2,"rblcheck ");
   if (rbloh) logstring(2,"rblonlyheader ");
-  if (sendercheck) logstring(2,"sendercheck ");
+  if (sendercheck) logstring(2,"sendercheck");
+  if (sendercheck == 1) logstring(2," ");
   if (sendercheck == 2) logstring(2,"-loose ");
   if (sendercheck == 3) logstring(2,"-strict ");
   if (rcptcheck) logstring(2,"rcptcheck ");
   if (ldapsoftok) logstring(2,"ldapsoftok ");
+  if (flagauth) logstring(2, "smtp-auth");
+  if (needssl) logstring(2, "-tls-required ");
+  else logstring(2, " ");
+  if (needauth) logstring(2, "authrequired ");
 #ifdef SMTPEXECCHECK
   if (execcheck_on()) logstring(2, "rejectexecutables ");
 #endif
@@ -522,7 +542,7 @@ char *name;
 
   flagesc = 0;
   flagquoted = 0;
-  for (i = 0;ch = arg[i];++i) { /* skipping addr, respecting quotes */
+  for (i = 0;(ch = arg[i]);++i) { /* skipping addr, respecting quotes */
     if (flagesc) {
       flagesc = 0;
     } else {
@@ -615,7 +635,7 @@ int addrallowed()
   {
     j = byte_rchr(addr.s,addr.len,'@');
     if (j < addr.len)
-      if (constmap(&maplocals,addr.s + j,addr.len - j - 1)) return 1;
+      if (constmap(&maplocals,addr.s + j + 1,addr.len - j - 2)) return 1;
   }
   r = rcpthosts(addr.s,str_len(addr.s));
   if (r == -1) die_control();
@@ -638,10 +658,9 @@ int addrlocals()
 {
   int j;
   if (!localsok) return 0;
-  if (constmap(&maplocals, addr.s, addr.len - 1)) return 1;
   j = byte_rchr(addr.s,addr.len,'@');
   if (j < addr.len)
-    if (constmap(&maplocals, addr.s + j, addr.len - j - 1))
+    if (constmap(&maplocals, addr.s + j + 1, addr.len - j - 2))
       return 1;
   return 0;
 }
@@ -656,6 +675,11 @@ int goodmailaddr()
     if (constmap(&mapgma, addr.s + j, addr.len - j - 1))
       return 1;
   return 0;
+}
+
+int ldaplookup()
+{
+  return 1;
 }
 
 int relayprobe() /* relay probes trying stupid old sendwhale bugs */
@@ -695,6 +719,11 @@ void smtp_ehlo(arg) char *arg;
   if (!ssl)
     out("250-STARTTLS\r\n");
 #endif
+#ifdef TLS_SMTPD
+  if (!needssl || ssl)
+#endif
+  if (flagauth)
+    out("250-AUTH LOGIN PLAIN\r\n");
   out("250 8BITMIME\r\n");
 
   seenmail = 0; dohelo(arg);
@@ -730,6 +759,13 @@ void smtp_mail(arg) char *arg;
     return;
   }
   logpid(3); logstring(3,"mail from: "); logstring(3,addr.s); logflush(3);
+
+  if (needauth && !authenticated) {
+    out("530 authentication needed\r\n");
+    logline(2, "auth needed");
+    if (errdisconnect) err_quit();
+    return;
+  }
 
   /* smtp size check */
   if (databytes && !sizelimit(arg))
@@ -866,7 +902,7 @@ void smtp_mail(arg) char *arg;
     {
       if (addrlocals())
       {
-        switch (ldaplookup(&addr))
+        switch (ldaplookup())
         {
           case 1: /* valid */
             break;
@@ -951,6 +987,9 @@ void smtp_rcpt(arg) char *arg; {
     return;
   }
 
+  /* XXX now this is a ugly hack */
+  if (authenticated && relayclient == 0) relayclient = "";
+  
   /* is sender ip allowed to relay */
   if (relayclient)
   {
@@ -960,7 +999,7 @@ void smtp_rcpt(arg) char *arg; {
   } else {
     if (!addrallowed())
     { 
-      err_nogateway(&remoteip);
+      err_nogateway(remoteip);
       logpid(2); logstring(2,"no mail relay for 'rcpt to': ");
       logstring(2,arg); logflush(2);
       if (errdisconnect) err_quit();
@@ -1033,8 +1072,6 @@ int compdata = 0;
 
 int compression_init(void)
 {
-  int r;
-
   compdata = 1;
   stream.zalloc = Z_NULL;
   stream.zfree = Z_NULL;
@@ -1240,7 +1277,7 @@ void smtp_data() {
   if (wantcomp) logline(3,"smtp dataz");
   else
 #endif
-    logline(3,"smtp data");
+  logline(3,"smtp data");
 
   if (!seenmail) {
     err_wantmail();
@@ -1257,23 +1294,31 @@ void smtp_data() {
 #ifdef SMTPEXECCHECK
   execcheck_start();
 #endif
-  if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
+  if (qmail_open(&qqt) == -1) {
+    err_qqt();
+    logline(1,"failed to start qmail-queue");
+    return;
+  }
   qp = qmail_qp(&qqt);
   out("354 go ahead punk, make my day\r\n"); logline(3,"go ahead");
   rblheader(&qqt);
 
 #ifdef TLS_SMTPD
   if(ssl){
-    if (!stralloc_copys(&protocolinfo, SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
+    if (!stralloc_copys(&protocolinfo,
+       SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
 #ifdef DATA_COMPRESS
-    if (wantcomp) { if (!stralloc_cats(&protocolinfo, " encrypted compressed SMTP")) die_nomem(); }
-    else
+    if (wantcomp) {
+      if (!stralloc_cats(&protocolinfo, " encrypted compressed SMTP"))
+	die_nomem();
+    } else
 #endif
     if (!stralloc_cats(&protocolinfo, " encrypted SMTP")) die_nomem();
   } else {
 #ifdef DATA_COMPRESS
-    if (wantcomp) { if (!stralloc_copys(&protocolinfo,"compressed SMTP")) die_nomem(); }
-    else
+    if (wantcomp) {
+      if (!stralloc_copys(&protocolinfo,"compressed SMTP")) die_nomem();
+    } else
 #endif
     if (!stralloc_copys(&protocolinfo,"SMTP")) die_nomem();
   }
@@ -1339,12 +1384,100 @@ void smtp_data() {
 }
 
 #ifdef DATA_COMPRESS
-void smtp_dataz() {
+void smtp_dataz()
+{
   wantcomp = 1;
   smtp_data();
 }
 #endif
 
+stralloc line = {0};
+
+void smtp_auth(char *arg)
+{
+  struct call cct;
+  char *type;
+  char *status;
+  
+  if (!flagauth) {
+    err_unimpl();
+    return;
+  }
+  logline(3,"smtp auth");
+  if (authenticated) {
+    out("503 you are already authenticated\r\n");
+    logline(2,"reauthentication attempt rejected");
+    if (errdisconnect) err_quit();
+    return;
+  }
+  if (needssl && !ssl) {
+    out("538 Encryption required for requested authentication mechanism");
+    logline(2,"TLS encryption required for authentication");
+    if (errdisconnect) err_quit();
+    return;
+  }
+  type = arg;
+  while (*arg != '\0' && *arg != ' ') ++arg;
+  if (*arg) {
+    *arg++ = '\0';
+    while (*arg == ' ') ++arg;
+  }
+  
+  if (case_diffs(type, "login") == 0) {
+    logline(3,"auth login");
+    if (call_open(&cct, "bin/auth_smtp", 30, 1) == -1) goto fail;
+    call_puts(&cct, "login"); call_put(&cct, "", 1);
+    if (*arg) {
+      call_puts(&cct, arg); call_put(&cct, "", 1);
+    } else {
+      out("334 VXNlcm5hbWU6\r\n"); flush(); /* base64 for 'Username:' */
+      if (call_getln(&ssin, &line) <= 0) die_read();
+      call_puts(&cct, line.s); call_put(&cct, "", 1);
+    }
+    out("334 UGFzc3dvcmQ6\r\n"); flush(); /* base64 for 'Password:' */
+    if (call_getln(&ssin, &line) <= 0) die_read();
+    call_puts(&cct, line.s); call_putflush(&cct, "", 1);
+  } else if (case_diffs(type, "plain") == 0) {
+    logline(3,"auth plain");
+    if (call_open(&cct, "bin/auth_smtp", 30, 1) == -1) goto fail;
+    call_puts(&cct, "plain"); call_put(&cct, "", 1);
+    if (*arg) {
+      call_puts(&cct, arg); call_putflush(&cct, "", 1);
+    } else {
+      out("334 \r\n"); flush();
+      if (call_getln(&ssin, &line) <= 0) die_read();
+      call_puts(&cct, line.s); call_putflush(&cct, "", 1);
+    }
+  } else {
+    out("504 authentication type not supported\r\n");
+    logstring(2,"authentication type ");
+    logstring(2,type);
+    logstring(2,": not supported");
+    logflush(2);
+    if (errdisconnect) err_quit();
+    return;
+  }
+fail:
+  status = auth_close(&cct, &line, authprepend);
+  switch (*status) {
+  case '2':
+    authenticated = 1;
+    remoteinfo = line.s;
+    out(status);
+    logline(2,"authentication success");
+    break;
+  case '4':
+  case '5':
+    sleep(1);
+    out(status);
+    logstring(2, "authentication failed: ");
+    logstring(2, status + 4);
+    logflush();
+    sleep(4);
+    if (errdisconnect) err_quit();
+    break;
+  }
+}
 
 #ifdef TLS_SMTPD
 RSA *tmp_rsa_cb(ssl,export,keylength) SSL *ssl; int export; int keylength; 
@@ -1428,6 +1561,7 @@ struct commands smtpcommands[] = {
 #ifdef DATA_COMPRESS
 , { "dataz", smtp_dataz, flush }
 #endif
+, { "auth", smtp_auth, flush }
 , { "noop", err_noop, flush }
 , { "vrfy", err_vrfy, flush }
 , { 0, err_unimpl, flush }
@@ -1442,10 +1576,9 @@ void main()
   if (chdir(auto_qmail) == -1) die_control();
   setup();
   if (ipme_init() != 1) die_ipme();
-  if (550greeting)
-  {
-    stralloc_copys(&greeting,550greeting);
-    if (!greeting.len)
+  if (greeting550) {
+    stralloc_copys(&greeting,greeting550);
+    if (greeting.len != 0)
       stralloc_copys(&greeting,"sorry, your mail was administratively denied. (#5.7.1)");
     smtp_line("553 ");
     err_quit();

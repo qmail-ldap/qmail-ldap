@@ -149,8 +149,8 @@ qldap_controls(void)
 		return -1;
 	if (control_readulong(&quotacount, "control/defaultquotacount") == -1) 
 		return -1;
-	log(64, "init_ldap: control/defaultquotasize: %lu\n", quotasize);
-	log(64, "init_ldap: control/defaultquotacount: %lu\n", quotacount);
+	log(64, "init_ldap: control/defaultquotasize: %u\n", quotasize);
+	log(64, "init_ldap: control/defaultquotacount: %u\n", quotacount);
 
 	return 0;
 }
