@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/03/01 20:20:08 $ ($Revision: 1.34 $)
+RELEASE: $Date: 2001/04/14 07:48:25 $ ($Revision: 1.35 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,12 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ bugfixes in maildir++ support. Thanks to Franky Van Liedekerke.
+
+ bugfixes in qmail-reply
+
+NEWS for 20010301
 
  added 0.0.0.0 patch
 

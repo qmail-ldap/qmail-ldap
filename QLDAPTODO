@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2001/03/01 20:20:08 $ ($Revision: 1.14 $)
+RELEASE: $Date: 2001/04/14 07:48:26 $ ($Revision: 1.15 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -33,7 +33,7 @@ ALSO ON THE LIST: (priority list ???)
 - clean up and strip of the digest_*.c files so that it get more platform
   independent.  Target is to remove the "ugly" compatibility.h
 - make the complete lookup code modular so that it should be possible to add 
-  diffrent backends or use a "caching" server to accelerate lookups.
+  diffrent backends.
   It should also be so flexible that other auth services (smtp-auth/SASL) 
   are possible without rewriting to much.
 - use connectionless ldap for lookups (done some work but it seems that the

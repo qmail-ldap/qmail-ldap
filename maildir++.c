@@ -64,7 +64,6 @@ addfail:
 	strerr_warn3("Unable to add file to quota: ", error_str(errno), 
 			". (QUOTA #1.2.1)",0);
 	seek_trunc(fd,pos); /* recover form error */
-	close(fd);
 	return; /* ignore errors, perhaps the file was removed */
 }
 
@@ -96,16 +95,17 @@ rmfail:
 	strerr_warn3("Unable to remove file from quota: ", error_str(errno), 
 			". (QUOTA #1.3.1)",0);
 	seek_trunc(fd,pos); /* recover form error */
-	close(fd);
 	return; /* ignore errors, perhaps the file was removed */
 }
 
 int quota_calc(char *dir, int *fd, quota_t *q)
 {
-	char bigbuf[5120]; /* as big as maildirsize max size */
+	char *bigbuf; /* need to be as big as maildirsize max size */
 	int  i = 0;
+	int  ret;
 	
 	if ( ! stralloc_copys(&path, dir) ) temp_nomem();
+	if ( ! (bigbuf = alloc(5120) )  ) temp_nomem();
 
 	while ( mailfolder() ) {
 		if ( ! stralloc_cats(&path, "/..") ) temp_nomem();
@@ -117,23 +117,27 @@ int quota_calc(char *dir, int *fd, quota_t *q)
 	if ( ! stralloc_0(&path) ) temp_nomem();
 	*fd = read5120( path.s, bigbuf, &i);
 	if ( *fd != -1 ) {
-		return quota_parsesize(q, fd, bigbuf, i);
+		ret = quota_parsesize(q, fd, bigbuf, i);
 	} else {
-		return quota_calcsize(q, fd, bigbuf, i);
+		ret = quota_calcsize(q, fd, bigbuf, i);
 	}
+	alloc_free(bigbuf);
+	return ret;
 }
 
 int quota_recalc(char *dir, int *fd, quota_t *q, unsigned long size, 
                unsigned long count, int *perc)
 {
-	char bigbuf[5120]; /* as big as maildirsize max size */
+	char *bigbuf; /* need to be as big as maildirsize max size */
 	int  i = 0;
 	int  j;
+	int  ret;
 	int  lines = 0;
 	time_t tm;
 	struct stat st;
 	
 	if ( ! stralloc_copys(&path, dir) ) temp_nomem();
+	if ( ! (bigbuf = alloc(5120) )  ) temp_nomem();
 
 	while ( mailfolder() ) {
 		if ( ! stralloc_cats(&path, "/..") ) temp_nomem();
@@ -154,14 +158,17 @@ int quota_recalc(char *dir, int *fd, quota_t *q, unsigned long size,
 				strerr_die3x(111, "Unable to fstat maildirsize: ", 
 						error_str(errno), " (QUOTA #1.5.1)");
 			tm = now();
-			if ( tm < st.st_mtime + 15*60 ) return -1;
+			if ( tm < st.st_mtime + 15*60 ) { ret = -1; goto done; }
 		}
 		/* need to recalculate the quota */
 		close(*fd); *fd = -1;
 		unlink(path.s);
 	}
-	if ( quota_calcsize(q, fd, bigbuf, i) == -1 ) return -1;
-	return quota_check(q, size, count, perc);
+	if ( quota_calcsize(q, fd, bigbuf, i) == -1 ) { ret = -1; goto done; }
+	ret = quota_check(q, size, count, perc);
+done:
+	alloc_free(bigbuf);
+	return ret;
 
 }
 
@@ -264,7 +271,7 @@ static int quota_parsesize(quota_t *q, int *fd, char* buf, int len)
 	}
 	
 	quota_get(&dummy, buf);
-	if ( q->quota_size == 0 || q->quota_count == 0 ) {
+	if ( q->quota_size == 0 && q->quota_count == 0 ) {
 		/* no quota defined */
 		q->quota_size = dummy.quota_size;
 		q->quota_count = dummy.quota_count;
@@ -294,7 +301,7 @@ static int quota_parsesize(quota_t *q, int *fd, char* buf, int len)
 		}
 		q->size += fig;
 		/* then the file count */
-		while ( *++s == ' ' ) ; /* hope over the spaces */
+		while ( *++s == ' ' ) ; /* hop over the spaces */
 
 		if ( *s == '-' ) {
 			if (! ( s += scan_ulong(++s, &fig) ) ) continue;
@@ -412,7 +419,6 @@ static int quota_writesize(quota_t *q, int *fd, time_t maxtime)
 	
 	if ( substdio_flush(&ss) == -1 ) goto fail; 
 	if ( fsync(*fd) == -1 ) goto fail; 
-//	if ( close(*fd) == -1 ) goto fail; /* NFS dorks */
 	
 	i = check_maxtime(maxtime);
 	if ( ! stralloc_cats(&path, "/maildirsize") ) temp_nomem();
