@@ -16,6 +16,7 @@
 # from a specified account to another (swiss bigbrother law)
 # -DALTQUEUE to use a diffrent qmail-queue programm on runtime
 # -DDATA_COMPRESS to use the smtp on the fly DATA compression 
+# -DSMTPEXECCHECK to enable smtp DOS/Windows executable detection
 #LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT 
 
 # Perhaps you have different ldap libraries, change them here
@@ -717,6 +718,10 @@ except.1
 except.o: \
 compile except.c fork.h strerr.h wait.h error.h exit.h
 	./compile except.c
+
+execcheck.o: \
+compile execcheck.c execcheck.h case.h env.h qmail.h str.h stralloc.h
+	./compile $(LDAPFLAGS) execcheck.c
 
 fd.a: \
 makelib fd_copy.o fd_move.o
@@ -1849,13 +1854,13 @@ auto_split.h
 qmail-smtpd: \
 load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o rbl.o \
 timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
-date822fmt.o now.o qmail.o cdb.a fd.a wait.a datetime.a getln.a \
-open.a sig.a case.a env.a stralloc.a alloc.a substdio.a error.a str.a \
-fs.a auto_qmail.o dns.lib socket.lib
+date822fmt.o now.o qmail.o execcheck.o cdb.a fd.a wait.a datetime.a \
+getln.a open.a sig.a case.a env.a stralloc.a alloc.a substdio.a \
+error.a str.a fs.a auto_qmail.o dns.lib socket.lib
 	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o rbl.o \
 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
-	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
-	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
+	received.o date822fmt.o now.o qmail.o execcheck.o cdb.a fd.a \
+	wait.a datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
 	alloc.a substdio.a error.a fs.a auto_qmail.o dns.o str.a \
 	`cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
 

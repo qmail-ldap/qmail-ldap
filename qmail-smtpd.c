@@ -36,6 +36,9 @@ stralloc clientcert = {0};
 #ifdef DATA_COMPRESS
 #include <zlib.h>
 #endif
+#ifdef SMTPEXECCHECK
+#include "execcheck.h"
+#endif
 
 #define MAXHOPS 100
 unsigned int databytes = 0;
@@ -288,12 +291,16 @@ void setup()
   rblok = rblinit();
   if (rblok == -1) die_control();
 
-  errdisconnect = (env_get("SMTP550DISCONNECT") ? 1:0);
-  nobounce = (env_get("NOBOUNCE") ? 1:0);
-  sanitycheck = (env_get("SANITYCHECK") ? 1:0);
-  returnmxcheck = (env_get("RETURNMXCHECK") ? 1:0);
-  blockrelayprobe = (env_get("BLOCKRELAYPROBE") ? 1:0);
+  if (env_get("SMTP550DISCONNECT")) errdisconnect = 1;
+  if (env_get("NOBOUNCE")) nobounce = 1;
+  if (env_get("SANITYCHECK")) sanitycheck = 1;
+  if (env_get("RETURNMXCHECK")) returnmxcheck = 1;
+  if (env_get("BLOCKRELAYPROBE")) blockrelayprobe = 1;
   relayok = relayclient = env_get("RELAYCLIENT");
+
+#ifdef SMTPEXECCHECK
+  execcheck_setup();
+#endif
 
   if (control_readint(&databytes,"control/databytes") == -1) die_control();
   x = env_get("DATABYTES");
@@ -322,6 +329,9 @@ void setup()
   if (returnmxcheck) logstring(2,"returnmxcheck ");
   if (blockrelayprobe) logstring(2,"blockrelayprobe ");
   if (relayclient) logstring(2,"relayclient ");
+#ifdef SMTPEXECCHECK
+  if (execcheck_on()) logstring(2, "rejectexecutables ");
+#endif
 
   logflush(2);
   dohelo(remotehost);
@@ -1009,6 +1019,9 @@ unsigned int bytesreceived = 0;
 void put(ch)
 char *ch;
 {
+#ifdef SMTPEXECCHECK
+  execcheck_put(&qqt, ch);
+#endif
   if (bytestooverflow)
     if (!--bytestooverflow)
       qmail_fail(&qqt);
@@ -1109,6 +1122,9 @@ void smtp_data() {
   if (!rcptto.len) { err_wantrcpt(); return; }
   seenmail = 0;
   if (databytes) bytestooverflow = databytes + 1;
+#ifdef SMTPEXECCHECK
+  execcheck_start();
+#endif
   if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
   qp = qmail_qp(&qqt);
   out("354 go ahead\r\n"); logline(3,"go ahead");
@@ -1141,15 +1157,24 @@ void smtp_data() {
   qqx = qmail_close(&qqt);
   if (!*qqx) { acceptmessage(qp); return; }
   if (hops) { out("554 too many hops, this message is looping (#5.4.6)\r\n"); return; }
-  if (databytes) if (!bytestooverflow)
-  {
+  if (databytes) if (!bytestooverflow) {
     out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n");
     logline(2,"datasize limit exceeded");
     return;
   }
+#ifdef SMTPEXECCHECK
+  if (execcheck_flag()) {
+    out("552 we don't accept email with executable content (#5.3.4)\r\n");
+    logline(2,"windows executable detected");
+    return;
+  }
+#endif
   logpid(1);
-  if (*qqx == 'D') { out("554 "); logstring(1,"message not accepted because: "); }
-    else { out("451 "); logstring(1,"message not accepted because: "); }
+  if (*qqx == 'D') {
+    out("554 "); logstring(1,"message not accepted because: ");
+  } else {
+    out("451 "); logstring(1,"message not accepted because: ");
+  }
   out(qqx + 1);
   logstring(1,qqx+1); logflush(1);
   out("\r\n");
@@ -1166,6 +1191,9 @@ void smtp_compress() {
   if (!rcptto.len) { err_wantrcpt(); return; }
   seenmail = 0;
   if (databytes) bytestooverflow = databytes + 1;
+#ifdef SMTPEXECCHECK
+  execcheck_start();
+#endif
   if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
   qp = qmail_qp(&qqt);
   out("354 go ahead punk, make my day\r\n");
@@ -1202,15 +1230,25 @@ void smtp_compress() {
   qqx = qmail_close(&qqt);
   if (!*qqx) { acceptmessage(qp); return; }
   if (hops) { out("554 too many hops, this message is looping (#5.4.6)\r\n"); return; }
-  if (databytes) if (!bytestooverflow)
-  {
+  if (databytes) if (!bytestooverflow) {
     out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n");
     logline(2,"datasize limit exceeded");
     return;
   }
+#ifdef SMTPEXECCHECK
+  if (execcheck_flag()) {
+    out("552 we don't accept email with executable content (#5.3.4)\r\n");
+    logline(2,"windows executable detected");
+    return;
+  }
+#endif
   logpid(1);
-  if (*qqx == 'D') { out("554 "); logstring(1,"message not accepted because: "); }
-    else { out("451 "); logstring(1,"message not accepted because: "); }
+  if (*qqx == 'D') {
+    out("554 ");
+    logstring(1,"message not accepted because: ");
+  } else {
+    out("451 "); logstring(1,"message not accepted because: ");
+  }
   out(qqx + 1);
   logstring(1,qqx+1); logflush(1);
   out("\r\n");

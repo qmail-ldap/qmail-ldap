@@ -481,3 +481,5 @@ POPBEFORESMTP
 qmail-todo.c
 byte_repl.c
 rbl.c
+execcheck.c
+execcheck.h

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2003/07/30 15:41:12 $)
+RELEASE: current ($Date: 2003/07/30 17:16:48 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -77,6 +77,8 @@ INSTALL:
                 variable QMAILQUEUE. Also known as qmailqueue patch.
                -DDATA_COMPRESS to enable smtp on the fly data compression.
                 It is needed to set ZLIB accordingly.
+               -DSMTPEXECCHECK to enable Russell Nelsons antivirus patch
+	        for qmail-smtpd. To turn it on set the REJECTEXEC env-var.
      NOTE: at the moment -DLDAP_ESCAPE_BUG is not defined, this should be
            added if your ldap server has problems with the escapeing of 
            LDAP filters (fixed as of OpenLDAP 1.2.8 and higher)
@@ -580,6 +582,28 @@ BLOCKRELAYPROBE
        hack and double-"@" a sendwhale bug.
        Beware if you actually use the qmail percent-hack! Then this can't
        be used obviously!
+
+QMAILQUEUE
+
+ Use this queueing program instead of the default qmail-queue program.
+ Default: off
+ Affects: qmail-smtpd, qmail-qmtpd, qmail-qmqpd, qmail-inject,
+          but also qmail-local, qmail-reply, qmail-send, qreceipt, 
+          condredirect, forward
+ Example: /var/scanner/bin/qmail-scanner-queue.pl
+ Note: Using this for something different than the mail incomming daemons
+       is dissuaded.
+
+REJECTEXEC
+
+ Reject Dos/Windows executables in mail attachements.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: This patch does not distinguish between valid applications and
+       evil viruses and trojans so handle with care. It is not a 100%
+       guaranteed protection.
+       See also: http://www.qmail.org/qmail-smtpd-viruscan-1.1.patch
 
 LOGLEVEL
 
