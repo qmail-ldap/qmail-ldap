@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/11/01 18:58:16 $ ($Revision: 1.73 $)
+RELEASE: $Date: 2002/11/04 15:34:05 $ ($Revision: 1.74 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,12 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ Minor bug fixes in the pbs tools inspired by Junjiro Okajima.
+
+ Don't use NULL in maildir++.c because it is often not defined.
+
+NEWS for 20021101 stuff:
 
  New ldap fields added:
  - mailQuotaSize and mailQuotaCount replace the cryptic mailQuota string.

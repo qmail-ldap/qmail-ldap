@@ -152,23 +152,25 @@ void setup(void)
   s = addresses.s;
   for( i = 0; i < numservers; i++ ) {
     len = ip_scan(s, &servers[i]);
-    if ( len == 0 && len > 15 ) die_control();
+    if ( len == 0 || len > 15 ) die_control();
     while( *s++ );
   }
 }
 
 
+static void uint16_pack_big(char s[2], unsigned int u)
+{
+  s[1] = u & 255;
+  s[0] = (u >> 8) & 255;
+}
+
 int sendrequest(int fd, char* buf, int len, struct ip_address *ip)
 {
   struct sockaddr_in sin;
-  unsigned int port;
-  char *x;
   
   byte_zero(&sin,sizeof(sin));
   byte_copy(&sin.sin_addr,4,ip);
-  x = (char *) &sin.sin_port;
-  port = serverport;
-  x[1] = port; port >>= 8; x[0] = port;
+  uint16_pack_big((char *)&sin.sin_port, serverport);
   sin.sin_family = AF_INET;
   
   return sendto(fd, buf, len, 0, (struct sockaddr*)&sin, sizeof(sin));
@@ -285,7 +287,7 @@ int main (int argc, char** argv)
   ipstr = env_get("TCPREMOTEIP");
   if (!ipstr) die_badenv();
   len = ip_scan(ipstr, &ip);
-  if ( len == 0 && len > 15 ) die_badenv();
+  if ( len == 0 || len > 15 ) die_badenv();
   
   sfd = socket(AF_INET,SOCK_DGRAM,0);
   if ( sfd == -1 ) goto start_daemon;
@@ -332,4 +334,6 @@ start_daemon:
   execvp(*childargs,childargs);
   /* should never reach this point */
   die_exec();
+  /* NOTREACHED */
 }
+

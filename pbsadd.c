@@ -87,7 +87,7 @@ void setup(void)
   
   if (control_readint(&serverport,"control/pbsport") == -1) die_control();
   if (serverport > 65000) die_control();
-  if (control_rldef(&secret,"control/pbssecret",0, 0) != 1) die_control();
+  if (control_rldef(&secret,"control/pbssecret",0,"") != 1) die_control();
   if ( secret.len > 255 ) die_secret();
   if (control_readfile(&envs,"control/pbsenv",0) == -1) die_control();
   
@@ -108,36 +108,39 @@ void setup(void)
   s = addresses.s;
   for( i = 0; i < numservers; i++ ) {
     len = ip_scan(s, &servers[i]);
-    if ( len == 0 && len > 15 ) die_control();
+    if ( len == 0 || len > 15 ) die_control();
     while( *s++ );
   }
   
 }
 
 
+static void uint16_pack_big(char s[2], unsigned int u)
+{
+  s[1] = u & 255;
+  s[0] = (u >> 8) & 255;
+}
+
 int sendrequest(int fd, char* buf, int len, struct ip_address *ip)
 {
   struct sockaddr_in sin;
-  unsigned int port;
-  char *x;
   
   byte_zero(&sin,sizeof(sin));
   byte_copy(&sin.sin_addr,4,ip);
-  x = (char *) &sin.sin_port;
-  port = serverport;
-  x[1] = port; port >>= 8; x[0] = port;
+  uint16_pack_big((char *)&sin.sin_port, serverport);
   sin.sin_family = AF_INET;
   
   return sendto(fd, buf, len, 0, (struct sockaddr*)&sin, sizeof(sin));
 }
 
+
 int addenv(char *buf, int len)
 {
   int i;
-  int vlen;
-  int elen;
-  int telen;
-  int olen;
+  int vlen;	/* length of the envvar  */
+  int elen;	/* length of the envname */
+  int telen;	/* length of the envline (envname=rewritename) */
+  int olen;	/* old length of the packet buffer */
   char *e;
   char *v;
 
@@ -148,27 +151,34 @@ int addenv(char *buf, int len)
   e = envs.s;
   for(i=0; i < numenvs; i++) {
     telen = str_len(e);
-    elen = str_chr(e, '=');
-    if ( telen != elen ) e[elen] = '\0'; 
+    elen = str_chr(e, '='); /* we are not interested in the rewrite name */
+    e[elen] = '\0';
+
+    /* get the requested envvar */
     v = env_get(e);
-    vlen = v?str_len(v):0;
-    if ( vlen + elen + 1 > 255 ) {
+    vlen = v != (char *)0?str_len(v):0;
+
+    /* write the result */
+    if (elen + vlen + 1 > 255) {
+      /* Check that length indicator does not overflow */
       log_envvar(e);
       return olen;
     }
-    *buf++ = vlen + elen + 1; len++;
-    if ( len + elen + vlen + 2 > 1024 ) {
+    if (len + elen + vlen + 2 > 1024) {
+      /*
+       * Packet may not overflow.
+       * The environment is written like this:
+       *   [length]envname"="envvar
+       */
       log_envsize();
       return olen;
     }
-    byte_copy(buf, elen, e); buf+=elen, len+=elen;
-    if ( len >= 1024 ) {
-      log_envsize();
-      return olen;
-    }
-    *buf++ = '='; len++;
+    *buf++ = elen + vlen + 1; len++; /* length */
+    byte_copy(buf, elen, e); buf+=elen, len+=elen; /* envname */
+    *buf++ = '='; len++; /* "=" */
     if (vlen != 0) { byte_copy(buf, vlen, v); buf+=vlen, len+=vlen; }
     if ( len > 1024 ) {
+      /* call me paranoid ... */
       log_envsize();
       return olen;
     }
@@ -194,7 +204,7 @@ int main (int argc, char** argv)
   ipstr = env_get("TCPREMOTEIP");
   if (!ipstr) die_badenv();
   len = ip_scan(ipstr, &ip);
-  if ( len == 0 && len > 15 ) die_badenv();
+  if ( len == 0 || len > 15 ) die_badenv();
   
   sfd = socket(AF_INET,SOCK_DGRAM,0);
   if ( sfd == -1 ) {
@@ -221,4 +231,6 @@ done:
   execvp(*childargs,childargs);
   /* should never reach this point */
   die_exec();
+  /* NOTREACHED */
 }
+
