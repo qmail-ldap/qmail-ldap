@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/09/15 08:29:05 $ ($Revision: 1.17 $)
+RELEASE: $Date: 2000/09/19 14:45:25 $ ($Revision: 1.18 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -19,13 +19,18 @@ TODO:
 
 NEWS for current stuff:
 
+ cluster loop protection added. Now it should be impossible that mail loop
+ forever if the cluster was badly configured. It works via the Delivered-To line
+ and uses something like this: 
+     Delivered-To: CLUSTERHOST host.name.as.in.control.me
+
  fixed multiple problems with suns cc.
 
  fixed multiple problems and bugs in TLS support.
 
  fixed a bug introduced with the bitmask support for debug outputs.
 
- cleanup at different location to respect the signedness of variables
+ cleanup at different locations to respect the signedness of variables
 
  added bitmask support for debug outputs, so DEBUGLEVEL=3 will print error and
  warnings but DEBUGLEVEL=2 only warnings. Note: init_debug's 2nd argument has
