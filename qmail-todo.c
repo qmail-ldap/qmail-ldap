@@ -652,7 +652,9 @@ void main()
 
    if (flagreadasap) { flagreadasap = 0; reread(); }
    if (!flagsendalive) {
-     /* qmail-send died. We can not log and we can not work therefor _exit(1) */
+     /* qmail-send finaly exited, so do the same. */
+     if (flagstopasap) _exit(0);
+     /* qmail-send died. We can not log and we can not work therefor _exit(1). */
      _exit(1);
    }
 
