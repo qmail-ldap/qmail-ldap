@@ -271,7 +271,7 @@ void setup()
     rblohok = control_readint(&rblonlyheader,"control/rblonlyheader",0);
     if (rblohok == -1) die_control();
     rblonlyheader = env_get("RBLONLYHEADER");
-    if (rblonlyheader) logline(2,"Log RBL match only in header, do not reject message");
+    if (rblonlyheader) logline(2,"Note RBL match only in header, do not reject message");
   }
 
   if (control_readint(&databytes,"control/databytes") == -1) die_control();
@@ -296,7 +296,9 @@ void setup()
 
   relayok = relayclient = env_get("RELAYCLIENT");
   if (relayclient) { logstring(2,", relayclient set"); }
+
   denymail = env_get("DENYMAIL");
+
   logflush(2);
   dohelo(remotehost);
 }
@@ -483,7 +485,7 @@ int rblcheck()
   return r;
 }
 
-/* RBL */
+/* RBL done */
 
 int sizelimit(arg)
 char *arg;
@@ -570,6 +572,7 @@ void smtp_helo(arg) char *arg;
   seenmail = 0; dohelo(arg);
   logpid(3); logstring(3,"remote helo ="); logstring(3,arg); logflush(3);
 }
+
 char smtpsize[FMT_ULONG];
 void smtp_ehlo(arg) char *arg;
 {
@@ -651,9 +654,9 @@ void smtp_mail(arg) char *arg;
         if (rblonlyheader)
           rblheader(qqt,remoteip,rblmessage.s);
         else {
-         err_rbl(rblmessage.s);
-         return;
-         }
+          err_rbl(rblmessage.s);
+          return;
+          }
       default: /* ok, go ahead */
     logline(3,"RBL checking completed without match or listed in header");
     }
