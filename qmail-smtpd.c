@@ -340,7 +340,7 @@ char *arg;
 int badmxcheck(dom) char *dom;
 {
   ipalloc checkip = {0};
-  int ret=0;
+  int ret = 0;
   stralloc checkhost = {0};
 
   if (!*dom) return (DNS_HARD);
@@ -461,14 +461,12 @@ void smtp_ehlo(arg) char *arg;
    out("250 8BITMIME\r\n");
   }
   else {
-   out("\r\n250-PIPELINING\r\n");
-   out("250-SIZE "); out(smtpsize); out("\r\n");
-   out("250-STARTTLS\r\n250 8BITMIME\r\n");
-  }
-#else
+#endif
   out("\r\n250-PIPELINING\r\n");
   out("250-SIZE "); out(smtpsize); out("\r\n");
   out("250 8BITMIME\r\n");
+#ifdef TLS
+  }
 #endif
   seenmail = 0; dohelo(arg);
   logpid(3); logstring(3,"remote ehlo ="); logstring(3,arg); logflush(3);
@@ -528,7 +526,7 @@ void smtp_mail(arg) char *arg;
       }
       else
       {
-        /*why = "Invalid.Mailfrom";*/
+        /* Invalid Mailfrom */
         if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len) {
            why = "refused 'mail from' without @";
            flagbarf=1; }      /* no '@' in from */
@@ -546,23 +544,24 @@ void smtp_mail(arg) char *arg;
          
           j = addr.len-(i+1+j+1);
           if (j < 2 || j > 3) {
+             /* XXX: This needs adjustment when new TLD's are constituded */
              why = "refused 'mail from' without country or top level domain";
              flagbarf=1; } /* root domain, not a country (2), nor TLD (3)*/
 
          if (!flagbarf)
           if (!str_diff("DNSCHECK", denymail)) 
           {
-             /* check syntax, via DNS */
-             switch (badmxcheck(&addr.s[i+1]))
-             {
-               case 0:                 break; /*valid*/
-               case DNS_SOFT:  flagbarf=2; /*fail tmp*/
-                               why = "refused 'mail from' because return MX lookup failed temporarly";
-                               break;
-               case DNS_HARD:  flagbarf=1; 
-                               why = "refused 'mail from' because return MX does not exist";
-                               break;
-             }
+            /* check syntax, via DNS */
+            switch (badmxcheck(&addr.s[i+1]))
+            {
+              case 0:                 break; /*valid*/
+              case DNS_SOFT:  flagbarf=2; /*fail tmp*/
+                              why = "refused 'mail from' because return MX lookup failed temporarly";
+                              break;
+              case DNS_HARD:  flagbarf=1; 
+                              why = "refused 'mail from' because return MX does not exist";
+                              break;
+            }
           }
         }
       }
@@ -626,7 +625,7 @@ void smtp_rcpt(arg) char *arg; {
     }
 #else
     if (!addrallowed())
-     {
+    {
       if (ssl)
       { STACK_OF(X509_NAME) *sk;
         X509 *peercert;
@@ -637,11 +636,19 @@ void smtp_rcpt(arg) char *arg; {
                        SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
                        NULL);
         if ((sk = SSL_load_client_CA_file("control/clientca.pem")) == NULL)
-         { err_nogateway(); return; }
+        {
+           err_nogateway();
+           logpid(2); logstring(2,"unable to read ~control/clientca.pem, no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+           return;
+        }
         SSL_set_client_CA_list(ssl, sk);
         if((control_readfile(&tlsclients,"control/tlsclients",0) != 1) ||
            !constmap_init(&maptlsclients,tlsclients.s,tlsclients.len,0))
-          { err_nogateway(); return; }
+        {
+           err_nogateway();
+           logpid(2); logstring(2,"unable to read or process ~control/tlsclients, no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+           return;
+        }
 
         SSL_renegotiate(ssl);
         SSL_do_handshake(ssl);
@@ -649,16 +656,29 @@ void smtp_rcpt(arg) char *arg; {
         SSL_do_handshake(ssl);
         if ((SSL_get_verify_result(ssl) == X509_V_OK) &&
              (peercert = SSL_get_peer_certificate(ssl)))
-         {char emailAddress[256];
-
-          if (!constmap(&maptlsclients,clientcert.s,clientcert.len))
-            { err_nogwcert(); return; }
-          relayclient = "";
-         }
-          else { err_nogwcert(); return; }
-       }
-      else { err_nogateway(); return; }
-     }
+        {
+           if (!constmap(&maptlsclients,clientcert.s,clientcert.len))
+           {
+              err_nogwcert();
+              logpid(2); logstring(2,"client cert no found, no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+              return;
+           }
+           relayclient = "";
+        }
+        else
+        {
+           err_nogwcert();
+           logpid(2); logstring(2,"either not X509 or no certificate presented, no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+           return;
+        }
+      }
+      else
+      {
+        err_nogateway();
+        logpid(2); logstring(2,"no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
+        return;
+      }
+    }
 #endif
 
   }
@@ -861,27 +881,47 @@ void smtp_tls(arg) char *arg;
   SSL_CTX *ctx;
 
   if (*arg)
-   {out("501 Syntax error (no parameters allowed) (#5.5.4)\r\n");
-    return;}
+  {
+    out("501 Syntax error (no parameters allowed) (#5.5.4)\r\n");
+    logstring(1,"aborting TLS negotiations, no parameters to starttls allowed");
+    return;
+  }
 
   SSLeay_add_ssl_algorithms();
   if(!(ctx=SSL_CTX_new(SSLv23_server_method())))
-   {out("454 TLS not available: unable to initialize ctx (#4.3.0)\r\n"); 
-    return;}
+  {
+    out("454 TLS not available: unable to initialize ctx (#4.3.0)\r\n"); 
+    logstring(1,"aborting TLS negotiations, unable to initialize local SSL context");
+    return;
+  }
   if(!SSL_CTX_use_RSAPrivateKey_file(ctx, "control/cert.pem", SSL_FILETYPE_PEM))
-   {out("454 TLS not available: missing RSA private key (#4.3.0)\r\n"); 
-    return;}
+  {
+    out("454 TLS not available: missing RSA private key (#4.3.0)\r\n");
+    logstring(1,"aborting TLS negotiations, RSA private key invalid or unable to read ~control/cert.pem");
+    return;
+  }
   if(!SSL_CTX_use_certificate_file(ctx, "control/cert.pem", SSL_FILETYPE_PEM))
-   {out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
-    return;}
+  {
+    out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
+    logstring(1,"aborting TLS negotiations, local cert invalid or unable to read ~control/cert.pem");
+    return;
+  }
   SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_cb);
   SSL_CTX_load_verify_locations(ctx, "control/clientca.pem",NULL);
  
   out("220 ready for tls\r\n"); flush();
 
-  if(!(ssl=SSL_new(ctx))) die_read();
+  if(!(ssl=SSL_new(ctx))) 
+  {
+    logstring(2,"aborting TLS connection, unable to set up SSL session");
+    die_read();
+  }
   SSL_set_fd(ssl,0);
-  if(SSL_accept(ssl)<=0) die_read();
+  if(SSL_accept(ssl)<=0)
+  {
+    logstring(2,"aborting TLS connection, unable to finish SSL accept");
+    die_read();
+  }
   substdio_fdbuf(&ssout,SSL_write,ssl,ssoutbuf,sizeof(ssoutbuf));
 
   remotehost = env_get("TCPREMOTEHOST");
