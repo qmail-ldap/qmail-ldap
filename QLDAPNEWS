@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/30 17:14:02 $ ($Revision: 1.131 $)
+RELEASE: $Date: 2003/09/30 17:15:55 $ ($Revision: 1.132 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -83,7 +83,7 @@ NEWS for current stuff:
  balancers or NAT devices. The cookie is presentented in the smtp
  greeting as last string before \r\n. qmail-remote compares the
  cookie with it's own and if they match assumes that the message
- is looping. Cookies are set in ~control/smtpclustercookies. Length
+ is looping. Cookies are set in ~control/smtpclustercookie. Length
  is limited to 32 characters. Fill with some random printable chars.
 
  qmail-smtpd now prints its hostname (~control/me) along with QP
