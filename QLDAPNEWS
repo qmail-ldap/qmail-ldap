@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/08/31 15:19:21 $ ($Revision: 1.110 $)
+RELEASE: $Date: 2003/08/31 15:31:00 $ ($Revision: 1.111 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -32,9 +32,9 @@ NEWS for current stuff:
  makes it much more logical.
  This change probably has a great impact on many administrative frontends!
 
- Quota definitions are new format only. ~control/ldapdefaultquota, mailQuota
+ Quota definitions are new format only. ~control/defaultquota, mailQuota
  serve no meaning anymore. Also the string quota format (10000S,100C) is no
- longer supported. Use ~control/ldapdefaultquota[size|count] and mailQuotaSize
+ longer supported. Use ~control/defaultquota[size|count] and mailQuotaSize
  and mailQuotaCount instead.
 
  New tool qmail-secretary. This is the swiss army knife for mail group and

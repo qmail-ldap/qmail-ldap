@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/08/31 15:19:21 $)
+RELEASE: current ($Date: 2003/08/31 15:31:00 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -311,7 +311,7 @@ CONFIG FILES:
  Example: customersmtp.nrg4u.com
  Note: multiline
 
-~control/ldapdefaultquotasize
+~control/defaultquotasize
 
  The default amount of disk space the user can use until all further messages
  get bounced back to the sender. Size is a byte count.
@@ -320,7 +320,7 @@ CONFIG FILES:
  Note: is overridden by mailQuota*, make sure to have set ~control/quotowarning
        otherwise you will not get quota warning messages
 
-~control/ldapdefaultquotacount
+~control/defaultquotacount
 
  The default maximum amount of messages the user can have until all further
  messages get bounced back to the sender. Count is a file count.
@@ -766,7 +766,7 @@ LDAP_QUOTA_COUNT (default: "mailQuotaCount")
  Example: max 1000000 bytes size and max 1000 Mails
             mailQuotaSize: 1000000
             mailQuotaCount: 1000
- Note: overrides ldapdefaultquotasize and ldapdefaultquotacount per user.
+ Note: overrides defaultquotasize and defaultquotacount per user.
        the old string forma (1000000S,1000C) is no longer supported.
 
 LDAP_MAXMSIZE (default: "mailSizeMax")
