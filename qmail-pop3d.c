@@ -160,11 +160,16 @@ void pop3_stat()
 {
   int i;
   unsigned long total;
+  unsigned int count;
  
   total = 0;
-  for (i = 0;i < numm;++i) if (!m[i].flagdeleted) total += m[i].size;
+  count = 0;
+  for (i = 0;i < numm;++i) if (!m[i].flagdeleted) {
+    total += m[i].size;
+    count += 1;
+  }
   puts("+OK ");
-  put(strnum,fmt_uint(strnum,numm));
+  put(strnum,fmt_uint(strnum,count));
   puts(" ");
   put(strnum,fmt_ulong(strnum,total));
   puts("\r\n");
