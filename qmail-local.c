@@ -107,26 +107,29 @@ char *dir;
    /* this one handles the case where the aliasempty is not "./" */
    if (errno == error_noent) {
      umask(077);
-     if (mkdir(dir,0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
-     if (chdir(dir) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
-     if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
-     if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
-     if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+     if (mkdir(dir,0700) == -1) { if (error_temp(errno)) _exit(9); _exit(9); }
+     if (chdir(dir) == -1) { if (error_temp(errno)) _exit(9); _exit(9); }
+     if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(9); _exit(9); }
+     if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(9); _exit(9); }
+     if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(9); _exit(9); }
    } else
 #endif
-   if (error_temp(errno)) _exit(1); else _exit(2);
+   if (error_temp(errno)) _exit(9); else _exit(9);
  }
 #ifdef AUTOMAILDIRMAKE
  /* this one handles the case where the aliasempty is "./" */
- if (chdir("./tmp") == -1) {
+ if (stat("tmp", &st) == -1) {
    if (errno == error_noent) {
      umask(077);
-     if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
-     if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
-     if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(1); _exit(2); }
+     if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(10); _exit(10); }
+     if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(10); _exit(10); }
+     if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(10); _exit(10); }
    } else
-   if (error_temp(errno)) _exit(1); else _exit(2);
+   if (error_temp(errno)) _exit(10); else _exit(10);
  }
+
+ if (chdir(dir) == -1) { if (error_temp(errno)) _exit(10); else _exit(10); }
+
 #endif
    
 /* XXX this looks weird and doesn't fit */
@@ -333,6 +336,8 @@ char *fn;
    case 4: strerr_die1x(111,"Unable to read message. (#4.3.0)");
 #ifdef AUTOMAILDIRMAKE
    case 5: strerr_die1x(111,"Unable to make maildirs. (LDAP-ERR #2.4.4)");
+   case 9: strerr_die1x(111,"Boom with normal aliasempty (LDAP-ERR #2.4.4)");
+   case 10: strerr_die1x(111,"Boom with ./ aliasempty (LDAP-ERR #2.4.4)");
 #endif
    default: strerr_die1x(111,"Temporary error on maildir delivery. (#4.3.0)");
   }
