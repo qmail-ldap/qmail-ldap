@@ -142,12 +142,14 @@ void setup(void)
 int sendrequest(int fd, char* buf, int len, struct ip_address *ip)
 {
   struct sockaddr_in sin;
+  unsigned int port;
   char *x;
   
   byte_zero(&sin,sizeof(sin));
   byte_copy(&sin.sin_addr,4,ip);
   x = (char *) &sin.sin_port;
-  x[1] = serverport; serverport >>= 8; x[0] = serverport;
+  port = serverport;
+  x[1] = port; port >>= 8; x[0] = port;
   sin.sin_family = AF_INET;
   
   return sendto(fd, buf, len, 0, (struct sockaddr*)&sin, sizeof(sin));
