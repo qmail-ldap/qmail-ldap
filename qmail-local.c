@@ -185,9 +185,11 @@ char *dir;
  s += fmt_ulong(s,(unsigned long) st.st_size);
  *s++ = 0;
 
- /* finally update the quota file "maildirsize" */
- quota_add(msfd, (unsigned long) st.st_size, 1, quotastring, ".");
- close(msfd);
+ if( quotastring && *quotastring ) {
+   /* finally update the quota file "maildirsize" */
+   quota_add(msfd, (unsigned long) st.st_size, 1, quotastring, ".");
+   close(msfd);
+ }
   
  if (link(fntmptph,fnnewtph) == -1) goto fail;
    /* if it was error_exist, almost certainly successful; i hate NFS */
