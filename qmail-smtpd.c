@@ -790,7 +790,6 @@ void smtp_rset()
   relayclient = relayok; /* restore original relayclient setting */
   out("250 flushed\r\n");
   logline(3,"remote rset");
-  if (errdisconnect) err_quit();
 }
 
 struct qmail qqt;
