@@ -13,6 +13,7 @@
 #include "qldap-debug.h"
 #include "qldap-errno.h"
 #include "qmail-ldap.h"
+#include "readwrite.h"
 #include "scan.h"
 #include "sig.h"
 #include "str.h"

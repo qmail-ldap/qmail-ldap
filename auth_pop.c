@@ -8,6 +8,7 @@
 #include "qldap-debug.h"
 #include "qldap-errno.h"
 #include "qmail-ldap.h"
+#include "readwrite.h"
 #include "str.h"
 #include "stralloc.h"
 #include "substdio.h"

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/10/24 11:52:29 $ ($Revision: 1.139 $)
+RELEASE: $Date: 2003/10/28 13:27:01 $ ($Revision: 1.140 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -21,7 +21,16 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
 
 NEWS for current stuff:
 
- Finally enabled the "send only one reply to each sender" in qmail-reply.
+ Huge cleanup. Bring qmail into the 21st century. Define all prototypes
+ and include the needed system include files. This commit fixes about 99%
+ of all compiler warnings and makes code developing lesser error-prone.
+ The Makefile dependencies need to be updated to reflect reality.
+ A few errors are still in the tree which are either hard to solve or
+ considered harmless -- manly return type of main() in a few helper apps.
+ This cleanup brought some strange bugs to light which are now fixed.
+
+ Finally enabled the "send only one reply to each sender" feature
+ in qmail-reply.
 
  Critical bugfix in auth_imap.c. A bug in the function that should invoke
  the next authmodule caused auth_imap to end up in one infinit loop.

@@ -428,6 +428,7 @@ qldap-debug.o
 qldap-errno.o
 qldap-filter.o
 qldap-profile.o
+qldap.a
 qldap.o
 qmail-forward
 qmail-forward.o

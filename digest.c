@@ -7,6 +7,7 @@
 #include "error.h"
 #include "passwd.h"
 #include "qldap-errno.h"
+#include "readwrite.h"
 #include "sgetopt.h"
 #include "stralloc.h"
 
