@@ -993,8 +993,8 @@ int c;
      /* but from a security point of view, we don't trust rspawn */
    if (!ch && (dline[c].len > 2))
     {
-     delnum = (unsigned int)dline[c].s[0];
-     delnum += (unsigned int)dline[c].s[1] << 8;
+     delnum = (unsigned int)(unsigned char)dline[c].s[0];
+     delnum += (unsigned int)(unsigned char)dline[c].s[1] << 8;
 #if 0
      /* A hup is sent as delivery num 0xBEEF = 48879 */
      if (delnum == 0xBEEF) {
