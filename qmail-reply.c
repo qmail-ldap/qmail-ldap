@@ -1,3 +1,5 @@
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "byte.h"
 #include "case.h"
 #include "control.h"
@@ -5,6 +7,7 @@
 #include "env.h"
 #include "error.h"
 #include "exit.h"
+#include "fmt.h"
 #include "getln.h"
 #include "newfield.h"
 #include "now.h"
@@ -14,6 +17,8 @@
 #include "readwrite.h"
 #include "seek.h"
 #include "sgetopt.h"
+#include "sig.h"
+#include "str.h"
 #include "strerr.h"
 #include "stralloc.h"
 #include "substdio.h"
@@ -22,7 +27,7 @@
 #define WARN  "qmail-reply: warn: "
 
 void temp_nomem() { strerr_die2x(111, FATAL, "Out of memory."); }
-void temp_rewind() { strerr_die2x(111,FATAL, "Unable to rewind message."); }
+void temp_rewind() { strerr_die2x(111, FATAL, "Unable to rewind message."); }
 void temp_fork() { strerr_die2sys(111, FATAL, "Unable to fork: "); }
 
 
@@ -39,7 +44,7 @@ void envmail(void)
 	char *s;
 
 	if ((s = env_get(ENV_REPLYTEXT))) {
-		if (!stralloc_copys(&replytext,s)) temp_nomem();
+		if (!stralloc_copys(&replytext, s)) temp_nomem();
 	} else {
 		strerr_die3x(100, FATAL, ENV_REPLYTEXT,
 		    " not present.");
@@ -61,9 +66,9 @@ void readmail(char *file)
 	if (fd == -1)
 		strerr_die4sys(100, FATAL, "unable to open '", file, "': ");
  
-	substdio_fdbuf(&ss,read,fd,buf,sizeof(buf));
+	substdio_fdbuf(&ss, read, fd, buf, sizeof(buf));
 	for (;;) {
-		if (getln(&ss,&line,&match,'\n') == -1)
+		if (getln(&ss, &line, &match, '\n') == -1)
 			strerr_die4sys(100, FATAL, "unable to read '", file, "': ");
 		if (!match) {
 			close(fd);
@@ -85,23 +90,23 @@ void get_env(void)
 
 	if ((s = env_get("DTLINE")) == (char *)0)
 		strerr_die2x(100, FATAL, "Environment DTLINE not present.");
-	if (!stralloc_copys(&dtline,s)) temp_nomem();
+	if (!stralloc_copys(&dtline, s)) temp_nomem();
 
 	if ((s = env_get("SENDER")) == (char *)0)
 		strerr_die2x(100, FATAL, "Environment SENDER not present.");
-	if (!stralloc_copys(&to,s)) temp_nomem();
+	if (!stralloc_copys(&to, s)) temp_nomem();
 
 	if ((s = env_get("RECIPIENT")) == (char *)0)
 		strerr_die2x(100, FATAL, "Environment RECIPIENT not present.");
-	if (!stralloc_copys(&from,s)) temp_nomem();
+	if (!stralloc_copys(&from, s)) temp_nomem();
 
 	i = byte_chr(from.s, from.len, '@');
 	if ( i == 0 || i >= from.len )
 	  strerr_die2x(100, FATAL, "Bad RECIPIENT address.");
 
-	if (! (s = env_get("HOST") ) )
+	if (!(s = env_get("HOST")))
 		strerr_die2x(100, FATAL, "Environment HOST not present.");
-	if (!stralloc_copys(&host,s)) temp_nomem();
+	if (!stralloc_copys(&host, s)) temp_nomem();
 }
 
 stralloc junkfrom={0};
@@ -169,16 +174,16 @@ datetime_sec get_stamp(char *hex)
 	char c;
 
 	t = 0;
-	while(c = *hex++) {
+	while((c = *hex++)) {
 		if (c >= '0' && c <= '9')
 			c -= '0';
 		else if (c >= 'a')
-			c -= ('a' + 10);
+			c -= ('a' - 10);
 		else 
-			c -= ('A' + 10);
+			c -= ('A' - 10);
 		if (c >= 16)
 			break;
-		t = t<<4 + c;
+		t = (t<<4) + c;
 	}
 	
 	return (datetime_sec) t;	
@@ -193,14 +198,14 @@ char* stamp(datetime_sec time)
 
 	t = (long) time;
 	s = stampbuf;
-	*s++ = (t >> 28) & 0x0f;
-	*s++ = (t >> 24) & 0x0f;
-	*s++ = (t >> 20) & 0x0f;
-	*s++ = (t >> 16) & 0x0f;
-	*s++ = (t >> 12) & 0x0f;
-	*s++ = (t >>  8) & 0x0f;
-	*s++ = (t >>  4) & 0x0f;
-	*s++ =  t        & 0x0f;
+	*s++ = digit[(t >> 28) & 0x0f];
+	*s++ = digit[(t >> 24) & 0x0f];
+	*s++ = digit[(t >> 20) & 0x0f];
+	*s++ = digit[(t >> 16) & 0x0f];
+	*s++ = digit[(t >> 12) & 0x0f];
+	*s++ = digit[(t >>  8) & 0x0f];
+	*s++ = digit[(t >>  4) & 0x0f];
+	*s++ = digit[ t        & 0x0f];
 	*s = '\0';
 	return stampbuf;
 }
@@ -208,7 +213,9 @@ char* stamp(datetime_sec time)
 stralloc rs = {0}; /* recent sender */
 int rsmatch = 0;
 datetime_sec timeout;
-#define DEF_TIMEOUT 1209600 /* 2 weeks */
+#ifndef REPLY_TIMEOUT
+#define REPLY_TIMEOUT 1209600 /* 2 weeks */
+#endif
 #define MAX_SIZE 10240 /* 10kB */
 
 int recent(char *buf, int len)
@@ -229,9 +236,9 @@ int recent(char *buf, int len)
 
 	slen = rs.len; s = rs.s;
 	for (i = 0; i < slen; i += str_len(s+i)) {
-		if (case_diffb(s+i, buf, len) == 0) {
+		if (case_diffb(buf, len, s+i) == 0) {
 			/* match found, look at timeval */
-			rsmatch = i; i += slen;
+			rsmatch = i; i += len;
 			if (s[i++] != ':')
 				strerr_die2x(100, FATAL,
 				    "db file .qmail-reply.db corrupted");
@@ -251,19 +258,21 @@ void tryunlinktmp() { unlink(fntmptph); }
 void sigalrm()
 {
 	tryunlinktmp();
-	strerr_die2x(111. FATAL, "timeout while writing db file");
+	strerr_die2x(111, FATAL, "timeout while writing db file");
 }
 
 void recent_update(char *buf, int len)
 {
-	char *s;
-	int size, slen, i;
+	char *s, *t;
+	struct stat st;
+	unsigned long pid, time;
+	int fd, loop, size, slen, i;
 	substdio ss;
 
 	s = rs.s; slen = rs.len;
 	size = slen + len + 10;
 	for(; size > MAX_SIZE; ) {
-		i = str_len(s);
+		i = str_len(s) + 1;
 		size -= i;
 		slen -= i;
 		s += i;
@@ -272,12 +281,12 @@ void recent_update(char *buf, int len)
 	pid = getpid();
 	for (loop = 0;;++loop) {
 		time = now();
-		s = fntmptph;
-		s += fmt_str(s,".qmail-reply.tmp.");
-		s += fmt_ulong(s,time); *s++ = '.';
-		s += fmt_ulong(s,pid); *s++ = '.';
-		*s++ = 0;
-		if (stat(fntmptph,&st) == -1) if (errno == error_noent) break;
+		t = fntmptph;
+		t += fmt_str(t, ".qmail-reply.tmp.");
+		t += fmt_ulong(t, time); *t++ = '.';
+		t += fmt_ulong(t, pid);
+		*t++ = 0;
+		if (stat(fntmptph, &st) == -1) if (errno == error_noent) break;
 		/* really should never get to this point */
 		if (loop == 2) _exit(1);
 		sleep(2);
@@ -289,15 +298,15 @@ void recent_update(char *buf, int len)
 	if (fd == -1)
 		strerr_die2sys(111, FATAL, "unable to open tmp file: ");
 
-	substdio_fdbuf(&ss,write,fd,rsoutbuf,sizeof(rsoutbuf));
+	substdio_fdbuf(&ss, write, fd, rsoutbuf, sizeof(rsoutbuf));
 
-	for (i = 0; i < slen; i += str_len(s+i)) {
+	for (i = 0; i < slen; i += str_len(s+i) + 1) {
 		if (rs.s+rsmatch == s+i) continue;
 		if (substdio_puts(&ss, s+i) == -1) goto fail;
 		if (substdio_put(&ss, "\n", 1) == -1) goto fail;
 	}
 	if (substdio_put(&ss, buf, len) == -1) goto fail;
-	if (substdio_put(&ss, ":", len) == -1) goto fail;
+	if (substdio_put(&ss, ":", 1) == -1) goto fail;
 	if (substdio_puts(&ss, stamp(now())) == -1) goto fail;
 	if (substdio_put(&ss, "\n", 1) == -1) goto fail;
 	if (substdio_flush(&ss) == -1) goto fail;
@@ -306,7 +315,7 @@ void recent_update(char *buf, int len)
 
 	if (unlink(".qmail-reply.db") == -1 && errno != error_noent) goto fail;
 	
-	if (link(fntmptph,".qmail-reply.db") == -1) goto fail;
+	if (link(fntmptph, ".qmail-reply.db") == -1) goto fail;
 	/* if it was error_exist, almost certainly successful; i hate NFS */
 
 	tryunlinktmp();
@@ -349,7 +358,7 @@ int getfield(char *s, int len)
 
 stralloc subject = {0};
 
-int parseheader(/* XXX names for to/cc checking */ void)
+int parseheader(/* TODO names for to/cc checking */ void)
 {
 	substdio ss;
 	char *s;
@@ -361,7 +370,7 @@ int parseheader(/* XXX names for to/cc checking */ void)
 	do {
 		if(getln(&ss, &line, &match, '\n') != 0) {
 			strerr_warn3(WARN, "unable to read message: ",
-			    error_str(errno),0);
+			    error_str(errno), 0);
 			break; /* something bad happend, but we ignore it */
 		}
 		if (line.len == 0) /* something is wrong, bad message */
@@ -416,7 +425,7 @@ int parseheader(/* XXX names for to/cc checking */ void)
 		case 'c': /* Cc: */
 		case 'T':
 		case 't': /* To: */
-			/* to be implemented */
+			/*  TODO check if address is listed in To ot Cc field */
 #if 0
 			if (case_diffb("To:"
 				    sizeof("To:") - 1, s) == 0 ||
@@ -428,13 +437,15 @@ int parseheader(/* XXX names for to/cc checking */ void)
 			}
 #endif
 			break;
+		case ' ':
+		case '\t':
+			/* TODO multiline header Precedence, Subject, To and Cc */
 		default:
-			/* XXX multiline header for to and cc */
 			break;
 		}
 	} while (match);
 	strerr_warn2(WARN,
-	    "premature end of header. This message has no body.", 0);
+	    "premature end of header. The message has no body.", 0);
 	if ( subj_set == 0 )
 		if (!stralloc_copys(&subject, REPLY_SUBJ)) temp_nomem();
 
@@ -444,6 +455,13 @@ int parseheader(/* XXX names for to/cc checking */ void)
 stralloc ct = {0};
 stralloc cte = {0};
 stralloc resubject = {0};
+
+#ifndef REPLY_CT
+#define REPLY_CT "text/plain; charset=\"iso-8859-1\"\n"
+#endif
+#ifndef REPLY_CTE
+#define REPLY_CTE "8bit\n"
+#endif
 
 void sendmail(void)
 {
@@ -566,7 +584,8 @@ next:
 	} while (header == 1);
 
 	if (resubject.s == (char *)0) {
-		if (!stralloc_copys(&resubject, "[Auto-Reply] ")) goto fail_nomem;
+		if (!stralloc_copys(&resubject, "[Auto-Reply] "))
+			goto fail_nomem;
 		if (!stralloc_cat(&resubject, &subject)) goto fail_nomem;
 		if (!stralloc_cats(&resubject, "\n")) goto fail_nomem;
 		if (!stralloc_0(&resubject)) goto fail_nomem;
@@ -584,19 +603,19 @@ next:
 	qmail_puts(&qqt, "\n");
 	/* Subject: */
 	qmail_puts(&qqt, "Subject: ");
-	qmail_puts(&qqt, resubject.s); /* resubject allready has a '\n' at the end */
+	qmail_puts(&qqt, resubject.s); /* resubject already ends with a '\n'*/
 	/* Content-* */
 	qmail_puts(&qqt, "Content-type: ");
 	if (ct.s != (char *)0 && ct.len > 0)
 		qmail_put(&qqt, ct.s, ct.len);
 	else
-		qmail_puts(&qqt, "text/plain; charset=\"iso-8859-1\"\n");
+		qmail_puts(&qqt, REPLY_CT);
 	/* '\n' already written */
 	qmail_puts(&qqt, "Content-Transfer-Encoding: ");
 	if (cte.s != (char *)0 && cte.len > 0)
 		qmail_put(&qqt, cte.s, cte.len);
 	else
-		qmail_puts(&qqt, "8bit\n");
+		qmail_puts(&qqt, REPLY_CTE);
 	/* '\n' already written */
 	/* X-Mailer: qmail-reply */
 	qmail_puts(&qqt, "X-Mailer: qmail-reply\n\n");
@@ -624,7 +643,7 @@ int main(int argc, char **argv)
 	
 	flagenv = 1;
 #ifdef NOTYET
-	timeout = DEF_TIMEOUT;
+	timeout = REPLY_TIMEOUT;
 #endif
 
 	while((opt = getopt(argc,argv,"f:j:")) != opteof)
@@ -663,7 +682,7 @@ int main(int argc, char **argv)
 #ifdef NOTYET
 	recent_update(to.s, to.len);
 #endif
-	sendmail(); /* actually qmail :) */
+	sendmail();
 	return 0;
 }
 

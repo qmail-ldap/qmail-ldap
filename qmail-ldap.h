@@ -11,6 +11,15 @@
 /* triger level for quotawarning (0-100) */
 #define QUOTA_WARNING_LEVEL 70
 
+/* reply subject for mails without subjects. */
+#define REPLY_SUBJ "Your Mail"
+/* timeout for one delivery per sender */
+#define REPLY_TIMEOUT 1209600 /* 1 Week */
+/* default content type (don't forget the '\n' at the end) */
+#define REPLY_CT "text/plain; charset=\"utf-8\"\n"
+/* default content transfer encoding (don't forget the '\n' at the end) */
+#define REPLY_CTE "8bit\n"
+
 /* the maximum and minimum uid allowed */
 #define UID_MIN 100
 #define UID_MAX 65535
