@@ -339,7 +339,7 @@ void output(char *fmt, ...)
 					if ( substdio_put(&ssout, "%", 1) == -1 ) return;
 					break;
 				case 'c':
-					c = va_arg(args, unsigned char);
+					c = (unsigned char) va_arg(args, unsigned int);
 					substdio_BPUTC(&ssout, c);
 					break;
 			}

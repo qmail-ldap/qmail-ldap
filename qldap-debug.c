@@ -125,7 +125,7 @@ void debug(int level, char *fmt, ...)
 						return;
 					break;
 				case 'c':
-					c = va_arg(args, unsigned char);
+					c = (unsigned char) va_arg(args, unsigned int);
 					substdio_BPUTC(&ssdeb, c);
 					break;
 			}
