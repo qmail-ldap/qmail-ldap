@@ -611,6 +611,7 @@ void acceptmessage(qp) unsigned long qp;
   logstring(2,"qp"); logstring(2,accept_buf); logflush(2);
 }
 
+char receivedbytes[FMT_ULONG];
 void smtp_data() {
   int hops;
   unsigned long qp;
@@ -628,7 +629,10 @@ void smtp_data() {
  
   received(&qqt,"SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
   blast(&hops);
-  logpid(2); logstring(2,""); logstring(2,"bytes received"); logflush(2);
+
+  receivedbytes[fmt_ulong(receivedbytes,(unsigned long) bytesreceived)] = 0;
+  logpid(3); logstring(3,"data bytes received ="); logstring(3,receivedbytes); logflush(3);
+
   hops = (hops >= MAXHOPS);
   if (hops) { logline(2,"hop count exceeded"); qmail_fail(&qqt); }
   qmail_from(&qqt,mailfrom.s);
@@ -637,7 +641,6 @@ void smtp_data() {
   qqx = qmail_close(&qqt);
   if (!*qqx) { acceptmessage(qp); return; }
   if (hops) { out("554 too many hops, this message is looping (#5.4.6)\r\n"); return; }
-  logpid(3); logstring(3,"data bytes received ="); logline(3,"unknown"); logflush(3);
   if (databytes) if (!bytestooverflow)
   {
     out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n");
