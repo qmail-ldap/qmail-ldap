@@ -951,7 +951,7 @@ qldap_set_option(qldap *q, int forceV2)
 		 * 1.x does not support it and the other SDKs have other
 		 * rebind functions.
 		 */
-#if LDAP_VENDOR_VERSION > 20100
+#if LDAP_VENDOR_VERSION >= 20100 /* Oh no! They changed again the api, honey. */
 		rc = ldap_set_rebind_proc(q->ld, dorebind, (void *)0);
 #else
 		rc = ldap_set_rebind_proc(q->ld, dorebind);

@@ -370,7 +370,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
 #else
      /* normal qmail-ldap behavior test for username@domain.com and
         catchall@domain.com */
-     i = 0;
+     ext = 0;
 #endif
    } while (1);
 
