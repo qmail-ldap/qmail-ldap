@@ -152,7 +152,7 @@ unsigned char testvektor[128] = {
 	/* 32	' '			*/	SPACE,
 	/* 33	'!'			*/	ALLOW_PROG&PARANOIA,
 	/* 34	'"'			*/	ALLOW_PROG,
-	/* 35	'#'			*/	ALLOW_PROG&PARANOIA,
+	/* 35	'#'			*/	ALLOW_ALL,
 	/* 36	'$'			*/	ALLOW_PROG&PARANOIA,
 	/* 37	'%'			*/	ALLOW_PROG&PARANOIA,
 	/* 38	'&'			*/	ALLOW_PROG&PARANOIA,
