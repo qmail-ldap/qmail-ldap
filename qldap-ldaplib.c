@@ -330,9 +330,10 @@ int qldap_lookup(searchinfo *search, char **attrs, userinfo *info,
 		case LDAP_TIMELIMIT_EXCEEDED:
 		case LDAP_BUSY:
 		  qldap_errno = LDAP_SEARCH_TIMEOUT;
-
+		  break;
 		default:
 		  qldap_errno = LDAP_SEARCH;
+		  break;
 		}
 
 		return -1;
