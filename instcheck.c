@@ -89,6 +89,22 @@ int mode;
   perm(".../",subdir,"/",file,S_IFREG,uid,gid,mode);
 }
 
+void C(home,subdir,file,source,uid,gid,mode)
+const char *home;
+const char *subdir;
+const char *file;
+const char *source;
+int uid;
+int gid;
+int mode;
+{
+  if (chdir(home) == -1)
+    strerr_die4sys(111,FATAL,"unable to switch to ",home,": ");
+  if (chdir(subdir) == -1)
+    strerr_die6sys(111,FATAL,"unable to switch to ",home,"/",subdir,": ");
+  perm(".../",subdir,"/",file,S_IFREG,uid,gid,mode);
+}
+
 void z(home,file,len,uid,gid,mode)
 const char *home;
 const char *file;
@@ -100,6 +116,22 @@ int mode;
   if (chdir(home) == -1)
     strerr_die4sys(111,FATAL,"unable to switch to ",home,": ");
   perm("",home,"/",file,S_IFREG,uid,gid,mode);
+}
+
+void l(home,subdir,logdir,loguser,uid,gid,mode)
+const char *home;
+const char *subdir;
+const char *logdir;
+const char *loguser;
+int uid;
+int gid;
+int mode;
+{
+  if (chdir(home) == -1)
+    strerr_die4sys(111,FATAL,"unable to switch to ",home,": ");
+  if (chdir(subdir) == -1)
+    strerr_die6sys(111,FATAL,"unable to switch to ",home,"/",subdir,": ");
+  perm(".../",subdir,"/","run",S_IFREG,uid,gid,mode);
 }
 
 int main()

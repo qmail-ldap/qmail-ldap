@@ -37,8 +37,6 @@ int match;
 int main(int argc, char **argv)
 {
   umask(033);
-  if (chdir(auto_qmail) == -1)
-    strerr_die4sys(111,FATAL,"unable to chdir to ",auto_qmail,": ");
 
   if (argc != 3)
     strerr_die1sys(111,"qmail-cdb: usage: qmail-cdb rules.cdb rules.tmp");

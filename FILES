@@ -432,6 +432,7 @@ tcp-environ.5
 constmap.h
 constmap.c
 EXTTODO
+Makefile.cdb
 POPBEFORESMTP
 QLDAPINSTALL
 QLDAPNEWS
@@ -443,6 +444,7 @@ auth_mod.c
 auth_mod.h
 auth_pop.c
 auth_smtp.c
+auto_userl.h
 base64.c
 base64.h
 byte_repl.c
@@ -501,15 +503,24 @@ qldap.h
 qmail-cdb.c
 qmail-forward.c
 qmail-group.c
+qmail-imapd.rules
+qmail-imapd.run
 qmail-ldap.h
 qmail-ldaplookup.c
+qmail-pop3d.rules
+qmail-pop3d.run
+qmail-qmqpd.rules
+qmail-qmqpd.run
 qmail-quotawarn.c
 qmail-reply.c
 qmail-secretary
 qmail-secretary.c
+qmail-smtpd.rules
+qmail-smtpd.run
 qmail-todo.c
 qmail-verify.c
 qmail.schema
+qmail.run
 rbl.c
 rbl.h
 read-ctrl.c
@@ -517,3 +528,4 @@ read-ctrl.h
 readwrite.c
 smtpcall.c
 smtpcall.h
+

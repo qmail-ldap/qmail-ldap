@@ -1,0 +1,27 @@
+# Simple Makefile to keep cdb databases up to date
+# This Makefile assumes that tcprules and qmail-cdb are in your $PATH
+# if not edit the next two lines.
+TCPRULES=tcprules
+QMAILRULES=qmail-cdb
+
+FILES=	locals.cdb rcpthosts.cdb qmail-smtpd.cdb qmail-qmqpd.cdb \
+	qmail-pop3d.cdb qmail-imapd.cdb
+
+TMPFILE=rules.tmp
+
+.SUFFIXES: .cdb .rules
+
+all: $(FILES)
+	@rm -f $(TMPFILE)
+
+# locals and rcpthosts are special cases...
+locals.cdb: locals
+	$(QMAILRULES) locals.cdb $(TMPFILE) < locals
+
+rcpthosts.cdb: rcpthosts
+	$(QMAILRULES) rcpthosts.cdb $(TMPFILE) < rcpthosts
+
+.rules.cdb:
+	$(TCPRULES) $@ $(TMPFILE) < $<
+
+

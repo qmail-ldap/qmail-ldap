@@ -392,6 +392,8 @@ auth_pop
 auth_pop.o
 auth_smtp
 auth_smtp.o
+auto_userl.c
+auto_userl.o
 base64.o
 byte_repl.o
 case_startb.o

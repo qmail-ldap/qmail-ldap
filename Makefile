@@ -293,6 +293,14 @@ auto_usera.o: \
 compile auto_usera.c
 	./compile auto_usera.c
 
+auto_userl.c: \
+auto-str conf-users
+	./auto-str auto_userl `head -3 conf-users | tail -1` > auto_userl.c
+
+auto_userl.o: \
+compile auto_userl.c
+	./compile auto_userl.c
+
 base64.o: \
 compile base64.c base64.h str.h
 	./compile $(LDAPFLAGS) base64.c
@@ -984,16 +992,17 @@ seek.h fork.h
 
 install: \
 load install.o fifo.o hier.o auto_qmail.o auto_split.o auto_uids.o \
-strerr.a substdio.a open.a error.a str.a fs.a
+auto_userl.o strerr.a substdio.a open.a error.a str.a fs.a
 	./load install fifo.o hier.o auto_qmail.o auto_split.o \
-	auto_uids.o strerr.a substdio.a open.a error.a str.a fs.a 
+	auto_uids.o auto_userl.o strerr.a substdio.a open.a error.a \
+	str.a fs.a 
 
 install-big: \
 load install-big.o fifo.o install.o auto_qmail.o auto_split.o \
-auto_uids.o strerr.a substdio.a open.a error.a str.a fs.a
+auto_uids.o auto_userl.o strerr.a substdio.a open.a error.a str.a fs.a
 	./load install-big fifo.o install.o auto_qmail.o \
-	auto_split.o auto_uids.o strerr.a substdio.a open.a error.a \
-	str.a fs.a 
+	auto_split.o auto_uids.o auto_userl.o strerr.a substdio.a \
+	open.a error.a str.a fs.a 
 
 install-big.o: \
 compile install-big.c auto_qmail.h auto_split.h auto_uids.h fmt.h \
@@ -1007,9 +1016,9 @@ exit.h
 
 instcheck: \
 load instcheck.o fifo.o hier.o auto_qmail.o auto_split.o auto_uids.o \
-strerr.a substdio.a error.a str.a fs.a
+auto_userl.o strerr.a substdio.a error.a str.a fs.a
 	./load instcheck fifo.o hier.o auto_qmail.o auto_split.o \
-	auto_uids.o strerr.a substdio.a error.a str.a fs.a 
+	auto_uids.o auto_userl.o strerr.a substdio.a error.a str.a fs.a 
 
 instcheck.o: \
 compile instcheck.c strerr.h error.h readwrite.h exit.h

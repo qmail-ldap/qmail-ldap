@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/10/28 21:39:36 $ ($Revision: 1.142 $)
+RELEASE: $Date: 2003/10/30 09:13:02 $ ($Revision: 1.143 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,15 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Basic daemontool run scripts installed in ~/boot. qmail-ldap installs now
+ daemontools run script for most services in ~/boot. A Makefile for cdb
+ updating is installed in ~control.
+
+ locals and rcpthosts can now be stored as cdb. This makes morercpthost.cdb
+ superfluous, also the hupping of qmail-send if the locals.cdb file changes
+ is no longer neccesary. If locals.cdb is present locals is ignored respectively
+ if rcpthosts.cdb is present rcpthosts and morercpthosts.cdb are ignored.
 
  Important bug fix: if you removed rcpthost, qmail-ldap became a open relay.
  This is stock qmail behaviour but since we include locals in our rcpthost
@@ -157,8 +166,8 @@ NEWS for 20031001 stuff:
 
  Modernize qmail startup infratructure. First step is to redo the ~boot
  directory and to add ~log directory. Create subdirs for qmail, qmail-smtpd,
- qmail-qmqpd, qmail-pop3d, qmail-imapd and qmail-pbsd for supervise and multilog.
- Corresponding run files will come in the next release.
+ qmail-qmqpd, qmail-pop3d, qmail-imapd and qmail-pbsd for supervise and
+ multilog.  Corresponding run files will come in the next release.
 
  Fix bug in qmail-smtp addrparse function. If "mail from" or "rcpt to" did
  neither contain a '<' nor a ':' the function returned a nullsender (bounce)

@@ -4,8 +4,11 @@ exec 2>&1
 # POP3 service 
 #
 QMAIL=/var/qmail
-ME=`head -1 $QMAIL/control/me`
-ALIASEMPTY=`head -1 $QMAIL/control/aliasempty`
+ME=$(head -1 $QMAIL/control/me)
+ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty > /dev/null 2>&1)
+if test X"$ALIASEMPTY" = "X"; then
+	ALIASEMPTY=./Maildir/
+fi
 
 PATH=$PATH:"$QMAIL/bin"
 

@@ -1,12 +1,17 @@
 #include "auto_qmail.h"
 #include "auto_split.h"
 #include "auto_uids.h"
+#include "auto_userl.h"
 #include "fmt.h"
 #include "fifo.h"
 
 extern void c(const char *, const char *, const char *, int, int, int);
+extern void C(const char *, const char *, const char *, const char *,
+ int, int, int);
 extern void d(const char *, const char *, int, int, int);
 extern void h(const char *, int, int, int);
+extern void l(const char *, const char *, const char *, const char *,
+ int, int, int);
 extern void p(const char *, const char *, int, int, int);
 extern void z(const char *, const char *, int, int, int, int);
 
@@ -57,12 +62,12 @@ void hier()
   d(auto_qmail,"boot/qmail-pop3d",auto_uido,auto_gidq,0755);
   d(auto_qmail,"boot/qmail-pop3d/env",auto_uido,auto_gidq,0755);
   d(auto_qmail,"boot/qmail-pop3d/log",auto_uido,auto_gidq,0755);
-  d(auto_qmail,"boot/qmail-imap4",auto_uido,auto_gidq,0755);
-  d(auto_qmail,"boot/qmail-imap4/env",auto_uido,auto_gidq,0755);
-  d(auto_qmail,"boot/qmail-imap4/log",auto_uido,auto_gidq,0755);
-  d(auto_qmail,"boot/qmail-pbsd",auto_uido,auto_gidq,0755);
-  d(auto_qmail,"boot/qmail-pbsd/env",auto_uido,auto_gidq,0755);
-  d(auto_qmail,"boot/qmail-pbsd/log",auto_uido,auto_gidq,0755);
+  d(auto_qmail,"boot/qmail-imapd",auto_uido,auto_gidq,0755);
+  d(auto_qmail,"boot/qmail-imapd/env",auto_uido,auto_gidq,0755);
+  d(auto_qmail,"boot/qmail-imapd/log",auto_uido,auto_gidq,0755);
+  d(auto_qmail,"boot/qmail-pbsdbd",auto_uido,auto_gidq,0755);
+  d(auto_qmail,"boot/qmail-pbsdbd/env",auto_uido,auto_gidq,0755);
+  d(auto_qmail,"boot/qmail-pbsdbd/log",auto_uido,auto_gidq,0755);
 
   /* logging restructured for daemontools */
   d(auto_qmail,"log",auto_uidl,auto_gidq,0755);
@@ -71,7 +76,7 @@ void hier()
   d(auto_qmail,"log/qmail-qmqpd",auto_uidl,auto_gidq,0755);
   d(auto_qmail,"log/qmail-pop3d",auto_uidl,auto_gidq,0755);
   d(auto_qmail,"log/qmail-imapd",auto_uidl,auto_gidq,0755);
-  d(auto_qmail,"log/qmail-pbsd",auto_uidl,auto_gidq,0755);
+  d(auto_qmail,"log/qmail-pbsdbd",auto_uidl,auto_gidq,0755);
 
   d(auto_qmail,"man",auto_uido,auto_gidq,0755);
   d(auto_qmail,"man/cat1",auto_uido,auto_gidq,0755);
@@ -107,11 +112,33 @@ void hier()
   z(auto_qmail,"queue/lock/sendmutex",0,auto_uids,auto_gidq,0600);
   p(auto_qmail,"queue/lock/trigger",auto_uids,auto_gidq,0622);
 
-  /* restructured for daemontools */
-  //c(auto_qmail,"control","qmail-smtpd.rules",auto_uido,auto_gidq,0755);
-  //c(auto_qmail,"control","qmail-qmqpd.rules",auto_uido,auto_gidq,0755);
-  //c(auto_qmail,"control","qmail-pop3d.rules",auto_uido,auto_gidq,0755);
-  //c(auto_qmail,"control","qmail-imapd.rules",auto_uido,auto_gidq,0755);
+  /* rules file for tcpserver */
+  c(auto_qmail,"control","qmail-smtpd.rules",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"control","qmail-qmqpd.rules",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"control","qmail-pop3d.rules",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"control","qmail-imapd.rules",auto_uido,auto_gidq,0644);
+  
+  /* Makefile for cdb creation */
+  C(auto_qmail,"control","Makefile","Makefile.cdb",auto_uido,auto_gidq,0644);
+  
+  /* run files for boot/supervise scripts */
+  C(auto_qmail,"boot/qmail", "run", "qmail.run",auto_uido,auto_gidq,0755);
+  C(auto_qmail,"boot/qmail-smtpd", "run", "qmail-smtpd.run",auto_uido,auto_gidq,0755);
+  C(auto_qmail,"boot/qmail-qmqpd", "run", "qmail-qmqpd.run",auto_uido,auto_gidq,0755);
+  C(auto_qmail,"boot/qmail-pop3d", "run", "qmail-pop3d.run",auto_uido,auto_gidq,0755);
+  C(auto_qmail,"boot/qmail-imapd", "run", "qmail-imapd.run",auto_uido,auto_gidq,0755);
+  C(auto_qmail,"boot/qmail-pbsdbd", "run", "qmail-pbsdbd.run",auto_uido,auto_gidq,0755);
+  C(auto_qmail,"boot/qmail-imapd", "down", "/dev/null",auto_uido,auto_gidq,0644);
+  C(auto_qmail,"boot/qmail-qmqpd", "down", "/dev/null",auto_uido,auto_gidq,0644);
+  C(auto_qmail,"boot/qmail-pbsdbd", "down", "/dev/null",auto_uido,auto_gidq,0644);
+
+  /* run files for logging process */
+  l(auto_qmail,"boot/qmail/log","log/qmail",auto_userl,auto_uido,auto_gidq,0755);
+  l(auto_qmail,"boot/qmail-smtpd/log","log/qmail-smtpd",auto_userl,auto_uido,auto_gidq,0755);
+  l(auto_qmail,"boot/qmail-qmqpd/log","log/qmail-qmqpd",auto_userl,auto_uido,auto_gidq,0755);
+  l(auto_qmail,"boot/qmail-pop3d/log","log/qmail-pop3d",auto_userl,auto_uido,auto_gidq,0755);
+  l(auto_qmail,"boot/qmail-imapd/log","log/qmail-imapd",auto_userl,auto_uido,auto_gidq,0755);
+  l(auto_qmail,"boot/qmail-pbsdbd/log","log/qmail-pbsdbd",auto_userl,auto_uido,auto_gidq,0755);
 
   c(auto_qmail,"doc","FAQ",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","UPGRADE",auto_uido,auto_gidq,0644);
