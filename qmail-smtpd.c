@@ -450,10 +450,20 @@ int rblcheck()
   p = &rbl.s[0];
   while(p < &rbl.s[0]+rbl.len)
   {
+    logpid(2); logstring(2,"RBL check with '"); logstring(2,p); logstring(2,"':");
     r = rbl_lookup(p);
-      if (r == 2) return 2;
-      if (r == 1) return 1;
+      if (r == 2)
+      {
+        logstring(2,"temporary DNS error"); logflush();
+        return 2;
+      }
+      if (r == 1)
+      {
+        logstring(2,"found match, sender is blocked"); logflush();
+        return 1;
+      }
     /* continue */
+    logstring(2,"no match found, continue"); logflush();
     p = p+strlen(p);
     p++;
   }
@@ -615,6 +625,7 @@ void smtp_mail(arg) char *arg;
   /* Check RBL only if relayclient is not set */
   if (rblenabled && !relayclient)
   {
+    logline(3,"RBL checking enabled, going through list of RBLs");
     switch(rblcheck())
     {
       case 2: /* soft error lookup */
@@ -624,6 +635,7 @@ void smtp_mail(arg) char *arg;
         err_rbl();
         return;
       default: /* ok, go ahead */
+    logline(3,"RBL checking completed without match");
     }
   }
 
