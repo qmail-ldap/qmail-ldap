@@ -1499,8 +1499,8 @@ fd_set *rfds;
 datetime_sec *wakeup;
 {
   if (flagexitasap) {
-    write(todofdout, "X", 1);
-    return;
+    if (flagtodoalive)
+      write(todofdout, "X", 1);
   }
   if (flagtodoalive) {
     FD_SET(todofdin,rfds);
@@ -1522,35 +1522,31 @@ void todo_del(char* s)
  switch(*s++) {
   case 'L':
     flagchan[0] = 1;
+		log1("qmail-send: recived message for local delivery\n");
     break;
   case 'R':
     flagchan[1] = 1;
+		log1("qmail-send: recived message for remote delivery\n");
     break;
   case 'B':
     flagchan[0] = 1;
     flagchan[1] = 1;
+		log1("qmail-send: recived message for both deliveries\n");
     break;
   case 'X':
+		log1("qmail-send: recived message for NO delivery\n");
     break;
   default:
     log1("warning: qmail-send unable to understand qmail-todo\n");
     return;
  }
  
+ log3("qmail-send: new msg from qmail-todo id ", s, "\n");
  len = scan_ulong(s,&id);
  if (!len || s[len]) {
   log1("warning: qmail-send unable to understand qmail-todo\n");
   return;
  }
-
- fnmake_todo(id);
- if (substdio_putflush(&sstoqc,fn.s,fn.len) == -1) { cleandied(); return; }
- if (substdio_get(&ssfromqc,&ch,1) != 1) { cleandied(); return; }
- if (ch != '+')
-  {
-   log3("warning: qmail-clean unable to clean up ",fn.s,"\n");
-   return;
-  }
 
  pe.id = id; pe.dt = now();
  for (c = 0;c < CHANNELS;++c)
@@ -1560,6 +1556,9 @@ void todo_del(char* s)
  for (c = 0;c < CHANNELS;++c) if (flagchan[c]) break;
  if (c == CHANNELS)
    while (!prioq_insert(&pqdone,&pe)) nomem();
+ if (c == CHANNELS)
+	log1("qmail-send: message already done\n");
+	 
 
  return;
 }
@@ -1571,17 +1570,18 @@ fd_set *rfds;
   char ch;
   int i;
   
-  if (flagexitasap) {
-    write(todofdout, "X", 1);
-    return;
-  }
-  
   if (!flagtodoalive) return;
   if (!FD_ISSET(todofdin,rfds)) return;
 
   r = read(todofdin,todobuf,sizeof(todobuf));
   if (r == -1) return;
-  if (r == 0) { tododied(); return; }
+  if (r == 0) {
+    if (flagexitasap)
+      flagtodoalive = 0;
+    else
+      tododied();
+    return;
+  }
   for (i = 0;i < r;++i) {
     ch = todobuf[i];
     while (!stralloc_append(&todoline,&ch)) nomem();
@@ -1591,6 +1591,7 @@ fd_set *rfds;
     if (!ch && (todoline.len > 1)) {
       switch (todoline.s[0]) {
 	case 'D':
+	  if (flagexitasap) break;
 	  todo_del(todoline.s + 1);
 	  break;
 	case 'L':
@@ -1598,6 +1599,7 @@ fd_set *rfds;
 	  break;
 	default:
 	  log1("warning: qmail-send unable to understand qmail-todo: report mangled\n");
+	  log1("warning: recieved: "); logsafe(todoline.s); log1("\n");
 	  break;
       }
       todoline.len = 0;
@@ -1748,8 +1750,12 @@ void main()
  todo_init();
  cleanup_init();
 
+#ifdef EXTERNAL_TODO
+ while (!flagexitasap || !del_canexit() || flagtodoalive)
+#else
  while (!flagexitasap || !del_canexit())
-  {
+#endif
+ {
    recent = now();
 
    if (flagrunasap) { flagrunasap = 0; pqrun(); }

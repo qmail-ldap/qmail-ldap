@@ -47,16 +47,23 @@ char *chanaddr[CHANNELS] = { "local/", "remote/" };
 
 datetime_sec recent;
 
-int flagexitasap = 0; void sigterm(void) { flagexitasap = 1; }
-int flagreadasap = 0; void sighup(void) { flagreadasap = 1; }
-int flagsendalive = 1; void senddied(void) { flagsendalive = 0; }
-
 void log1(char *x);
 void log3(char* x, char* y, char* z);
+
+int flagexitasap = 0; void sigterm(void) 
+{ log1("status: qmail-todo exiting asap\n"); flagexitasap = 1; }
+int flagreadasap = 0; void sighup(void) { flagreadasap = 1; }
+int flagsendalive = 1; void senddied(void) { flagsendalive = 0; }
 
 void nomem() { log1("alert: out of memory, sleeping...\n"); sleep(10); }
 void pausedir(dir) char *dir;
 { log3("alert: unable to opendir ",dir,", sleeping...\n"); sleep(10); }
+
+void cleandied() { 
+	log1("alert: qmail-todo: oh no! lost qmail-clean connection! dying...\n");
+	flagexitasap = 1; }
+
+int dfd;
 
 
 /* this file is not too long ------------------------------------- FILENAMES */
@@ -132,6 +139,8 @@ int rewrite(char *recip)
 
 /* this file is not too long --------------------------------- COMMUNICATION */
 
+substdio sstoqc; char sstoqcbuf[1024];
+substdio ssfromqc; char ssfromqcbuf[1024];
 stralloc comm_buf = {0};
 int comm_pos;
 int fdout = -1;
@@ -139,6 +148,9 @@ int fdin = -1;
 
 void comm_init(void)
 {
+ substdio_fdbuf(&sstoqc,write,2,sstoqcbuf,sizeof(sstoqcbuf));
+ substdio_fdbuf(&ssfromqc,read,3,ssfromqcbuf,sizeof(ssfromqcbuf));
+
  fdout = 1; /* stdout */
  fdin = 0;  /* stdin */
  if (ndelay_on(fdout) == -1)
@@ -193,7 +205,7 @@ void comm_write(unsigned long id, int local, int remote)
   int pos;
   char *s;
   
-  if(local&&remote) s="B";
+  if(local && remote) s="B";
   else if(local) s="L";
   else if(remote) s="R";
   else s="X";
@@ -278,14 +290,19 @@ void comm_do(fd_set *wfds, fd_set *rfds)
 	int w;
 	int len;
 	len = comm_buf.len;
+	write(dfd, "write: ", 7);
+	write(dfd, comm_buf.s + comm_pos,len - comm_pos);
+	write(dfd, "\n\n", 2);
 	w = write(fdout,comm_buf.s + comm_pos,len - comm_pos);
 	if (w <= 0) {
 	  if ((w == -1) && (errno == error_pipe))
 	    senddied();
 	} else {
 	  comm_pos += w;
-	  if (comm_pos == len)
+	  if (comm_pos == len) {
 	    comm_buf.len = 0;
+	    comm_pos = 0;
+	  }
 	}
       }
   if (flagsendalive)
@@ -297,15 +314,21 @@ void comm_do(fd_set *wfds, fd_set *rfds)
       if (r <= 0) {
 	if ((r == -1) && (errno == error_pipe))
 	  senddied();
+	write(dfd, "read: failed non fatal\n", 23);
       } else {
 	switch(c) {
 	  case 'H':
+	    write(dfd, "read: sighup()\n",15);
 	    sighup();
 	    break;
 	  case 'X':
+	    write(dfd, "read: sigterm()\n",16);
 	    sigterm();
 	    break;
 	  default:
+	    write(dfd, "read: unknown char ",19);
+	    write(dfd, &c, 1);
+	    write(dfd, "\n", 1);
 	    log1("warning: qmail-todo: qmail-send speaks an obscure dialect\n");
 	    break;
 	}
@@ -498,6 +521,15 @@ void todo_do(fd_set *rfds)
      close(fdchan[c]); fdchan[c] = -1;
     }
 
+ fnmake_todo(id);
+ if (substdio_putflush(&sstoqc,fn.s,fn.len) == -1) { cleandied(); return; }
+ if (substdio_get(&ssfromqc,&ch,1) != 1) { cleandied(); return; }
+ if (ch != '+')
+  {
+   log3("warning: qmail-clean unable to clean up ",fn.s,"\n");
+   return;
+  }
+
  comm_write(id, flagchan[0], flagchan[1]);
  
  return;
@@ -562,6 +594,7 @@ void regetcontrols(void)
 
 void reread(void)
 {
+  write(dfd, "HUP\n", 4);
  if (chdir(auto_qmail) == -1)
   {
    log1("alert: qmail-todo: unable to reread controls: unable to switch to home directory\n");
@@ -585,6 +618,9 @@ void main()
  struct timeval tv;
  int c;
 
+ dfd = open_trunc("/tmp/qmail-todo.out");
+ if ( dfd == -1 ) _exit(1);
+ 
  if (chdir(auto_qmail) == -1)
   { log1("alert: qmail-todo: cannot start: unable to switch to home directory\n"); _exit(111); }
  if (!getcontrols())
@@ -599,7 +635,7 @@ void main()
  todo_init();
  comm_init();
  
- while (!flagexitasap)
+ while (!flagexitasap || comm_canwrite())
   {
    recent = now();
 
@@ -634,7 +670,7 @@ void main()
      comm_do(&wfds, &rfds);
     }
   }
- log1("status: qmail-todo exiting\n");
+ write(dfd, "goodby\n",7);
  _exit(0);
 }
 
