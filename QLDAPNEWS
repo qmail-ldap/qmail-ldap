@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/02 12:15:44 $ ($Revision: 1.113 $)
+RELEASE: $Date: 2003/09/02 20:05:13 $ ($Revision: 1.114 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -102,6 +102,8 @@ NEWS for current stuff:
  support the dynamic data compression, stock QMQP and compressed QMQP are
  unable to understand each other. This may change for the server but not for the
  client.  Enable in Makefile with -DQMQP_COMPRESSION switch.
+
+ cleaned up qmail.schema and added qmailGroup objectclass for mail groups.
 
  major cleanup, actually a huge cleanup, currently over 75 modified, removed
  or added files. The code is now much more modularized and protable.
