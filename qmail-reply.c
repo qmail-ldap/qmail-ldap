@@ -553,29 +553,26 @@ int parseheader(/* TODO names for to/cc checking */ void)
 			return 0;
 		case 'M':
 		case 'm': /* Mailing-List: */
-			if (case_diffb("Mailing-List:",
-				    sizeof("Mailing-List:") - 1, s) == 0) {
+			if (case_startb(s, len, "Mailing-List:")) {
 				return 1;
 				/* don't reply to mailing-lists */
 			}
 			break;
 		case 'P':
 		case 'p': /* Precedence: */
-			if (case_diffb("Precedence:",
-				    sizeof("Precedence:") - 1, s) == 0) {
+			if (case_startb(s, len, "Precedence:")) {
 				i = getfield(s, len);
 				if (i >= len) break;
 				s += i; len -= i;
-				if (case_diffb(s, 4, "junk") == 0 ||
-				    case_diffb(s, 4, "bulk") == 0 ||
-				    case_diffb(s, 4, "list") == 0)
+				if (case_startb(s, len, "junk") ||
+				    case_startb(s, len, "bulk") ||
+				    case_startb(s, len, "list"))
 					return 1;
 			}
 			break;
 		case 'S':
 		case 's': /* Subject: */
-			if (case_diffb("Subject:",
-				    sizeof("Subject:") - 1, s) == 0) {
+			if (case_startb(s, len, "Subject:")) {
 				i = getfield(s, len);
 				if (i >= len) break;
 				s += i; len -= i;
@@ -605,6 +602,13 @@ int parseheader(/* TODO names for to/cc checking */ void)
 				s += i; len -= i;
 			}
 #endif
+			break;
+		case 'X':
+		case 'x': /* X-RBL: */
+			if (case_startb(s, len, "X-RBL:")) {
+				return 1;
+				/* don't reply to mailing-lists */
+			}
 			break;
 		case ' ':
 		case '\t':
