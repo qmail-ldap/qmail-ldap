@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/10 07:54:29 $ ($Revision: 1.119 $)
+RELEASE: $Date: 2003/09/16 16:56:56 $ ($Revision: 1.120 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,9 +18,35 @@ TODO:
 
 NEWS for current stuff:
 
- smtp recipient verify.
+ Removed some unneccesary verbositiy in qmail-secretary.
 
- smtp sender verify.
+ Bug fix in the maildir string creation. A specified count value will over-
+ wirte any size settings.
+
+ Added auth_smtp and AUTH capabilities to qmail-smtpd. Enabled via the 
+ SMTPAUTH env var. If SMTPAUTH is set to TLSREQUIRED it is neccesairy to
+ do a STARTTLS befor issuing an AUTH command. If AUTHREQUIRED is set the user
+ MUST successfully authenticate befor issuing a MAIL command.
+ The string in the env var AUTHPREPEND will be prepended to the userid.
+
+ qmail-reply will no longer send replies to mails tagged with a X-RBL header.
+ This should dramaticaly reduce reply bounces if used with the proper RBL.
+
+ New compile time option QUOTATRASH to include the Trash in the quota
+ calculation. The courier-imap secification tells explicitly to ignore
+ .Trash but in the last few weeks I had to find out that the courier
+ documentation should not be respected, because courier does not respect
+ it either.
+
+ New compile time option FUCKVERISIGN to disable dns wildchar matches
+ on gtlds. With this the return mx check will work again with .com doamins.
+ A big hurray for verisign that added this new feature to the internet.
+
+ New tool qmail-verify which is used for email address verification.
+
+ smtp recipient verify. Enabled with RCPTCHECK env var.
+
+ smtp sender verify. Enabled with SENDERCHECK env var.
 
  550greeting to reject smtp connections right away in the smtp
  greeting message. Use this to permanently reject all messages coming
