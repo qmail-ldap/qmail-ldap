@@ -38,6 +38,7 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	char	*a, *s, *t, *l, *p;
 	int	i;
 
+	sleep(20);
 	if (argc < 2)
 		auth_error(AUTH_CONF);
 	if (str_diff(argv[1], "-d") == 0) {
@@ -84,12 +85,12 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	i = 0;
 	s = auth_up; /* ignore service field */
 	while (auth_up[i] && auth_up[i] != '\n' ) i++;
-	if (i == auth_uplen)
+	if (i >= auth_uplen)
 		auth_error(NEEDED);
 	auth_up[i++] = '\0';
 	t = auth_up + i; /* type has to be "login" else fail ... */
 	while (auth_up[i] && auth_up[i] != '\n' ) i++;
-	if (i == auth_uplen)
+	if (i >= auth_uplen)
 		auth_error(NEEDED);
 	auth_up[i++] = '\0';
 	if (str_diff("login", t)) {
@@ -102,15 +103,15 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	}
 	l = auth_up + i; /* next login */
 	while (auth_up[i] && auth_up[i] != '\n' ) i++;
-	if (i == auth_uplen)
+	if (i >= auth_uplen)
 		auth_error(NEEDED);
 	auth_up[i++] = '\0';
 	p = auth_up + i; /* and the password */
 	while (auth_up[i] && auth_up[i] != '\n' ) i++;
-	if (i == auth_uplen)
+	if (i >= auth_uplen)
 		auth_error(NEEDED);
 	auth_up[i++] = '\0';
-	if (i != auth_uplen) /* paranoia */
+	if (i > auth_uplen) /* paranoia */
 		auth_error(NEEDED);
 
 	/* copy the login and password into the coresponding structures */

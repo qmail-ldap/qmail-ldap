@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/02 20:05:13 $ ($Revision: 1.114 $)
+RELEASE: $Date: 2003/09/03 11:55:44 $ ($Revision: 1.115 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,8 +18,18 @@ TODO:
 
 NEWS for current stuff:
 
+ bug fix in auth_imap
+
+NEWS for 20030901 stuff:
+
  WARNING: This release is NOT fully backwards compatible! We have made
  certain changes for clarity and cleanup.
+
+ qmail-group added. This tool handles mailing groups stored in ldap. Members
+ can be defined as rfc822 addresses, via dn entries and via ldap filters.
+ qmail-group can restrict mails togheter with qmail-secretary. So it is
+ possible to moderate a list, to restrict the sender to be a list member or
+ to confirm each message (qsecretary).
 
  qmail-ldaplookup has been rewritten. Not all functionality of the old tool
  has been integrated yet. It is now possible to use search filters and to
