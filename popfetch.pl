@@ -9,12 +9,12 @@ use Mail::POP3Client;
 
 # Variables
 
-$path = $ARGV[3];
-$mailpath = "./".$path;
+$path       = $ARGV[3];
+$mailpath   = "./".$path;
 $username   = $ARGV[0];
 $pw         = $ARGV[1];
-$server     = 'n-r-g.com';
-$localhost  = "schweizerinserate.ch";
+$server     = 'mail.pipeline.ch';
+$localhost  = "mail.schweizerinserate.ch";
 @filenames;
 
 # Main
@@ -30,9 +30,9 @@ else
         print $numofmails;
         for($i = 1; $i <= $numofmails; $i++)
         {
-                $zeit = time();
-                $zufall = rand();
-                $filename = $zeit.".".$$.".".$zufall.$localhost;
+                $curtime = time();
+                $random = rand();
+                $filename = $curtime.".".$$.".".$random.$localhost;
                 push(@filenames, $filename);
                 open(OUT, ">".$mailpath."/tmp/".$filename);
                 foreach($pop->Retrieve($i))
