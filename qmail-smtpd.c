@@ -601,14 +601,18 @@ void smtp_mail(arg) char *arg;
     return;
   }
 
-  /************
-   DENYMAIL is set for this session from this client, 
-             so heavy checking of mailfrom is done
-   SPAM     -> refuse all mail
-   NOBOUNCE -> refuse null mailfrom
-   DNSCHECK -> validate Mailfrom domain
-  ************/
+  /* Allow relaying based on envelope sender address */
+  if (!relayok)
+  {
+    if (rmfcheck())
+    {
+      relayclient = "";
+      logline(2,"relaying allowed for envelope sender");
+    }
+    else relayclient = 0;
+  }
 
+  /* Check RBL only if relayclient is not set */
   if (rblenabled && !relayclient)
   {
     switch(rblcheck())
@@ -623,6 +627,12 @@ void smtp_mail(arg) char *arg;
     }
   }
 
+  /* DENYMAIL is set for this session from this client, so heavy checking
+   * of mailfrom is done. If one of the following is set:
+   * SPAM     -> refuse all mail
+   * NOBOUNCE -> refuse null mailfrom
+   * DNSCHECK -> validate Mailfrom domain
+   */
   if (denymail)
   {
     if (!str_diff("SPAM", denymail))
@@ -712,19 +722,7 @@ void smtp_mail(arg) char *arg;
         err_hard(why);
       return;
     }
-
   } /* denymail */
-
-  /* Allow relaying based on envelope sender address */
-  if (!relayok)
-  { 
-    if (rmfcheck())
-    {
-      relayclient = "";
-      logline(2,"relaying allowed for envelope sender");
-    }
-    else relayclient = 0;
-  }
 
   seenmail = 1;
   if (!stralloc_copys(&rcptto,"")) die_nomem();
