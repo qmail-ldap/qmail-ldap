@@ -526,6 +526,7 @@ rbl.h
 read-ctrl.c
 read-ctrl.h
 readwrite.c
+signatures
 smtpcall.c
 smtpcall.h
 

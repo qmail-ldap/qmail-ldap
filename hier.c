@@ -121,6 +121,9 @@ void hier()
   /* Makefile for cdb creation */
   C(auto_qmail,"control","Makefile","Makefile.cdb-p",auto_uido,auto_gidq,0644);
   
+  /* signature file for qmail-smtpd ecexcheck freature */
+  C(auto_qmail,"control","signatures","signatures",auto_uido,auto_gidq,0644);
+
   /* run files for boot/supervise scripts */
   C(auto_qmail,"boot/qmail", "run", "qmail.run",auto_uido,auto_gidq,0755);
   C(auto_qmail,"boot/qmail-smtpd", "run", "qmail-smtpd.run",auto_uido,auto_gidq,0755);
