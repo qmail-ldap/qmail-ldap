@@ -483,8 +483,8 @@ static int allwrite(int (*op)(),int fd, char *buf,int len)
 	return 0;
 }
 
-static char copybuf[4096];		/* very big buffer ethernet pkgs are normaly
-						   around 1500 bytes long */
+static char copybuf[4096];	/* very big buffer ethernet pkgs are normaly
+				   around 1500 bytes long */
 
 static void copyloop(int infd, int outfd, int timeout)
 {
@@ -494,6 +494,7 @@ static void copyloop(int infd, int outfd, int timeout)
 	int bytes, ret, in, out;
 
 	in = 1; out = 1;
+	ndelay_off(infd); ndelay_off(outfd);
 	while(in || out) {
 		/* file descriptor bits */
 		FD_ZERO(&iofds);
@@ -525,12 +526,13 @@ static void copyloop(int infd, int outfd, int timeout)
 				log(1, "copyloop: read failed: %s\n", error_str(errno));
 				break;
 			}
+			log(32, "copyloop: read out %i bytes read\n", bytes);
 			if (bytes == 0) {
 				shutdown(infd, 0); /* close recv end on in and ... */
 				shutdown(outfd, 1); /* close send 'end' on out */
 				in = 0; /* do not select on infd */
 			} else if(allwrite(write, outfd, copybuf, bytes) != 0) {
-				log(1, "copyloop: write failed: %s\n", error_str(errno));
+				log(1, "copyloop: write out failed: %s\n", error_str(errno));
 				break;
 			}
 		}
@@ -539,12 +541,13 @@ static void copyloop(int infd, int outfd, int timeout)
 				log(1, "copyloop: read failed: %s\n", error_str(errno));
 				break;
 			}
+			log(32, "copyloop: read in %i bytes read\n", bytes);
 			if (bytes == 0) {
 				shutdown(outfd, 0); /* close recv end on out and ... */
 				shutdown(infd, 1); /* close send 'end' on in */
 				out = 0; /* do not select on outfd */
 			} else if(allwrite(write, infd, copybuf, bytes) != 0) {
-				log(1, "copyloop: write failed: %s\n", error_str(errno));
+				log(1, "copyloop: write in failed: %s\n", error_str(errno));
 				break;
 			}
 		}
