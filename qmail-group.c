@@ -61,6 +61,8 @@
 #include "substdio.h"
 #include "wait.h"
 
+#include "subfd.h"
+
 #define FATAL "qmail-group: fatal: "
 
 void
@@ -103,7 +105,12 @@ void explode(qldap *);
 void subscribed(qldap *, int);
 qldap *ldapgroup(char *, int *, int *, int *, int *);
 
+char *local;
+char *host;
 char *sender;
+stralloc base = {0};
+stralloc action = {0};
+char *ext;
 char *dname;
 
 int
@@ -119,6 +126,10 @@ main(int argc, char **argv)
 	
 	init();
 	/* filter out loops as soon as poosible */
+	output(subfderr, "qmail-group: sender %s local %s host %s\n",
+	    sender, local, host);
+	output(subfderr, "qmail-group: base %S action %s ext %s\n",
+	    &base, action.s, ext);
 	bouncefx();
 	
 	flagc = flags = flagS = flagm = 0;
@@ -172,10 +183,7 @@ ctrlfunc ctrls[] = {
 	0
 };
 
-stralloc base = {0};
 stralloc dtline = {0};
-char *local;
-char *host;
 
 void
 init(void)
@@ -202,8 +210,14 @@ init(void)
 		if (!stralloc_copyb(&base, local,
 			    str_len(local) - str_len(t) - 1))
 			temp_nomem();
+		ext = t;
+		ext += str_chr(ext, '-');
+		if (stralloc_copyb(&action, t, ext - t)) temp_nomem();
+		if (stralloc_0(&action)) temp_nomem();
+		if (*ext) ++ext;
 	} else {
 		if (!stralloc_copys(&base, local)) temp_nomem();
+		ext = 0;
 	}
 	if (!stralloc_copys(&dtline, "Delivered-To: ")) temp_nomem();
 	if (!stralloc_cat(&dtline, &base)) temp_nomem();
@@ -241,6 +255,7 @@ bouncefx(void)
 }
 
 stralloc recips = {0};
+stralloc bounceadmin = {0};
 char strnum1[FMT_ULONG];
 char strnum2[FMT_ULONG];
 
@@ -255,7 +270,7 @@ blast(void)
 	datetime_sec when;
 	int match;
 
-	if (recips.s == NULL || recips.len == 0)
+	if (recips.s == (char *)0 || recips.len == 0)
 		strerr_die2x(100, FATAL, "no recipients found in this group.");
 
 	if (seek_begin(0) == -1) temp_rewind();
@@ -274,20 +289,18 @@ blast(void)
 		qmail_put(&qqt, line.s, line.len);
 	} while (match);
 
-#if 0
-	/*
-	 * XXX this needs to be fixed. qmail-group should acctualy bounce
-	 * messages to -return- to a special bounce admin.
-	 */
-	if (!stralloc_copy(&line,&base)) temp_nomem();
-	if (!stralloc_cats(&line,"-return-@")) temp_nomem();
-	if (!stralloc_cats(&line,host)) temp_nomem();
-	if (!stralloc_cats(&line,"-@[]")) temp_nomem();
-	if (!stralloc_0(&line)) temp_nomem();
-	qmail_from(&qqt, line.s);
-#else
-	qmail_from(&qqt, sender);
-#endif
+	if (bounceadmin.s == (char *)0 || bounceadmin.len == 0)
+		/* if no bounce admin specified forward with sender address */
+		qmail_from(&qqt, sender);
+	else {
+		if (!stralloc_copy(&line,&base)) temp_nomem();
+		if (!stralloc_cats(&line,"-return-@")) temp_nomem();
+		if (!stralloc_cats(&line,host)) temp_nomem();
+		if (!stralloc_cats(&line,"-@[]")) temp_nomem();
+		if (!stralloc_0(&line)) temp_nomem();
+		qmail_from(&qqt, line.s);
+	}
+
 	for (s = recips.s, smax = recips.s + recips.len; s < smax;
 	    s += str_len(s) + 1)
 		qmail_to(&qqt,s);
@@ -618,6 +631,7 @@ ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
 		LDAP_GROUPSENDERDN,
 		LDAP_GROUPSENDER822,
 		LDAP_GROUPSENDERFILTER,
+		LDAP_GROUPBOUNCEADMIN,
 		0 };
 	int r;
 		
@@ -681,6 +695,19 @@ ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
 	default:
 		goto fail;
 	}
+
+	r = qldap_get_attr(q, LDAP_GROUPBOUNCEADMIN, &ldapval, MULTI_VALUE);
+	switch (r) {
+	case OK:
+		r = unescape(ldapval.s, &bounceadmin, 0);
+		if (r != OK) goto fail;
+		break;
+	case NOSUCH:
+		break;
+	default:
+		goto fail;
+	}
+
 
 	*flagm = getmoderators(q);
 	
