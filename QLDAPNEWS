@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/06/25 01:05:44 $ ($Revision: 1.12 $)
+RELEASE: $Date: 2000/06/28 23:00:42 $ ($Revision: 1.13 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,6 +18,11 @@ TODO:
 
 
 NEWS for current stuff:
+
+ if the LDAP server is down put the message back into the queue instead of
+ bouncing
+
+ correct spelling errors in many files
 
  forcing forwardonly and ldaponly when neither LDAP_MAILSTORE nor LDAP_HOMEDIR
  is defined
