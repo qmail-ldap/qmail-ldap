@@ -125,7 +125,6 @@ void logstring(level,string) int level; char *string;
 {
   if (level > loglevel) return;
   substdio_puts(subfderr,string);
-//  substdio_puts(subfderr," ");
 }
 
 void logflush(level) int level;
@@ -320,23 +319,24 @@ void setup()
   logpid(2);
   logstring(2,"connection from "); logstring(2,remoteip);
   logstring(2," ("); logstring(2,remotehost);
-  if (remoteinfo) { logstring(2,","); logstring(2,remoteinfo); }
+  if (remoteinfo) { logstring(2,", "); logstring(2,remoteinfo); }
   logstring(2,") to "); logstring(2,local);
   logflush(2);
 
   logpid(2);
   logstring(2, "enabled options: ");
-  if (errdisconnect) logstring(2,"smtp550disconnect ");
-  if (nobounce) logstring(2,"nobounce ");
+  if (relayclient) logstring(2,"relayclient ");
   if (sanitycheck) logstring(2,"sanitycheck ");
   if (returnmxcheck) logstring(2,"returnmxcheck ");
   if (blockrelayprobe) logstring(2,"blockrelayprobe ");
-  if (relayclient) logstring(2,"relayclient ");
+  if (nobounce) logstring(2,"nobounce ");
   if env_get("RBL") logstring(2,"rblcheck ");
   if env_get("RBLONLYHEADER") logstring(2,"rblonlyheader ");
 #ifdef SMTPEXECCHECK
   if (execcheck_on()) logstring(2, "rejectexecutables ");
 #endif
+  if (errdisconnect) logstring(2,"smtp550disconnect ");
+  if env_get("QMAILQUEUE") logstring(2,"qmailqueue ");
   logflush(2);
 
   dohelo(remotehost);
@@ -949,8 +949,8 @@ int compression_done(void)
     num[0] = ' ';
   num[fmt_ulong(num+1,r)+1] = 0;
   logpid(1);
-  logstring(1, "Dynamic data compression saved ");
-  logstring(1, num); logstring(1, "%"); logflush(1);
+  logstring(1,"Dynamic data compression saved ");
+  logstring(1,num); logstring(1,"%"); logflush(1);
   return 0;
 }
 #endif
@@ -1303,7 +1303,7 @@ void smtp_tls(arg) char *arg;
   if (*arg)
   {
     out("501 Syntax error (no parameters allowed) (#5.5.4)\r\n");
-    logstring(1,"aborting TLS negotiations, no parameters to starttls allowed");
+    logline(1,"aborting TLS negotiations, no parameters to starttls allowed");
     return;
   }
 
@@ -1311,19 +1311,19 @@ void smtp_tls(arg) char *arg;
   if(!(ctx=SSL_CTX_new(SSLv23_server_method())))
   {
     out("454 TLS not available: unable to initialize ctx (#4.3.0)\r\n"); 
-    logstring(1,"aborting TLS negotiations, unable to initialize local SSL context");
+    logline(1,"aborting TLS negotiations, unable to initialize local SSL context");
     return;
   }
   if(!SSL_CTX_use_RSAPrivateKey_file(ctx, "control/cert.pem", SSL_FILETYPE_PEM))
   {
     out("454 TLS not available: missing RSA private key (#4.3.0)\r\n");
-    logstring(1,"aborting TLS negotiations, RSA private key invalid or unable to read ~control/cert.pem");
+    logline(1,"aborting TLS negotiations, RSA private key invalid or unable to read ~control/cert.pem");
     return;
   }
   if(!SSL_CTX_use_certificate_file(ctx, "control/cert.pem", SSL_FILETYPE_PEM))
   {
     out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
-    logstring(1,"aborting TLS negotiations, local cert invalid or unable to read ~control/cert.pem");
+    logline(1,"aborting TLS negotiations, local cert invalid or unable to read ~control/cert.pem");
     return;
   }
   SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_cb);
@@ -1333,13 +1333,13 @@ void smtp_tls(arg) char *arg;
 
   if(!(ssl=SSL_new(ctx))) 
   {
-    logstring(2,"aborting TLS connection, unable to set up SSL session");
+    logline(2,"aborting TLS connection, unable to set up SSL session");
     die_read();
   }
   SSL_set_fd(ssl,0);
   if(SSL_accept(ssl)<=0)
   {
-    logstring(2,"aborting TLS connection, unable to finish SSL accept");
+    logline(2,"aborting TLS connection, unable to finish SSL accept");
     die_read();
   }
   substdio_fdbuf(&ssout,SSL_write,ssl,ssoutbuf,sizeof(ssoutbuf));
