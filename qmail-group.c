@@ -255,11 +255,11 @@ blast(void)
 	int match;
 
 	if (recips.s == NULL || recips.len == 0)
-		strerr_die2x(100, FATAL, "no recipients found in group.");
-		
+		strerr_die2x(100, FATAL, "no recipients found in this group.");
+
 	if (seek_begin(0) == -1) temp_rewind();
 	substdio_fdbuf(&ss, subread, 0, buf, sizeof(buf));
-	
+
 	if (qmail_open(&qqt) == -1) temp_fork();
 	qp = qmail_qp(&qqt);
 	/* mail header */
@@ -273,12 +273,20 @@ blast(void)
 		qmail_put(&qqt, line.s, line.len);
 	} while (match);
 
+#if 0
+	/*
+	 * XXX this needs to be fixed. qmail-group should acctualy bounce
+	 * messages to -return- to a special bounce admin.
+	 */
 	if (!stralloc_copy(&line,&base)) temp_nomem();
 	if (!stralloc_cats(&line,"-return-@")) temp_nomem();
 	if (!stralloc_cats(&line,host)) temp_nomem();
 	if (!stralloc_cats(&line,"-@[]")) temp_nomem();
 	if (!stralloc_0(&line)) temp_nomem();
 	qmail_from(&qqt, line.s);
+#else
+	qmail_from(&qqt, sender);
+#endif
 	for (s = recips.s, smax = recips.s + recips.len; s < smax;
 	    s += str_len(s) + 1)
 		qmail_to(&qqt,s);
