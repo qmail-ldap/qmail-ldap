@@ -3,8 +3,7 @@
 
 /* this is the "catch all" string
  * ATTN: escape the string correctly, remember
- * '(', ')', '\', '*' and '\0' have to be escaped with '\'
- * Escaping is broken in OpenLDAP up to release 1.2.6, 1.2.7 is OK
+ * '(', ')', '\', and '*' have to be escaped with '\'
  */
 #define LDAP_CATCH_ALL "catchall"
 
@@ -44,6 +43,18 @@
 
 /* Default ldap search timeout. In seconds */
 #define	QLDAP_TIMEOUT		30
+
+/* This needs DASH_EXT option.
+ * Limit dash ext to the first DASH_EXT_LEVELS extensions.
+ * Search only for (DASH_EXT_LEVELS = 4):
+ * a-b-c-d-e-f-g-...@foobar.com
+ * a-b-c-d-catchall@foobar.com
+ * a-b-c-catchall@foobar.com
+ * a-b-catchall@foobar.com
+ * a-catchall@foobar.com
+ * catchall@foobar.com
+ */
+#define DASH_EXT_LEVELS 4
 
 /*********************************************************************
         ldap variables used in qmail-lspawn and auth_*

@@ -481,7 +481,7 @@ int qldap_get(stralloc *mail, char *rcpt, int fdmess)
    /*
     * set the quota environment
     */
-   if (size == 0 && count == 0) {
+   if (size != 0 || count != 0) {
      if (size != 0) {
        if (!stralloc_copyb(&foo, num, fmt_ulong(num, size))) cae(q, QLX_NOMEM);
        if (!stralloc_append(&foo, "S")) cae(q, QLX_NOMEM);

@@ -2,18 +2,17 @@
 
 # to enable some additional for qmail-ldap stuff put it on the LDAPFLAGS line
 #
-# -DQLDAP_CLUSTER for enabling cluster support
-# -DDASH_EXT to enable the dash_ext patch for extended mail addresses
-# -DCLEARTEXTPASSWD to use cleartext passwords (a bad idea on production
-# systems)
-# -DEXTERNAL_TODO to use the external high-performance todo processing (this
-# avoids the silly qmail syndrome with high injection rates)
-# -DBIGTODO to enable the big todo patch (this can be used together with 
-# EXTERNAL_TODO). Useful for servers with very many non-preprocessed mails
-# -DBIGBROTHER to use the control/bigbrother file to forward all mails comming
-# from a specified account to another (swiss bigbrother law)
 # -DALTQUEUE to use a diffrent qmail-queue programm on runtime
+# -DBIGBROTHER to use the control/bigbrother file to forward all mails comming
+#     from a specified account to another (swiss bigbrother law)
+# -DBIGTODO to enable the big todo patch (this can be used together with 
+#     EXTERNAL_TODO). Useful for servers with very many non-preprocessed mails
+# -DCLEARTEXTPASSWD to use cleartext passwords (bad idea on production systems)
+# -DDASH_EXT to enable the dash_ext patch for extended mail addresses
 # -DDATA_COMPRESS to use the smtp on the fly DATA compression 
+# -DEXTERNAL_TODO to use the external high-performance todo processing (this
+#     avoids the silly qmail syndrome with high injection rates)
+# -DQLDAP_CLUSTER for enabling cluster support
 # -DQMQP_COMPRESS to use the QMQP on the fly compression (for clusters)
 # -DSMTPEXECCHECK to enable smtp DOS/Windows executable detection
 #LDAPFLAGS=-DQLDAP_CLUSTER -DEXTERNAL_TODO -DDASH_EXT -DDATA_COMPRESS -DQMQP_COMPRESS

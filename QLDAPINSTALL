@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/08/31 21:07:00 $)
+RELEASE: current ($Date: 2003/09/02 12:15:44 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -52,6 +52,7 @@ INSTALL:
 
 3. You need the following compiled and installed
     - OpenLDAP 2.x or higher (others might also work)
+      OpenLDAP releases < 2.0 should no longer be used (you have been warned).
    and
     - OpenSSL 0.9.4 or higher if you want TLS SMTP encrytion
 
@@ -68,25 +69,27 @@ INSTALL:
 
 5. Edit the conf-* files and the top of the Makefile (only the top ;-) )
    You can set/change:
-   - LDAPFLAGS=-DQLDAP_CLUSTER (turns the cluster support on) +
-               -DLDAP_ESCAPE_BUG (see NOTE) +
+   - LDAPFLAGS=
+               -DALTQUEUE (to enable alternate queue selection via environment
+                variable QMAILQUEUE. Also known as qmailqueue patch.)
+               -DBIGBROTHER (turn on per address queue extra feature see the
+                section about the ~control/bigbrother control file)
+               -DBIGTODO (to enable the big todo patch, can be used together
+                with EXTERNAL_TODO)
                -DCLEARTEXTPASSWD (for cleartext passwords in ldap, bad idea)
                -DDASH_EXT (turn on dash_ext support see 5.3)
-               -DEXTERNAL_TODO to use the external high-performancer
-                todo processing
-               -DBIGTODO to enable the big todo patch
-               -DBIGBROTHER (turn on per address queue extra feature see NEWS)
-               -DALTQUEUE to enable alternate queue selection via environment
-                variable QMAILQUEUE. Also known as qmailqueue patch.
-               -DDATA_COMPRESS to enable smtp on the fly data compression.
-                It is needed to set ZLIB accordingly.
-               -DQMQP_COMPRESS to enable QMQP on the fly data compression.
+               -DDATA_COMPRESS (to enable smtp on the fly data compression.
+                It is needed to set ZLIB accordingly.)
+               -DEXTERNAL_TODO (to use the external high-performancer
+               -DQLDAP_CLUSTER (turns the cluster support on)
+                todo processing)
+               -DQMQP_COMPRESS (to enable QMQP on the fly data compression.
                 Can be used in clusters. It is needed to set ZLIB accordingly.
-               -DSMTPEXECCHECK to enable Russell Nelsons antivirus patch
-	        for qmail-smtpd. To turn it on set the REJECTEXEC env-var.
-     NOTE: at the moment -DLDAP_ESCAPE_BUG is not defined, this should be
-           added if your ldap server has problems with the escapeing of 
-           LDAP filters (fixed as of OpenLDAP 1.2.8 and higher)
+                IMPORTANT: this breaks compatibility with the stock qmqp
+                protocol. So either all qmail-qmqpc/-qmqpd use the on the fly
+                compression or non.)
+               -DSMTPEXECCHECK (to enable Russell Nelsons antivirus patch
+	        for qmail-smtpd. To turn it on set the REJECTEXEC env-var.)
 
    - LDAPLIBS: the libraries you need for ldap, e.g. -lldap -llber
      NOTE: on Solaris Systems you probably need also -lnsl -lsocket
@@ -152,8 +155,8 @@ INSTALL:
     where CATCHALL is replaced with the value of LDAP_CATCH_ALL defined
     in qmail-ldap.h. If CATCHALL is set to "default" instead of the standart
     "catchall" it is almost stock qmails behaviour.
-    Note: Only up to five levels of dash extensions are checked to prevent
-    DoS attacks. You can change that in qmail-ldap.h DASH_EXT_LEVELS.
+    Note: Only up to four levels of dash extensions are checked to prevent
+    DoS attacks. You can change that in qmail-ldap.h via DASH_EXT_LEVELS.
 
 6.  Compile and install the stuff (it's the same as in standard qmail
     install -> HINT: read the INSTALL and the FAQ file!!! :) ).
@@ -389,6 +392,11 @@ CONFIG FILES:
  Default: NULL
  Example: You can contact us at (555) 555 5555
  Note: Multiline. Needs to be present to make qmail-quotawarn work.
+       Supports the %HEADER% magic similar to qmail-reply. The headers From:,
+       Subject:, the content type headers and headers starting with X- can be
+       set. The value of the To: header is forced to the recipient address.
+       The %SUBJECT% magic of qmail-reply is not useful for a quotawarning and
+       therefor disabled.
 
 ~control/relaymailfrom
 
@@ -486,6 +494,20 @@ CONFIG FILES:
        #EOF
        -cut-
 
+~control/bigbrother
+
+ This file is only used if BIGBROTHER was defined in the Makefile.
+ For ISP that need to implement some surveillance method because of some
+ beloved authoroties (like here in switzerland), you can enable a per
+ address queue extra feature. To automatically forward all mail to and from
+ badguy@badplace.ch to bigbrother@admin.ch you need to add followong line to
+ ~control/bigbrother: badguy@badplace.ch:bigbrother@admin.ch.
+ bigbrother@admin.ch can be a local, ldap or remote address.
+ Default: none (off)
+ Example: badguy@badplace.ch:bigbrother@admin.ch
+ Note: An extra recipient will be added in qmail-send. If the bigbrother
+       address causes a bounce the sender will see this bounce.
+
 ~control/tarpitcount
 ~control/tarpitdelay
 ~control/maxrcptcount
@@ -497,94 +519,7 @@ CONFIG FILES:
 
 ================================================================================
 
-Environment variables with control files (see control file for description):
-
- RBL
-
-Environment variables *without* control file (setable with tcpserver):
-
-TARPITCOUNT
-
- Tarpitcount is the number of RCPT TOs you accept before you start tarpitting.
- Default: 0 (which means no tarpitting)
- Affects: qmail-smtpd
- Example: 5
- Note: This number should be smaller than MAXRCPTCOUNT to have any effect.
-
-TARPITDELAY
-
- Tarpitdelay is the number of seconds of delay to introduce after each
- subsequent RCPT TO.
- Default: 5
- Affects: qmail-smtpd
- Example: 10
- Note: Connection which are tarpitted take a long time to finish. Be aware
-       that this ties up the available qmail-smtpd slots. Raise connection
-       limits with tcpserver if neccessary.
-
-MAXRCPTCOUNT
-
- Maxrcptcount is the maximum number of RCPT TOs you accept before permanently
- rejecting this delivery attempt.
- Default: 0 (which means no unlimited)
- Affects: qmail-smtpd
- Example: 5
- Note: This is a hard limit. If you just want to give some pain for smaller
-       recipient numbers consider tarpit use as well.
-
-RBLONLYHEADER
-
- Rblonlyheader causes qmail-smtpd not to reject the message in any case but
- just to add a line with it's findings to the mail header.
- Default: none
- Affects: qmail-smtpd
- Example: "" (any value will do)
- Note: Add's a
-       "X-RBL: (relays.ordb.org) matches with 127.0.0.2 and tells us go home"
-       header to the message for later filtering.
-
-SMTP550DISCONNECT
-
- Disconnect the SMTP session if a 5xx is produced by the sender
- Default: off
- Affects: qmail-smtpd
- Example: "" (any value will do)
- Note: This is useful if you have a spammer trying different senders or
-       recipients in the same session separated by rset's.
-
-NOBOUNCE
-
- Rejects null sender bounces
- Default: off
- Affects: qmail-smtpd
- Example: "" (any value will do)
- Note: Use only in extreme cases and only for certain IP ranges. Blocking
-       bounces is considered harmful and strictly prohibited by RFC2821.
-       This can be useful if a spammer used your domain as sender and you
-       get all the bounces. Otherwise don't enable this! You want to get
-       bounces!
-
-SANITYCHECK
-
- Rejects senders without an @, no . in domain part or too long/short TLD
- Default: off
- Affects: qmail-smtpd
- Example: "" (any value will do)
- Note: Rejects stuff which you probably don't want on your mailserver
-       because it's highly likely that it'll bounce later.
-
-RETURNMXCHECK
-
- Rejects senders if they don't have a valid return MX
- Default: off
- Affects: qmail-smtpd
- Example: "" (any value will do)
- Note: This is quite useful even though it doesn't stops many spammers
-       today. But it ensures that you can send an email or a bounce
-       back to the sender. It is also useful for your own users/customers
-       because if they type a nonexistent sender into their "from" field
-       (typos!) it'll stop them the first time instead of getting help-
-       desk calls when nobody can reply to them.
+Environment variables setable via tcpserver, envdir or plain old env/sh:
 
 BLOCKRELAYPROBE
 
@@ -600,28 +535,6 @@ BLOCKRELAYPROBE
        hack and double-"@" a sendwhale bug.
        Beware if you actually use the qmail percent-hack! Then this can't
        be used obviously!
-
-QMAILQUEUE
-
- Use this queueing program instead of the default qmail-queue program.
- Default: off
- Affects: qmail-smtpd, qmail-qmtpd, qmail-qmqpd, qmail-inject,
-          but also qmail-local, qmail-reply, qmail-send, qreceipt, 
-          condredirect, forward
- Example: /var/scanner/bin/qmail-scanner-queue.pl
- Note: Using this for something different than the mail incomming daemons
-       is dissuaded.
-
-REJECTEXEC
-
- Reject DOS/Windows executables in mail attachements.
- Default: off
- Affects: qmail-smtpd
- Example: "" (any value will do)
- Note: This patch does not distinguish between valid applications and
-       evil viruses and trojans so handle with care. It is not a 100%
-       guaranteed protection but it handles a lot of unwanted stuff.
-       See also: http://www.qmail.org/qmail-smtpd-viruscan-1.1.patch
 
 LOGLEVEL
 
@@ -649,6 +562,8 @@ POP3_LOGLEVEL
      3 = session errors
      4 = verbose
  Note: integer value, everything will be logged through tcpserver
+ Note2: this is a hack so that this log level does not interfere with the one
+        of auth_pop.
 
 LOGLEVEL or DEBUGLEVEL
 
@@ -675,6 +590,127 @@ LOGLEVEL or DEBUGLEVEL
        LOGLEVEL=3 will report warnings and errors but LOGLEVEL=2 will
        only report warnings.
        Both names are supported with LOGLEVEL having the higher priority.
+
+MAXRCPTCOUNT
+
+ Maxrcptcount is the maximum number of RCPT TOs you accept before permanently
+ rejecting this delivery attempt.
+ Default: 0 (which means no unlimited)
+ Affects: qmail-smtpd
+ Example: 5
+ Note: This is a hard limit. If you just want to give some pain for smaller
+       recipient numbers consider tarpit use as well.
+
+NOBOUNCE
+
+ Rejects null sender bounces
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Use only in extreme cases and only for certain IP ranges. Blocking
+       bounces is considered harmful and strictly prohibited by RFC2821.
+       This can be useful if a spammer used your domain as sender and you
+       get all the bounces. Otherwise don't enable this! You want to get
+       bounces!
+
+NOPBS
+
+ Disable adding of pbs data. NOPBS disables the execution of pbsadd in auth_*.
+ Default: off
+ Affects: auth_pop, auth_imap & pbsadd
+ Example: "" (any value will do)
+ Note: this is manly useful to hinder adding informations of forwarder sessions.
+
+QMAILQUEUE
+
+ Use this queueing program instead of the default qmail-queue program.
+ Default: off
+ Affects: qmail-smtpd, qmail-qmtpd, qmail-qmqpd, qmail-inject,
+          but also qmail-local, qmail-reply, qmail-send, qreceipt, 
+          condredirect, forward
+ Example: /var/scanner/bin/qmail-scanner-queue.pl
+ Note: Using this for something different than the mail incomming daemons
+       is dissuaded.
+
+RBL
+
+ If set turns on rbl checking. See also section about the ~control/rbllist
+ control file.
+ Default: none
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+
+RBLONLYHEADER
+
+ Rblonlyheader causes qmail-smtpd not to reject the message in any case but
+ just to add a line with it's findings to the mail header.
+ Default: none
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Add's a
+       "X-RBL: (relays.ordb.org) matches with 127.0.0.2 and tells us go home"
+       header to the message for later filtering.
+
+REJECTEXEC
+
+ Reject DOS/Windows executables in mail attachements.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: This patch does not distinguish between valid applications and
+       evil viruses and trojans so handle with care. It is not a 100%
+       guaranteed protection but it handles a lot of unwanted stuff.
+       See also: http://www.qmail.org/qmail-smtpd-viruscan-1.1.patch
+
+RETURNMXCHECK
+
+ Rejects senders if they don't have a valid return MX
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: This is quite useful even though it doesn't stops many spammers
+       today. But it ensures that you can send an email or a bounce
+       back to the sender. It is also useful for your own users/customers
+       because if they type a nonexistent sender into their "from" field
+       (typos!) it'll stop them the first time instead of getting help-
+       desk calls when nobody can reply to them.
+
+SANITYCHECK
+
+ Rejects senders without an @, no . in domain part or too long/short TLD
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Rejects stuff which you probably don't want on your mailserver
+       because it's highly likely that it'll bounce later.
+
+SMTP550DISCONNECT
+
+ Disconnect the SMTP session if a 5xx is produced by the sender
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: This is useful if you have a spammer trying different senders or
+       recipients in the same session separated by rset's.
+
+TARPITCOUNT
+
+ Tarpitcount is the number of RCPT TOs you accept before you start tarpitting.
+ Default: 0 (which means no tarpitting)
+ Affects: qmail-smtpd
+ Example: 5
+ Note: This number should be smaller than MAXRCPTCOUNT to have any effect.
+
+TARPITDELAY
+
+ Tarpitdelay is the number of seconds of delay to introduce after each
+ subsequent RCPT TO.
+ Default: 5
+ Affects: qmail-smtpd
+ Example: 10
+ Note: Connection which are tarpitted take a long time to finish. Be aware
+       that this ties up the available qmail-smtpd slots. Raise connection
+       limits with tcpserver if neccessary.
 
 ================================================================================
 
@@ -841,16 +877,17 @@ LDAP_REPLYTEXT (default: "mailReplyText")
    ZW5qb3kgc2tpaW5nLgoKdGhhbmtzIGZvciByZWFkaW5nIHRoZSBRTERBUElO
    U1RBTEwgZmlsZQoKLS0KOndxIENsYXVkaW8K
  Note: used only if deliveryMode is set to reply.
-       To use multiline text in ldap it has to be base64 in ldif.
+       To use multiline text in ldap it has to be base64 in the ldif.
        GUI tools like GQ are doing this correct, ldapadd can handle base64
        inputs or a path to a file containing the reply text (man ldapadd).
  Note2: It is now possible to add a header section to the reply.
        If the replytext starts with a %HEADER% line all lines following until
-       the next empty line (\n\n) are treated as header. The fields From: To:
-       Date: and Precedence: are ignored and set by qmail-reply. If %SUBJECT%
+       the next empty line are treated as header. The fields From:, Subject:,
+       the content type headers and most X- headers can be set. To:, X-Mailer:
+       and Precedence: are ignored and set by qmail-reply. If %SUBJECT%
        is used in the Subject field it is expanded with the Subject of the sent
-       mail.
-
+       mail. This expansion will only work for the first line of a multiline
+       Subject header.
 
 LDAP_DOTMODE (default: "qmailDotMode")
 
@@ -967,7 +1004,7 @@ It is impossible to know where the problem is when somebody writes a mail like:
 I have a problem with the patch. No mail gets send to the user in the ldap db.
 
 Normaly you get also a better response if you specify your problem in detail.
-It seems that often a "RTFM" is enough, but when you read until here you 
+It seems that often a "RTFM" is enough, but when you have read until here you 
 are probably not such a candidate.
 
 END :-)

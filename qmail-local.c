@@ -235,14 +235,16 @@ char *fn;
 
  if (quotastring && *quotastring) {
    if (fstat(0, &mailst) != 0)
-       strerr_die3x(111,"Can not stat mail for quota: ",error_str(errno),". (#4.3.0)");
+       strerr_die3x(111,"Can not stat mail for quota: ",
+	   error_str(errno),". (#4.3.0)");
    mailsize = mailst.st_size;
    quota_get(&q, quotastring);
    if (quota_calc(fn, &msfd, &q) == -1) {
      /* second chance */
      sleep(3);
      if (quota_calc(fn, &msfd, &q) == -1) {
-       strerr_die1x(111,"Temporary race condition while calculating quota. (#4.3.0)");
+       strerr_die1x(111,
+	   "Temporary race condition while calculating quota. (#4.3.0)");
      }
    }
    /* fd can be -1 when retval = 0 quota_add/rm take care of that */
@@ -252,15 +254,19 @@ char *fn;
        /* second chance */
        sleep(3);
        if (quota_recalc(fn, &msfd, &q) == -1)
-	 strerr_die1x(111,"Temporary race condition while recalculating quota. (#4.3.0)");
+	 strerr_die1x(111,
+	     "Temporary race condition while recalculating quota. (#4.3.0)");
      }
-     if (quota_check(&q, mailsize, 1, &perc) != 0)
+     if (quota_check(&q, mailsize, 1, &perc) != 0) {
+       /* bounce mail but drop a warning first */
+       quota_warning(fn);
        quota_bounce("mailfolder");
+     }
    }
    /* fd can be -1 when retval = 0 quota_add/rm take care of that */
 
    if (perc >= QUOTA_WARNING_LEVEL) 
-	 /* drop a warning when mailbox is around 80% full */
+     /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
  }
  
@@ -319,12 +325,11 @@ char *fn;
      strerr_die3x(111,"Unable to quota mail: ",error_str(errno), ". (#4.3.0)");
    
    totalsize = (long) filest.st_size + (long) mailst.st_size;
-   if ( totalsize > q.quota_size ) {
-     quota_bounce("mailbox");
-   } else if ( totalsize*100/q.quota_size >= QUOTA_WARNING_LEVEL) {
-	 /* drop a warning when mailbox is around 80% full */
+   if ( totalsize*100/q.quota_size >= QUOTA_WARNING_LEVEL)
+     /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);
-   }
+   if ( totalsize > q.quota_size )
+     quota_bounce("mailbox");
  }
  
  /* end -- quota handling mbox */

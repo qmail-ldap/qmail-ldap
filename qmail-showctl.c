@@ -230,7 +230,7 @@ void main()
 
 
   do_lst("badmailfrom","Any MAIL FROM is allowed.",""," not accepted in MAIL FROM.");
-  do_lst("badmailfrom-unknown","Any MAIL FROM from host without PTR is allowed.","",
+  do_lst("badmailfrom-unknown","Any MAIL FROM from hosts without PTR is allowed.","",
 	 " not accepted in MAIL FROM from host without PTR.");
   do_lst("badrcptto","Any RCPT TO is allowed.",""," not accepted in RCPT TO");
   if (stat("bigbrother",&stmrh) == 0)
@@ -309,8 +309,8 @@ void main()
   do_str("ldapobjectclass",0,"not defined","The objectclass to limit ldap filter is ");
   do_str("ldapmessagestore",0,"not defined","Prefix for non absolute paths is ");
   do_str("ldapdefaultdotmode",0,"ldaponly","Default dot mode for ldap users is ");
-  do_int("defaultquotasize","0","Mailbox size quota is "," bytes (0 is unlimited).");
-  do_int("defaultquotacount","0","Mailbox count quota is "," messages (0 is unlimited).");
+  do_int("defaultquotasize","0","Mailbox size quota is "," bytes (0 is unlimited)");
+  do_int("defaultquotacount","0","Mailbox count quota is "," messages (0 is unlimited)");
   do_int("ldaplocaldelivery","1","Local passwd lookup is "," (1 = on, 0 = off)");
   do_int("ldaprebind","0","Ldap rebinding is "," (1 = on, 0 = off)");
   do_int("ldapcluster","0","Clustering is "," (1 = on, 0 = off)");

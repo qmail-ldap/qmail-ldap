@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/08/31 21:07:00 $ ($Revision: 1.112 $)
+RELEASE: $Date: 2003/09/02 12:15:44 $ ($Revision: 1.113 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -21,6 +21,10 @@ NEWS for current stuff:
  WARNING: This release is NOT fully backwards compatible! We have made
  certain changes for clarity and cleanup.
 
+ qmail-ldaplookup has been rewritten. Not all functionality of the old tool
+ has been integrated yet. It is now possible to use search filters and to
+ show multiple entries.
+ 
  Removed some qmail-smtpd control files (tarpitcount/delay, maxrcptcount,
  rblonlyheader). The only and right way to set them is environment variables
  with tcpserver.
@@ -32,7 +36,7 @@ NEWS for current stuff:
  much more logical.
  This change probably has a great impact on many administrative frontends!
 
- Quota definitions are new format only. ~control/ldapdefaultquota, mailQuota
+ Quota definitions are new format only. ~control/ldapdefaultquota and mailQuota
  serve no meaning anymore. Also the string quota format (10000S,100C) is no
  longer supported. Use ~control/defaultquota[size|count] and mailQuotaSize
  and mailQuotaCount instead.
@@ -48,7 +52,7 @@ NEWS for current stuff:
  qmail-reply recent sender support finished. The code is still disabled
  via NOTYET defines until I verified it.
 
- the mailheader magic of qmail-reply is now also supported by qmail-ldaplookup
+ The mailheader magic of qmail-reply is now also supported by qmail-ldaplookup
  and qmail-secretary.
 
  Fixed some problems with text control files, mainly quotawarning and
@@ -93,11 +97,14 @@ NEWS for current stuff:
  handling and upcomming filter functions that can handle mutliple results.
 
  compile time option to enable ZLIB compression for QMQP cluster communication.
- this is useful when cluster hosts are in different locations and have slow
- or metered connections between them. Enable in Makefile with -DQMQP_COMPRESSION.
+ This is useful when cluster hosts are in different locations and have slow
+ or metered connections between them. All QMQP client/servers need to be
+ support the dynamic data compression, stock QMQP and compressed QMQP are
+ unable to understand each other. This may change for the server but not for the
+ client.  Enable in Makefile with -DQMQP_COMPRESSION switch.
 
- major cleanup, actually a huge cleanup, currently over 75 modified or added
- files.
+ major cleanup, actually a huge cleanup, currently over 75 modified, removed
+ or added files. The code is now much more modularized and protable.
 
 NEWS for 20030801 stuff:
 

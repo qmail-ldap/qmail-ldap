@@ -102,11 +102,11 @@ quota_rm(int fd, unsigned long size, unsigned long count)
 	/* create string of the form '-1232 -12\n' and add it to the quota */
 	if (substdio_bput(&ss, "-", 1) == -1)
 		goto rmfail;
-	if (substdio_bput(&ss, num, fmt_ulong(num, size) ) == -1)
+	if (substdio_bput(&ss, num, fmt_ulong(num, size)) == -1)
 		goto rmfail;
 	if (substdio_bput(&ss, " -", 2) == -1)
 		goto rmfail;
-	if (substdio_bput(&ss, num, fmt_ulong(num, count) ) == -1)
+	if (substdio_bput(&ss, num, fmt_ulong(num, count)) == -1)
 		goto rmfail;
 	if (substdio_bput(&ss, "\n", 1) == -1)
 		goto rmfail;
@@ -143,7 +143,7 @@ quota_calc(const char *dir, int *fd, quota_t *q)
 	if (! stralloc_cats(&path, "maildirsize")) temp_nomem();
 	if (! stralloc_0(&path)) temp_nomem();
 	
-	*fd = read5120( path.s, buf5120, &i);
+	*fd = read5120(path.s, buf5120, &i);
 
 	if (*fd != -1) {
 		ret = quota_parsesize(q, fd, buf5120, i);
@@ -162,19 +162,19 @@ quota_recalc(const char *dir, int *fd, quota_t *q)
 	time_t tm;
 	struct stat st;
 	
-	if (! stralloc_copys(&path, dir)) temp_nomem();
+	if (!stralloc_copys(&path, dir)) temp_nomem();
 	if (path.s[path.len-1] != '/')
 		if (! stralloc_cats(&path, "/")) temp_nomem();
 
 	while (mailfolder()) {
-		if (! stralloc_cats(&path, "../")) temp_nomem();
+		if (!stralloc_cats(&path, "../")) temp_nomem();
 		if (i++ > 1 ) strerr_die1x(111, 
 				"Unable to calc quota: recursive "
 				"maildir++ (QUOTA #1.1.1)");
 	}
 	
-	if (! stralloc_cats(&path, "maildirsize")) temp_nomem();
-	if (! stralloc_0(&path)) temp_nomem();
+	if (!stralloc_cats(&path, "maildirsize")) temp_nomem();
+	if (!stralloc_0(&path)) temp_nomem();
 	
 	*fd = read5120( path.s, buf5120, &i);
 	
@@ -274,10 +274,9 @@ quota_get(quota_t *q, char const *quota)
 			case 'C':
 				q->quota_count = i;
 				break;
-			default: /* defaults to size */
-				q->quota_size = i*1024; 
-				/* because in the old patch it was in kB */
-				break;		/* thanks to Aaron Nabil */
+			default:
+				/* ignore */
+				break;
 		}
 	}
 }
@@ -293,12 +292,12 @@ mailfolder(void)
 	 */
 	
 	len = path.len;
-	if ( ! stralloc_cats(&path, "maildirfolder") ) temp_nomem();
-	if ( ! stralloc_0(&path) ) temp_nomem();
+	if (!stralloc_cats(&path, "maildirfolder")) temp_nomem();
+	if (!stralloc_0(&path)) temp_nomem();
 	path.len = len; /* cut away what this function has added */
 
-	if ( stat(path.s, &st) == -1 ) { /* are we in a subdir ? */
-		if ( errno != error_noent ) {
+	if (stat(path.s, &st) == -1) { /* are we in a subdir ? */
+		if (errno != error_noent) {
 			strerr_die3x(111, "Unable to stat maildirfolder: ", 
 					error_str(errno), " (QUOTA #1.4.1)");
 		}

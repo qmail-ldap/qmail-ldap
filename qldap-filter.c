@@ -101,8 +101,9 @@ filter_mail(char *mail, int *done)
 		}
 #ifdef DASH_EXT
 		/*
-		 * limit ext to the first 4 extensions.
-		 * We will only check for:
+		 * limit ext to the first DASH_EXT_LEVELS extensions.
+		 * We will only check for (DASH_EXT_LEVELS = 4):
+		 * a-b-c-d-e-f-g-...@foobar.com
 		 * a-b-c-d-catchall@foobar.com
 		 * a-b-c-catchall@foobar.com
 		 * a-b-catchall@foobar.com
@@ -111,7 +112,7 @@ filter_mail(char *mail, int *done)
 		 */
 		if (ext == at)
 			for (i = 0, ext = 0, extcnt = 1;
-			    ext < at && extcnt < 5; ext++)
+			    ext < at && extcnt <= DASH_EXT_LEVELS; ext++)
 				if (escaped[ext] == *auto_break) extcnt++;
 		while (ext != 0 && --ext > 0) {
 			if (escaped[ext] == *auto_break) break;
