@@ -349,7 +349,8 @@ void smtp()
   substdio_flush(&smtpto);
 
   code = smtpcode();
-  if (code >= 500) quit("DConnected to "," but my name was rejected");
+  if (code > 500 && code != 502 && code != 504)
+	  quit("DConnected to "," but my name was rejected");
   if (code != 250){
    substdio_puts(&smtpto,"HELO ");
    substdio_put(&smtpto,helohost.s,helohost.len);
