@@ -38,6 +38,7 @@
 #include <unistd.h>
 
 #include "base64.h"
+#include "case.h"
 #include "error.h"
 #include "passwd.h"
 #include "qldap-errno.h"
@@ -57,7 +58,20 @@ const char *mode[] = {
        	"{SHA}",
        	"{SSHA}",
        	"{RMD160}",
-       	0 };
+       	0
+};
+
+const char *mode2[] = {
+	"crypt",
+       	"md4",
+       	"md5",
+       	"ns-mta-md5",
+       	"smd5",
+       	"sha",
+       	"ssha",
+       	"rmd160",
+       	0
+};
 
 stralloc pw = {0};
 stralloc salt = {0};
@@ -66,7 +80,7 @@ void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage:\tdigest [ -c ] [ -b | -5 | -C | -f cryptformat ] [ -s base64Salt ]\n\t[ -S hexSalt ] passwd\n"
+	    "usage:\tdigest [ -c ] [ -b | -5 | -C | -f cryptformat ] [ -s base64Salt ]\n\t[ -S hexSalt ] [ -t type ] passwd\n"
 	    "\tdigest -v password hashedPassword\n");
 	exit(1);
 }
@@ -103,7 +117,7 @@ getsalt(stralloc *b, int blen)
 int
 main(int argc, char *argv[])
 {
-	int	i, opt, m;
+	int	i, opt, m, type = -1;
 	char	*clear, *encrypted;
 	const char *cformat;
 	
@@ -111,7 +125,7 @@ main(int argc, char *argv[])
 	encrypted = (char *)0;
 	m = 0;
 	cformat = "XX";
-	while ((opt = getopt(argc, argv, "5bcf:s:S:v")) != opteof)
+	while ((opt = getopt(argc, argv, "5bcf:s:S:t:v")) != opteof)
 		switch (opt) {
 		case '5':
 			/* md5 format */
@@ -143,6 +157,19 @@ main(int argc, char *argv[])
 				usage();
 			}
 			break;
+		case 't':
+			for (i = 0; mode2[i] != 0; i++)
+				if (!case_diffs(mode2[i], optarg))
+					break;
+			if (mode2[i]) {
+				type = i;
+				break;
+			}
+			fprintf(stderr,
+			    "digest: bad digest type, use one of:\n");
+			for (i = 0; mode2[i] != 0; i++)
+				fprintf(stderr, "\t%s\n", mode2[i]);
+			exit(1);
 		case 'v':
 			m = 1;
 			break;
@@ -160,13 +187,20 @@ main(int argc, char *argv[])
 			getsalt(&salt, 16);
 		feed_salt(salt.s, salt.len);
 		feed_crypt(cformat);
-		for (i = 0; mode[i] != 0; i++) {
-			if (make_passwd(mode[i], clear, &pw) == OK) {
+		if (type != -1) {
+			if (make_passwd(mode[type], clear, &pw) == OK) {
 				stralloc_0(&pw);
-				printf("%s%s\n", mode[i], pw.s);
+				printf("%s%s\n", mode[type], pw.s);
 			} else
-				printf("%s failed.\n", mode[i]);
-		}
+				printf("%s failed.\n", mode2[type]);
+		} else 
+			for (i = 0; mode[i] != 0; i++) {
+				if (make_passwd(mode[i], clear, &pw) == OK) {
+					stralloc_0(&pw);
+					printf("%s%s\n", mode[i], pw.s);
+				} else
+					printf("%s failed.\n", mode2[i]);
+			}
 	} else {
 		if (argc != 2) usage();
 		clear = argv[0];
