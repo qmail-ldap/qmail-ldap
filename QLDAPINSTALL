@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/04/16 13:24:16 $)
+RELEASE: current ($Date: 2004/05/05 17:31:55 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -603,6 +603,26 @@ CONFIG FILES:
  Note: An extra recipient will be added in qmail-send. If the bigbrother
        address causes a bounce the sender will see this bounce.
 
+~control/signatures
+
+ This file contains content signatures for the REJECTEXEC functionality.
+ Default: none
+ Example: TVqQAAMAA  (block some windows executables, exe|com|pif|scr)
+ Example: UEsDBAoAAAAAA*****DKJx+eAFgAAABYAA**AAAA  (block MyDoom)
+ Note: These signatures are matched for in the first line of mime
+       attachments. Be sure to make them as specific as possible
+       to avoid to have a too broad filter and matching valid
+       content. The asterisk (*) is a single placeholder that will
+       match any single character at that position. The signature
+       is litteraly matches and no decoding of mime attachments is
+       being done. Normally the signature contains the base64
+       encoded version of the string you want to match. Lines
+       starting with a hash sign (#) are ignored and can be used
+       for comments.
+       The default file contains signatures of Windows executable
+       files (exe|com|pif|scr, etc) and common email Virii at the
+       time of the current release.
+
 ~control/tarpitcount
 ~control/tarpitdelay
 ~control/maxrcptcount
@@ -809,7 +829,8 @@ REJECTEXEC
  Note: This patch does not distinguish between valid applications and
        evil viruses and trojans so handle with care. It is not a 100%
        guaranteed protection but it handles a lot of unwanted stuff.
-       See also: http://www.qmail.org/qmail-smtpd-viruscan-1.1.patch
+       The file ~control/signatures contains signatures for matching
+       of mime attachments.
 
 RETURNMXCHECK
 
