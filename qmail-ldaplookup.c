@@ -117,10 +117,14 @@ int main(int argc, char **argv)
 		strerr_die2x(1, "ERROR: init_ldap faild: ", qldap_err_str(qldap_errno));
 	}
 	
-	output( "init_ldap:\tlocaldelivery:\t%s\n\t\tclustering:\t%s\n",
+	output( "init_ldap:\tpasswords are %scompared via rebind\n",
+			rebind?"":"not ");
+	output( "\t\t\tlocaldelivery:\t%s\n\t\tclustering:\t%s\n",
 			locald?"on":"off", cluster?"on":"off");
-	output( "\t\thomedirmaker:\t%s\n", homemaker.s);
-	output( "\t\tpasswords are %scompared via rebind\n",rebind?"":"not ");
+	output( "\t\t\thomedirmaker:\t%s\n", homemaker.s);
+	output( "\t\t\tdefaultDotMode:\t%s\n", defdot.s);
+	output( "\t\t\tdefaultQuota:\t%s\n", defquota.s);
+	output( "\t\t\tQuotaWarning:\n%s\n", quotawarning.s);
 
 	/* initalize the different objects */
 	extra[9].what = 0; /* end marker for extra info */
