@@ -18,7 +18,7 @@ static stralloc	dirmaker = {0};
 
 int
 dirmaker_init(void)
-/* XXX ~control/dirmaker SHOULD to be only writeable for root */
+/* ~control/dirmaker SHOULD to be only writeable for root */
 {
 	if (control_rldef(&dirmaker, "control/dirmaker", 0, "") == -1)
 		return -1;
