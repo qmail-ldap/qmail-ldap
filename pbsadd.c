@@ -32,6 +32,8 @@ static void log(char* s)
 
 void die_badenv() { log("pbsadd unable to read $TCPREMOTEIP"); die(); }
 void die_control() { log("pbsadd unable to read controls"); die(); }
+void die_dir() { log("pbsadd unable to open current directory: "); die(); }
+void die_dirback() { log("pbsadd unable to switch back to source directory: "); die(); }
 void die_secret() { log("pbsadd control/pbssecret is to long"); die(); }
 void die_exec() { log("pbsadd unable to start pop3 daemon"); die(); }
 void die_usage() { log("usage: pbsadd subprogram ..."); die(); }
@@ -57,17 +59,26 @@ void setup(void)
 {
   char* s;
   int i;
+  int fdsourcedir;
   int len;
+  
+  fdsourcedir = open_read(".");
+  if (fdsourcedir == -1)
+    die_dir();
   
   if (chdir(auto_qmail) == -1) die_control();
 
   if (control_readfile(&addresses,"control/pbsservers",0) == -1) die_control();
-  if (!stralloc_0(&addresses) ) log_nomem();
   
   if (control_readint(&serverport,"control/pbsport") == -1) die_control();
   if (serverport > 65000) die_control();
   if (control_rldef(&secret,"control/pbssecret",0, 0) != 1) die_control();
   if ( secret.len > 255 ) die_secret();
+
+  if (fchdir(fdsourcedir) == -1)
+    die_dirback();
+
+  if (!stralloc_0(&addresses) ) log_nomem();
 
   for( i = 0; i < addresses.len; i++)
     if( addresses.s[i] == '\0' ) numservers++;
@@ -81,6 +92,7 @@ void setup(void)
     if ( len == 0 && len > 15 ) die_control();
     while( *s++ );
   }
+  
 }
 
 
