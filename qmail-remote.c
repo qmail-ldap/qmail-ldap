@@ -372,10 +372,10 @@ char *append;
 
    str=ONELINE_NAME(X509_get_subject_name(peer));
    out("; subject="); out(str);
-   SSL_free(str);
+   OPENSSL_free(str);
    str=ONELINE_NAME(X509_get_issuer_name(peer));
    out("; issuer="); out(str);
-   SSL_free(str);
+   OPENSSL_free(str);
    X509_free(peer);
   }
   out(";\n");
