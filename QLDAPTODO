@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/03/30 17:55:07 $ ($Revision: 1.20 $)
+RELEASE: $Date: 2002/04/18 17:32:10 $ ($Revision: 1.21 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
@@ -27,17 +27,21 @@ planned - make it possible to have locals and rcpthosts in ldap
 
 ALSO ON THE LIST: (priority list ???)
 - improve the RBL handling (tagging, types, etc)
-- add smtp-after-pop functionality
+- add smtp-after-pop functionality (done)
 
-- force to alias if only mail and mailforwardingaddress is set (no uid).
-- enhancement to debug code (almost done)
+- check the enhanced debug code
 - benchmarking the code
-- test what happens if only uid and mail is defiend in ldap or similar uncommon
-  cases (seems to be no problem, or?)
-- add better documentation. (man files)
 - make the current code rock solid (even if it is not perfect)
 - better TLS support (better written??) (tls for pop???)
-- SMTP-after-POP/IMAP and SMTP_AUTH
+- add more and clearer documentation.
+
+status unclear:
+- force to alias if only mail and mailforwardingaddress is set (no uid).
+- test what happens if only uid and mail is defiend in ldap or similar uncommon
+  cases (seems to be no problem, or?)
+
+low priority:
+- SMTP_AUTH (low priority because of POP before SMTP)
 - make the complete lookup code modular so that it should be possible to add 
   diffrent backends.
   It should also be so flexible that other auth services (smtp-auth/SASL) 

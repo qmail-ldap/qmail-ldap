@@ -7,7 +7,7 @@ This patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/04/12 13:02:26 $)
+RELEASE: current ($Date: 2002/04/18 17:32:10 $)
 
 POP-Before-SMTP:
 ======================
@@ -30,7 +30,7 @@ NEWS:
 
 HOW DOES IT WORK
 
- From http://www.lifewithqmail.org/ldap
+ From http://www.lifewithqmail.org/ldap:
     As we all know, SMTP does not contain any authentication mechanisms by
     default. So in practice you are allowing relaying through your server only
     for some IP addresses, normally your corporate network. If your users are
@@ -69,9 +69,7 @@ INSTALL
  The Tools pbsadd, pbscheck and pbsdbd are installed in the qmail binary
  directory, normally /var/qmail/bin.
  
- NOTE: the tools can also be used on qmail system without the qmail-ldap patch.
- 
- XXX not jet done modify install.c hier.c ....
+ NOTE: the tools can also be used on qmail systems without the qmail-ldap patch.
  
 ================================================================================
 

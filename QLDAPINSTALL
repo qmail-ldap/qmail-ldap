@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/04/12 13:02:26 $)
+RELEASE: current ($Date: 2002/04/18 17:32:10 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -25,14 +25,10 @@ NEWS:
 
 IMPORTANT NEWS:
 
- new commandline options for qmail-ldaplookup
+ added pop-before-smtp tools (see POPBEFORESMTP for more info).
 
- variation of Henning Brauer's dash_ext patch. See Section 5.3 and 
- have a look at the QLDAPNEWS.
-
- new logging facilities for qmail-lspawn and auth_*
-
- new control file ldapclusterhosts. See Section CONFIG FILES.
+ reject any null sender (bounce) smtp session with more than one rcpt-to
+ (based on an idea of Charles Cazabon and some code of Henning Brauer)
 
 ================================================================================
 

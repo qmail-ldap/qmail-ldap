@@ -109,8 +109,8 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 /* starts the next auth_module, or what ever (argv ... ) */
 {
 	log(16, "auth_success: login=%s, uid=%u, ", login, uid);
-	log(16, "gid=%u, home=%s, maildir=%s, hdm=%s\n",
-			gid, home, md, homedirmake );
+	log(16, "gid=%u, home=%s, maildir=%s, aliasempty=%s, hdm=%s\n",
+			gid, home, md, argv[argc-1], homedirmake );
 	
 	/* check the uid and the gid */
 	if ( UID_MIN > uid || uid > UID_MAX ) {
@@ -151,11 +151,11 @@ void auth_success(int argc, char **argv, char *login, int uid, int gid,
 			int ret;
 			
 			log(8, "auth_success: makeing homedir with %s %s %s\n",
-					homedirmake, home, (md && *md)? md: argv[2] );
+					homedirmake, home, (md && *md)? md: argv[argc-1] );
 			if (md && *md) {
 				ret = make_homedir(home, md, homedirmake );
 			} else {
-				ret = make_homedir(home, argv[2], homedirmake );
+				ret = make_homedir(home, argv[argc-1], homedirmake );
 			}
 			if (ret != 0 ) {
 				if ( qldap_errno == ERRNO ) {
