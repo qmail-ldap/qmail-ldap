@@ -417,7 +417,7 @@ char **argv;
     if (smtpfd == -1) temp_oserr();
 
     /* performace hack to send TCP ACK's without delay */
-    setsockopt(smtpfd, IPPROTO_TCP, TCP_NODELAY, &tcpnodelay, sizeof tcpnodelay);
+    setsockopt(smtpfd, IPPROTO_TCP, TCP_NODELAY, &tcpnodelay, sizeof(tcpnodelay));
  
     if (timeoutconn(smtpfd,&ip.ix[i].ip,(unsigned int) port,timeoutconnect) == 0) {
       tcpto_err(&ip.ix[i].ip,0);
