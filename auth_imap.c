@@ -421,12 +421,12 @@ void auth_forward(int fd, char *login, char *passwd)
 	
 	get_ok(fd, "*");
 	substdio_fdbuf(&ss,write,fd,buf,sizeof(buf));
-	substdio_put(&ss, tag, str_len(tag) );
-	substdio_put(&ss, " login ", 7); 
-	substdio_put(&ss, login, str_len(login) ); 
-	substdio_put(&ss, " ", 1);
-	substdio_put(&ss, passwd, str_len(passwd) ); 
-	substdio_put(&ss, "\r\n",1);
+	substdio_puts(&ss, tag);
+	substdio_puts(&ss, " login "); 
+	substdio_puts(&ss, login); 
+	substdio_puts(&ss, " ");
+	substdio_puts(&ss, passwd); 
+	substdio_puts(&ss, "\r\n");
 	substdio_flush(&ss);
 
 }

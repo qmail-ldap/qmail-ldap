@@ -309,14 +309,14 @@ void auth_forward(int fd, char *login, char *passwd)
 
 	substdio_fdbuf(&ss,write,fd,buf,sizeof(buf));
 	get_ok(fd);
-	substdio_put(&ss, "user ", 5); 
-	substdio_put(&ss, login, str_len(login) );
-	substdio_put(&ss, "\r\n", 1);
+	substdio_puts(&ss, "user "); 
+	substdio_puts(&ss, login);
+	substdio_puts(&ss, "\r\n");
 	substdio_flush(&ss);
 	get_ok(fd);
-	substdio_put(&ss, "pass ", 5); 
-	substdio_put(&ss, passwd, str_len(passwd) ); 
-	substdio_put(&ss, "\r\n",1);
+	substdio_puts(&ss, "pass "); 
+	substdio_puts(&ss, passwd); 
+	substdio_puts(&ss, "\r\n");
 	substdio_flush(&ss);
 
 }
