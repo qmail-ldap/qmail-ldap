@@ -133,7 +133,8 @@ init_controls(void)
 }
 
 ctrlfunc ctrls[] = {
-	qldap_controls,
+	qldap_ctrl_trylogin,
+	qldap_ctrl_generic,
 	init_controls,
 	0
 };
