@@ -511,7 +511,10 @@ void smtp_mail(arg) char *arg;
 {
   int i,j;
   char *why;
+
   logpid(3); logstring(3,"remote sent 'mail from' ="); logstring(3,arg); logflush(3);
+
+  /* address syntax check */
   if (!addrparse(arg))
   {
     err_syntax(); 
@@ -519,16 +522,58 @@ void smtp_mail(arg) char *arg;
     return;
   }
   logpid(3); logstring(3,"mail from ="); logstring(3,addr.s); logflush(3);
+
+  /* smtp size check */
   if (databytes && !sizelimit(arg)) { err_size(); return; }
+
+  /* bad mail from check */
   flagbarf = bmfcheck();
   if (flagbarf)
   {
     err_bmf();
-    logpid(2); logstring(2,"bad mail from ="); logstring(2,arg); logflush(2);
+    logpid(2); logstring(2,"bad mail from ="); logstring(2,addr.s); logflush(2);
     return;
   }
 
-  /* Allow relaying based on envelope sender address */
+  /* XXX: NOBOUNCE check */
+  if (nobounce)
+  {
+    if (!addr.s[0] || !str_diff("#@[]", addr.s))
+    {
+      why = "refused to accept RFC821 bounce from remote";
+      flagbarf=1;
+    }
+  }
+
+  /* XXX: Sanity checks */
+  if (!str_diff("SANITYCHECK", denymail))
+  {
+    /* Invalid Mailfrom */
+    if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len)
+    {
+      why = "refused 'mail from' without @";
+      flagbarf=1;
+    }
+    /* check syntax, visual */
+    if ((j = byte_rchr(addr.s+i, addr.len-i, '.')) >= addr.len-i)
+    {
+      why = "refused 'mail from' without . in domain";
+      flagbarf=1; /* curious no '.' in domain.TLD */
+    }
+    /* check tld length */
+    j = addr.len-(i+1+j+1);
+    if (j < 2 || j > 6)
+    {
+      /* XXX: This needs adjustment when new TLD's are constituded.
+       * OK, now after the candidates are nominated we know new TLD's
+       * may contain up to six characters.
+       */
+      why = "refused 'mail from' without country or top level domain";
+      flagbarf=1;
+     }
+  }
+
+  /* relay mail from check (allow relaying based on evelope sender address) */
   if (!relayok)
   {
     if (rmfcheck())
@@ -540,113 +585,52 @@ void smtp_mail(arg) char *arg;
   }
 
   /* Check RBL only if relayclient is not set */
-  switch(rblcheck(remoteip, &why)) {
-    case 2: /* soft error lookup */
-      err_dns();
-      return;
-    case 1: /* host is listed in RBL */
-      err_rbl(why);
-      return;
-    default: /* ok, go ahead */
-      logline(3,"RBL checking completed");
-  }
-	
-  /* DENYMAIL is set for this session from this client, so heavy checking
-   * of mailfrom is done. If one of the following is set:
-   * SPAM     -> refuse all mail
-   * NOBOUNCE -> refuse null mailfrom
-   * DNSCHECK -> validate Mailfrom domain
-   */
-  if (denymail)
+  if (rbl && !relayclient)
   {
-    if (!str_diff("SPAM", denymail))
+    switch(rblcheck(remoteip, &why))
     {
-       flagbarf=1;
-       spamflag=1;
-       why = "refused to accept SPAM";
-    }
-    else
-    {
-      if (!addr.s[0] || !str_diff("#@[]", addr.s)) /* if (!addr.s[0]) */
-      {
-         if (!str_diff("NOBOUNCE", denymail))
-         {
-            why = "refused to accept RFC821 bounce from remote";
-            flagbarf=1;
-         }
-      }
-      else
-      {
-        /* Invalid Mailfrom */
-        if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len)
-        {
-           why = "refused 'mail from' without @";
-           flagbarf=1;
-        }
-        else
-        {
-          /* money!@domain.TLD */
-          if (addr.s[i-1] == '!')
-          {
-             why = "refused 'mail from' with !@";
-             flagbarf=1;
-          }
-             
-          /* check syntax, visual */
-          if ((j = byte_rchr(addr.s+i, addr.len-i, '.')) >= addr.len-i)
-          {
-             why = "refused 'mail from' without . in domain";
-             flagbarf=1; /* curious no '.' in domain.TLD */
-          }
-
-          j = addr.len-(i+1+j+1);
-          if (j < 2 || j > 6)
-          {
-             /* XXX: This needs adjustment when new TLD's are constituded.
-              * OK, now after the candidates are nominated we know new TLD's
-              * may contain up to six characters.
-              */
-             why = "refused 'mail from' without country or top level domain";
-             flagbarf=1;
-          }
-
-          if (!flagbarf)
-          {
-            if (!str_diff("DNSCHECK", denymail)) 
-            {
-              /* check syntax, via DNS */
-              switch (badmxcheck(&addr.s[i+1]))
-              {
-                case 0:
-                  break; /*valid*/
-                case DNS_SOFT:
-                  flagbarf=2; /*fail tmp*/
-                  why = "refused 'mail from' because return MX lookup failed temporarly";
-                  break;
-                case DNS_HARD:
-                default:
-                  flagbarf=1; 
-                  why = "refused 'mail from' because return MX does not exist";
-                  break;
-              }
-            } /* DNSCHECK */
-          } /* if !flagbarf */
-        } /* without @ */
-      } /* bounce */
-    } /* SPAM */
-
-    if (flagbarf)
-    {
-      logpid(2); logstring(2,why); logstring(2,"for ="); logstring(2,addr.s); logflush(2);
-      if (flagbarf==2)
+      case 2: /* soft error lookup */
         err_dns();
-      else if (spamflag)
-        err_spam();
-      else
-        err_hard(why);
-      return;
+        return;
+      case 1: /* host is listed in RBL */
+        err_rbl(why);
+        return;
+      default: /* ok, go ahead */
+        logline(3,"RBL checking completed");
     }
-  } /* denymail */
+  }
+
+  /* XXX: Return MX check */
+  if (!str_diff("DNSCHECK", denymail) && !relayclient)
+  {
+    switch (badmxcheck(&addr.s[i+1]))
+    {
+      case 0:
+        break; /*valid*/
+      case DNS_SOFT:
+        flagbarf=2; /*fail tmp*/
+        why = "refused 'mail from' because return MX lookup failed temporarly";
+        break;
+      case DNS_HARD:
+      default:
+        flagbarf=1;
+        why = "refused 'mail from' because return MX does not exist";
+        break;
+     }
+  }
+
+  /* XXX: Old denymail check not yet converted */
+  if (flagbarf)
+  {
+    logpid(2); logstring(2,why); logstring(2,"for ="); logstring(2,addr.s); logflush(2);
+    if (flagbarf==2)
+      err_dns();
+    else if (spamflag)
+      err_spam();
+    else
+      err_hard(why);
+    return;
+  }
 
   seenmail = 1;
   if (!stralloc_copys(&rcptto,"")) die_nomem();
