@@ -25,6 +25,10 @@
 #include "sig.h"
 #include "auto_usera.h"
 #include "auto_uids.h"
+#include "byte.h"
+#include "open.h"
+#include "readwrite.h"
+#include "str.h"
 #include <pwd.h>
 #include <sys/types.h>
 

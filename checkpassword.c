@@ -66,9 +66,8 @@ static int cmp_passwd(char *clear, char *encrypted);
 
 static int get_local_maildir(stralloc *home, stralloc *maildir);
 
-static void copyloop(int infd, int outfd, int timeout);
-
 #ifdef QLDAP_CLUSTER
+static void copyloop(int infd, int outfd, int timeout);
 static void forward_session(char *host, char *name, char *passwd);
 #endif
 

@@ -252,56 +252,88 @@ void auth_error(void)
 	_exit(111);
 }
 
+#ifdef QLDAP_CLUSTER
+
 static void get_ok(int fd)
 /* get the ok for the next command, wait for "+OK.*\r\n" */
-/* XXX this is not the correct solution but should work for 
- * XXX about 99.999...% of the cases */
+/* XXX this could be a mostly correct solution (adapted from fetchmail) */
 {
 #define AUTH_TIMEOUT 10 /* 10 sec timeout */
-#define OK_LEN 128
+#define OK_LEN 512      /* max length of response (RFC1939) */
 	char ok[OK_LEN];
+	char *c;
 	int  len;
 	int  i;
-	int  pass;
-	int  state;
 
-	pass = 0;
-	state = 0;
-	do {
-		len = timeoutread(AUTH_TIMEOUT, fd, ok, OK_LEN);
-		if ( len == -1 ) {
-			if ( pass == 0 && errno == error_timeout ) {
-				pass = 1;
-				continue; /* second chance for slow servers */
-			}
-			qldap_errno = ERRNO;
+	/* first get one single line from the other pop server */
+	len = timeoutread(AUTH_TIMEOUT, fd, ok, OK_LEN);
+	if ( len == -1 ) {
+		/* OK an error occured, giving up */
+		qldap_errno = ERRNO;
+		auth_error();
+	}
+	if ( len != 0 ) {
+		c = ok;
+		if ( *c == '+' || *c == '-' ) {
+			c++;
+		} else {
+			qldap_errno = BADCLUSTER; /* BAD POP3 Protocol */
 			auth_error();
 		}
-		if ( state == 0 ) {
-			if ( len != 0 && *ok == '+' ) {
-				state = 1;
-			} else {
-				qldap_errno = BADCLUSTER;
+		for ( i = 1; i < len /* paranoia */ && 
+				('A' < *c && *c < 'Z') ; ) { i++; c++; }
+
+		if ( i < len ) {
+			*c = '\0';
+			if ( str_diff(ok, "+OK") == 0 ) {
+				return;
+			} else if ( str_diffn(ok, "-ERR", 4) ) {
+				qldap_errno = BADCLUSTER; /* other server is not happy */
 				auth_error();
 			}
 		}
-		for(i = 0; i < len; i++ ) {
-			if ( ok[i] == '\n' ) state++;
+	}
+	/* ARRG, very strange POP3 answer */
+	qldap_errno = BADCLUSTER;
+	auth_error();
+}
+
+static int allwrite(op,fd,buf,len)
+/* copied from substdo.c */
+register int (*op)();
+register int fd;
+register char *buf;
+register int len;
+{
+	register int w;
+
+	while (len) {
+		w = op(fd,buf,len);
+		if (w == -1) {
+			if (errno == error_intr) continue;
+			return -1; /* note that some data may have been written */
 		}
-		if ( pass++ > 2 ) {
-			qldap_errno = BADCLUSTER;
-			auth_error();
-		}
-	} while( state != 2 );
+		if (w == 0) ; /* luser's fault */
+		buf += w;
+		len -= w;
+	}
+	return 0;
 }
 
 void auth_forward(int fd, char *login, char *passwd)
 /* for connection forwarding, makes the login part and returns after sending the
- * latest command immidiatly */
+ * last command immidiatly so the user gets the possible error */
 {
 	get_ok(fd);
-	write(fd, "user ", 5); write(fd, login, str_len(login) ); write(fd, "\n", 1);
+	allwrite(write, fd, "user ", 5); 
+	allwrite(write, fd, login, str_len(login) );
+	allwrite(write, fd, "\n", 1);
 	get_ok(fd);
-	write(fd, "pass ", 5); write(fd, passwd, str_len(passwd) ); write(fd, "\n",1);
+	allwrite(write, fd, "pass ", 5); 
+	allwrite(write, fd, passwd, str_len(passwd) ); 
+	allwrite(write, fd, "\n",1);
 
 }
+
+#endif /* QLDAP_CLUSTER */
+

@@ -357,66 +357,92 @@ void auth_error(void)
 	
 }
 
-static void get_ok(int fd)
-/* get the ok for the next command, wait for "\* OK.*\r\n" */
-/* XXX this is not the correct solution but should work for 
- * XXX about 99.999...% of the cases */
+#ifdef QLDAP_CLUSTER
+
+static void get_ok(int fd, char *tag)
+/* get the ok for the next command, wait for "[TAG] OK.*\r\n" */
+/* XXX this should work now better (Idea from RFC 1730 and fetchmail) */
 {
 #define AUTH_TIMEOUT 10 /* 10 sec timeout */
-#define OK_LEN 128
+#define OK_LEN 8192+1
 	char ok[OK_LEN];
+	char *s;
+	unsigned char x;
 	int  len;
 	int  i;
-	int  pass;
-	int  state;
 
-	pass = 0;
-	state = 0;
+	if ( !tag ) return; /* bad pointer */
 	do {
-		len = timeoutread(AUTH_TIMEOUT, fd, ok + len, sizeof(ok) - len);
+		len = timeoutread(AUTH_TIMEOUT, fd, ok, sizeof(ok) - 1);
 		if ( len == -1 ) {
-			if ( pass == 0 && errno == error_timeout ) {
-				pass = 1;
-				continue; /* second chance for slow servers */
-			}
 			qldap_errno = ERRNO;
 			auth_error();
 		}
-		if ( state == 0 ) {
-			if ( len != 0 && ok[0] == '*' ) {
-				if (len > 4 && ok[2] == 'O' && ok[3] == 'K' ) {
-					state = 1;
-				} else if ( len > 4 ){
-					qldap_errno = BADCLUSTER;
-					auth_error();
-				} else {
-					pass++;
-					continue;
-				}
-			} else {
-				qldap_errno = BADCLUSTER;
-				auth_error();
-			}
+		ok[len] = '\0';
+		/* upper case all */
+		for ( i = 0, s = ok ; i < len; i++ ) {
+			x = *s - 'a';
+			if ( x <= 'z' - 'a' ) *s = x + 'A';
+			s++;
 		}
-		for(i = 0; state == 1 && i < len; i++ ) {
-			if ( ok[i] == '\n' ) state++;
+	} while ( str_diffn(ok, tag, str_len(tag) ) );
+	/* tag found, next check for OK */
+	s = ok + str_len(tag); /* skip tag */
+	while ( *s == ' ' || *s == '\t' ) s++; /* skip all spaces */
+	
+	if ( str_diffn(ok, "OK", 2 ) == 0 ) return;
+	else if ( str_diffn(ok, "BAD", 3) == 0 || str_diffn(ok, "NO", 2) == 0 ) {
+		qldap_errno = BADCLUSTER; /* other server not happy */
+		auth_error();
+	}
+	/* ARRG, this server talks not my dialect */
+	qldap_errno = BADCLUSTER;
+	auth_error();
+}
+
+static int allwrite(op,fd,buf,len)
+/* copied from substdo.c */
+register int (*op)();
+register int fd;
+register char *buf;
+register int len;
+{
+	register int w;
+
+	while (len) {
+		w = op(fd,buf,len);
+		if (w == -1) {
+			if (errno == error_intr) continue;
+			return -1; /* note that some data may have been written */
 		}
-		if ( pass++ > 2 ) {
-			qldap_errno = BADCLUSTER;
-			auth_error();
-		}
-	} while( state != 2 );
+		if (w == 0) ; /* luser's fault */
+		buf += w;
+		len -= w;
+	}
+	return 0;
 }
 
 void auth_forward(int fd, char *login, char *passwd)
 /* for connection forwarding, makes the login part and returns after sending the
  * latest command immidiatly */
 {
-	/* XXX XXX THIS IS HIGHLY BETA XXX XXX */
-	get_ok(fd);
-	write(fd, "* login ", 5); 
-	write(fd, login, str_len(login) ); write(fd, " ", 1);
-	write(fd, passwd, str_len(passwd) ); write(fd, "\n",1);
-	get_ok(fd);
+	char *tag = env_get("IMAPLOGINTAG");
+	
+	if ( !( tag && *tag ) ) {
+		/* UH OH, no imap tag, how could that be ? */
+	   	qldap_errno = AUTH_PANIC;
+		auth_error();
+	}
+	
+	get_ok(fd, "*");
+	allwrite(write, fd, tag, str_len(tag) );
+	allwrite(write, fd, " login ", 5); 
+	allwrite(write, fd, login, str_len(login) ); 
+	allwrite(write, fd, " ", 1);
+	allwrite(write, fd, passwd, str_len(passwd) ); 
+	allwrite(write, fd, "\n",1);
 
 }
+
+#endif /* QLDAP_CLUSTER */
+

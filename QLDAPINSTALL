@@ -18,6 +18,9 @@ done    - ldap authentication for courier-imap
 
 NEWS:
 
+ changed the connection forwarding under pop and imap. Now it should work 
+ correctly, or at least better then befor ;-)
+
  to have the possibility to compare cleartextpasswords (password how are 
  stored cleartext in ldap) define CLEARTEXTPASSWORD. Because this setting
  is a security disaster it is normaly off. All other modes (hashed MD4, MD5,
@@ -131,8 +134,8 @@ INSTALL:
      NOTE: to high debuglevels are reduced to the maximum allowd debug level
            if the level parameter form init_debug() is smaler.
            Perhaps a compare with a bit mask will be added somewhen, so that
-           DEBUGLEVEL=3, warning and errors reports but DEBUGLEVEL=2 only
-           warnings.
+           DEBUGLEVEL=3 will report warnings and errors but DEBUGLEVEL=2 will
+           only report warnings.
 
 CONFIG FILES:
 

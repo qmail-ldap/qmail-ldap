@@ -17,6 +17,11 @@
 #include "stralloc.h"
 #include "substdio.h"
 #include "wait.h"
+#include "getln.h"
+#include "lock.h"
+#include "now.h"
+#include "fmt.h"
+#include "myctime.h"
 #include "qmail-ldap.h"
 
 /* global vars */
@@ -75,7 +80,7 @@ int main (int argc, char **argv)
 
 
 /* a match function */
-static int wild_matchb(register char* pattern, register unsigned int pat_len, \
+static int wild_matchb(register char* pattern, register unsigned int pat_len, 
                        register char* string, unsigned int len)
 {
    register unsigned int i;
@@ -181,6 +186,10 @@ void write_maildir(char* fn)
    if (substdio_puts(&ssout,"Received: (directly through the qmail-quota-warning program);\n\t"))
       goto fail;
    if (substdio_puts(&ssout,myctime(starttime))) goto fail;
+   /* Qmail-QUOTAWARNING: line */
+   if (substdio_puts(&ssout,"Qmail-QuotaWarning: ")) goto fail;
+   if (substdio_put(&ssout,host.s,host.len)) goto fail;
+   if (substdio_puts(&ssout,"\n")) goto fail;
    /* message-id and date line */
    if (substdio_put(&ssout,newfield_msgid.s,newfield_msgid.len)) goto fail;   
    if (substdio_put(&ssout,newfield_date.s,newfield_date.len)) goto fail;
@@ -229,7 +238,7 @@ void check_mailfile(char* fn)
       case_lowerb(temp.s, (len = byte_chr(temp.s,temp.len,':') ) );
       if( !str_diffn("qmail-quotawarning:", temp.s, len+1) ) {
          if (!wild_matchb(host.s, host.len, temp.s+len+1, temp.len-len-2) ) {
-            /* quota warning allredy in mailbox */
+            /* quota warning allready in mailbox */
             close(fd);
             _exit(0);
          }
@@ -245,7 +254,6 @@ void write_mailfile(char* fn)
 {
    int fd;
    substdio ssout;
-   int match;
    seek_pos pos;
    int flaglocked;
    char *t;
@@ -327,3 +335,4 @@ void write_mailfile(char* fn)
    close(fd);
    _exit(111);
 }
+

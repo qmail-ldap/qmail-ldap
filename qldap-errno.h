@@ -2,7 +2,7 @@
 #ifndef __QLDAP_ERRNO_H__
 #define __QLDAP_ERRNO_H__
 
-int qldap_errno;
+extern int qldap_errno;
 
 /* generic errors */
 #define ERRNO			1				/* check errno for more info */
@@ -33,5 +33,8 @@ int qldap_errno;
 #define MAILDIR_CORRUPT	17				/* maildir seems to be corrupted */
 #define MAILDIR_CRASHED	18				/* dirmaker script crashed */
 #define MAILDIR_BADEXIT	19				/* dirmaker exit status not zero */
+
+char *qldap_err_str(int enbr );
+/* returns a string that corresponds to the qldap_errno */
 
 #endif

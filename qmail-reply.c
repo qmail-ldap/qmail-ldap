@@ -13,6 +13,8 @@
 #include "stralloc.h"
 #include "substdio.h"
 #include "wait.h"
+#include "byte.h"
+#include "fd.h"
 #include "qmail-ldap.h"
 
 /* some error-handling funktions */
@@ -22,7 +24,7 @@ void temp_childcrashed() { strerr_die1x(111,"Aack, child crashed. (LDAP-ERR #4.5
 void temp_fork() { strerr_die3x(111,"Unable to fork: ",error_str(errno),". (LDAP-ERR #4.5.0)"); }
 void temp_read() { strerr_die3x(111,"Unable to read message: ",error_str(errno),". (LDAP-ERR #4.5.0)"); }
 
-/* funktion prototypes */
+/* function prototypes */
 void get_env(stralloc *dtl, stralloc *to, stralloc *from, stralloc *replytext);
 void check_header_and_get_subject(stralloc *subject);
 void send_reply(stralloc *dtl, stralloc *to, stralloc *from, stralloc *subject, stralloc *replytext);
