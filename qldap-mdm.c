@@ -41,5 +41,5 @@ int make_homedir(char *home, char *maildir, char *dirmaker)
 }
 
 /* XXX the maildirmake stuff is dirictly in qmail-local.c and qmail-pop3d.c
- * XXX this is simpler and better (Perhaps I finde a better way sometimes) ;-) */
+ * XXX this is simpler and better (Perhaps I'll find a better way sometimes) ;-) */
 /* int make_maildir(...) */

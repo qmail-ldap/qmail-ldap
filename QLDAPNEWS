@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/05/11 20:59:31 $ ($Revision: 1.7 $)
+RELEASE: $Date: 2000/05/16 21:00:44 $ ($Revision: 1.8 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,8 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ update of the QLDAP* files
 
  bugfix in maildir++.c and qmail-local.c, now quota_add should add the correct 
  size of the mail. Until now only the message without DTLINE and RPLINE was 
@@ -37,15 +39,15 @@ NEWS for 20000501 patch (and some also for 20000401):
        it is installed with mode 000 (no rights for anybody)
        You should only give root the permision to start it.
 
- new mailMessageStore/homedirectory handling
-  because a lot of people request it and because I was also unhappy with it
-  I have rewritten, enhanced the mailMessageStore handling.
-  Now the homedir and aliasempty are set via both mailMessageStore 
-  (LDAP_MAILSTORE) and homedirectory (LDAP_HOMEDIR).
+ new mailMessageStore/homedirectory handling.
+ Because a lot of people requested it and because I was also unhappy with it
+ I have rewritten/enhanced the mailMessageStore handling.
+ Now the homedir and aliasempty are set via both 
+ mailMessageStore (LDAP_MAILSTORE) and homedirectory (LDAP_HOMEDIR).
   It works like this:
     IF LDAP_HOMEDIR exists it is used as $HOME (qmail-locals 3rd ARGV)
       IF also LDAP_MAILSTORE exists LDAP_MAILSTORE is used as aliasempty
-      (last ARGV of qmail-local)
+        (last ARGV of qmail-local)
       ELSE (no LDAP_MAILSTORE ) use the aliasempty specified 
         in /var/qmail/rc or simmilar
       FI
@@ -55,7 +57,7 @@ NEWS for 20000501 patch (and some also for 20000401):
       ELSE (LDAP_MAILSTORE not absolute) use control/ldapmessagestore as
         prefix to LDAP_MAILSTORE and use this as $HOME and use std. aliasempty
     ELSE neither LDAP_MAILSTORE nor LDAP_HOMEDIR exists
-        use ~alias as $HOME and ALIASDEVNULL as aliasempty 
+      use ~alias as $HOME and ALIASDEVNULL as aliasempty 
     FI
   
   NOTE: the case neither LDAP_MAILSTORE nor LDAP_HOMEDIR is a bit special
@@ -66,7 +68,7 @@ NEWS for 20000501 patch (and some also for 20000401):
         ("|/var/qmail/bin/myalerttool")
   NOTE2: if you use "homedirectory" and "mailMessageStore" in an incompatible 
         way and you want the old behaviour back define LDAP_HOMEDIR in 
-        qmail-ldap.h as an nonexsitent ldap db field like noHomedirectory.
+        qmail-ldap.h as an nonexsitent ldap db field like noHomeDirectory.
 
  new check algorithm, I think it's faster and better.
  Have a look at check.c. At the end of the file there is a array with all
@@ -101,7 +103,6 @@ NEWS for 20000501 patch (and some also for 20000401):
  
  bugfixes in qmail-lspawn.c, qmail-reply.c and checkpassword.c
  
-
 
 NEWS for previous releases:
 

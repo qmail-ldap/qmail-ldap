@@ -99,6 +99,9 @@ void hier()
   c(auto_qmail,"doc","PIC.relaygood",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","PIC.rem2local",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","QLDAPINSTALL",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"doc","QLDAPNEWS",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"doc","QLDAPTODO",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"doc","QLDAPPICTURE",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","ANTISPAM",auto_uido,auto_gidq,0644);
 
   c(auto_qmail,"bin","qmail-queue",auto_uidq,auto_gidq,04711);

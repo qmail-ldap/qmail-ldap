@@ -265,7 +265,7 @@ char *fn;
        strerr_die1x(111,"Temporary race condition while calculating quota. (LDAP-ERR #2.4.2)");
    }
    if ( perc == 100 )
-	 quota_bounce("maildir");
+	 quota_bounce("mailfolder");
    else if ( perc > QUOTA_WARNING_LEVEL ) 
 	 /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);

@@ -6,11 +6,14 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/05/11 20:59:31 $ ($Revision: 1.2 $)
+RELEASE: $Date: 2000/05/16 21:00:45 $ ($Revision: 1.3 $)
 
 This is the TODO FILE, so the QLDAPINSTALL file gets a bit cleaner.
 This file is NOT structured!!
 
+NEWS:
+
+ see QLDAPNEWS
 
 TODO:
 
@@ -19,14 +22,18 @@ ongoing - The big qmail-ldap picture
 ongoing - full code review by a third person
 planned - splitting the patch into smaler separate pieces
 planned - make it possible to have locals and rcpthosts in ldap
-          and perhaps also the rules for the tcpserver
+          and perhaps also the rules for the tcpserver (certs?)
 
 
-
-ALSO ON THE LIST: (prioroty list)
+ALSO ON THE LIST: (priority list)
+- force forward-only and ldaponly when neither LDAP_MAILSTORE nor LDAP_HOMEDIR 
+  defined 
 - looping of messages in cluster mode, does the loop count work?
   NO it does not! PANIC have to fix that!
-- imap check, there seems to be some problems with Netscape
+- use conection less ldap for lookups
 - benchmarking the code
+- enhancement to debug code
+- imap check, there seems to be some problems with Netscape (seems to be a 
+  courier-imap and Netscape thing )
 - what happens if only uid and mail is defiend in ldap or similar uncommon cases
 

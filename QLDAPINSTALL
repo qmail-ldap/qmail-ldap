@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20000501 ($Date: 2000/05/11 20:59:30 $)
+RELEASE: 20000501 ($Date: 2000/05/16 21:00:44 $)
 
 TODO:
 
@@ -18,7 +18,7 @@ NEWS:
 
 IMPORTANT NEWS:
 
- added new tool qmail-ldaplookup with this program you can check the ldap
+ added new tool qmail-ldaplookup: with this program you can check the ldap
  db entries. Similar to the old checkpassword with debug support.
  Usage: qmail-ldaplookup {-m mailaddress | -u userid [passwd]}
  NOTE: because this tool could show critical data (like the hashed passwd)
@@ -60,7 +60,7 @@ INSTALL:
 5. Edit the conf-* files and the top of the Makefile (only the top ;-) )
    You can set/change:
    - LDAPFLAGS=-DQLDAP_CLUSTER (turns the cluster support on) +
-               -DLDAP_ESCAPE_BUG (see NOTE)
+               -DLDAP_ESCAPE_BUG (see NOTE) +
                -DCLEARTEXTPASSWD (for cleartext passwords in ldap bad idea)
      NOTE: at the moment -DLDAP_ESCAPE_BUG is not defined, this should be
            added if your ldap server has problems with the escapeing of 
@@ -78,11 +78,13 @@ INSTALL:
      into the release, you need the ~control/dirmaker file to turn the 
      patch on, see CONFIG FILES)
 
-   - SHADOWLIBS=-lshadow, SHADOWOPTS=-DPW_SHADOW are needed on some Systems
-     (Solaris, Linux) for local password lookups (just like the original
-     djb-checkpassword)
+   - SHADOWLIBS=-lcrypt is needed on most systems (exeption my OpenBSD box)
+     SHADOWLIBS=-lcrypt -lshadow , SHADOWOPTS=-DPW_SHADOW are needed on some 
+     Systems (Solaris, Linux) for local password lookups 
+     (just like the original djb-checkpassword)
    - DEBUG=-DDEBUG (compiles debugging into the auth modules and qmail-ldap, 
      see also 10.)
+   - TLS* stuff for TLS (SMTP encryption) mostly self explaining
 
 5.1 Have a look at qmail-ldap.h, perhaps you want to change something there.
 
@@ -99,9 +101,13 @@ INSTALL:
     install -> read the INSTALL file and the FAQ !!!).
     Now everything should be installed with correct permisions.
 
+6.1 If using TLS you can use make cert or make cert-req to create TLS 
+    certificates
+
 7.  Create the LDAP user database and start the LDAP server
 
 8.  Create the proper ~control/ldap* files for qldap
+    Minimal ldapserver and ldapbasedn should exist (and also me)
 
 9.  Test, Debug and Enjoy!
 
@@ -144,6 +150,7 @@ CONFIG FILES:
 ~control/ldapbasedn
 
  The base DN from where the search in the LDAP tree begins
+ Most times required
  Default: NULL
  Example: o=Internet Pipeline, c=CH
  Note: Referrals are ignored
