@@ -60,6 +60,7 @@ int uplen;
 
 #ifdef QLDAPDEBUG
 
+#include <stdio.h>
 #define OUTPUT stderr
 #define debug_msg fprintf
 
