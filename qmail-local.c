@@ -118,25 +118,25 @@ char *dir;
 
 /* this one handles the case where the aliasempty is "./" */
 #ifdef AUTOMAILDIRMAKE 
- if ( !str_diff(dir, "./") ) {
+ if (!str_diff(dir, "./")) {
    umask(077);
    if (stat("new", &st) == -1) {
      if (errno == error_noent) {
        if (mkdir("new",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
      } else if (error_temp(errno)) _exit(5); else _exit(6);
-   } else if (! S_ISDIR(st.st_mode) ) _exit(7);
+   } else if (!S_ISDIR(st.st_mode)) _exit(7);
 	
    if (stat("cur", &st) == -1) {
      if (errno == error_noent) {
        if (mkdir("cur",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
      } else if (error_temp(errno)) _exit(5); else _exit(6);
-   } else if (! S_ISDIR(st.st_mode) ) _exit(7);
+   } else if (!S_ISDIR(st.st_mode)) _exit(7);
 	
    if (stat("tmp", &st) == -1) {      
      if (errno == error_noent) {        
        if (mkdir("tmp",0700) == -1) { if (error_temp(errno)) _exit(5); _exit(6); }
      } else if (error_temp(errno)) _exit(5); else _exit(6);
-   } else if (! S_ISDIR(st.st_mode) ) _exit(7);
+   } else if (!S_ISDIR(st.st_mode)) _exit(7);
  }
 #endif
 

@@ -394,7 +394,7 @@ static int quota_calcsize(quota_t *q, int *fd, char* buf, int len)
 			path.len = plen;
 		}
 	}
-	closedir(dirp);
+	if (dirp) closedir(dirp);
 	
 	path.len = plen;
 	calc_curnew(q, &maxtime);
@@ -564,7 +564,7 @@ static int check_maxtime(time_t time)
 			}
 		}
 	}
-	closedir(dirp);
+	if (dirp) closedir(dirp);
 
 	path.len = slen;
 	return i;
@@ -643,7 +643,7 @@ static void calc_curnew(quota_t *q, time_t *maxtime)
 				q->size += (long)filest.st_size;
 			} 
 		}
-		closedir(dirp);
+		if (dirp) closedir(dirp);
 
 		/* the same thing with cur */
 		fmt_str(path.s + path.len - 5, "cur");
