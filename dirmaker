@@ -1,3 +1,2 @@
 #!/bin/sh
-umask 700
 /bin/mkdir -m 700 -p $1
