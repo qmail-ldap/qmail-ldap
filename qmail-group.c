@@ -580,7 +580,7 @@ subscribed(qldap *q, int flagS)
 
 	for (s = tmpval.s, smax = tmpval.s + tmpval.len;
 	    s < smax; s += str_len(s) + 1) {
-		r = qldap_filter(sq, founddn.s, attrs, founddn.s, SCOPE_BASE);
+		r = qldap_filter(sq, s, attrs, founddn.s, SCOPE_BASE);
 		if (r == NOSUCH) continue;
 		if (r != OK) goto fail;
 		if (qldap_count(sq) < 1) continue;
