@@ -907,7 +907,7 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
 		  _exit(QLX_EXECHARD);
    }
    
-   debug(8, "Forwarding to %S at host %s from %s\n", to, host, from);
+   debug(8, "Forwarding to %S at host %s from %s ", to, host, from);
    close(pi[0]);
    allwrite(write, pi[1], "F", 1);
    allwrite(write, pi[1], from, str_len(from));
@@ -925,11 +925,15 @@ void forward_mail(char *host, stralloc *to, char* from, int fdmess)
       _exit(238);
    }
       
-   switch(wait_exitcode(wstat)) {
-      case 0: _exit(0);
+   switch(i=wait_exitcode(wstat)) {
+      case 0: 
+          debug(8, "was successful\n");
+		  _exit(0);
       case 31: case 61: 
+         debug(8, "failed (hard error %i)/n", i); 
          _exit(240);
       default:
+		 debug(8, "failed (soft error %i)/n", i);
          _exit(239);
    }
 }
