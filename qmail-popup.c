@@ -81,6 +81,7 @@ void die_4() { err("account disabled"); die(); }
 void die_5() { err("mailhost is unreachable"); die(); }
 void die_6() { err("mailbox is corrupted"); die(); }
 void die_7() { err("unable to start pop daemon"); die(); }
+void die_unknown() { err("unspecified error"); die(); }
 
 void err_syntax() { err("syntax error"); }
 void err_wantuser() { err("USER first"); }
@@ -136,6 +137,7 @@ char *pass;
   if (wait_pid(&wstat,child) == -1) die();
   if (wait_crashed(wstat)) die_childcrashed();
   switch (wait_exitcode(wstat)) {
+    case 0: die();
     case 1: die_1();
     case 2: die_2();
     case 25: die_25();
@@ -144,7 +146,7 @@ char *pass;
     case 5: die_5();
     case 6: die_6();
     case 7: die_7();
-    default: die_badauth();
+    default: die_unknown();
   }
   die();
 }

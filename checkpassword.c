@@ -733,7 +733,7 @@ char **argv;
  execvp(argv[1],argv + 1);
 #endif
 
- _exit(7);
+ _exit(0);
 
 }
 
