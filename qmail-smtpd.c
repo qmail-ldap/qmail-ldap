@@ -272,7 +272,7 @@ int ldapsoftok = 0;
 int flagauth = 0;
 int needauth = 0;
 int needssl = 0;
-int authenticated = 0;
+int flagauthok = 0;
 const char *authprepend;
 int sslenabled = 0;
 
@@ -812,12 +812,16 @@ void smtp_mail(arg) char *arg;
   }
   logpid(3); logstring(3,"mail from: "); logstring(3,addr.s); logflush(3);
 
-  if (needauth && !authenticated) {
+  if (needauth && !flagauthok) {
     out("530 authentication needed\r\n");
     logline(2, "auth needed");
     if (errdisconnect) err_quit();
     return;
   }
+
+  /* check if we are authenticated, if yes enable relaying */
+  if (flagauthok && relayclient == 0)
+    relayclient = "";
 
   /* smtp size check */
   if (databytes && !sizelimit(arg))
@@ -894,7 +898,7 @@ void smtp_mail(arg) char *arg;
   }
 
   /* relay mail from check (allow relaying based on evelope sender address) */
-  if (!relayok) {
+  if (!relayclient) {
     if (rmfcheck()) {
       relayclient = "";
       logline(2,"relaying allowed for mailfrom");
@@ -1032,9 +1036,6 @@ void smtp_rcpt(arg) char *arg; {
     return;
   }
 
-  /* XXX now this is a ugly hack */
-  if (authenticated && relayclient == 0) relayclient = "";
-  
   /* is sender ip allowed to relay */
   if (relayclient) {
     --addr.len;
@@ -1451,7 +1452,7 @@ void smtp_auth(char *arg)
     return;
   }
   logline(3,"smtp auth");
-  if (authenticated) {
+  if (flagauthok) {
     out("503 you are already authenticated\r\n");
     logline(2,"reauthentication attempt rejected");
     if (errdisconnect) err_quit();
@@ -1510,7 +1511,7 @@ fail:
   status = auth_close(&cct, &line, authprepend);
   switch (*status) {
   case '2':
-    authenticated = 1;
+    flagauthok = 1;
     remoteinfo = line.s;
     out(status);
     logline(2,"authentication success");
