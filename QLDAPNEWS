@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/01/04 21:52:45 $ ($Revision: 1.161 $)
+RELEASE: $Date: 2004/01/12 10:05:50 $ ($Revision: 1.162 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -21,7 +21,7 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
 
 NEWS for current stuff:
 
- Newer fdcopy STDOUT with STDERR in qmail-popup. The copy was only skipped if
+ Never fdcopy STDOUT with STDERR in qmail-popup. The copy was only skipped if
  DEBUG was set. So it was not possible to use qmail-pop3d accounting/logging
  if a non-DEBUG version was compiled. Report by Henning Brauer.
 
