@@ -1092,7 +1092,7 @@ maildir++.o: \
 compile maildir++.c maildir++.h readwrite.h stralloc.h error.h str.h \
 open.h substdio.h getln.h error.h strerr.h fmt.h scan.h now.h seek.h \
 sig.h direntry.h
-	./compile maildir++.c
+	./compile $(LDAPFLAGS) maildir++.c
 
 maildir2mbox: \
 load maildir2mbox.o maildir.o prioq.o now.o myctime.o gfrom.o lock.a \
