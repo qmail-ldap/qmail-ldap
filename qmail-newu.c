@@ -6,7 +6,7 @@
 #include "subfd.h"
 #include "getln.h"
 #include "substdio.h"
-#include "cdbmss.h"
+#include "cdb_make.h"
 #include "exit.h"
 #include "readwrite.h"
 #include "open.h"
@@ -58,7 +58,7 @@ void die_rename()
   die_temp();
 }
 
-struct cdbmss cdbmss;
+struct cdb_make cdbm;
 stralloc key = {0};
 stralloc data = {0};
 
@@ -89,7 +89,7 @@ int main()
   fdtemp = open_trunc("users/cdb.tmp");
   if (fdtemp == -1) die_opent();
 
-  if (cdbmss_start(&cdbmss,fdtemp) == -1) die_writet();
+  if (cdb_make_start(&cdbm,fdtemp) == -1) die_writet();
 
   if (!stralloc_copys(&wildchars,"")) die_nomem();
 
@@ -128,12 +128,12 @@ int main()
     if (numcolons < 6) die_format();
     data.len = i;
 
-    if (cdbmss_add(&cdbmss,key.s,key.len,data.s,data.len) == -1) die_writet();
+    if (cdb_make_add(&cdbm,key.s,key.len,data.s,data.len) == -1) die_writet();
   }
 
-  if (cdbmss_add(&cdbmss,"",0,wildchars.s,wildchars.len) == -1) die_writet();
+  if (cdb_make_add(&cdbm,"",0,wildchars.s,wildchars.len) == -1) die_writet();
 
-  if (cdbmss_finish(&cdbmss) == -1) die_writet();
+  if (cdb_make_finish(&cdbm) == -1) die_writet();
   if (fsync(fdtemp) == -1) die_writet();
   if (close(fdtemp) == -1) die_writet(); /* NFS stupidity */
   if (rename("users/cdb.tmp","users/cdb") == -1) die_rename();

@@ -424,42 +424,24 @@ compile case_starts.c case.h
 	./compile case_starts.c
 
 cdb.a: \
-makelib cdb_hash.o cdb_unpack.o cdb_seek.o
-	./makelib cdb.a cdb_hash.o cdb_unpack.o cdb_seek.o
+makelib cdb_hash.o cdb.o
+	./makelib cdb.a cdb_hash.o cdb.o
+
+cdb.o: \
+compile cdb.c cdb.h byte.h  error.h seek.h uint32.h
+	./compile cdb.c
 
 cdb_hash.o: \
 compile cdb_hash.c cdb.h uint32.h
 	./compile cdb_hash.c
 
-cdb_seek.o: \
-compile cdb_seek.c cdb.h uint32.h
-	./compile cdb_seek.c
-
-cdb_unpack.o: \
-compile cdb_unpack.c cdb.h uint32.h
-	./compile cdb_unpack.c
+cdb_make.o: \
+compile cdb_make.c cdb.h readwrite.h seek.h error.h alloc.h uint32.h
+	./compile cdb_make.c
 
 cdbmake.a: \
-makelib cdbmake_pack.o cdbmake_hash.o cdbmake_add.o
-	./makelib cdbmake.a cdbmake_pack.o cdbmake_hash.o \
-	cdbmake_add.o
-
-cdbmake_add.o: \
-compile cdbmake_add.c cdbmake.h uint32.h
-	./compile cdbmake_add.c
-
-cdbmake_hash.o: \
-compile cdbmake_hash.c cdbmake.h uint32.h
-	./compile cdbmake_hash.c
-
-cdbmake_pack.o: \
-compile cdbmake_pack.c cdbmake.h uint32.h
-	./compile cdbmake_pack.c
-
-cdbmss.o: \
-compile cdbmss.c readwrite.h seek.h alloc.h cdbmss.h cdbmake.h \
-uint32.h substdio.h
-	./compile cdbmss.c
+makelib cdb_make.o cdb_hash.o
+	./makelib cdbmake.a cdb_make.o cdb_hash.o
 
 check: \
 it man ldap
@@ -1450,15 +1432,15 @@ compile qldap-profile.c qldap-profile.h qldap-debug.h
 	./compile $(INCTAI) $(DEBUG) qldap-profile.c 
 
 qmail-cdb: \
-load qmail-cdb.o cdbmss.o getln.a open.a cdbmake.a seek.a case.a \
+load qmail-cdb.o getln.a open.a cdbmake.a seek.a case.a \
 stralloc.a alloc.a strerr.a substdio.a error.a str.a auto_qmail.o
-	./load qmail-cdb cdbmss.o getln.a open.a cdbmake.a seek.a \
+	./load qmail-cdb getln.a open.a cdbmake.a seek.a \
 	case.a stralloc.a alloc.a strerr.a substdio.a error.a str.a \
 	auto_qmail.o
 
 qmail-cdb.o: \
-compile qmail-cdb.c auto_qmail.h case.h cdbmss.h exit.h getln.h \
-open.h readwrite.h stralloc.h strerr.h substdio.h
+compile qmail-cdb.c auto_qmail.h case.h cdb_make.h exit.h getln.h \
+open.h readwrite.h stralloc.h strerr.h substdio.h uint32.h
 	./compile qmail-cdb.c
 
 qmail-clean: \
@@ -1675,11 +1657,11 @@ sig.h str.h qldap-cluster.h getln.h seek.h dirmaker.h
 	qmail-lspawn.c
 
 qmail-newmrh: \
-load qmail-newmrh.o cdbmss.o getln.a open.a cdbmake.a seek.a case.a \
+load qmail-newmrh.o getln.a open.a cdbmake.a seek.a case.a \
 stralloc.a alloc.a strerr.a substdio.a error.a str.a auto_qmail.o
-	./load qmail-newmrh cdbmss.o getln.a open.a cdbmake.a \
-	seek.a case.a stralloc.a alloc.a strerr.a substdio.a \
-	error.a str.a auto_qmail.o 
+	./load qmail-newmrh getln.a open.a cdbmake.a seek.a \
+	case.a stralloc.a alloc.a strerr.a substdio.a error.a \
+	str.a auto_qmail.o 
 
 qmail-newmrh.0: \
 qmail-newmrh.8
@@ -1695,14 +1677,14 @@ qmail-newmrh.9 conf-break conf-spawn
 
 qmail-newmrh.o: \
 compile qmail-newmrh.c strerr.h stralloc.h gen_alloc.h substdio.h \
-getln.h exit.h readwrite.h open.h auto_qmail.h cdbmss.h cdbmake.h \
-uint32.h substdio.h
+getln.h exit.h readwrite.h open.h auto_qmail.h cdb_make.h uint32.h \
+substdio.h
 	./compile qmail-newmrh.c
 
 qmail-newu: \
-load qmail-newu.o cdbmss.o getln.a open.a seek.a cdbmake.a case.a \
+load qmail-newu.o getln.a open.a seek.a cdbmake.a case.a \
 stralloc.a alloc.a substdio.a error.a str.a auto_qmail.o
-	./load qmail-newu cdbmss.o getln.a open.a seek.a cdbmake.a \
+	./load qmail-newu getln.a open.a cdbmake.a seek.a \
 	case.a stralloc.a alloc.a substdio.a error.a str.a \
 	auto_qmail.o 
 
@@ -1720,8 +1702,8 @@ qmail-newu.9 conf-break conf-spawn
 
 qmail-newu.o: \
 compile qmail-newu.c stralloc.h gen_alloc.h subfd.h substdio.h \
-getln.h substdio.h cdbmss.h cdbmake.h uint32.h substdio.h exit.h \
-readwrite.h open.h error.h case.h auto_qmail.h
+getln.h substdio.h cdb_make.h uint32.h substdio.h exit.h readwrite.h \
+open.h error.h case.h auto_qmail.h
 	./compile qmail-newu.c
 
 qmail-pbsdbd.run: \
@@ -1857,13 +1839,13 @@ qmail-qmqpd.sh conf-qmail
 
 qmail-qmtpd: \
 load qmail-qmtpd.o rcpthosts.o control.o constmap.o received.o \
-date822fmt.o now.o qmail.o cdb.a fd.a wait.a datetime.a open.a \
-getln.a sig.a case.a env.a stralloc.a alloc.a substdio.a error.a \
-str.a fs.a auto_qmail.o
+date822fmt.o now.o qmail.o cdb.a fd.a seek.a wait.a datetime.a \
+open.a getln.a sig.a case.a env.a stralloc.a alloc.a substdio.a \
+error.a str.a fs.a auto_qmail.o
 	./load qmail-qmtpd rcpthosts.o control.o constmap.o \
-	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
-	datetime.a open.a getln.a sig.a case.a env.a stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a auto_qmail.o 
+	received.o date822fmt.o now.o qmail.o cdb.a fd.a seek.a \
+	wait.a datetime.a open.a getln.a sig.a case.a env.a \
+	stralloc.a alloc.a substdio.a error.a str.a fs.a auto_qmail.o 
 
 qmail-qmtpd.0: \
 qmail-qmtpd.8
@@ -2075,16 +2057,16 @@ auto_split.h
 qmail-smtpd: \
 load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o rbl.o \
 timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
-date822fmt.o now.o qmail.o execcheck.o cdb.a smtpcall.o coe.o fd.a wait.a \
-datetime.a getln.a open.a sig.a case.a env.a stralloc.a alloc.a \
-substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
+date822fmt.o now.o qmail.o execcheck.o cdb.a smtpcall.o coe.o fd.a \
+seek.a wait.a datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
+alloc.a substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
 	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o rbl.o \
 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
 	received.o date822fmt.o now.o qmail.o execcheck.o cdb.a \
-	smtpcall.o coe.o fd.a wait.a datetime.a getln.a open.a sig.a \
-	case.a env.a stralloc.a alloc.a substdio.a error.a fs.a \
-	auto_qmail.o dns.o str.a `cat dns.lib` `cat socket.lib` \
-	$(TLSLIBS) $(ZLIB)
+	smtpcall.o coe.o fd.a seek.a wait.a datetime.a getln.a \
+	open.a sig.a case.a env.a stralloc.a alloc.a substdio.a \
+	error.a fs.a auto_qmail.o dns.o str.a \
+	`cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
 
 qmail-smtpd.0: \
 qmail-smtpd.8
@@ -2159,10 +2141,10 @@ fmt.h ip.h lock.h error.h exit.h datetime.h now.h datetime.h
 qmail-todo: \
 load qmail-todo.o control.o constmap.o trigger.o fmtqfn.o now.o \
 readsubdir.o case.a ndelay.a getln.a sig.a cdb.a open.a stralloc.a \
-alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
+alloc.a substdio.a error.a str.a seek.a fs.a auto_qmail.o auto_split.o
 	./load qmail-todo control.o constmap.o trigger.o fmtqfn.o now.o \
 	readsubdir.o case.a ndelay.a getln.a sig.a cdb.a open.a stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
+	alloc.a substdio.a error.a str.a seek.a fs.a auto_qmail.o auto_split.o
 
 qmail-todo.o: \
 compile qmail-todo.c alloc.h auto_qmail.h byte.h cdb.h constmap.h control.h \
@@ -2391,9 +2373,8 @@ make-makelib.sh trycpp.c warn-auto.sh auto-str.c auto-int.c \
 auto-int8.c auto-gid.c auto-uid.c hier.c install.c instcheck.c \
 install-big.c alloc.3 alloc.h alloc.c alloc_re.c case.3 case.h \
 case_diffb.c case_diffs.c case_lowerb.c case_lowers.c case_starts.c \
-cdb.3 cdb.h cdb_hash.c cdb_seek.c cdb_unpack.c cdbmake.h \
-cdbmake_add.c cdbmake_hash.c cdbmake_pack.c cdbmss.h cdbmss.c coe.3 \
-coe.h coe.c fd.h fd_copy.3 fd_copy.c fd_move.3 fd_move.c fifo_make.3 \
+cdb.3 cdb.c cdb.h cdb_hash.c cdb_make.c cdb_make.h coe.3 coe.h \
+coe.c fd.h fd_copy.3 fd_copy.c fd_move.3 fd_move.c fifo_make.3 \
 fifo.h fifo.c trymkffo.c fork.h1 fork.h2 tryvfork.c now.3 now.h now.c \
 open.h open_append.c open_excl.c open_read.c open_trunc.c \
 open_write.c seek.h seek_cur.c seek_end.c seek_set.c seek_trunc.c \

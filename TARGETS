@@ -147,9 +147,8 @@ hasshsgr.h
 prot.o
 coe.o
 cdb_hash.o
-cdb_unpack.o
-cdb_seek.o
 cdb.a
+cdb.o
 auto-uid.o
 auto-uid
 auto-gid.o
@@ -221,10 +220,7 @@ qmail-upq
 qmail-showctl.o
 qmail-showctl
 qmail-newu.o
-cdbmss.o
-cdbmake_pack.o
-cdbmake_hash.o
-cdbmake_add.o
+cdb_make.o
 cdbmake.a
 qmail-newu
 qmail-pw2u.o

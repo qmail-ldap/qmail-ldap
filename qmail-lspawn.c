@@ -611,6 +611,7 @@ fail:
 
 stralloc lower = {0};
 stralloc wildchars = {0};
+struct cdb cdb;
 
 void nughde_get(local)
 char *local;
@@ -640,11 +641,12 @@ char *local;
    uint32 dlen;
    unsigned int i;
 
-   r = cdb_seek(fd,"",0,&dlen);
+   cdb_init(&cdb, fd);
+   r = cdb_seek(&cdb,"",0,&dlen);
    if (r != 1) _exit(QLX_CDB);
    if (!stralloc_ready(&wildchars,(unsigned int) dlen)) _exit(QLX_NOMEM);
    wildchars.len = dlen;
-   if (cdb_bread(fd,wildchars.s,wildchars.len) == -1) _exit(QLX_CDB);
+   if (cdb_bread(&cdb,wildchars.s,wildchars.len) == -1) _exit(QLX_CDB);
 
    i = lower.len;
    flagwild = 0;
@@ -654,16 +656,17 @@ char *local;
      /* i > 0 */
      if (!flagwild || (i == 1) || (byte_chr(wildchars.s,wildchars.len,lower.s[i - 1]) < wildchars.len))
       {
-       r = cdb_seek(fd,lower.s,i,&dlen);
+       r = cdb_seek(&cdb,lower.s,i,&dlen);
        if (r == -1) _exit(QLX_CDB);
        if (r == 1)
         {
          if (!stralloc_ready(&nughde,(unsigned int) dlen)) _exit(QLX_NOMEM);
          nughde.len = dlen;
-         if (cdb_bread(fd,nughde.s,nughde.len) == -1) _exit(QLX_CDB);
+         if (cdb_bread(&cdb,nughde.s,nughde.len) == -1) _exit(QLX_CDB);
          if (flagwild)
 	   if (!stralloc_cats(&nughde,local + i - 1)) _exit(QLX_NOMEM);
          if (!stralloc_0(&nughde)) _exit(QLX_NOMEM);
+	 cdb_free(&cdb);
          close(fd);
          return;
         }

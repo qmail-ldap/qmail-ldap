@@ -134,6 +134,7 @@ void fnmake_chanaddr(unsigned long id, int c)
 
 stralloc localscdb = {0};
 stralloc rwline = {0};
+struct cdb cdb;
 
 /* 1 if by land, 2 if by sea, 0 if out of memory. not allowed to barf. */
 /* may trash recip. must set up rwline, between a T and a \0. */
@@ -173,7 +174,9 @@ int rewrite(char *recip)
     case_lowerb(lowaddr.s, lowaddr.len);
     fd = open_read(localscdb.s);
     if (fd == -1) return 0;
-    r = cdb_seek(fd, lowaddr.s,lowaddr.len, &dlen);
+    cdb_init(&cdb, fd);
+    r = cdb_seek(&cdb, lowaddr.s,lowaddr.len, &dlen);
+    cdb_free(&cdb);
     close(fd);
     if (r == -1) return 0;
     if (r == 1) {

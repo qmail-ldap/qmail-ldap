@@ -99,3 +99,11 @@ ERANGE;
 #else
 -14;
 #endif
+
+int error_proto =
+#ifdef EPROTO
+EPROTO;
+#else
+-15;
+#endif
+

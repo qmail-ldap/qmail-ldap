@@ -21,6 +21,7 @@ int i;
   X(error_perm,"permission denied")
   X(error_acces,"access denied")
   X(error_range,"numerical result out of range")
+  X(error_proto,"protocol error")
 #ifdef ESRCH
   X(ESRCH,"no such process")
 #endif
@@ -260,9 +261,6 @@ int i;
 #endif
 #ifdef ECOMM
   X(ECOMM,"communication error")
-#endif
-#ifdef EPROTO
-  X(EPROTO,"protocol error")
 #endif
 #ifdef EMULTIHOP
   X(EMULTIHOP,"multihop attempted")
