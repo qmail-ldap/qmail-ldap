@@ -379,7 +379,7 @@ MD4DataBase64 (data, len, buf, buflen)
     size_t buflen;
 {
     MD4_CTX ctx;
-    char buffer[16];
+    unsigned char buffer[16];
 
     MD4Init(&ctx);
     MD4Update(&ctx, data, len);

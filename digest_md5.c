@@ -406,7 +406,7 @@ MD5DataBase64 (data, len, buf, buflen)
     size_t buflen;
 {
     MD5_CTX ctx;
-    char buffer[16];
+    unsigned char buffer[16];
 
     MD5Init(&ctx);
     MD5Update(&ctx, data, len);

@@ -62,7 +62,7 @@ substdio ssout;
 char buffer[LEN];
 
 void output(char *fmt, ...);
-static int cmp_passwd(char *clear, char *encrypted);
+static int cmp_passwd(unsigned char *clear, char *encrypted);
 static void local_lookup(char *username, char *passwd);
 
 void usage() 
@@ -259,7 +259,7 @@ int main(int argc, char **argv)
 	}
 	
 	if ( mode == uid && argv[3] && !rebind ) {
-		ret = cmp_passwd(argv[3], extra[8].vals[0] );
+		ret = cmp_passwd((unsigned char *) argv[3], extra[8].vals[0] );
 		output( "ldap_lookup:\tpassword compare was %s\n", 
 				ret==0?"successful":"not successful");
 	}
@@ -414,7 +414,7 @@ static void local_lookup(char *username, char *passwd)
 				qldap_err_str(qldap_errno));
 	}
 	output( "\t\tcrypted passwd: %s\n", spw->sp_pwdp);
-	ret = cmp_passwd(passwd, spw->sp_pwdp);
+	ret = cmp_passwd((unsigned char *) passwd, spw->sp_pwdp);
 #else /* no PW_SHADOW */
 #ifdef AIX
 	spw = getuserpw(username);
@@ -425,10 +425,10 @@ static void local_lookup(char *username, char *passwd)
 				qldap_err_str(qldap_errno));
 	}
 	output( "\t\tcrypted passwd: %s\n", spw->upw_passwd);
-	ret = cmp_passwd(passwd, spw->upw_passwd);
+	ret = cmp_passwd((unsigned char *) passwd, spw->upw_passwd);
 #else /* no AIX */
 	output( "\t\tcrypted passwd: %s\n", pw->pw_passwd);
-	ret = cmp_passwd(passwd, pw->pw_passwd);
+	ret = cmp_passwd((unsigned char *) passwd, pw->pw_passwd);
 #endif /* END AIX */
 #endif /* END PW_SHADOW */
 	output( "local_lookup:\tpassword compare was %s\n", 
@@ -436,7 +436,7 @@ static void local_lookup(char *username, char *passwd)
 	_exit(0);
 }
 
-static int cmp_passwd(char *clear, char *encrypted)
+static int cmp_passwd(unsigned char *clear, char *encrypted)
 {
 #define HASH_LEN 100	/* XXX is this enough, I think yes */
 						/* What do you think ? */

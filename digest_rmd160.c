@@ -502,7 +502,7 @@ RMD160DataBase64 (data, len, buf, buflen)
     size_t buflen;
 {
     RMD160_CTX ctx;
-    char buffer[20];
+    unsigned char buffer[20];
 
     RMD160Init(&ctx);
     RMD160Update(&ctx, data, len);

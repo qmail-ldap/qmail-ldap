@@ -274,7 +274,7 @@ SHA1DataBase64 (data, len, buf, buflen)
     size_t buflen;
 {
     SHA1_CTX ctx;
-    char buffer[20];
+    unsigned char buffer[20];
 
     SHA1Init(&ctx);
     SHA1Update(&ctx, data, len);
