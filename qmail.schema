@@ -246,5 +246,5 @@ objectclass ( 1.3.6.1.4.1.7914.1.4.2.1 NAME 'qldapAdmin'
 	MUST ( qlaDnManager $ qlaDomainList $ qlaMailMStorePrefix $
 	       qlaMailHostList )
 	MAY ( qlaUidPrefix $ qlaQmailUid $ qlaQmailGid $ qlaMailQuotaSize $
-	      qlaMailQuotaCount $ qlaMailSizeMax )
+	      qlaMailQuotaCount $ qlaMailSizeMax ) )
 
