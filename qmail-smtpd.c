@@ -330,8 +330,8 @@ void setup()
   if (returnmxcheck) logstring(2,"returnmxcheck ");
   if (blockrelayprobe) logstring(2,"blockrelayprobe ");
   if (nobounce) logstring(2,"nobounce ");
-  if env_get("RBL") logstring(2,"rblcheck ");
-  if env_get("RBLONLYHEADER") logstring(2,"rblonlyheader ");
+  if (env_get("RBL")) logstring(2,"rblcheck ");
+  if (env_get("RBLONLYHEADER")) logstring(2,"rblonlyheader ");
 #ifdef SMTPEXECCHECK
   if (execcheck_on()) logstring(2, "rejectexecutables ");
 #endif
