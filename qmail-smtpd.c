@@ -253,9 +253,6 @@ struct constmap maprmf;
 int brtok = 0;
 stralloc brt = {0};
 struct constmap mapbadrcptto;
-int localsok = 0;
-stralloc locals = {0};
-struct constmap maplocals;
 int gmaok = 0;
 stralloc gma = {0};
 struct constmap mapgma;
@@ -346,11 +343,6 @@ void setup()
   if (brtok)
     if (!constmap_init(&mapbadrcptto,brt.s,brt.len,0)) die_nomem();
 
-  localsok = control_readfile(&locals,"control/locals",1);
-  if (localsok == -1) die_control();
-  if (localsok)
-    if (!constmap_init(&maplocals,locals.s,locals.len,0)) die_nomem();
-
   gmaok = control_readfile(&gma,"control/goodmailaddr",0);
   if (gmaok == -1) die_control();
   if (gmaok)
@@ -367,8 +359,7 @@ void setup()
   if (env_get("SANITYCHECK")) sanitycheck = 1;
   if (env_get("RETURNMXCHECK")) returnmxcheck = 1;
   if (env_get("BLOCKRELAYPROBE")) blockrelayprobe = 1;
-  if (env_get("SENDERCHECK"))
-  {
+  if (env_get("SENDERCHECK")) {
     sendercheck = 1;
     if (!case_diffs("LOOSE",env_get("SENDERCHECK"))) sendercheck = 2;
     if (!case_diffs("STRICT",env_get("SENDERCHECK"))) sendercheck = 3;
@@ -656,13 +647,6 @@ int rmfcheck(void)
 int addrallowed(void)
 {
   int r;
-  int j;
-  if (localsok)
-  {
-    j = byte_rchr(addr.s,addr.len,'@');
-    if (j < addr.len)
-      if (constmap(&maplocals,addr.s + j + 1,addr.len - j - 2)) return 1;
-  }
   r = rcpthosts(addr.s,str_len(addr.s));
   if (r == -1) die_control();
   return r;
@@ -676,17 +660,6 @@ int rcptdenied(void)
   j = byte_rchr(addr.s,addr.len,'@');
   if (j < addr.len)
     if (constmap(&mapbadrcptto, addr.s + j, addr.len - j - 1))
-      return 1;
-  return 0;
-}
-
-int addrlocals(void)
-{
-  int j;
-  if (!localsok) return 0;
-  j = byte_rchr(addr.s,addr.len,'@');
-  if (j < addr.len)
-    if (constmap(&maplocals, addr.s + j + 1, addr.len - j - 2))
       return 1;
   return 0;
 }
@@ -968,7 +941,7 @@ void smtp_mail(arg) char *arg;
   /* check if sender exists in ldap */
   if (sendercheck && !bounceflag) {
     if (!goodmailaddr()) { /* good mail addrs go through anyway */
-      if (addrlocals()) {
+      if (addrlocals(addr.s, addr.len)) {
 	char *s;
         switch (ldaplookup(addr.s, &s)) {
           case 1: /* valid */
@@ -1094,7 +1067,7 @@ void smtp_rcpt(arg) char *arg; {
   if (rcptcheck) {
     if (!goodmailaddr()) {
       logline(3,"recipient verify, recipient not in goodmailaddr");
-      if (addrlocals()) {
+      if (addrlocals(addr.s, addr.len)) {
 	char *s;
 	logline(3,"recipient verify, recipient is local");
         switch (ldaplookup(addr.s, &s)) {

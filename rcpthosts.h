@@ -3,5 +3,6 @@
 
 extern int rcpthosts_init(void);
 extern int rcpthosts(char *, int);
+extern int addrlocals(char *, int);
 
 #endif
