@@ -4,7 +4,7 @@ exec 2>&1
 # qmail-send and friends
 #
 QMAIL="%QMAIL%"
-ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty 2> /dev/null)
+ALIASEMPTY="`head -1 $QMAIL/control/aliasempty 2> /dev/null`"
 ALIASEMPTY=${ALIASEMPTY:="./Maildir/"}
 
 PATH="$QMAIL/bin:$PATH"

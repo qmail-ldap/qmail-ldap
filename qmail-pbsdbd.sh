@@ -8,12 +8,14 @@ QMAIL="%QMAIL%"
 PATH="$QMAIL/bin:$PATH"
 
 # source the environemt in ./env
-eval `env - envdir ./env awk '\
-        BEGIN { for (i in ENVIRON) printf "%s=\"%s\"\n", i, ENVIRON[i] }'`
+eval `env - PATH=$PATH envdir ./env awk '\
+	BEGIN { for (i in ENVIRON) \
+		printf "export %s=\"%s\"\n", i, ENVIRON[i] }'`
 
 # enforce some sane defaults
 USER=${USER:="qmaild"}
 
-exec envdir ./env setuidgid $USER \
+exec \
+	setuidgid $USER \
 	$QMAIL/bin/pbsdbd
 

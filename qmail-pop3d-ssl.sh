@@ -4,20 +4,21 @@ exec 2>&1
 # POP3 service 
 #
 QMAIL="%QMAIL%"
-ME=$(head -1 $QMAIL/control/me)
-ALIASEMPTY=$(head -1 $QMAIL/control/aliasempty 2> /dev/null )
+ME="`head -1 $QMAIL/control/me`"
+ALIASEMPTY="`head -1 $QMAIL/control/aliasempty 2> /dev/null`"
 ALIASEMPTY=${ALIASEMPTY:="./Maildir/"}
 
 PATH="$QMAIL/bin:$PATH"
 
 # source the environemt in ./env
-eval `env - envdir ./env awk '\
-        BEGIN { for (i in ENVIRON) printf "%s=\"%s\"\n", i, ENVIRON[i] }'`
+eval `env - PATH=$PATH envdir ./env awk '\
+	BEGIN { for (i in ENVIRON) \
+		printf "export %s=\"%s\"\n", i, ENVIRON[i] }'`
 
 # enforce some sane defaults
 TLSCERT=${TLSCERT:="/var/qmail/control/cert.pem"}
 
-exec envdir ./env \
+exec \
 	tcpserver -v -HRl $ME -x$QMAIL/control/qmail-pop3d.cdb \
 	    ${CONCURRENCY+"-c$CONCURRENCY"} ${BACKLOG+"-b$BACKLOG"} \
 	    -s ${TLSCERT+"-n$TLSCERT"} 0 pop3s \
