@@ -1931,15 +1931,15 @@ wait.h lock.h
 
 qmail-remote: \
 load qmail-remote.o control.o constmap.o timeoutread.o timeoutwrite.o \
-timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o ipme.o quote.o \
+timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o ipme.o quote.o base64.o \
 ndelay.a case.a sig.a open.a lock.a seek.a getln.a stralloc.a alloc.a \
-substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
+strerr.a substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
 	./load qmail-remote control.o constmap.o timeoutread.o \
 	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
-	ipalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
-	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
-	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib` \
-	$(TLSLIBS) $(ZLIB)
+	ipalloc.o ipme.o quote.o base64.o ndelay.a case.a sig.a \
+	open.a lock.a seek.a getln.a stralloc.a alloc.a strerr.a \
+	substdio.a error.a str.a fs.a auto_qmail.o \
+	`cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
 
 qmail-remote.0: \
 qmail-remote.8

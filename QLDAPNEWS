@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/03/05 19:34:48 $ ($Revision: 1.183 $)
+RELEASE: $Date: 2004/03/15 15:26:15 $ ($Revision: 1.184 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,13 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Add SMTP AUTH support to qmail-remote. A user can be specified via
+ ~control/smtproutes. To authenticate all mails to inside.af.mil with
+ user joe-user something like this can be used.
+   inside.af.mil:firewall.af.mil joe-user eat@joe's
+
+ Don't let qmail-group or qmail-secretary inject mails with no recipients.
 
  Print remote IP address in error messages for RBL rejects and denied
  relaying attempts to make debugging based on the bounce messages far
