@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/07/20 09:30:02 $ ($Revision: 1.14 $)
+RELEASE: $Date: 2000/08/24 07:07:23 $ ($Revision: 1.15 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -18,6 +18,10 @@ TODO:
 
 
 NEWS for current stuff:
+
+ fixed a bug introduced with the bitmask support for debug outputs.
+
+ cleanup at different location to respect the signedness of variables
 
  added bitmask support for debug outputs, so DEBUGLEVEL=3 will print error and
  warnings but DEBUGLEVEL=2 only warnings. Note: init_debug's 2nd argument has

@@ -15,7 +15,7 @@
 char debugbuffer[DEBUGLEN];
 char num[FMT_ULONG];
 int  debfd;
-unsigned long  dlevel;
+unsigned int dlevel = 0 ;
 substdio ssdeb;
 
 static const char nullString[] = "(null pointer)";
@@ -62,7 +62,7 @@ void debug(int level, char *fmt, ...)
 	unsigned char c;
 	stralloc *sa;
 
-	if ( level & dlevel ) return;
+	if ( ! ( dlevel & (unsigned int) level ) ) return;
 	va_start(args,fmt);
 
 	start = fmt;

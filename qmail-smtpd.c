@@ -463,6 +463,9 @@ void smtp_ehlo(arg) char *arg;
   else {
 #endif
   out("\r\n250-PIPELINING\r\n");
+#ifdef TLS
+  out("250-STARTTLS\r\n");
+#endif
   out("250-SIZE "); out(smtpsize); out("\r\n");
   out("250 8BITMIME\r\n");
 #ifdef TLS
