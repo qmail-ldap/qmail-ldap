@@ -602,6 +602,7 @@ char *recip;
 }
 
 stralloc bouncetext = {0};
+int bouncemaxbytes = 0;
 
 void addbounce(id,recip,report)
 unsigned long id;
@@ -750,9 +751,20 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
      qmail_fail(&qqt);
    else
     {
+     int bytestogo;
+     int bytestoget;
+     bytestogo = bouncemaxbytes;
+     bytestoget = (bytestogo < sizeof(buf) && bytestogo != 0) ? bytestogo : sizeof(buf);
      substdio_fdbuf(&ssread,read,fd,inbuf,sizeof(inbuf));
-     while ((r = substdio_get(&ssread,buf,sizeof(buf))) > 0)
+     while ((r = substdio_get(&ssread,buf,bytestoget)) > 0) {
        qmail_put(&qqt,buf,r);
+       bytestogo -= r;
+       if ( bytestogo <= 0 ) {
+	 qmail_puts(&qqt,"\n\n--- End of message stripped.\n");
+	 break;
+       }
+       bytestoget = (bytestogo < sizeof(buf) && bytestogo != 0) ? bytestogo : sizeof(buf);
+     }
      close(fd);
      if (r == -1)
        qmail_fail(&qqt);
@@ -1601,6 +1613,7 @@ int getcontrols() { if (control_init() == -1) return 0;
  if (!stralloc_cats(&doublebounceto,"@")) return 0;
  if (!stralloc_cat(&doublebounceto,&doublebouncehost)) return 0;
  if (!stralloc_0(&doublebounceto)) return 0;
+ if (control_readint(&bouncemaxbytes,"control/bouncemaxbytes") == -1) return 0;
  if (control_readfile(&custombouncetext,"control/custombouncetext",0) == -1) return 0;
  byte_repl(custombouncetext.s, custombouncetext.len, '\0', '\n');
  if (!stralloc_0(&custombouncetext) ) return 0;
