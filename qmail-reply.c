@@ -71,7 +71,7 @@ static int wild_matchb(register char* pattern, register unsigned int pat_len, \
    register unsigned int i;
    register unsigned int t;
    
-   t = len-pat_len;
+   t = len-pat_len+1;
    for(i=0; i < t; i++) {
       if (!str_diffn( pattern, string+i, pat_len) )
          return 0;
@@ -153,13 +153,13 @@ void check_header_and_get_subject(stralloc *subject)
       if ( !str_diffn("mailing-list:", line.s, len+1) ) exit(0); /* don't send to mailing-lists */
       if ( !str_diffn("precedence:", line.s, len+1) ) { /* exit if bulk, junk, list */
 		  
-         if ( wild_matchb("list", 4, line.s+len+1, line.len-len-1) ) {
+         if ( !wild_matchb("list", 4, line.s+len+1, line.len-len-1) ) {
             exit(0);
          }
-         if ( wild_matchb("bulk", 4, line.s+len+1, line.len-len-1) ) {
+         if ( !wild_matchb("bulk", 4, line.s+len+1, line.len-len-1) ) {
             exit(0);
          }
-         if ( wild_matchb("junk", 4, line.s+len+1, line.len-len-1) ) {
+         if ( !wild_matchb("junk", 4, line.s+len+1, line.len-len-1) ) {
             exit(0);
          }
       }   
