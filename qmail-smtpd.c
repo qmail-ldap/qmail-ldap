@@ -2,6 +2,7 @@
 #include "readwrite.h"
 #include "stralloc.h"
 #include "substdio.h"
+#include "subfd.h"
 #include "alloc.h"
 #include "auto_qmail.h"
 #include "control.h"
@@ -43,21 +44,61 @@ substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 void flush() { substdio_flush(&ssout); }
 void out(s) char *s; { substdio_puts(&ssout,s); }
 
-void die_read() { _exit(1); }
-void die_alarm() { out("451 timeout (#4.4.2)\r\n"); flush(); _exit(1); }
-void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); flush(); _exit(1); }
-void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
-void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1); }
-void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
+/* level 0 = no logging
+         1 = fatal errors
+         2 = connection setup and warnings
+         3 = verbose */
+
+int loglevel = 0;
+
+void logpid(level) int level;
+{
+  char buf[FMT_ULONG];
+  if (level > loglevel) return;
+  substdio_puts(subfderr,"qmail-smtpd ");
+  buf[fmt_ulong(buf,(unsigned long) getpid())] = 0;
+  substdio_puts(subfderr,buf);
+  substdio_puts(subfderr,": ");
+}
+
+void logline(level,string) int level; char *string;
+{
+  if (level > loglevel) return;
+  logpid();
+  substdio_puts(subfderr,string);
+  substdio_puts(subfderr,"\n");
+  substdio_flush(subfderr);
+}
+
+void logstring(level,string) int level; char *string;
+{
+  if (level > loglevel) return;
+  substdio_puts(subfderr,string);
+  substdio_puts(subfderr," ");
+}
+
+void logflush(level) int level;
+{
+  if (level > loglevel) return;
+  substdio_puts(subfderr,"\n");
+  substdio_flush(subfderr);
+}
+
+void die_read() { logline(1,"read error, connection closed"); _exit(1); }
+void die_alarm() { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); _exit(1); }
+void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); logline(1,"out of memory, closing connection"); flush(); _exit(1); }
+void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); logline(1,"unable to real controls, closing connection"); flush(); _exit(1); }
+void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); logline(1,"unable to figure out my IP address, closing connection"); flush(); _exit(1); }
+void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
 
 void err_bmf() { out("553 syntax error, please forward to your postmaster (#5.7.1)\r\n"); }
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
-void err_unimpl() { out("502 unimplemented (#5.5.1)\r\n"); }
+void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command ="); logstring(3,arg); logflush(3); }
 void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
-void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); }
-void err_wantrcpt() { out("503 RCPT first (#5.5.1)\r\n"); }
-void err_noop() { out("250 ok\r\n"); }
-void err_vrfy() { out("252 send some mail, i'll try my best\r\n"); }
+void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
+void err_wantrcpt() { out("503 RCPT first (#5.5.1)\r\n"); logline(3,"'rcpt to' first"); }
+void err_noop() { out("250 ok\r\n"); logline(3,"'noop'"); }
+void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n"); logpid(3); logstring(3,"vrfy for ="); logstring(3,arg); logflush(3); }
 void err_qqt() { out("451 qqt failure (#4.3.0)\r\n"); }
 void err_dns() { out("451 DNS temporary failure (#4.3.0)\r\n"); }
 void err_spam() { out("553 sorry, mail from your location is not accepted here (#5.7.1)\r\n"); }
@@ -78,10 +119,13 @@ void smtp_help()
 {
   out("214 qmail home page: http://pobox.com/~djb/qmail.html\r\n");
   out("214 qmail-ldap patch home page: http://www.nrg4u.com\r\n");
+  logline(3,"help requested");
 }
 void smtp_quit()
 {
-  smtp_greet("221 "); out("\r\n"); flush(); _exit(0);
+  smtp_greet("221 "); out("\r\n");
+  logline(3,"quit, closing connection");
+  flush(); _exit(0);
 }
 
 char *remoteip;
@@ -111,14 +155,18 @@ int tarpitdelay = 5;
 
 void setup()
 {
-  char *x;
-  unsigned long u;
- 
+  char *x, *l;
+  unsigned long u, v;
+
+  l = env_get("LOGLEVEL");
+  if (l) { scan_ulong(l,&v); loglevel = v; };
+
   if (control_init() == -1) die_control();
   if (control_rldef(&greeting,"control/smtpgreeting",1,(char *) 0) != 1)
     die_control();
   liphostok = control_rldef(&liphost,"control/localiphost",1,(char *) 0);
   if (liphostok == -1) die_control();
+
   if (control_readint(&timeout,"control/timeoutsmtpd") == -1) die_control();
   if (timeout <= 0) timeout = 1;
 
@@ -150,14 +198,23 @@ void setup()
  
   remoteip = env_get("TCPREMOTEIP");
   if (!remoteip) remoteip = "unknown";
+  logpid(2); logstring(2,"connection from"); logstring(2,remoteip);
+  remotehost = env_get("TCPREMOTEHOST");
+  if (!remotehost) remotehost = "unknown";
+  logstring(2,"("); logstring(2,remotehost);
+  remoteinfo = env_get("TCPREMOTEINFO");
+  if (remoteinfo) { logstring(2,","); logstring(2,remoteinfo); }
+  logstring(2,") to");
+
   local = env_get("TCPLOCALHOST");
   if (!local) local = env_get("TCPLOCALIP");
   if (!local) local = "unknown";
-  remotehost = env_get("TCPREMOTEHOST");
-  if (!remotehost) remotehost = "unknown";
-  remoteinfo = env_get("TCPREMOTEINFO");
+  logstring(2,local);
+
   relayclient = env_get("RELAYCLIENT");
+  if (relayclient) { logstring(2,", relayclient set"); }
   denymail = env_get("DENYMAIL");
+  logflush(2);
   dohelo(remotehost);
 }
 
@@ -224,11 +281,6 @@ char *arg;
   return 1;
 }
 
-#define log_brt(s,r)
-#define log_bmf(s,r)
-#define log_deny(m,f,t)
-#define log_helo()
-
 int badmxcheck(dom) char *dom;
 {
   ipalloc checkip = {0};
@@ -281,10 +333,10 @@ int addrallowed()
 {
   int r,j;
   j = byte_rchr(addr.s,addr.len,'@');
- if (brtok)
+  if (brtok)
     if (constmap(&mapbadrcptto, addr.s, addr.len - 1) ||
         constmap(&mapbadrcptto, addr.s + j, addr.len - j - 1))
-       {log_brt(mailfrom.s,addr.s); return 2;}
+       { logpid(2); logstring(2,addr.s); logflush(2); return 2; }
   r = rcpthosts(addr.s,str_len(addr.s));
   if (r == -1) die_control();
   return r;
@@ -295,95 +347,115 @@ void smtp_helo(arg) char *arg;
 {
   smtp_greet("250 "); out("\r\n");
   seenmail = 0; dohelo(arg);
+  logpid(3); logstring(3,"remote helo ="); logstring(3,arg); logflush(3);
 }
 void smtp_ehlo(arg) char *arg;
 {
   smtp_greet("250-"); out("\r\n250-PIPELINING\r\n250 8BITMIME\r\n");
   seenmail = 0; dohelo(arg);
+  logpid(3); logstring(3,"remote ehlo ="); logstring(3,arg); logflush(3);
 }
 void smtp_rset()
 {
   seenmail = 0;
   out("250 flushed\r\n");
+  logline(3,"remote rset");
 }
+
 void smtp_mail(arg) char *arg;
 {
-int i,j; char *why;
-  if (!addrparse(arg)) { err_syntax(); return; }
+  int i,j;
+  char *why;
+  logpid(3); logstring(3,"remote sent 'mail from' ="); logstring(3,arg); logflush(3);
+  if (!addrparse(arg))
+  {
+    err_syntax(); 
+    logpid(2); logstring(2,"RFC821 syntax error in mail from ="); logstring(2,arg); logflush(2);
+    return;
+  }
+  logpid(3); logstring(3,"mail from ="); logstring(3,addr.s); logflush(3);
   flagbarf = bmfcheck();
- if (flagbarf) { log_bmf(addr.s,""); err_bmf(); return; }
-/************
+  if (flagbarf)
+  {
+    err_bmf();
+    logpid(2); logstring(2,"bad mail from ="); logstring(2,arg); logflush(2);
+    return;
+  }
+
+  /************
    DENYMAIL is set for this session from this client, 
              so heavy checking of mailfrom
    SPAM     -> refuse all mail
    NOBOUNCE -> refuse null mailfrom
    DNSCHECK -> validate Mailfrom domain
-************/
+  ************/
 
- if (denymail)
- {
-    why = denymail;
-    
+  if (denymail)
+  {
     if (!str_diff("SPAM", denymail)) {
        flagbarf=1;
        spamflag=1;
     }
     else
       if (!addr.s[0] || !str_diff("#@[]", addr.s)) /*mjr*/
-     /* if (!addr.s[0]) */
+      /* if (!addr.s[0]) */
       {  
-         if (!str_diff("NOBOUNCE", denymail)) 
+         if (!str_diff("NOBOUNCE", denymail))
+            why = "refused to accept RFC821 bounce from remote";
             flagbarf=1;
       }
       else
       {
         /*why = "Invalid.Mailfrom";*/
-        why = "MAIL FROM: syntax";
-        if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len)
-           flagbarf=1;       /* no '@' in from */
+        if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len) {
+           why = "refused 'mail from' without @";
+           flagbarf=1; }      /* no '@' in from */
         else
         {
           /* money!@domain.TLD */
-          if (addr.s[i-1] == '!') 
-             flagbarf=1;
+          if (addr.s[i-1] == '!') {
+             why = "refused 'mail from' with !@";
+             flagbarf=1; }
              
           /* check syntax, visual */
-          if ((j = byte_rchr(addr.s+i, addr.len-i, '.')) >= addr.len-i)
-             flagbarf=1;  /* curious no '.' in domain.TLD */
+          if ((j = byte_rchr(addr.s+i, addr.len-i, '.')) >= addr.len-i) {
+             why = "refused 'mail from' without . in domain";
+             flagbarf=1; } /* curious no '.' in domain.TLD */
          
           j = addr.len-(i+1+j+1);
-          if (j < 2 || j > 3)
-             flagbarf=1;  /* root domain, not a country (2), nor TLD (3)*/
+          if (j < 2 || j > 3) {
+             why = "refused 'mail from' without country or top level domain";
+             flagbarf=1; } /* root domain, not a country (2), nor TLD (3)*/
 
          if (!flagbarf)
           if (!str_diff("DNSCHECK", denymail)) 
           {
-           /* check syntax, via DNS */
-             why = "MAIL FROM: DNS";
+             /* check syntax, via DNS */
              switch (badmxcheck(&addr.s[i+1]))
              {
                case 0:                 break; /*valid*/
                case DNS_SOFT:  flagbarf=2; /*fail tmp*/
-                                why = "(temporary) MAIL FROM: DNS";
-                                break;
+                               why = "refused 'mail from' because return MX lookup failed temporarly";
+                               break;
                case DNS_HARD:  flagbarf=1; 
-                                       break;
+                               why = "refused 'mail from' because return MX does not exist";
+                               break;
              }
           }
         }
       }
     if (flagbarf)    
     {
-      log_deny(why, addr.s, ""); 
+      logpid(2); logstring(2,why); logstring(2,"for ="); logstring(2,addr.s); logflush(2);
       if (2==flagbarf)
-         err_dns(); 
+        err_dns(); 
       else if (1==spamflag)
         err_spam();
       else
-         err_bmf();
+        err_bmf();
       return;
     }
- }/* denymail */
+  } /* denymail */
   seenmail = 1;
   if (!stralloc_copys(&rcptto,"")) die_nomem();
   if (!stralloc_copys(&mailfrom,addr.s)) die_nomem();
@@ -391,27 +463,44 @@ int i,j; char *why;
   rcptcount = 0;
   out("250 ok\r\n");
 }
+
 void smtp_rcpt(arg) char *arg; {
   if (!seenmail) { err_wantmail(); return; }
-  if (!addrparse(arg)) { err_syntax(); return; }
+  logpid(3); logstring(3,"remote sent 'rcpt to' ="); logstring(3,arg); logflush(3);
+  if (!addrparse(arg))
+  {
+    err_syntax();
+    logpid(2); logstring(2,"syntax error in 'rcpt to' ="); logstring(2,arg); logflush(2);
+    return;
+  }
+  logpid(3); logstring(3,"rcpt to ="); logstring(3,addr.s); logflush(3);
   if (relayclient) {
     --addr.len;
     if (!stralloc_cats(&addr,relayclient)) die_nomem();
     if (!stralloc_0(&addr)) die_nomem();
   }
   else {
-    if (addrallowed()==2) { err_badrcptto(); return; }
+    if (addrallowed()==2)
+    {
+      err_badrcptto();
+      logpid(2); logstring(2,"'rcpt to' not allowed ="); logstring(2,arg); logflush(2);
+      return;
+    }
     if (!addrallowed()) 
     { 
        err_nogateway(); 
-//       log_ngw (mailfrom.s, addr.s);
+       logpid(2); logstring(2,"no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
        return; 
     }
   }
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
   if (!stralloc_0(&rcptto)) die_nomem();
-  if (tarpitcount && ++rcptcount >= tarpitcount) while (sleep(tarpitdelay)); 
+  if (tarpitcount && ++rcptcount >= tarpitcount)
+  {
+    logline(2,"tarpitting");
+    while (sleep(tarpitdelay)); 
+  }
   out("250 ok\r\n");
 }
 
@@ -510,39 +599,50 @@ void acceptmessage(qp) unsigned long qp;
   out("250 ok ");
   accept_buf[fmt_ulong(accept_buf,(unsigned long) when)] = 0;
   out(accept_buf);
+  logpid(2); logstring(2,"message queued ="); logstring(2,accept_buf);
   out(" qp ");
   accept_buf[fmt_ulong(accept_buf,qp)] = 0;
   out(accept_buf);
   out("\r\n");
+  logstring(2,"qp"); logstring(2,accept_buf); logflush(2);
 }
 
 void smtp_data() {
   int hops;
   unsigned long qp;
   char *qqx;
+  char buf[FMT_ULONG];
  
+  logline(3,"smtp data");
   if (!seenmail) { err_wantmail(); return; }
   if (!rcptto.len) { err_wantrcpt(); return; }
   seenmail = 0;
   if (databytes) bytestooverflow = databytes + 1;
-  if (qmail_open(&qqt) == -1) { err_qqt(); return; }
+  if (qmail_open(&qqt) == -1) { err_qqt(); logline(1,"failed to start qmail-queue"); return; }
   qp = qmail_qp(&qqt);
-  out("354 go ahead\r\n");
+  out("354 go ahead\r\n"); logline(3,"go ahead");
  
   received(&qqt,"SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
-  if (fakehelo) log_helo();
   blast(&hops);
   hops = (hops >= MAXHOPS);
-  if (hops) qmail_fail(&qqt);
+  if (hops) { logline(2,"hop count exceeded"); qmail_fail(&qqt); }
   qmail_from(&qqt,mailfrom.s);
   qmail_put(&qqt,rcptto.s,rcptto.len);
  
   qqx = qmail_close(&qqt);
   if (!*qqx) { acceptmessage(qp); return; }
   if (hops) { out("554 too many hops, this message is looping (#5.4.6)\r\n"); return; }
-  if (databytes) if (!bytestooverflow) { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); return; }
-  if (*qqx == 'D') out("554 "); else out("451 ");
+  if (databytes) if (!bytestooverflow)
+  {
+    out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n");
+    logline(2,"datasize limit exceeded");
+    return;
+  }
+  logpid(1);
+  if (*qqx == 'D') { out("554 "); logstring(1,"message not accepted because ="); }
+    else { out("451 "); logstring(1,"message not accepted because ="); }
   out(qqx + 1);
+  logstring(1,qqx+1); logflush(1);
   out("\r\n");
 }
 
