@@ -863,6 +863,7 @@ void smtp_rcpt(arg) char *arg; {
   {
     err_badbounce();
     logline(1,"bounce message denied because it has more than one recipient");
+    return;
   }
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
