@@ -56,6 +56,11 @@ NEWS:
 
  WARNING: {SHA1} changed to {SHA} according to the standard
 
+ Integrated Lindsay Haisley update to Rask Lambertsen's excellent
+ antispam patch for qmail v1.01, based on Lionel Widdifield's patch.
+ Please read ANTISPAM for more information.
+
+
 INSTALL:
 
 1. Make sure you have fairly good knowledge of qmail and LDAP
@@ -240,6 +245,16 @@ CONFIG FILES:
  Example: 10
  Note: You can override tarpitdelay by setting TARPITDELAY in qmail-smtpd's
  environment (with tcpserver).
+
+~control/badrcptto
+
+ This file lists recipient addresses that should be rejected.
+ Default: none
+ Example: user@domain or @domain
+ Note: This can be useful if a spammer sends lots of messages to a
+ nonexistant user from an invalid address, as otherwise, postmaster
+ will get lots of double bounces.
+
 
 LDAP PARAMETER FIELDS:
 

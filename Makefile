@@ -6,7 +6,7 @@ LDAPON=-DQLDAP
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
 # and change the location of the include files here
-LDAPINCLUDE=-I/usr/local/inlcude
+LDAPINCLUDES=-I/usr/local/include
 # for example on my Linux box I use:
 #LDAPLIBS=-L/opt/ldap/lib -lpthread -lldapssl30
 # if you need a special include-directory for ldap headers enable this
@@ -1659,7 +1659,7 @@ fs.a auto_qmail.o socket.lib
 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
 	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a auto_qmail.o  `cat \
+	alloc.a substdio.a error.a str.a fs.a auto_qmail.o dns.o `cat \
 	socket.lib`
 
 qmail-smtpd.0: \
