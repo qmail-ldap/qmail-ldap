@@ -66,7 +66,7 @@
 void
 temp_nomem(void)
 {
-	strerr_die2x(111, FATAL, "Out of memory.");
+	strerr_die2x(111, FATAL, "Out of memory. (#4.3.0)");
 }
 void
 temp_qmail(char *fn)
@@ -76,12 +76,12 @@ temp_qmail(char *fn)
 void
 temp_rewind(void)
 {
-	strerr_die2x(111, FATAL, "Unable to rewind message.");
+	strerr_die2x(111, FATAL, "Unable to rewind message. (#4.3.0)");
 }
 void
 temp_read(void)
 {
-	strerr_die2x(111, FATAL, "Unable to read message.");
+	strerr_die2x(111, FATAL, "Unable to read message. (#4.3.0)");
 }
 void
 temp_fork(void)
@@ -95,16 +95,27 @@ void usage(void)
 
 void init(void);
 void bouncefx(void);
-void blast(void);
+void blast(stralloc *, int);
 void reopen(void);
 void trydelete(void);
 void secretary(char *, int);
 void explode(qldap *);
 void subscribed(qldap *, int);
-qldap *ldapgroup(char *, int *, int *, int *, int *);
+qldap *ldapgroup(char *, int *, int *, int *);
 
+char *local;
+char *host;
 char *sender;
+stralloc base = {0};
+stralloc action = {0};
+char *ext;
 char *dname;
+
+stralloc recips = {0};
+stralloc bounceadmin = {0};
+stralloc moderators = {0};
+unsigned int nummoderators;
+
 
 int
 main(int argc, char **argv)
@@ -122,22 +133,43 @@ main(int argc, char **argv)
 	bouncefx();
 	
 	flagc = flags = flagS = flagm = 0;
-	qlc = ldapgroup(dname, &flagc, &flags, &flagS, &flagm);
-	/* need to distinguish between new messages and responses */
+	qlc = ldapgroup(dname, &flagc, &flags, &flagS);
 
-	if (flagc)
-		secretary(maildir, 0);
-	if (flags)
-		subscribed(qlc, flagS);
-	if (flagm)
-		secretary(maildir, 1);
+	/* need to distinguish between new messages and responses */
+	if (action.s) {
+		if (!case_diffs(action.s, "confirm") ||
+		    !case_diffs(action.s, "approve") ||
+		    !case_diffs(action.s, "reject"))
+			secretary(maildir, flagc);
+		else if (moderators.s && moderators.len &&
+		    !case_diffs(action.s, "moderators") && !(ext && *ext)) {
+			/* mail to moderators */
+			blast(&moderators, 0);
+		} else if (!case_diffs(action.s, "return") && ext && *ext) {
+			/* bounce form subscribed user */
+			blast(&bounceadmin, 0);
+		} else if (!case_diffs(action.s, "bounce") && ext && *ext) {
+			/* bounce from moderator */
+			if (bounceadmin.s && bounceadmin.len)
+				blast(&bounceadmin, 0);
+			secretary(maildir, flagc);
+		} else
+			/* bad address */
+			strerr_die2x(100, FATAL, "Sorry, no mailbox here "
+			    "by that name. (#5.1.1)");
+	} else {
+		if (flags)
+			subscribed(qlc, flagS);
+		if (flagc || nummoderators)
+			secretary(maildir, flagc);
+	}
 
 	reopen();
 	explode(qlc);
 	qldap_free(qlc);
 	
 	/* does not return */
-	blast();
+	blast(&recips, 1);
 	return 111;
 }
 
@@ -172,10 +204,7 @@ ctrlfunc ctrls[] = {
 	0
 };
 
-stralloc base = {0};
 stralloc dtline = {0};
-char *local;
-char *host;
 
 void
 init(void)
@@ -202,8 +231,14 @@ init(void)
 		if (!stralloc_copyb(&base, local,
 			    str_len(local) - str_len(t) - 1))
 			temp_nomem();
+		ext = t;
+		ext += str_chr(ext, '-');
+		if (!stralloc_copyb(&action, t, ext - t)) temp_nomem();
+		if (!stralloc_0(&action)) temp_nomem();
+		if (*ext) ++ext;
 	} else {
 		if (!stralloc_copys(&base, local)) temp_nomem();
+		ext = 0;
 	}
 	if (!stralloc_copys(&dtline, "Delivered-To: ")) temp_nomem();
 	if (!stralloc_cat(&dtline, &base)) temp_nomem();
@@ -240,12 +275,11 @@ bouncefx(void)
 	}
 }
 
-stralloc recips = {0};
 char strnum1[FMT_ULONG];
 char strnum2[FMT_ULONG];
 
 void
-blast(void)
+blast(stralloc *r, int flagb)
 {
 	struct qmail qqt;
 	substdio ss;
@@ -255,7 +289,7 @@ blast(void)
 	datetime_sec when;
 	int match;
 
-	if (recips.s == NULL || recips.len == 0)
+	if (r->s == (char *)0 || r->len == 0)
 		strerr_die2x(100, FATAL, "no recipients found in this group.");
 
 	if (seek_begin(0) == -1) temp_rewind();
@@ -274,22 +308,18 @@ blast(void)
 		qmail_put(&qqt, line.s, line.len);
 	} while (match);
 
-#if 0
-	/*
-	 * XXX this needs to be fixed. qmail-group should acctualy bounce
-	 * messages to -return- to a special bounce admin.
-	 */
-	if (!stralloc_copy(&line,&base)) temp_nomem();
-	if (!stralloc_cats(&line,"-return-@")) temp_nomem();
-	if (!stralloc_cats(&line,host)) temp_nomem();
-	if (!stralloc_cats(&line,"-@[]")) temp_nomem();
-	if (!stralloc_0(&line)) temp_nomem();
-	qmail_from(&qqt, line.s);
-#else
-	qmail_from(&qqt, sender);
-#endif
-	for (s = recips.s, smax = recips.s + recips.len; s < smax;
-	    s += str_len(s) + 1)
+	if (flagb && bounceadmin.s && bounceadmin.len) {
+		if (!stralloc_copy(&line,&base)) temp_nomem();
+		if (!stralloc_cats(&line,"-return-@")) temp_nomem();
+		if (!stralloc_cats(&line,host)) temp_nomem();
+		if (!stralloc_cats(&line,"-@[]")) temp_nomem();
+		if (!stralloc_0(&line)) temp_nomem();
+		qmail_from(&qqt, line.s);
+	} else
+		/* if no bounce admin specified forward with sender address */
+		qmail_from(&qqt, sender);
+
+	for (s = r->s, smax = r->s + r->len; s < smax; s += str_len(s) + 1)
 		qmail_to(&qqt,s);
 	qqx = qmail_close(&qqt);
 	if (*qqx)
@@ -328,11 +358,8 @@ trydelete(void)
 		unlink(fname.s);
 }
 
-unsigned int nummoderators;
-stralloc moderators = {0};
-
 void
-secretary(char *maildir, int flagmoderate)
+secretary(char *maildir, int flagcheck)
 {
 	const char **args;
 	char *s, *smax;
@@ -345,25 +372,22 @@ secretary(char *maildir, int flagmoderate)
 
 	if (seek_begin(0) == -1) temp_rewind();
 
-	numargs = 4;
-	if (flagmoderate == 1)
-		numargs += 2 * nummoderators;
+	numargs = 4 + 2 * nummoderators;
 	
 	args = (const char **) alloc(numargs * sizeof(char *));
 	if (!args) temp_nomem();
 	i = 0;
 	args[i++] = "qmail-secretary";
-	if (flagmoderate == 0)
+	if (flagcheck == 1)
 		args[i++] = "-Zc";
-	else {
+	else 
 		args[i++] = "-ZC";
-		for (s = moderators.s, smax = moderators.s + moderators.len;
-		    s < smax; s += str_len(s) + 1) {
-			args[i++] = "-m";
-			args[i++] = s;
-			if (i + 2 > numargs)
-			       strerr_die2x(111, FATAL, "internal error.");	
-		}
+	for (s = moderators.s, smax = moderators.s + moderators.len;
+	    s < smax; s += str_len(s) + 1) {
+		args[i++] = "-m";
+		args[i++] = s;
+		if (i + 2 > numargs)
+		       strerr_die2x(111, FATAL, "internal error.");	
 	}
 	args[i++] = maildir;
 	args[i++] = 0;
@@ -426,7 +450,7 @@ secretary(char *maildir, int flagmoderate)
 stralloc ldapval = {0};
 stralloc tmpval = {0};
 
-static int getmoderators(qldap *);
+static void getmoderators(qldap *);
 static int unescape(char *, stralloc *, unsigned int *);
 static void extract_addrs822(qldap *, const char *, stralloc *, unsigned int *);
 static void extract_addrsdn(qldap *, qldap *, const char *, stralloc *,
@@ -435,13 +459,13 @@ static void extract_addrsfilter(qldap *, qldap *, const char *, stralloc *,
     unsigned int *);
 static int getentry(qldap *, char *);
 
-static int
+static void
 getmoderators(qldap *q)
 {
 	qldap *sq;
 	int r;
 	
-	nummoderators = 0; sq = 0;
+	nummoderators = 0; sq = (qldap *)0;
 	if (!stralloc_copys(&moderators, "")) { r = ERRNO; goto fail; }
 
 	extract_addrs822(q, LDAP_GROUPMODERAT822,
@@ -460,7 +484,7 @@ getmoderators(qldap *q)
 	    &moderators, &nummoderators);
 	
 	qldap_free(sq);
-	return nummoderators > 0;
+	return;
 	
 fail:
 	if (sq) qldap_free(sq);
@@ -468,7 +492,6 @@ fail:
 	strerr_die3x(111, FATAL, "expand group: moderators: ",
 	    qldap_err_str(r));
 	/* NOTREACHED */
-	return 0;
 }
 
 void
@@ -602,7 +625,7 @@ fail:
 
 
 qldap *
-ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
+ldapgroup(char *dn, int *flagc, int *flags, int *flagS)
 {
 	qldap *q;
 	const char *attrs[] = {
@@ -618,6 +641,7 @@ ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
 		LDAP_GROUPSENDERDN,
 		LDAP_GROUPSENDER822,
 		LDAP_GROUPSENDERFILTER,
+		LDAP_GROUPBOUNCEADMIN,
 		0 };
 	int r;
 		
@@ -682,7 +706,20 @@ ldapgroup(char *dn, int *flagc, int *flags, int *flagS, int *flagm)
 		goto fail;
 	}
 
-	*flagm = getmoderators(q);
+	r = qldap_get_attr(q, LDAP_GROUPBOUNCEADMIN, &ldapval, MULTI_VALUE);
+	switch (r) {
+	case OK:
+		r = unescape(ldapval.s, &bounceadmin, 0);
+		if (r != OK) goto fail;
+		break;
+	case NOSUCH:
+		break;
+	default:
+		goto fail;
+	}
+
+
+	getmoderators(q);
 	
 	if (*flags) {
 		r = qldap_get_attr(q, LDAP_GROUPSENDERDN,

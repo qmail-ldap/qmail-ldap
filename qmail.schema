@@ -178,6 +178,12 @@ attributetype ( 1.3.6.1.4.1.7914.1.3.1.12 NAME 'filtersender'
 	SUBSTR caseIgnoreIA5SubstringsMatch
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{512} )
 
+attributetype ( 1.3.6.1.4.1.7914.1.3.1.13 NAME 'bounceadmin'
+	DESC 'rfc822 email address where bounces should be sent to.'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} )
+
 
 #
 # qldapAdmin Attributes
@@ -259,7 +265,8 @@ objectclass ( 1.3.6.1.4.1.7914.1.3.2.1 NAME 'qmailGroup'
 	MUST ( mail $ mailAlternateAddress $ mailMessageStore )
 	MAY ( dnmember $ rfc822member $ filtermember $ senderconfirm $
 	      membersonly $ confirmtext $ dnmoderator $ rfc822moderator $
-	      moderatortext $ dnsender $ rfc822sender $ filtersender) )
+	      moderatortext $ dnsender $ rfc822sender $ filtersender $
+	      bounceadmin) )
 
 objectclass ( 1.3.6.1.4.1.7914.1.4.2.1 NAME 'qldapAdmin'
 	DESC 'QMail-LDAP Subtree Admin'

@@ -153,6 +153,7 @@
 #define LDAP_GROUPSENDERDN	"dnsender"
 #define LDAP_GROUPSENDER822	"rfc822sender"
 #define LDAP_GROUPSENDERFILTER	"filtersender"
+#define LDAP_GROUPBOUNCEADMIN	"bounceadmin"
 
 
 /*********************************************************************
