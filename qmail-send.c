@@ -1665,7 +1665,7 @@ int getcontrols() { if (control_init() == -1) return 0;
  if (!stralloc_cat(&doublebounceto,&doublebouncehost)) return 0;
  if (!stralloc_0(&doublebounceto)) return 0;
  if (control_readint(&bouncemaxbytes,"control/bouncemaxbytes") == -1) return 0;
- if (control_readrawfile(&custombouncetext,"control/custombouncetext",0) == -1) return 0;
+ if (control_readrawfile(&custombouncetext,"control/custombouncetext") == -1) return 0;
  if (!stralloc_0(&custombouncetext) ) return 0;
  if (control_readfile(&locals,"control/locals",1) != 1) return 0;
  if (!constmap_init(&maplocals,locals.s,locals.len,0)) return 0;
@@ -1694,9 +1694,8 @@ void regetcontrols()
  if (control_readint(&bouncemaxbytes,"control/bouncemaxbytes") == -1)
   { log1("alert: unable to reread control/bouncemaxbytes\n"); return; }
  
- if (control_readfile(&newcbtext,"control/custombouncetext",0) == -1)
+ if (control_readrawfile(&newcbtext,"control/custombouncetext") == -1)
   { log1("alert: unable to reread control/custombouncetext\n"); return; }
- byte_repl(newcbtext.s, newcbtext.len, '\0', '\n');
  while (!stralloc_0(&newcbtext)) nomem();
  while (!stralloc_copy(&custombouncetext,&newcbtext)) nomem();
 
