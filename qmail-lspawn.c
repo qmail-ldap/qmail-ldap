@@ -238,7 +238,7 @@ int len;
       REPORT_RETURN;
 
    case 225:
-         substdio_puts(ss, "DMailaddress is administrativley disabled. (LDAP-ERR #220)\n");
+         substdio_puts(ss, "DMailaddress is administratively disabled. (LDAP-ERR #220)\n");
       REPORT_RETURN;
 
    case 230: /* XXX */
