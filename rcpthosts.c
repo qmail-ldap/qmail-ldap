@@ -38,6 +38,8 @@ int rcpthosts_init(void)
   return 0;
 }
 
+static stralloc host = {0};
+
 int localhosts(char *buf, int len)
 {
   int j;
@@ -49,6 +51,10 @@ int localhosts(char *buf, int len)
   if (j >= len) return 0; /* envnoathost is not acceptable */
   ++j; buf += j; len -= j;
   
+  if (!stralloc_copyb(&host,buf,len)) return -1;
+  buf = host.s;
+  case_lowerb(buf,len);
+
   /* if local.cdb available use this as source */
   if (fdlo != -1) 
     return cdb_seek(fdlo, buf, len, &dlen);
@@ -56,8 +62,6 @@ int localhosts(char *buf, int len)
     if (constmap(&maplocals, buf, len)) return 1;
   return 0;
 }
-
-static stralloc host = {0};
 
 int rcpthosts(buf,len)
 char *buf;

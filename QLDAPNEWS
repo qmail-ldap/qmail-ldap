@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/11/14 13:02:48 $ ($Revision: 1.148 $)
+RELEASE: $Date: 2003/11/20 19:52:12 $ ($Revision: 1.149 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -21,7 +21,12 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
 
 NEWS for current stuff:
 
- Do not touch down files in service dirs on install else we would disable a
+ Case sensitivity bug fix when using locals.cdb. While constmap uses case
+ insensitive compares cdb doesn't, this will cause trouble when using local.cdb
+ and the envelope recipient has uppercase letters in the domain part.
+ Thanks to Doug Council for the report.
+
+ Do not touch "down" files in service dirs on install else we would disable a
  already enabled service without the knowledge of the user.
 
 NEWS for 20031101a stuff:

@@ -5,6 +5,7 @@
 #include "alloc.h"
 #include "auto_qmail.h"
 #include "byte.h"
+#include "case.h"
 #include "cdb.h"
 #include "constmap.h"
 #include "control.h"
@@ -131,11 +132,15 @@ int rewrite(char *recip)
   at = byte_rchr(addr.s,addr.len,'@');
 
   if (localscdb.s && localscdb.len > 1) {
+    static stralloc lowaddr = {0};
     int fd, r;
     uint32 dlen;
+
+    if (!stralloc_copyb(&lowaddr,addr.s + at + 1,addr.len - at - 1)) return 0;
+    case_lowerb(lowaddr.s, lowaddr.len);
     fd = open_read(localscdb.s);
     if (fd == -1) return -1;
-    r = cdb_seek(fd, addr.s + at + 1,addr.len - at - 1, &dlen);
+    r = cdb_seek(fd, lowaddr.s,lowaddr.len, &dlen);
     close(fd);
     if (r == -1) return -1;
     if (r == 1) {
