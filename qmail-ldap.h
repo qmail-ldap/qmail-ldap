@@ -28,7 +28,10 @@
 
 /* ALIASDEVNULL replacement for the std. aliasempty for user with
  * neither homeDirectory nor mailMessageStore defined */
-#define ALIASDEVNULL "/dev/null"
+#define ALIASDEVNULL "|sh -c \"cat > /dev/null\""
+/* just pipe everything to /dev/null, you could also use a program/script
+ * to make a notify the postmaster if something like this happens.
+ * It's up to the reader to write such a simple script */
 
 /*********************************************************************
         ldap variables used in qmail-lspawn and checkpassword

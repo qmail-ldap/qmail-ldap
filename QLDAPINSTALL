@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2000/12/23 08:34:37 $)
+RELEASE: current ($Date: 2000/12/25 17:45:43 $)
 
 TOC:
  INSTALL             how to install the patch
@@ -444,6 +444,7 @@ LDAP_MAILALTERNATE (default: "mailAlternateAddress")
 LDAP_UID (default: "uid")
 
  The username for POP3 and IMAP delivery
+ Required
  Example: jdoe
  Note: this name will also be set as $USER for qmail-local and program delivery.
 

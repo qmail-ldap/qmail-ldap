@@ -101,11 +101,10 @@ int init_ldap(int *localdelivery, int *cluster, int *bind, stralloc *hm,
 	if (!stralloc_0(&qldap_basedn)) return -1; /* also stralloc sets errno's */
 	debug(64, "init_ldap: control/ldapbasedn: %s\n", qldap_basedn.s);
 
-        t = cf;
-        t += fmt_strn(cf, "control/ldapobjectclass", 64); *t=0;
-        if (control_rldef(&qldap_objectclass, ctrl_file, 0, "") == -1) return -1;
-        if (!stralloc_0(&qldap_objectclass)) return -1;
-        debug(64, "init_ldap: control/ldapobjectclass: %s\n", qldap_objectclass.s);
+	t = cf;
+	t += fmt_strn(cf, "control/ldapobjectclass", 64); *t=0;
+	if (control_rldef(&qldap_objectclass, ctrl_file, 0, "") == -1) return -1;
+	debug(64, "init_ldap: control/ldapobjectclass: %S\n", &qldap_objectclass);
 
 	t = cf;
 	t += fmt_strn(cf, "control/ldaplogin", 64); *t=0;

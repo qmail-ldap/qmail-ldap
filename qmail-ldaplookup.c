@@ -43,6 +43,7 @@
 typedef enum mode_d { uid, mail} mode_d;
 
 extern stralloc qldap_me;
+extern stralloc qldap_objectclass;
 
 int rebind; 
 int cluster;
@@ -122,6 +123,7 @@ int main(int argc, char **argv)
 			rebind?"":"not ");
 	output( "\t\tlocaldelivery:\t%s\n\t\tclustering:\t%s\n",
 			locald?"on":"off", cluster?"on":"off");
+	output( "\t\tldapobjectclass:\t%S\n", qldap_objectclass);
 	output( "\t\thomedirmaker:\t%s\n", homemaker.len?homemaker.s:"undefined");
 	output( "\t\tdefaultDotMode:\t%s\n", defdot.s);
 	output( "\t\tdefaultQuota:\t%s\n", defquota.s);
@@ -158,8 +160,19 @@ int main(int argc, char **argv)
 	}
 	if ( mode == mail) {
 		/* build the search string for the email address */
-		if ( !stralloc_copys(&filter,"(|(" ) ||
-			 !stralloc_cats(&filter, LDAP_MAIL ) || 
+		if ( !stralloc_copys(&filter,"(|(" ) ) {
+			strerr_die2x(1, "ERROR: can not create a filter: ",
+				   error_str(errno));
+		}
+		if ( qldap_objectclass.len && (
+			 !stralloc_cats(&filter,LDAP_OBJECTCLASS) ||
+			 !stralloc_cats(&filter,"=") ||
+			 !stralloc_cat(&filter,qldap_objectclass) ||
+			 !stralloc_cats(&filter,")(") ) ) {
+			strerr_die2x(1, "ERROR: can not create a filter: ",
+				   error_str(errno));
+		}
+		if ( !stralloc_cats(&filter, LDAP_MAIL ) || 
 			 !stralloc_cats(&filter, "=" ) ||
 			 !stralloc_cat(&filter,&value) ||
 			 !stralloc_cats(&filter,")(" ) || 
