@@ -30,7 +30,6 @@ void temp_nomem() { strerr_die2x(111, FATAL, "Out of memory."); }
 void temp_rewind() { strerr_die2x(111, FATAL, "Unable to rewind message."); }
 void temp_fork() { strerr_die2sys(111, FATAL, "Unable to fork: "); }
 
-
 void usage(void)
 {
 	strerr_die1x(100,
@@ -251,10 +250,10 @@ int recent(char *buf, int len)
 }
 
 char rsoutbuf[SUBSTDIO_OUTSIZE];
-char fntmptph[32 + FMT_ULONG * 2];
+char fntmptph[32 + FMT_ULONG];
 
-void tryunlinktmp() { unlink(fntmptph); }
-void sigalrm()
+void tryunlinktmp(void) { unlink(fntmptph); }
+void sigalrm(void)
 {
 	tryunlinktmp();
 	strerr_die2x(111, FATAL, "timeout while writing db file");
@@ -280,19 +279,26 @@ void recent_update(char *buf, int len)
 	}
 
 	pid = getpid();
+	time = now();
+	t = fntmptph;
+	t += fmt_str(t, ".qmail-reply.tmp.");
+	t += fmt_ulong(t, pid);
+	*t++ = 0;
+	
 	for (loop = 0;;++loop) {
-		time = now();
-		t = fntmptph;
-		t += fmt_str(t, ".qmail-reply.tmp.");
-		t += fmt_ulong(t, time); *t++ = '.';
-		t += fmt_ulong(t, pid);
-		*t++ = 0;
-		if (stat(fntmptph, &st) == -1) if (errno == error_noent) break;
+		if (stat(fntmptph, &st) == -1) if (errno == error_noent)
+			break;
 		/* really should never get to this point */
-		if (loop == 2) _exit(1);
+		if (st.st_mtime + 900 < time) {
+			/* stale tmp file */
+			tryunlinktmp();
+		}
+		if (loop == 2)
+			strerr_die2x(111, FATAL,
+			    "could not open tmp file.");
 		sleep(2);
 	}
-	
+
 	sig_alarmcatch(sigalrm);
 	alarm(600); /* give up after 10 min */
 	fd = open_excl(fntmptph);
@@ -319,7 +325,6 @@ void recent_update(char *buf, int len)
 	if (close(fd) == -1) goto fail; /* NFS dorks */
 
 	if (unlink(".qmail-reply.db") == -1 && errno != error_noent) goto fail;
-	
 	if (link(fntmptph, ".qmail-reply.db") == -1) goto fail;
 	/* if it was error_exist, almost certainly successful; i hate NFS */
 
@@ -327,6 +332,7 @@ void recent_update(char *buf, int len)
 	return;
 
 fail:
+	strerr_warn2(WARN, "db update failed: ", &strerr_sys);
 	tryunlinktmp(); /* failed somewhere, giving up */
 	return;
 }
