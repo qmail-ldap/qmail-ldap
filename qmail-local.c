@@ -760,6 +760,9 @@ char **argv;
        strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
      }
    }
+
+ if (chdir(homedir) == -1)
+   strerr_die5x(111,"Even after homedircreation I'm unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
 #else
    strerr_die5x(111,"Unable to switch to ",homedir,": ",error_str(errno),". (#4.3.0)");
 #endif
