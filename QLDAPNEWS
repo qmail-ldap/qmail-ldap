@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/10/30 09:13:02 $ ($Revision: 1.143 $)
+RELEASE: $Date: 2003/10/30 14:29:05 $ ($Revision: 1.144 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -46,7 +46,7 @@ NEWS for current stuff:
  of all compiler warnings and makes code developing lesser error-prone.
  The Makefile dependencies need to be updated to reflect reality.
  A few errors are still in the tree which are either hard to solve or
- considered harmless -- manly return type of main() in a few helper apps.
+ considered harmless -- mainly return type of main() in a few helper apps.
  This cleanup brought some strange bugs to light which are now fixed.
 
  Finally enabled the "send only one reply to each sender" feature
@@ -55,7 +55,13 @@ NEWS for current stuff:
  Critical bugfix in auth_imap.c. A bug in the function that should invoke
  the next authmodule caused auth_imap to end up in one infinit loop.
 
- Add DUPEALIAS feature.
+ Add DUPEALIAS feature. When duplicate or overlapping mail or
+ mailAlternateAddress exist the mail will be forwarded to this local
+ user (like the alias user of qmail). It can be either bounced or
+ handled there with a script/program answering with some meaningful
+ reply. This compile time option is intended for migration of old
+ X.400 mail systems where a user was available under some short names
+ if nobody else had the same shortname.
 
  Add some more features to qmail-ldaplookup. Password compare works now.
  It is now also possible to use a different binddn and bindpw.
