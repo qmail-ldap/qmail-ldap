@@ -6,7 +6,14 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: 20000501 ($Date: 2000/05/16 21:00:44 $)
+RELEASE: 20000501 ($Date: 2000/06/01 21:06:31 $)
+
+TOC:
+ INSTALL             how to install the patch
+ CONFIG FILES        all about the extra config file
+ DEFAULT LDAP FIELDS all about the fields in ldap
+ EXAMPLES            example ldif and slapd.conf
+ BUGS & PROBLEMS     How to help us helping you
 
 TODO:
 
@@ -22,8 +29,8 @@ IMPORTANT NEWS:
  db entries. Similar to the old checkpassword with debug support.
  Usage: qmail-ldaplookup {-m mailaddress | -u userid [passwd]}
  NOTE: because this tool could show critical data (like the hashed passwd)
-       it is installed with mode 000 (no rights for anybody)
-       You should only give root the permision to start it.
+	   it is installed with mode 700 (rwx------) only root has the permision 
+       to start it.
 
  Add the new control files and their meaning to qmail-showctl
  You can use qmail-showctl to check your setup.
@@ -38,7 +45,8 @@ INSTALL:
 
 1. Make sure you have fairly good knowledge of qmail and LDAP
 
-2. Read this document
+2. Read this document. THIS IS IMPORTANT, this is no 
+   ./configure; make; make install software.
 
 3. You need the following compiled and installed
     - OpenLDAP 1.2.9 or higher (others might also work)
@@ -98,8 +106,8 @@ INSTALL:
      NOTE: have a look at QLDAPNEWS for more info
 
 6.  Compile and install the stuff (it's the same as in standard qmail
-    install -> read the INSTALL file and the FAQ !!!).
-    Now everything should be installed with correct permisions.
+    install -> read the INSTALL and the FAQ file!!!).
+    Now everything should be installed with correct permissions.
 
 6.1 If using TLS you can use make cert or make cert-req to create TLS 
     certificates
@@ -107,7 +115,7 @@ INSTALL:
 7.  Create the LDAP user database and start the LDAP server
 
 8.  Create the proper ~control/ldap* files for qldap
-    Minimal ldapserver and ldapbasedn should exist (and also me)
+    At least ldapserver and ldapbasedn should exist (and also me)
 
 9.  Test, Debug and Enjoy!
 
@@ -165,12 +173,13 @@ CONFIG FILES:
 
  Password for the LDAP server connection
  Default: NULL
- Note: The password is in clear text
+ Note: The password is in clear text. The file should be owned by root and
+       mode (600) rw-------.
 
 ~control/ldaplocaldelivery
 
- If on lookup local passwd in qmail-lspawn and checkpassword
- if the LDAP lookup finds nothing
+ If on do a lookup on the local passwd file. This affects qmail-lspawn and
+ checkpassword if the LDAP lookup returns nothing.
  Default: enabled
  Example: 1
  Note: boolean, use 0 (zero) or 1 (one)
@@ -191,7 +200,8 @@ CONFIG FILES:
  Example: 1
  Note: boolean, use 0 (zero) or 1 (one)
  ATTN: the control files me, rcpthosts and locals have to be set carfully
-       or you will have big problems.
+       or you will have big problems. Until now there is no loop detection
+       in the clustering code.
 
 ~control/ldapdefaultquota
 
@@ -211,32 +221,29 @@ CONFIG FILES:
  Default: ldaponly
  Example: both
  Values: both, dotonly, ldaponly, ldapwithprog, none
- Note: Works only for deliveries based on LDAP lookups
+ Note: Works only for deliveries based on LDAP lookups.
+       Local mails use dotonly like normal qmail does. 
 
 ~control/ldapmessagestore
 
- The default added path for mailMessageStore without trailing /
+ The default prefix for pathes in mailMessageStore without trailing /
  Default: NULL
  Example: /maildisk/
  Note: Used in virtual users environments
-       the / at the end is needed!
-
-~control/ldapusername
- NO LONGER USED, PLEASE REMOVE THE FILE
 
 ~control/ldapuid
 
  The default UID used in virtual users environments
  Default: NULL
  Example: 1010
- Note: Must match the username, must be above 100
+ Note: should be a real UID, must be above 100
 
 ~control/ldapgid
 
  The default GID used in virtual users environments
  Default: NULL
  Example: 1010
- Note: Must match the username, must be above 100
+ Note: should be a real GID, must be above 100
 
 ~control/custombouncetext
 
@@ -252,12 +259,7 @@ CONFIG FILES:
  of your ISP
  Default: NULL
  Example: You can contact us at (555) 555 5555
- Note: Multiline. Needs to be present to make qmail-quotawarn work
-
-~control/ldappasswdappend
- NO LONGER USED, PLEASE REMOVE THE FILE
- Now the auth modules extract the Maildir out of the .qmail file, but only
- on local (/etc/passwd) lookups.
+ Note: Multiline. Needs to be present to make qmail-quotawarn work.
 
 ~control/tarpitcount
 
@@ -303,6 +305,14 @@ CONFIG FILES:
        #EOF
        -cut-
 
+~control/ldapusername
+ NO LONGER USED, PLEASE REMOVE THE FILE
+
+~control/ldappasswdappend
+ NO LONGER USED, PLEASE REMOVE THE FILE
+ Now the auth modules extract the Maildir out of the .qmail file, but only
+ on local (/etc/passwd) lookups.
+
 
 DEFAULT LDAP PARAMETER FIELDS:
 NOTE: keywords have to match exactly, so pay attention.
@@ -315,13 +325,20 @@ LDAP_MAIL (default: "mail")
  Required
  Example: jdoe@foo.bar
 
+
 LDAP_MAILALTERNATE (default: "mailAlternateAddress")
 
  Secondary (alias) mailaddresses for the same user
  Example: jd@foo.bar
+ Note: multifield
 
-LDAP_QMAILUSER (default: "qmailUser")
- NO LONGER USED, REMOVE IT SOMEWHEN FROM YOUR DATABASE
+
+LDAP_UID (default: "uid")
+
+ The username for POP3 and IMAP delivery
+ Example: jdoe
+ Note: this name will also be set as $USER for qmail-local.
+
 
 LDAP_QMAILUID (default: "qmailUID")
 
@@ -329,21 +346,46 @@ LDAP_QMAILUID (default: "qmailUID")
  Example: 1010
  Note: Can be omitted in a virtual users environment
 
+
 LDAP_QMAILGID (default: "qmailGID")
 
  GID of the user on the mailsystem
  Example: 1010
  Note: Can be omitted in a virtual users environment
 
-XXX UPDATE ME XXX
-LDAP_MAILSTORE (default: "mailMessageStore")
 
- Path to the maildir/mbox on the mail system
+LDAP_PASSWD (default: "userPassword")
+
+ The password for POP3/IMAP authentication
+ Example: {MD5}uSI59Zyfa5lapBLGfJrD+g==
+ Note: Can be encrypted with {SHA}, {MD4}, {MD5}, {RMD160}, {NS-MTA-MD5}, 
+       {crypt} crypt (without {crypt} prefix) or cleartext (only if compiled 
+       with -DCLEARTEXTPASSWD (a bad idea on production systems) )
+       If you rebind to the ldapserver don't use {NS-MTA-MD5}, {RMD160} and
+       probably {MD4}. This algorithms are sometimes not supported by the 
+       ldap servers, read their documentation. 
+       To generate passwords you can use the inlcuded tool digest.
+
+
+LDAP_MAILSTORE (default: "mailMessageStore")
+and
+LDAP_HOMEDIR (default: "homeDirectory")
+
+ Path to the maildir/mbox on the mail system is extracted from those fields.
+ If LDAP_HOMEDIR is found this field is used as $HOME, using aliasempty or
+ mailMessagestore as default delivery method.
+ If only LDAP_MAILSTORE is defined this will be used as $HOME and aliasempty
+ as default delivery method.
+ If neither LDAP_MAILSTORE nor LDAP_HOMEDIR is defined, ~alias (qmails alias 
+ user homedir) will be used as $HOME and ALIASDEVNULL (defined in qmail-ldap.h)
+ as default delivery method.
  Example: /home/jdoe/
- Note: Can be written relative in a virtual users environment
- XXX: at the moment mailMessageStore has to point to a directory
-      So Mailfiles are only possible via the aliasempty argument 
-      of qmail-lspawn / qmail-start
+ Note: LDAP_MAILSTORE can be written relative in a virtual users environment
+       ldapmailstore will be prefixed to make the path absolute.
+       For more info have a look at the QLDAPNEWS file.
+       If you use "homeDirectory" in an incompatible way redefine it to 
+       something not used like "noHomeDirectory".
+
 
 LDAP_QUOTA (default: "mailQuota")
 
@@ -352,28 +394,26 @@ LDAP_QUOTA (default: "mailQuota")
  The mailQuota is a string of the form figures type (S or C) and a ',' separates
  multiple entries.
  Example: 1000000S,1000C (max 1000000 bytes size and max 1000 Mails)
- Note: overrides ldapdefaultquota
+ Note: overrides ldapdefaultquota, the old format is still supported
+
 
 LDAP_FORWARDS (default: "mailForwardingAddress")
 
- Addresses to forward all incoming messages, multi field
+ Addresses to forward all incoming messages to.
  Example: jdoe@new.place
- Note: 
+ Note: multifield
 
-LDAP_MAILHOST (default: "mailHost")
-
- On which qmail server the messagestore of this user is located
- Example: qmail3.nrg4u.com
- Note: Must be equal to the ~control/me hostname on the homeserver 
-       of the user.
 
 LDAP_PROGRAM (default: "deliveryProgramPath")
 
- Program to execute with all incoming messages, multi field
+ Program to execute with all incoming messages as input
  Example: /usr/bin/program -c -s
- Note: the same as |/usr/bin/program -c -s in .qmail
+ Note: multifield. The same as |/usr/bin/program -c -s in .qmail
        Works only with qmailDotMode set to ldapwithprog or both
-       with ldaponly set deliveryProgramPath is silently ignored
+       with ldaponly set deliveryProgramPath is silently ignored.
+       Before using it have a look at QLDAPNEWS, qmail-ldap.h, check.c and
+       see also 5.2.
+       
 
 LDAP_MODE (default: "deliveryMode")
 
@@ -382,7 +422,7 @@ LDAP_MODE (default: "deliveryMode")
            (Maildir/box delivery only if no forwards or programs are executed)
  - forwardonly: is equal to set the execute bit of .qmail
                 so only forwards are allowed
- - nombox: ignor all maildir/mbox deliveries
+ - nombox: ignore all maildir/mbox deliveries
  - localdelivery: forces maildir/mbox delivery (into $HOME/$ALIASEMPTY)
  - reply: send also an auto_reply mail with text from mailReplyText 
  - echo: something very strange, just echo the message (nothing else)
@@ -394,14 +434,16 @@ LDAP_MODE (default: "deliveryMode")
        "normal", "nombox", "localdelivery" and "forwardonly" are set one after
        the other (i.e. "nombox,localdelivery,normal" resets to a "normal"
        delivery).
-       There are some strange behavior when localdelivery and nombox/forwardonly
-       are set, so handle them with care.
+       There are some strange behavior when localdelivery and nombox or
+       forwardonly are set, so handle them with care.
         
+
 LDAP_REPLYTEXT (default: "mailReplyText")
 
  A reply text for every incoming message (multiline)
  Example: I'm on vacation until next monday
- Note: works only if deliveryMode is set to reply
+ Note: used only if deliveryMode is set to reply.
+
 
 LDAP_DOTMODE (default: "qmailDotMode")
 
@@ -409,21 +451,16 @@ LDAP_DOTMODE (default: "qmailDotMode")
  Values: both, dotonly, ldaponly, ldapwithprog, none (just Maildir/box delivery)
  Default: set by file ~control/ldapdefaultdotmode
  Note: Works only for deliveries based on LDAP lookups,
-       overrides ldapdefaultdotmode
+       overrides ldapdefaultdotmode.
+ 
 
-LDAP_UID (default: "uid")
+LDAP_MAILHOST (default: "mailHost")
 
- The username for POP3 and IMAP delivery
- Example: jdoe
- Note: this name will also be set as $USER for qmail-local.
+ On which qmail server the messagestore of this user is located
+ Example: qmail3.nrg4u.com
+ Note: Must be equal to the ~control/me hostname on the homeserver 
+       of the user.
 
-LDAP_PASSWD (default: "userPassword")
-
- The password for POP3 delivery
- Example: testit
- Note: Can be encrypted with {SHA}, {MD4}, {MD5}, {NS-MTA-MD5}, {crypt}
- crypt (without {crypt} prefix) or cleartext (only if compiled with
- -DCLEARTEXTPASSWD (a bad idea on production systems) )
 
 LDAP_ISACTIVE (default: "accountStatus")
 
@@ -431,7 +468,14 @@ LDAP_ISACTIVE (default: "accountStatus")
  Values: active (no restrictions), 
          nopop (only mail delivery but no pop access), 
          disabled (bounce incoming messages)
- Default: no accountStatus is equal to active
+ Default: no accountStatus is equal to active.
+
+
+LDAP_QMAILUSER (default: "qmailUser")
+ NO LONGER USED, REMOVE IT SOMEWHEN FROM YOUR DATABASE
+ Replaced by LDAP_UID
+
+
 
 EXAMPLE QLDAP LDIF FILE:
 
@@ -481,6 +525,7 @@ objectclass qmailUser
                 uid
         allows
                 mailMessageStore,
+                homeDirectory
                 userPassword,
                 mailAlternateAddress,
                 qmailUID,
@@ -493,5 +538,20 @@ objectclass qmailUser
                 deliveryMode,
                 mailReplyText,
                 accountStatus
+
+
+
+BUGS & PROBLEMS
+
+There is a qmail-ldap specific mailinglist at qmail-ldap@argus.pipeline.ch.
+To subscribe just write a mail to qmail-ldap-subscribe@argus.pipeline.ch.
+
+If you have a problem with the patch or there seems to be a bug in the code
+please add some output of qmail-ldap with DEBUGLEVEL set to something higher
+then 2 (255 is a good setting to see all possible problems).
+It is impossible to know where the problem is when somebody writes a mail like:
+I have a problem with the patch. No mail gets send to the user in the ldap db.
+
+Normaly you get also a better response if you sepecify your problem.
 
 

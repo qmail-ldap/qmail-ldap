@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2000/05/16 21:00:44 $ ($Revision: 1.8 $)
+RELEASE: $Date: 2000/06/01 21:06:32 $ ($Revision: 1.9 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -39,7 +39,7 @@ NEWS for 20000501 patch (and some also for 20000401):
        it is installed with mode 000 (no rights for anybody)
        You should only give root the permision to start it.
 
- new mailMessageStore/homedirectory handling.
+ new mailMessageStore/homeDirectory handling.
  Because a lot of people requested it and because I was also unhappy with it
  I have rewritten/enhanced the mailMessageStore handling.
  Now the homedir and aliasempty are set via both 
