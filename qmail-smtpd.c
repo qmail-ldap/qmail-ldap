@@ -336,7 +336,12 @@ void setup()
   if (execcheck_on()) logstring(2, "rejectexecutables ");
 #endif
   if (errdisconnect) logstring(2,"smtp550disconnect ");
-  if env_get("QMAILQUEUE") logstring(2,"qmailqueue ");
+#ifdef ALTQUEUE
+  if (env_get("QMAILQUEUE")) {
+    logstring(2,"qmailqueue ");
+    logstring(2,env_get("QMAILQUEUE"));
+  }
+#endif
   logflush(2);
 
   dohelo(remotehost);
