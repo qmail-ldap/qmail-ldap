@@ -647,7 +647,15 @@ int rmfcheck(void)
 int addrallowed(void)
 {
   int r;
-  r = rcpthosts(addr.s,str_len(addr.s));
+  r = rcpthosts(addr.s,addr.len - 1);
+  if (r == -1) die_control();
+  return r;
+}
+
+int addrlocals(void)
+{
+  int r;
+  r = localhosts(addr.s, addr.len - 1);
   if (r == -1) die_control();
   return r;
 }
@@ -941,7 +949,7 @@ void smtp_mail(arg) char *arg;
   /* check if sender exists in ldap */
   if (sendercheck && !bounceflag) {
     if (!goodmailaddr()) { /* good mail addrs go through anyway */
-      if (addrlocals(addr.s, addr.len)) {
+      if (addrlocals()) {
 	char *s;
         switch (ldaplookup(addr.s, &s)) {
           case 1: /* valid */
@@ -1067,7 +1075,7 @@ void smtp_rcpt(arg) char *arg; {
   if (rcptcheck) {
     if (!goodmailaddr()) {
       logline(3,"recipient verify, recipient not in goodmailaddr");
-      if (addrlocals(addr.s, addr.len)) {
+      if (addrlocals()) {
 	char *s;
 	logline(3,"recipient verify, recipient is local");
         switch (ldaplookup(addr.s, &s)) {

@@ -90,7 +90,7 @@ default: it ldap
 
 ldap: qmail-quotawarn qmail-reply auth_pop auth_imap auth_smtp digest \
 qmail-ldaplookup pbsadd pbscheck pbsdbd qmail-todo qmail-forward \
-qmail-secretary qmail-group qmail-verify condwrite
+qmail-secretary qmail-group qmail-verify condwrite qmail-cdb
 
 addresses.0: \
 addresses.5
@@ -1429,6 +1429,18 @@ qldap-profile.o: \
 compile qldap-profile.c qldap-profile.h qldap-debug.h
 	./compile $(INCTAI) $(DEBUG) qldap-profile.c 
 
+qmail-cdb: \
+load qmail-cdb.o cdbmss.o getln.a open.a cdbmake.a seek.a case.a \
+stralloc.a alloc.a strerr.a substdio.a error.a str.a auto_qmail.o
+	./load qmail-cdb cdbmss.o getln.a open.a cdbmake.a seek.a \
+	case.a stralloc.a alloc.a strerr.a substdio.a error.a str.a \
+	auto_qmail.o
+
+qmail-cdb.o: \
+compile qmail-cdb.c auto_qmail.h case.h cdbmss.h exit.h getln.h \
+open.h readwrite.h stralloc.h strerr.h substdio.h
+	./compile qmail-cdb.c
+
 qmail-clean: \
 load qmail-clean.o fmtqfn.o now.o getln.a sig.a stralloc.a alloc.a \
 substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
@@ -1946,13 +1958,13 @@ sig.h str.h stralloc.h strerr.h substdio.h
 qmail-send: \
 load qmail-send.o qsutil.o control.o constmap.o newfield.o prioq.o \
 trigger.o fmtqfn.o quote.o now.o readsubdir.o qmail.o date822fmt.o \
-datetime.a case.a ndelay.a getln.a wait.a seek.a fd.a sig.a open.a \
-lock.a stralloc.a env.a alloc.a substdio.a error.a str.a fs.a \
+datetime.a case.a ndelay.a getln.a wait.a cdb.a seek.a fd.a sig.a \
+open.a lock.a stralloc.a env.a alloc.a substdio.a error.a str.a fs.a \
 auto_qmail.o auto_split.o
 	./load qmail-send qsutil.o control.o constmap.o newfield.o \
 	prioq.o trigger.o fmtqfn.o quote.o now.o readsubdir.o \
 	qmail.o date822fmt.o datetime.a case.a ndelay.a getln.a \
-	wait.a seek.a fd.a sig.a open.a lock.a stralloc.a env.a \
+	wait.a cdb.a seek.a fd.a sig.a open.a lock.a stralloc.a env.a \
 	alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_split.o 
 
 qmail-send.0: \
@@ -1973,7 +1985,7 @@ open.h seek.h exit.h lock.h ndelay.h now.h datetime.h getln.h \
 substdio.h alloc.h error.h stralloc.h gen_alloc.h str.h byte.h fmt.h \
 scan.h case.h auto_qmail.h trigger.h newfield.h stralloc.h quote.h \
 qmail.h substdio.h qsutil.h prioq.h datetime.h gen_alloc.h constmap.h \
-fmtqfn.h readsubdir.h direntry.h
+fmtqfn.h readsubdir.h direntry.h cdb.h uint32.h
 	./compile $(LDAPFLAGS) qmail-send.c
 
 qmail-showctl: \
@@ -2075,14 +2087,14 @@ fmt.h ip.h lock.h error.h exit.h datetime.h now.h datetime.h
 
 qmail-todo: \
 load qmail-todo.o control.o constmap.o trigger.o fmtqfn.o now.o \
-readsubdir.o case.a ndelay.a getln.a sig.a open.a stralloc.a alloc.a \
-substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
+readsubdir.o case.a ndelay.a getln.a sig.a cdb.a open.a stralloc.a \
+alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
 	./load qmail-todo control.o constmap.o trigger.o fmtqfn.o now.o \
-	readsubdir.o case.a ndelay.a getln.a sig.a open.a stralloc.a \
+	readsubdir.o case.a ndelay.a getln.a sig.a cdb.a open.a stralloc.a \
 	alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
 
 qmail-todo.o: \
-compile qmail-todo.c alloc.h auto_qmail.h byte.h constmap.h control.h \
+compile qmail-todo.c alloc.h auto_qmail.h byte.h cdb.h constmap.h control.h \
 direntry.h error.h exit.h fmt.h fmtqfn.h getln.h open.h ndelay.h now.h \
 readsubdir.h scan.h select.h sig.h str.h stralloc.h substdio.h trigger.h
 	./compile $(LDAPFLAGS) qmail-todo.c

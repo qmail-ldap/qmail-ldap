@@ -32,6 +32,7 @@
 #include "constmap.h"
 #include "fmtqfn.h"
 #include "readsubdir.h"
+#include "cdb.h"
 
 /* critical timing feature #1: if not triggered, do not busy-loop */
 /* critical timing feature #2: if triggered, respond within fixed time */
@@ -115,6 +116,7 @@ void fnmake_chanaddr(id,c) unsigned long id; int c;
 
 /* this file is too long ----------------------------------------- REWRITING */
 
+stralloc localscdb = {0};
 stralloc rwline = {0};
 
 /* 1 if by land, 2 if by sea, 0 if out of memory. not allowed to barf. */
@@ -147,11 +149,25 @@ char *recip;
 
   at = byte_rchr(addr.s,addr.len,'@');
 
-  if (constmap(&maplocals,addr.s + at + 1,addr.len - at - 1)) {
-    if (!stralloc_cat(&rwline,&addr)) return 0;
-    if (!stralloc_0(&rwline)) return 0;
-    return 1;
-  }
+  if (localscdb.s && localscdb.len > 1) {
+    int fd, r;
+    uint32 dlen;
+    fd = open_read(localscdb.s);
+    if (fd == -1) return -1;
+    r = cdb_seek(fd, addr.s + at + 1,addr.len - at - 1, &dlen);
+    close(fd);
+    if (r == -1) return -1;
+    if (r == 1) {
+      if (!stralloc_cat(&rwline,&addr)) return 0;
+      if (!stralloc_0(&rwline)) return 0;
+      return 1;
+    }
+  } else
+    if (constmap(&maplocals,addr.s + at + 1,addr.len - at - 1)) {
+      if (!stralloc_cat(&rwline,&addr)) return 0;
+      if (!stralloc_0(&rwline)) return 0;
+      return 1;
+    }
 
   for (i = 0;i <= addr.len;++i)
     if (!i || (i == at + 1) || (i == addr.len) || ((i > at) && (addr.s[i] == '.')))
@@ -1653,7 +1669,11 @@ fd_set *rfds;
 
 /* this file is too long ---------------------------------------------- MAIN */
 
-int getcontrols() { if (control_init() == -1) return 0;
+int getcontrols()
+{
+ struct stat st;
+
+ if (control_init() == -1) return 0;
  if (control_readint(&lifetime,"control/queuelifetime") == -1) return 0;
  if (control_readint(&concurrency[0],"control/concurrencylocal") == -1) return 0;
  if (control_readint(&concurrency[1],"control/concurrencyremote") == -1) return 0;
@@ -1668,8 +1688,17 @@ int getcontrols() { if (control_init() == -1) return 0;
  if (control_readint(&bouncemaxbytes,"control/bouncemaxbytes") == -1) return 0;
  if (control_readrawfile(&custombouncetext,"control/custombouncetext") == -1) return 0;
  if (!stralloc_0(&custombouncetext) ) return 0;
- if (control_readfile(&locals,"control/locals",1) != 1) return 0;
- if (!constmap_init(&maplocals,locals.s,locals.len,0)) return 0;
+
+ if (stat("control/locals.cdb", &st) == 0) {
+   if (!stralloc_copys(&localscdb, auto_qmail)) return 0;
+   if (!stralloc_cats(&localscdb, "/control/locals.cdb")) return 0;
+   if (!stralloc_0(&localscdb)) return 0;
+   if (!constmap_init(&maplocals,"",0,1)) return 0;
+ } else {
+   if (control_readfile(&locals,"control/locals",1) != 1) return 0;
+   if (!constmap_init(&maplocals,locals.s,locals.len,0)) return 0;
+ }
+
  switch(control_readfile(&percenthack,"control/percenthack",0))
   {
    case -1: return 0;
@@ -1690,6 +1719,7 @@ stralloc newcbtext = {0};
 
 void regetcontrols()
 {
+ struct stat st;
  int r;
 
  if (control_readint(&bouncemaxbytes,"control/bouncemaxbytes") == -1)
@@ -1700,17 +1730,29 @@ void regetcontrols()
  while (!stralloc_0(&newcbtext)) nomem();
  while (!stralloc_copy(&custombouncetext,&newcbtext)) nomem();
 
- if (control_readfile(&newlocals,"control/locals",1) != 1)
-  { log1("alert: unable to reread control/locals\n"); return; }
+ if (stat("control/locals.cdb", &st) == 0) {
+   while (!stralloc_copys(&localscdb, auto_qmail)) nomem();
+   while (!stralloc_cats(&localscdb, "/control/locals.cdb")) nomem();
+   while  (!stralloc_0(&localscdb)) nomem();
+   
+   constmap_free(&maplocals);
+   while (!constmap_init(&maplocals,"",0,1)) nomem();
+ } else {
+   if (control_readfile(&newlocals,"control/locals",1) != 1)
+    { log1("alert: unable to reread control/locals\n"); return; }
+   
+   while (!stralloc_copys(&localscdb, "")) nomem();
+   
+   constmap_free(&maplocals);
+   while (!stralloc_copy(&locals,&newlocals)) nomem();
+   while (!constmap_init(&maplocals,locals.s,locals.len,0)) nomem();
+ }
+ 
  r = control_readfile(&newvdoms,"control/virtualdomains",0);
  if (r == -1)
   { log1("alert: unable to reread control/virtualdomains\n"); return; }
 
- constmap_free(&maplocals);
  constmap_free(&mapvdoms);
-
- while (!stralloc_copy(&locals,&newlocals)) nomem();
- while (!constmap_init(&maplocals,locals.s,locals.len,0)) nomem();
 
  if (r)
   {

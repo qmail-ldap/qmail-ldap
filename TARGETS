@@ -430,6 +430,8 @@ qldap-filter.o
 qldap-profile.o
 qldap.a
 qldap.o
+qmail-cdb
+qmail-cdb.o
 qmail-forward
 qmail-forward.o
 qmail-group
