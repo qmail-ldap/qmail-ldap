@@ -63,6 +63,7 @@ char *rcptto;
     safeput(qqt,remoteinfo);
     qmail_puts(qqt,"@");
   }
+  qmail_puts(qqt,"[");
   safeput(qqt,remoteip);
   qmail_puts(qqt,"])");
 
