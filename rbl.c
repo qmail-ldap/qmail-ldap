@@ -17,7 +17,7 @@ void rblheader(struct qmail *qqt)
   if (!rblenabled) return;
   if (!rblprintheader) return;
   /* rblmessage is safe because it does not contain any remote info */
-  if (rblmessage.s) qmail_puts(qqt,rblmessage.s);
+  if (rblmessage.s) qmail_put(qqt,rblmessage.s,rblmessage.len);
 }
 
 struct rbl {

@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: current ($Date: 2002/04/30 15:32:46 $)
+RELEASE: current ($Date: 2002/05/06 10:10:17 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -352,6 +352,9 @@ CONFIG FILES:
  Default: NULL
  Example: You can contact us at (555) 555 5555
  Note: Multiline
+       It MUST NOT contain a blank line ("\n\n") anywhere otherwise you 
+       break qsmbf. Use a line with one ore more spaces ("\n \n") instead.
+       See http://cr.yp.to/proto/qsbmf.txt for more info.
 
 ~control/quotawarning
 

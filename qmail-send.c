@@ -715,17 +715,20 @@ Hi. This is the qmail-send program at ");
    qmail_puts(&qqt,*sender.s ? ".\n\
 I'm afraid I wasn't able to deliver your message to the following addresses.\n\
 This is a permanent error; I've given up. Sorry it didn't work out.\n\
-\n\
 " : ".\n\
 I tried to deliver a bounce message to this address, but the bounce bounced!\n\
-\n\
 ");
 
-   if (custombouncetext.len)
+   if (custombouncetext.len > 1)
    {
-     qmail_put(&qqt,custombouncetext.s,custombouncetext.len-1);
-     qmail_puts(&qqt,"\n\n");
+//     qmail_puts(&qqt,"-\n");
+     qmail_puts(&qqt,custombouncetext.s);
+     if (custombouncetext.s[custombouncetext.len-2] != '\n' )
+       qmail_puts(&qqt,"\n"); /* I don't think we get here but anyway */
+//     qmail_puts(&qqt,"-\n");
    }
+
+   qmail_puts(&qqt,"\n");
 
    fd = open_read(fn2.s);
    if (fd == -1)

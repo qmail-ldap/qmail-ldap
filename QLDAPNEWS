@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license.
 
-RELEASE: $Date: 2002/05/02 09:41:44 $ ($Revision: 1.57 $)
+RELEASE: $Date: 2002/05/06 10:10:17 $ ($Revision: 1.58 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,19 @@ TODO:
  see QLDAPTODO
 
 NEWS for current stuff:
+
+ bounce messages are now qsbmf-compliant, wether custombouncetext is set or
+ not. Note that you may not have blank lines in custombouncetext.
+ Thanks to Henning Brauer for the patch and to Mike Jackson <mjj@pp.fi> for
+ the report.
+
+ The pop-before-smtp tools now support transaction of additional environment
+ variables. See POPBEFORESMTP for more info.
+
+ Use real rfc822 timestamps and more Maildir stile filename in qmail-quotawarn. 
+ This should fix order problems in mailclients.
+
+NEWS for 20020501 stuff:
 
  Major overhaul of qmail-smtpd. Completely restructured anti-spam stuff and
  replaced DENYMAIL environment variable (settable through tcpserver) with:
