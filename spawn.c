@@ -80,8 +80,9 @@ stralloc recip = {0};
 
 void err(s) char *s;
 {
- char ch; ch = delnum; substdio_put(&ssout,&ch,1);
- ch = delnum >> 8; substdio_put(&ssout,&ch,1);
+ unsigned char ch;
+ ch = (unsigned int) (unsigned char)delnum; substdio_put(&ssout,&ch,1);
+ ch = (unsigned int) (unsigned char)delnum >> 8; substdio_put(&ssout,&ch,1);
  substdio_puts(&ssout,s); substdio_putflush(&ssout,"",1);
 }
 
