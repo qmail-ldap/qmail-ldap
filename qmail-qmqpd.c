@@ -226,6 +226,10 @@ int main()
   sig_alarmcatch(resources);
   alarm(3600);
 
+#ifdef QMQP_COMPRESS
+  if (env_get("NOCOMPRESS")) compressed = -1;
+#endif
+
   bytesleft = getlen();
 
   len = getlen();
