@@ -395,6 +395,7 @@ void smtp_mail(arg) char *arg;
     if (!str_diff("SPAM", denymail)) {
        flagbarf=1;
        spamflag=1;
+       why = "refused to accept SPAM";
     }
     else
       if (!addr.s[0] || !str_diff("#@[]", addr.s)) /*mjr*/
