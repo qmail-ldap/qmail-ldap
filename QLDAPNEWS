@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2004/01/30 14:37:55 $ ($Revision: 1.169 $)
+RELEASE: $Date: 2004/01/30 17:44:29 $ ($Revision: 1.170 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -20,6 +20,11 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ It is now possible to limit the allowed senders to a qmail-group with
+ dnsender, rfc822sender and filtersender similar to dnmember, rfc822member
+ and filtermember. If membersonly is enabled and one of those sender attributes
+ is used only mails comming form this list of senders are passed to the group.
 
  Ensure qmail-remote does not print the DDC percentage in error messages.
 

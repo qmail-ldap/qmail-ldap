@@ -161,6 +161,24 @@ attributetype ( 1.3.6.1.4.1.7914.1.3.1.9 NAME 'moderatortext'
 	SUBSTR caseIgnoreSubstringsMatch
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{4096} SINGLE-VALUE )
 
+attributetype ( 1.3.6.1.4.1.7914.1.3.1.10 NAME 'dnsender'
+	DESC 'Allowed sender specified as distinguished name.'
+	EQUALITY distinguishedNameMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+
+attributetype ( 1.3.6.1.4.1.7914.1.3.1.11 NAME 'rfc822sender'
+	DESC 'Allowed sender specified as normal rf822 email address.'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} )
+
+attributetype ( 1.3.6.1.4.1.7914.1.3.1.12 NAME 'filtersender'
+	DESC 'Allowed sender specified as ldap search filter.'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{512} )
+
+
 #
 # qldapAdmin Attributes
 #
@@ -241,7 +259,7 @@ objectclass ( 1.3.6.1.4.1.7914.1.3.2.1 NAME 'qmailGroup'
 	MUST ( mail $ mailAlternateAddress $ mailMessageStore )
 	MAY ( dnmember $ rfc822member $ filtermember $ senderconfirm $
 	      membersonly $ confirmtext $ dnmoderator $ rfc822moderator $
-	      moderatortext ) )
+	      moderatortext $ dnsender $ rfc822sender $ filtersender) )
 
 objectclass ( 1.3.6.1.4.1.7914.1.4.2.1 NAME 'qldapAdmin'
 	DESC 'QMail-LDAP Subtree Admin'
