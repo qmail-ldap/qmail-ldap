@@ -248,6 +248,7 @@ void main()
   do_str("doublebouncehost",1,"doublebouncehost","2B recipient host: ");
   do_str("doublebounceto",0,"postmaster","2B recipient user: ");
   do_str("envnoathost",1,"envnoathost","Presumed domain name is ");
+  do_lst("goodmailaddr","No good mail addresses.",""," is allowed in any case.");
   do_str("helohost",1,"helohost","SMTP client HELO host name is ");
   do_str("idhost",1,"idhost","Message-ID host name is ");
   do_str("localiphost",1,"localiphost","Local IP address becomes ");
@@ -343,6 +344,7 @@ void main()
     if (str_equal(d->d_name,"doublebounceto")) continue;
     if (str_equal(d->d_name,"envnoathost")) continue;
     if (str_equal(d->d_name,"helohost")) continue;
+    if (str_equal(d->d_name,"goodmailaddr")) continue;
     if (str_equal(d->d_name,"idhost")) continue;
     if (str_equal(d->d_name,"ldapbasedn")) continue;
     if (str_equal(d->d_name,"ldapcluster")) continue;
