@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2003/09/02 12:15:44 $)
+RELEASE: current ($Date: 2003/09/07 12:28:27 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -438,6 +438,17 @@ CONFIG FILES:
        The environment variable RBLONLYHEADER overrides any rejects and only
        adds headers. This can be set by ip-range with tcpserver.
 
+~control/goodmailaddr
+
+ This file contains local recipient addresses that are always accepted in
+ conjunction with sender or recipient verify checks.
+ Default: none
+ Example: user@domain or @domain
+ Note: This is useful for things like <postmaster@domain.com> and other
+       addresses you always want to accept, even if they are not in the
+       ldap directory or when a lookup temporarly fails. See RCPTCHECK
+       and SENDERCHECK.
+
 ~control/badrcptto
 
  This file contains local recipient addresses that are rejected.
@@ -711,6 +722,34 @@ TARPITDELAY
  Note: Connection which are tarpitted take a long time to finish. Be aware
        that this ties up the available qmail-smtpd slots. Raise connection
        limits with tcpserver if neccessary.
+
+RCPTCHECK
+
+ Check if the recipient (envelope "rcpt to:") of a message really exists. If not
+ give a 550 reject right now instead of bouncing later in qmail-lspawn.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: Only applies to recipients whose domain is listed in ~control/locals.
+       Recipients domains listed in ~control/rcpthosts are allowed without
+       further checks. If RELAYCLIENT is set, all other recipients are allowed
+       as well. Addresses or domains listed in ~control/goodmailaddr are
+       unconditionally allowed in all cases.
+
+SENDERCHECK
+
+ Check if the sender (envelope "mail from:") of a message really exists (in the
+ ldap directory). If not give a 550 reject right now.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" or "LOOSE" or "STRICT"
+ Note: Only applies to senders whose domain is listed in ~control/locals.
+       Setting to "LOOSE" will allow only senders which are listed either in
+       ~control/locals or ~control/rcpthosts. Setting to "STRICT" will only
+       allow senders which are listed in ~control/locals. With this you can
+       enforce for example that people from certain ip ranges can only send
+       if they have a valid existing email address with you.
+
 
 ================================================================================
 

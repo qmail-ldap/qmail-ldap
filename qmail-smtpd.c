@@ -140,6 +140,7 @@ void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); 
 void err_dns() { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
 void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
 void err_qqt() { out("451 qqt failure (#4.3.0)\r\n"); }
+void err_ldapsoft() { out("451 temporary ldap lookup failure, try again later\r\n"); logline(1,"temporary ldap lookup failure"); }
 
 void err_bmf() { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
 void err_bmfunknown() { out("553 sorry, your mail from a host without RR DNS was administratively denied. (#5.7.1)\r\n"); }
@@ -152,6 +153,7 @@ void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
 void err_relay() { out("553 we don't relay (#5.7.1)\r\n"); }
 void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
 void err_wantrcpt() { out("503 RCPT first (#5.5.1)\r\n"); logline(3,"'rcpt to' first"); }
+
 void err_noop() { out("250 ok\r\n"); logline(3,"'noop'"); }
 void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n"); logpid(3); logstring(3,"vrfy for: "); logstring(3,arg); logflush(3); }
 
@@ -215,11 +217,17 @@ struct constmap mapbmfunknown;
 int rmfok = 0;
 stralloc rmf = {0};
 struct constmap maprmf;
-int rblok = 0;
-int rbloh = 0;
 int brtok = 0;
 stralloc brt = {0};
 struct constmap mapbadrcptto;
+int localsok = 0;
+stralloc locals = {0};
+struct constmap maplocals;
+int gmaok = 0;
+stralloc gma = {0};
+struct constmap mapgma;
+int rblok = 0;
+int rbloh = 0;
 int errdisconnect = 0;
 int nobounce = 0;
 int sanitycheck = 0;
@@ -228,6 +236,9 @@ int blockrelayprobe = 0;
 int tarpitcount = 0;
 int tarpitdelay = 5;
 int maxrcptcount = 0;
+int sendercheck = 0;
+int rcptcheck = 0;
+int ldapsoftok = 0;
 
 void setup()
 {
@@ -281,6 +292,16 @@ void setup()
   if (brtok)
     if (!constmap_init(&mapbadrcptto,brt.s,brt.len,0)) die_nomem();
 
+  localsok = control_readfile(&locals,"control/locals",0);
+  if (localsok == -1) die_control();
+  if (localsok)
+    if (!constmap_init(&maplocals,locals.s,locals.len,0)) die_nomem();
+
+  gmaok = control_readfile(&gma,"control/goodmailaddr",0);
+  if (gmaok == -1) die_control();
+  if (gmaok)
+    if (!constmap_init(&mapgma,gma.s,gma.len,0)) die_nomem();
+
   if (env_get("RBL")) {
     rblok = rblinit();
     if (rblok == -1) die_control();
@@ -292,6 +313,14 @@ void setup()
   if (env_get("SANITYCHECK")) sanitycheck = 1;
   if (env_get("RETURNMXCHECK")) returnmxcheck = 1;
   if (env_get("BLOCKRELAYPROBE")) blockrelayprobe = 1;
+  if (env_get("SENDERCHECK"))
+  {
+    sendercheck = 1;
+    if (!str_diff("LOOSE",env_get("SENDERCHECK"))) sendercheck = 2;
+    if (!str_diff("STRICT",env_get("SENDERCHECK"))) sendercheck = 3;
+  }
+  if (env_get("RCPTCHECK")) rcptcheck = 1;
+  if (env_get("LDAPSOFTOK")) ldapsoftok = 1;
   relayok = relayclient = env_get("RELAYCLIENT");
 
 #ifdef SMTPEXECCHECK
@@ -329,6 +358,11 @@ void setup()
   if (nobounce) logstring(2,"nobounce ");
   if (rblok) logstring(2,"rblcheck ");
   if (rbloh) logstring(2,"rblonlyheader ");
+  if (sendercheck) logstring(2,"sendercheck ");
+  if (sendercheck == 2) logstring(2,"-loose ");
+  if (sendercheck == 3) logstring(2,"-strict ");
+  if (rcptcheck) logstring(2,"rcptcheck ");
+  if (ldapsoftok) logstring(2,"ldapsoftok ");
 #ifdef SMTPEXECCHECK
   if (execcheck_on()) logstring(2, "rejectexecutables ");
 #endif
@@ -549,6 +583,13 @@ int rmfcheck()
 int addrallowed()
 {
   int r;
+  int j;
+  if (localsok)
+  {
+    j = byte_rchr(addr.s,addr.len,'@');
+    if (j < addr.len)
+      if (constmap(&maplocals,addr.s + j,addr.len - j - 1)) return 1;
+  }
   r = rcpthosts(addr.s,str_len(addr.s));
   if (r == -1) die_control();
   return r;
@@ -562,6 +603,30 @@ int rcptdenied()
   j = byte_rchr(addr.s,addr.len,'@');
   if (j < addr.len)
     if (constmap(&mapbadrcptto, addr.s + j, addr.len - j - 1))
+      return 1;
+  return 0;
+}
+
+int addrlocals()
+{
+  int j;
+  if (!localsok) return 0;
+  if (constmap(&maplocals, addr.s, addr.len - 1)) return 1;
+  j = byte_rchr(addr.s,addr.len,'@');
+  if (j < addr.len)
+    if (constmap(&maplocals, addr.s + j, addr.len - j - 1))
+      return 1;
+  return 0;
+}
+
+int goodmailaddr()
+{
+  int j;
+  if (!gmaok) return 0;
+  if (constmap(&mapgma, addr.s, addr.len - 1)) return 1;
+  j = byte_rchr(addr.s,addr.len,'@');
+  if (j < addr.len)
+    if (constmap(&mapgma, addr.s + j, addr.len - j - 1))
       return 1;
   return 0;
 }
@@ -767,6 +832,50 @@ void smtp_mail(arg) char *arg;
       }
   }
 
+  /* check if sender exists in ldap */
+  if (sendercheck && !bounceflag)
+  {
+    if (!goodmailaddr()) /* good mail addrs go through anyway */
+    {
+      if (addrlocals())
+      {
+        switch (ldaplookup(&addr))
+        {
+          case 1: /* valid */
+            break;
+          case 0: /* invalid */
+            err_554msg("refused mailfrom because sender address does not exist");
+            if (errdisconnect) err_quit();
+            return;
+          case -1:
+          case default: /* other error, treat as soft 4xx */
+            if (ldapsoftok)
+              break;
+            err_ldapsoft();
+            if (errdisconnect) err_quit();
+            return;
+        }
+      } else {
+        /* not in addrlocals, ldap lookup is useless */
+        /* normal mode: let through, it's just an external mail coming in */
+        /* loose mode: see if sender is in rcpthosts, if no reject here */
+        if (sendercheck == 2 && !addrallowed())
+        {
+          err_554msg("refused mailfrom because valid local sender address required");
+          if (errdisconnect) err_quit();
+          return;
+        }
+        /* strict mode: we require validated sender so reject here right out */
+        if (sendercheck == 3)
+        {
+          err_554msg("refused mailfrom because valid local sender address required");
+          if (errdisconnect) err_quit();
+          return;
+        }
+      }
+    }
+  }
+
   seenmail = 1;
   if (!stralloc_copys(&rcptto,"")) die_nomem();
   if (!stralloc_copys(&mailfrom,addr.s)) die_nomem();
@@ -776,12 +885,15 @@ void smtp_mail(arg) char *arg;
 }
 
 void smtp_rcpt(arg) char *arg; {
-  if (!seenmail) {
-   err_wantmail();
-   if (errdisconnect) err_quit();
-   return;
+  if (!seenmail)
+  {
+    err_wantmail();
+    if (errdisconnect) err_quit();
+    return;
   }
   logpid(3); logstring(3,"remote sent 'rcpt to': "); logstring(3,arg); logflush(3);
+
+  /* syntax check */
   if (!addrparse(arg))
   {
     err_syntax();
@@ -802,6 +914,8 @@ void smtp_rcpt(arg) char *arg; {
       return;
     }
   }
+
+  /* do we block this recipient */
   if (rcptdenied())
   {
     err_badrcptto();
@@ -809,6 +923,8 @@ void smtp_rcpt(arg) char *arg; {
     if (errdisconnect) err_quit();
     return;
   }
+
+  /* is sender ip allowed to relay */
   if (relayclient)
   {
     --addr.len;
@@ -823,8 +939,10 @@ void smtp_rcpt(arg) char *arg; {
       if (errdisconnect) err_quit();
       return; 
     }
-  } /* else from if relayclient */
+  }
   ++rcptcount;
+
+  /* maximum recipient limit reached */
   if (maxrcptcount && rcptcount > maxrcptcount)
   {
     err_maxrcpt();
@@ -832,6 +950,8 @@ void smtp_rcpt(arg) char *arg; {
     if (errdisconnect) err_quit();
     return;
   }
+
+  /* only one recipient for bounce messages */
   if (rcptcount > 1 && (!mailfrom.s[0] || !str_diff("#@[]", mailfrom.s)))
   {
     err_badbounce();
@@ -839,6 +959,34 @@ void smtp_rcpt(arg) char *arg; {
     if (errdisconnect) err_quit();
     return;
   }
+
+  /* check if recipient exists in ldap */
+  if (rcptcheck)
+  {
+    if (!goodmailaddr())
+    {
+      if (addrlocals())
+      {
+        switch (ldaplookup(&addr))
+        {
+          case 1: /* valid */
+            break;
+          case 0: /* invalid */
+            err_554msg("message rejected because recipient does not exist");
+            if (errdisconnect) err_quit();
+            return;
+          case -1:
+          case default: /* other error, treat as soft 4xx */
+            if (ldapsoftok)
+              break;
+            err_ldapsoft();
+            if (errdisconnect) err_quit();
+            return;
+        }
+      } /* else this is relaying, don't do anything */
+    }
+  }
+
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
   if (!stralloc_0(&rcptto)) die_nomem();
