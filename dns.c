@@ -17,8 +17,9 @@ extern int h_errno;
 #include "stralloc.h"
 #include "dns.h"
 #include "case.h"
-#ifdef FUCKVERISIGN
+#ifdef IGNOREVERISIGN
 #include "byte.h"
+#define FUCKVERISIGN 
 #endif
 
 static unsigned short getshort(c) unsigned char *c;

@@ -12,7 +12,7 @@
 # -DDATA_COMPRESS to use the smtp on the fly DATA compression 
 # -DEXTERNAL_TODO to use the external high-performance todo processing (this
 #     avoids the silly qmail syndrome with high injection rates)
-# -DFUCKVERISIGN to disallow dns wildchar matches on gtlds, thanks verisign.
+# -DIGNOREVERISIGN to disallow dns wildchar matches on gtlds, thanks verisign.
 # -DQLDAP_CLUSTER for enabling cluster support
 # -DQMQP_COMPRESS to use the QMQP on the fly compression (for clusters)
 # -DQUOTATRASH to include the Trash in the quota calculation (normaly it is not)

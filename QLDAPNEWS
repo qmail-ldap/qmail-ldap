@@ -6,7 +6,7 @@ This LDAP patches for qmail come with NO WARRANTY.
 
 These patches are under the BSD license. See LICENSE.
 
-RELEASE: $Date: 2003/09/23 09:42:08 $ ($Revision: 1.121 $)
+RELEASE: $Date: 2003/09/26 14:38:04 $ ($Revision: 1.122 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -23,7 +23,7 @@ NEWS for current stuff:
  Removed some unneccesary verbositiy in qmail-secretary.
 
  Bug fix in the maildir string creation. A specified count value will over-
- wirte any size settings. Thanks to Neil Sequeira for reporting this issue.
+ write any size settings. Thanks to Neil Sequeira for reporting this issue.
 
  Added auth_smtp and AUTH capabilities to qmail-smtpd. Enabled via the 
  SMTPAUTH env var. If SMTPAUTH is set to TLSREQUIRED it is neccesairy to
@@ -40,9 +40,10 @@ NEWS for current stuff:
  documentation should not be respected, because courier does not respect
  it either.
 
- New compile time option FUCKVERISIGN to disable dns wildchar matches
+ New compile time option IGNOREVERISIGN to disable dns wildcard matches
  on gtlds. With this the return mx check will work again with .com doamins.
- A big hurray for verisign that added this new feature to the internet.
+ This version can also handle multiple A records. A big hurray to verisign
+ who added this new feature to the internet.
 
  New tool qmail-verify which is used for email address verification.
 
