@@ -113,8 +113,14 @@ stralloc grouppassword = {0};
 int
 init_controls(void)
 {
-	if (control_rldef(&grouplogin, "control/ldapgrouplogin", 0, "") == -1)
+	switch (control_readline(&grouplogin, "control/ldapgrouplogin")) {
+	case 0:
+		return 0;
+	case 1:
+		break;
+	default:
 		return -1;
+	}
 	if (!stralloc_0(&grouplogin)) return -1;
 
 	if (control_rldef(&grouppassword, "control/ldapgrouppassword",
