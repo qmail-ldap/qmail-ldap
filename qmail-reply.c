@@ -802,7 +802,7 @@ int main(int argc, char **argv)
 	timeout = REPLY_TIMEOUT;
 
 	while((opt = getopt(argc,argv,"f:j:")) != opteof)
-		switch(opt) {
+		switch (opt) {
 		case 'f':
 			readmail(optarg);
 			flagenv = 0;
