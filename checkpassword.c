@@ -547,7 +547,7 @@ char **argv;
    /* NS-MTA-MD5 */
       shift = 12;
       if (!strlen(password.s) == 76) {
-      debug_msg(" comparing passwords \t: NS-MTA-MD5 password string length mismatch\n);
+      debug_msg(" comparing passwords \t: NS-MTA-MD5 password string length mismatch\n");
       _exit(1); } /* boom */
       strncpy(salt,&password.s[44],32);
       salt[32] = 0;
