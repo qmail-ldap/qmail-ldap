@@ -40,6 +40,7 @@ char *aliasempty;
 
 /* initialize the string arrays, this uses DJB's libs */
 extern stralloc qldap_me;
+extern stralloc qldap_objectclass;
 stralloc    qldap_defdotmode = {0};
 stralloc    qldap_defaultquota = {0};
 stralloc    qldap_quotawarning = {0};

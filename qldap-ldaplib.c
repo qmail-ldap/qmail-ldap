@@ -30,9 +30,11 @@ static int ldap_get_extrainfo(LDAP *ld, LDAPMessage *msg, extrainfo *info);
 
 /* internal data structures */
 stralloc qldap_me = {0};				/* server name, also external visible */
+stralloc qldap_objectclass = {0};		/* the search objectclass, external visible */
+
+/* internal use only vars */
 static stralloc qldap_server = {0};		/* name of ldap server */
 static stralloc qldap_basedn = {0};		/* the search basedn */
-static stralloc qldap_objectclass = {0};	/* the search objectclass */
 static stralloc qldap_user = {0};		/* the ldap user ( for login ) */
 static stralloc qldap_password = {0};	/* the ldap login password */
 

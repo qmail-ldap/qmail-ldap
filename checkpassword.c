@@ -44,6 +44,7 @@
 #endif
 
 extern stralloc qldap_me;
+extern stralloc qldap_objectclass;
 
 int rebind; 
 int cluster;
