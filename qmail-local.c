@@ -738,7 +738,7 @@ char **argv;
          dirargs[0] = s; dirargs[1] = homedir;
          dirargs[2] = aliasempty; dirargs[3] = 0;
          execv(*dirargs,dirargs);
-         strerr_die5x(111,"Error while running automatic dirmaker:",s,": ",error_str(errno),". (LDAP-ERR #2.3.0)");
+         strerr_die5x(111,"Error while running automatic dirmaker:",s,": ",error_str(errno),". (LDAP-ERR #2.2.1)");
        }
 
        wait_pid(&wstat,child);
@@ -747,12 +747,12 @@ char **argv;
        switch(wait_exitcode(wstat)) {
        case 0: break;
        default:
-         strerr_die3x(111,s,": exited non zero",". (LDAP-ERR #2.3.0)");
+         strerr_die3x(111,s,": exited non zero",". (LDAP-ERR #2.2.2)");
        }
        if (chdir(homedir) == -1) 
-          strerr_die5x(111,"Unable to switch to ",homedir," even after running dirmaker: ",error_str(errno),". (LDAP-ERR #2.3.0)");
+          strerr_die5x(111,"Unable to switch to ",homedir," even after running dirmaker: ",error_str(errno),". (LDAP-ERR #2.2.3)");
      } else {
-       strerr_die5x(111,"Unable to switch to ",homedir,", it does exist but is not accessable: ",error_str(errno),". (LDAP-ERR #2.3.0)");
+       strerr_die5x(111,"Unable to switch to ",homedir,", it does exist but is not accessable: ",error_str(errno),". (LDAP-ERR #2.2.4)");
      }
    }
 #else

@@ -68,7 +68,7 @@ char *rcptto;
   qmail_puts(qqt,"])");
 
   qmail_puts(qqt," (envelope-sender <");
-  safeput(qqt,mailfrom);
+  if (mailfrom) safeput(qqt,mailfrom);
   qmail_puts(qqt,">)\n          by ");
 
   safeput(qqt,local);
@@ -76,7 +76,7 @@ char *rcptto;
   qmail_puts(qqt,protocol);
 
   qmail_puts(qqt,"\n          for <");
-  safeput(qqt,rcptto);
+  if (rcptto) safeput(qqt,rcptto);
   qmail_puts(qqt,">; ");
 
   datetime_tai(&dt,now());

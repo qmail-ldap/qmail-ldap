@@ -1459,7 +1459,7 @@ getln.a substdio.a stralloc.a alloc.a error.a str.a fs.a socket.lib
 	./load qmail-qmqpc slurpclose.o timeoutread.o \
 	timeoutwrite.o timeoutconn.o ip.o control.o auto_qmail.o \
 	sig.a ndelay.a open.a getln.a substdio.a stralloc.a alloc.a \
-	error.a str.a fs.a  `cat socket.lib`
+	error.a str.a fs.a dns.o ipalloc.o `cat dns.lib` `cat socket.lib`
 
 qmail-qmqpc.0: \
 qmail-qmqpc.8
@@ -1469,7 +1469,7 @@ qmail-qmqpc.o: \
 compile qmail-qmqpc.c substdio.h getln.h readwrite.h exit.h \
 stralloc.h gen_alloc.h slurpclose.h error.h sig.h ip.h timeoutconn.h \
 timeoutread.h timeoutwrite.h auto_qmail.h control.h fmt.h
-	./compile qmail-qmqpc.c
+	./compile $(LDAPON) qmail-qmqpc.c
 
 qmail-qmqpd: \
 load qmail-qmqpd.o received.o now.o date822fmt.o qmail.o auto_qmail.o \

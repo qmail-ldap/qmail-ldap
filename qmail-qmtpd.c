@@ -130,7 +130,7 @@ main()
     else if (ch == 13) flagdos = 1;
     else badproto();
  
-    received(&qq,"QMTP",local,remoteip,remotehost,remoteinfo,(char *) 0);
+    received(&qq,"QMTP",local,remoteip,remotehost,remoteinfo,(char *) 0,(char *) 0,(char *) 0);
  
     /* XXX: check for loops? only if len is big? */
  

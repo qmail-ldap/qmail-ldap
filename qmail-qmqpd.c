@@ -78,7 +78,7 @@ void identify()
   if (!local) local = env_get("TCPLOCALIP");
   if (!local) local = "unknown";
  
-  received(&qq,"QMQP",local,remoteip,remotehost,remoteinfo,(char *) 0);
+  received(&qq,"QMQP",local,remoteip,remotehost,remoteinfo,(char *) 0,(char *) 0,(char *) 0);
 }
 
 char buf[1000];

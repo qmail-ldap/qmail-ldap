@@ -146,7 +146,7 @@ void get_qldap_controls()
 
    if (control_rldef(&qldap_me,"control/me",0,"") == -1) _exit(1);
    if (!stralloc_0(&qldap_me)) _exit(QLX_NOMEM);
-   debug_msg(OUTPUT," control/me \t: %s\n",qldap_me.s);
+   debug_msg(OUTPUT," control/me\t\t: %s\n",qldap_me.s);
 
 #ifdef AUTOHOMEDIRMAKE
    if (control_rldef(&qldap_dirmaker,"control/dirmaker",0,(char *) 0) == -1) _exit(1);
@@ -252,18 +252,18 @@ int qldap_get( char *login, char *passwd, unsigned int *uid, unsigned int *gid )
 
    /* check if the ldap entry is active */
    if ( (vals = ldap_get_values(ld,msg,LDAP_ISACTIVE)) != NULL ) {
-      debug_msg(OUTPUT,"accountStatus is: %s\n", vals[0]);
+      debug_msg(OUTPUT," accountStatus is\t: %s\n", vals[0]);
       if ( !str_diff(ISACTIVE_BOUNCE, vals[0]) ) _exit(1);
       if ( !str_diff(ISACTIVE_NOPOP, vals[0]) ) _exit(1);
    }
-#if 0
+#ifdef QLDAP_CLUSTER
    /* check if the I'm the right host */
    if ( (vals = ldap_get_values(ld,msg,LDAP_MAILHOST)) != NULL ) {
-      debug_msg(OUTPUT,"mailHost is: %s (I'm %s)\n", vals[0], qldap_me.s);
+      debug_msg(OUTPUT," mailHost is\t\t: %s (I'm %s)\n", vals[0], qldap_me.s);
       if ( str_diff(qldap_me.s, vals[0]) ) {
 		  	/* hostname is different, so I reconnect */
 #ifdef QLDAPDEBUG
-         debug_msg(OUTPUT, " would connect to new host %s\n", vals[0]);
+         debug_msg(OUTPUT, "\t\t\t  would connect to new host %s\n", vals[0]);
 #else
 			forward_session(vals[0], login, passwd);
 #endif

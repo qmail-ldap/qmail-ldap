@@ -135,7 +135,18 @@ char *server;
 
 stralloc servers = {0};
 
+#ifdef QLDAP
+#include "dns.h"
+#include "ipalloc.h"
+
+ipalloc ia = {0};
+
+void main(argc,argv)
+int argc;
+char **argv;
+#else
 main()
+#endif
 {
   int i;
   int j;
@@ -144,6 +155,22 @@ main()
 
   if (chdir(auto_qmail) == -1) die_home();
   if (control_init() == -1) die_control();
+#ifdef QLDAP
+  if ( argv[1] ) {
+	  char temp[IPFMT];
+	  if (!stralloc_copys(&servers,argv[1])) nomem();
+	  dns_init(0);
+	  switch (dns_ip(&ia,&servers)) {
+		  case DNS_HARD: die_perm();
+		  case DNS_SOFT: die_temp();
+		  case DNS_MEM: nomem();
+	  }
+
+	  temp[ip_fmt(temp,&ia.ix[0].ip)]=0;
+	  if (!stralloc_copys(&servers, temp)) nomem();
+	  if (!stralloc_0(&servers)) nomem();
+  } else
+#endif	  
   if (control_readfile(&servers,"control/qmqpservers",0) != 1) die_control();
 
   getmess();
