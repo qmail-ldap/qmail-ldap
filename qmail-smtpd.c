@@ -140,6 +140,7 @@ void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed r
 void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
 #endif
 void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command ="); logstring(3,arg); logflush(3); }
+void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); logline(3,"message denied because of 'SMTP SIZE' argument"); }
 void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
 void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
 void err_wantrcpt() { out("503 RCPT first (#5.5.1)\r\n"); logline(3,"'rcpt to' first"); }
@@ -363,6 +364,41 @@ int badmxcheck(dom) char *dom;
   return (ret);
 }
 
+int sizelimit(arg)
+char *arg;
+{
+  int i;
+  long r;
+  unsigned long sizebytes = 0;
+
+  i = str_chr(arg,'<');
+  if (arg[i])
+    arg += i + 1;
+  else {
+    arg += str_chr(arg,':');
+    if (*arg == ':') ++arg;
+    while (*arg == ' ') ++arg;
+  }
+
+  arg += str_chr(arg,' ');
+  if (*arg == ' ') while (*arg == ' ') ++arg;
+  else return 1;
+
+  i = str_chr(arg,'=');
+  arg[i] = 0;
+  if (case_equals(arg,"SIZE")) {
+    arg += i;
+    while (*++arg && *arg > 47 && *arg < 58) {
+      sizebytes *= 10;
+      sizebytes += *arg - 48;
+    }
+    r = databytes - sizebytes;
+    if (r < 0) return 0;
+  }
+  return 1;
+}
+
+
 int bmfcheck()
 {
   int j;
@@ -456,6 +492,7 @@ void smtp_mail(arg) char *arg;
     logpid(2); logstring(2,"RFC821 syntax error in mail from ="); logstring(2,arg); logflush(2);
     return;
   }
+  if (databytes && !sizelimit(arg)) { err_size(); return; }
   logpid(3); logstring(3,"mail from ="); logstring(3,addr.s); logflush(3);
   flagbarf = bmfcheck();
   if (flagbarf)
