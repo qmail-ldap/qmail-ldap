@@ -38,7 +38,6 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	char	*a, *s, *t, *l, *p;
 	int	i;
 
-	sleep(20);
 	if (argc < 2)
 		auth_error(AUTH_CONF);
 	if (str_diff(argv[1], "-d") == 0) {
