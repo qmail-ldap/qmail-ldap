@@ -287,6 +287,14 @@ int pref;
 {
  int r;
  struct ip_mx ix;
+#ifdef TLS
+ stralloc fqdn = {0};
+
+ if (!stralloc_copy(&fqdn,sa)) return DNS_MEM;
+ if (!stralloc_0(&fqdn)) return DNS_MEM;
+ ix.fqdn = fqdn.s;
+ alloc_free(fqdn);
+#endif
 
  if (!stralloc_copy(&glue,sa)) return DNS_MEM;
  if (!stralloc_0(&glue)) return DNS_MEM;
@@ -297,6 +305,7 @@ int pref;
      if (!ipalloc_append(ia,&ix)) return DNS_MEM;
      return 0;
     }
+
  }
 
  switch(resolve(sa,T_A))

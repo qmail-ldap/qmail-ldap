@@ -2303,6 +2303,16 @@ compile wait_pid.c error.h haswaitp.h
 #	chmod 640 /var/qmail/control/cert.pem
 #	chown qmaild:qmail /var/qmail/control/cert.pem
 
+#cert-req:
+#	/usr/local/bin/openssl req -new -nodes \
+#	-out req.pem \
+#	-keyout /var/qmail/control/cert.pem
+#	chmod 640 /var/qmail/control/cert.pem
+#	chown qmaild:qmail /var/qmail/control/cert.pem
+#	@echo
+#	@echo "Send req.pem to your CA to obtain signed_req.pem, and do:"
+#	@echo "cat signed_req.pem >> /var/qmail/control/cert.pem"
+
 backup: \
 BLURB BLURB2 BLURB3 BLURB4 README FAQ INSTALL INSTALL.alias INSTALL.ctl \
 INSTALL.ids INSTALL.maildir INSTALL.mbox INSTALL.vsm REMOVE.sendmail \

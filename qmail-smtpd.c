@@ -30,6 +30,7 @@
 #ifdef TLS
 #include <openssl/ssl.h>
 SSL *ssl = NULL;
+stralloc clientcert = {0};
 #endif
 
 #define MAXHOPS 100
@@ -135,6 +136,9 @@ void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n")
 
 void err_bmf() { out("553 syntax error, please forward to your postmaster (#5.7.1)\r\n"); }
 void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
+#ifdef TLS
+void err_nogwcert() { out("553 no valid cert for gatewaying (#5.7.1)\r\n"); }
+#endif
 void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); logpid(3); logstring(3,"unrecognized command ="); logstring(3,arg); logflush(3); }
 void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
 void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); logline(3,"'mail from' first"); }
@@ -548,12 +552,50 @@ void smtp_rcpt(arg) char *arg; {
       logpid(2); logstring(2,"'rcpt to' not allowed ="); logstring(2,arg); logflush(2);
       return;
     }
+#ifndef TLS
     if (!addrallowed()) 
     { 
        err_nogateway(); 
        logpid(2); logstring(2,"no mail relay for 'rcpt to' ="); logstring(2,arg); logflush(2);
        return; 
     }
+#else
+    if (!addrallowed())
+     {
+      if (ssl)
+      { STACK_OF(X509_NAME) *sk;
+        X509 *peercert;
+        stralloc tlsclients = {0};
+        struct constmap maptlsclients;
+
+        SSL_set_verify(ssl,
+                       SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
+                       NULL);
+        if ((sk = SSL_load_client_CA_file("control/clientca.pem")) == NULL)
+         { err_nogateway(); return; }
+        SSL_set_client_CA_list(ssl, sk);
+        if((control_readfile(&tlsclients,"control/tlsclients",0) != 1) ||
+           !constmap_init(&maptlsclients,tlsclients.s,tlsclients.len,0))
+          { err_nogateway(); return; }
+
+        SSL_renegotiate(ssl);
+        SSL_do_handshake(ssl);
+        ssl->state = SSL_ST_ACCEPT;
+        SSL_do_handshake(ssl);
+        if ((SSL_get_verify_result(ssl) == X509_V_OK) &&
+             (peercert = SSL_get_peer_certificate(ssl)))
+         {char emailAddress[256];
+
+          if (!constmap(&maptlsclients,clientcert.s,clientcert.len))
+            { err_nogwcert(); return; }
+          relayclient = "";
+         }
+          else { err_nogwcert(); return; }
+       }
+      else { err_nogateway(); return; }
+     }
+#endif
+
   }
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
@@ -697,9 +739,15 @@ void smtp_data() {
 #ifdef TLS
   if(ssl){
    if (!stralloc_copys(&protocolinfo, SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
-   if (!stralloc_ready(&protocolinfo,protocolinfo.len + 16)) die_nomem();
-   byte_copy(protocolinfo.s+protocolinfo.len,16," encrypted SMTP");
-   protocolinfo.len += 16;
+#   if (!stralloc_ready(&protocolinfo,protocolinfo.len + 16)) die_nomem();
+#   byte_copy(protocolinfo.s+protocolinfo.len,16," encrypted SMTP");
+#   protocolinfo.len += 16;
+   if (!stralloc_catb(&protocolinfo, " encrypted SMTP", 15)) die_nomem();
+   if (clientcert.len){
+     if (!stralloc_catb(&protocolinfo," cert ", 6)) die_nomem();
+     if (!stralloc_catb(&protocolinfo,clientcert.s, clientcert.len)) die_nomem();
+   }
+   if (!stralloc_0(&protocolinfo)) die_nomem();
   } else if (!stralloc_copyb(&protocolinfo,"SMTP",5)) die_nomem();
   received(&qqt,protocolinfo.s,local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
 #else 
@@ -765,6 +813,7 @@ void smtp_tls(arg) char *arg;
    {out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
     return;}
   SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_cb);
+  SSL_CTX_load_verify_locations(ctx, "control/clientca.pem",NULL);
  
   out("220 ready for tls\r\n"); flush();
 
