@@ -7,7 +7,7 @@
 #     from a specified account to another (swiss bigbrother law)
 # -DBIGTODO to enable the big todo patch (this can be used together with 
 #     EXTERNAL_TODO). Useful for servers with very many non-preprocessed mails
-# -DBIND_8_COMPAT need if your compile fails building dns.c because of
+# -DBIND_8_COMPAT need if the compile fails building dns.c because of
 #     undeclared defines. This is necessary on MacOS X 10.3.
 # -DCLEARTEXTPASSWD to use cleartext passwords (bad idea on production systems)
 # -DDASH_EXT to enable the dash_ext patch for extended mail addresses
@@ -34,7 +34,7 @@ LDAPINCLUDES=-I/usr/local/include
 
 # ZLIB needed for -DDATA_COMPRESS and -DQMQP_COMPRESS
 #ZLIB=-lz
-# of you installed zlib in a different path you can use something like this
+# or you installed zlib in a different path you can use something like this
 #ZLIB=-L/opt/zlib/lib -lz
 #ZINCLUDES=-I/opt/zlib/include
 

@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1998,1999,2000,2001,2002,2003,2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2004/03/29 12:55:49 $ ($Revision: 1.189 $)
+RELEASE: $Date: 2004/04/05 08:36:40 $ ($Revision: 1.190 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -777,7 +777,7 @@ NEWS for 20020501 stuff:
 NEWS for 20011001 stuff:
 
  added a variation of Henning Brauer's alternate mailhost patch.
- For more info: mailto:<qmail-ldap-get.5350@argus.pipeline.ch>
+ For more info: mailto:<qmail-ldap-get.5350@qmail-ldap.org>
 
  added a variation of Henning Brauer's dash-ext patch. The main
  difference is the way it handels the extensions.

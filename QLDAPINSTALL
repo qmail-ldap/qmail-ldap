@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2004/03/31 21:49:54 $)
+RELEASE: current ($Date: 2004/04/05 08:36:40 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -1202,8 +1202,8 @@ to your slapd.conf:
 
 MAILINGLIST, BUGS & PROBLEMS
 
-There is a qmail-ldap specific mailinglist at qmail-ldap@argus.pipeline.ch.
-To subscribe just write a mail to qmail-ldap-subscribe@argus.pipeline.ch.
+There is a qmail-ldap specific mailinglist at qmail-ldap@qmail-ldap.org.
+To subscribe just write a mail to qmail-ldap-subscribe@qmail-ldap.org.
 
 The qmail-ldap mailinglist archive can be found at
 http://www.suares.com/qmail-ldap/archive
