@@ -90,14 +90,14 @@ int len;
   
   /* then rcpthosts */
   for (j = 0;j < len;++j)
-    if (!j || (buf[j] == '.'))
+    if (!j || (buf[j] == '.')) {
       /* if rcpthosts.cdb available use this as source */
       if (fdrh != -1) {
 	r = cdb_seek(fdrh, buf + j, len - j, &dlen);
 	if (r) return r;
       } else
 	if (constmap(&maprh,buf + j,len - j)) return 1;
-
+  }
   /* finaly morercpthosts.cdb but only if not rcpthosts.cdb avail */
   if (fdmrh != -1 && fdrh == -1) {
     for (j = 0;j < len;++j)
