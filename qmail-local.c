@@ -564,7 +564,8 @@ int *cutable;
     return;
   }
 
-  for (i = safeext.len;i >= 0;--i)
+  i = safeext.len;
+  do {
     if (!i || (safeext.s[i - 1] == '-')) {
       if (!stralloc_copys(&qme,".qmail")) temp_nomem();
       if (!stralloc_cats(&qme,dash)) temp_nomem();
@@ -576,6 +577,7 @@ int *cutable;
         return;
       }
     }
+  } while (i-- != 0);
 
   *fd = -1;
 }
