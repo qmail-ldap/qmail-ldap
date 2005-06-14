@@ -1146,7 +1146,7 @@ void smtp_rcpt(char *arg)
   if (!stralloc_0(&rcptto)) die_nomem();
   if (tarpitcount && tarpitdelay && rcptcount >= tarpitcount)
   {
-    logline(4,"tarpitting");
+    logline(2,"tarpitting");
     while (sleep(tarpitdelay));
   }
   out("250 ok\r\n");
