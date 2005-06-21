@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2005/04/01 13:18:30 $)
+RELEASE: current ($Date: 2005/06/21 15:42:01 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -1017,13 +1017,13 @@ LDAP_PASSWD (default: "userPassword")
  The password for POP3/IMAP authentication
  Example: {MD5}uSI59Zyfa5lapBLGfJrD+g==
  Note: Can be encrypted with {SHA}, {SSHA}, {MD5}, {SMD5}, {MD4}, {RMD160},
-       {RMD160}, {NS-MTA-MD5},
-       {crypt} crypt (without {crypt} prefix) or cleartext (only if compiled 
-       with -DCLEARTEXTPASSWD (a bad idea on production systems)).
+       {NS-MTA-MD5}, {crypt} crypt (without {crypt} prefix) or cleartext (only
+       if compiled with -DCLEARTEXTPASSWD (a bad idea on production systems)).
        If you rebind to the ldapserver don't use {NS-MTA-MD5}, {RMD160} and
        probably {MD4}. These algorithms are sometimes not supported by the 
-       ldap servers, so check with their documentation.
-       To generate passwords you can use the included tool 'digest'.
+       ldap servers, so check with their documentation. When rebinding to
+       newer OpenLDAP versions (>2.2.23) crypt without {crypt} prefix will not
+       work. To generate passwords you can use the included tool 'digest'.
 
 
 LDAP_MAILSTORE (default: "mailMessageStore")
@@ -1197,12 +1197,12 @@ LDAP_QMAILUSER (default: "qmailUser")
 EXAMPLE QLDAP LDIF FILE:
 
 dn: cn=Andre Oppermann, o=Internet Pipeline, c=CH
-cn: Andre Oppermann
-sn: Oppermann
 objectClass: top
 objectClass: person
 objectClass: inetOrgPerson
 objectClass: qmailUser
+cn: Andre Oppermann
+sn: Oppermann
 mail: opi@opi.flirtbox.ch
 mailAlternateAddress: andre@opi.flirtbox.ch
 mailHost: opi.flirtbox.ch
@@ -1222,27 +1222,68 @@ accountStatus: active
 
 EXAMPLE SLAPD.CONF FILE:
 
+First copy qmail.schema to your OpenLDAP installation location and here is
+an example slapd.conf:
+
+#
+# ATTENTION: slapd run chrooted to /var/qmail/boot/slapd so all pathes
+# need to be relative to this chrooted dir.
+#
+
+ucdata-path ./ucdata
+
+# include needed schemas
+include ./schema/core.schema
+include ./schema/cosine.schema
+include        ./schema/nis.schema
+#include        ./schema/inetorgperson.schema
+include ./schema/qmail.schema
+
+# tuneing
+schemacheck     on
+idletimeout     60
+timelimit       60
+sizelimit       100
+defaultsearchbase "o=Internet Pipeline, c=CH"
+# for squirrelmail
+allow bind_v2
+
 #######################################################################
 # ldbm database definitions
 #######################################################################
 
+backend         ldbm
 database        ldbm
 suffix          "o=Internet Pipeline, c=CH"
-directory       /var/qmail/users
 rootdn          "cn=root, o=Internet Pipeline, c=CH"
 rootpw          secret
-index           objectclass,mail,mailAlternateAddress,uid  eq,sub
-index		accountStatus,mailHost,deliveryMode  eq
-index           default sub
+# remember you should run slapd chroot()-ed
+directory       ./ldapdb
 
-================================================================================
+# Indices to maintain
+index           objectclass                             eq
+index           uid                                     eq,sub
+index           cn,sn,mail,mailAlternateAddress         pres,eq,approx,sub
+#index          default                                 none
 
-FOR OpenLDAP 2.x DO THIS:
+EXAMPLE RUN FILE:
+#!/bin/sh
+exec 2>&1
 
-Copy qmail.schema to your OpenLDAP installation location and add this
-to your slapd.conf:
+PATH=$PATH:/usr/local/sbin:/usr/local/bin
+#
+# LDAP server
+# chuid to ldap and chroot to /var/qmail/boot/slapd
+#
 
- include /path/to/your/OpenLDAP/qmail.schema
+exec /usr/local/libexec/slapd -d 256 \
+        -u ldap -g ldap -r /var/qmail/boot/slapd -f ./slapd.conf \
+        -h "ldap:///"  # "ldaps:///"
+
+NOTES:
+An etc/passwd or etc/master.passwd and etc/group file is needed in the chroot
+directory because of OpenLDAP stupidity. Also ucdata and the needed schema
+files need to be added to the chroot.
 
 ================================================================================
 
