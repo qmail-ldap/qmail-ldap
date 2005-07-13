@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2005/06/21 15:42:01 $)
+RELEASE: current ($Date: 2005/07/13 13:16:28 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -260,7 +260,7 @@ OR
 
 ~control/locals.cdb
 
- Replaces locals and is read by qmail-local and qmail-smtpd on the fly.
+ Replaces locals and is read by qmail-send and qmail-smtpd on the fly.
  Default: locals
  Note: You don't have to -HUP qmail-send for changes in locals.cdb to
        take effect. As soon as you regenerate locals.cdb it will become
@@ -1014,7 +1014,7 @@ LDAP_QMAILGID (default: "qmailGID")
 
 LDAP_PASSWD (default: "userPassword")
 
- The password for POP3/IMAP authentication
+ The password for POP3/IMAP/SMTP authentication
  Example: {MD5}uSI59Zyfa5lapBLGfJrD+g==
  Note: Can be encrypted with {SHA}, {SSHA}, {MD5}, {SMD5}, {MD4}, {RMD160},
        {NS-MTA-MD5}, {crypt} crypt (without {crypt} prefix) or cleartext (only
