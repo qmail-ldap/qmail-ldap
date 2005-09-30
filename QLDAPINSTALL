@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2005/07/13 13:16:28 $)
+RELEASE: current ($Date: 2005/09/30 09:04:50 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -917,7 +917,9 @@ SMTP550DISCONNECT
  Affects: qmail-smtpd
  Example: "" (any value will do)
  Note: This is useful if you have a spammer trying different senders or
-       recipients in the same session separated by rset's.
+       recipients in the same session separated by rset's. Be aware of
+       the fact that this option "breaks" RFC 2821 and may cause problems
+       with legitimate SMTP traffic.
 
 TARPITCOUNT
 
@@ -1293,7 +1295,7 @@ There is a qmail-ldap specific mailinglist at qmail-ldap@qmail-ldap.org.
 To subscribe just write a mail to qmail-ldap-subscribe@qmail-ldap.org.
 
 The qmail-ldap mailinglist archive can be found at
-http://www.suares.com/qmail-ldap/archive
+http://marc.theaimsgroup.com/?l=qmail-ldap&r=1&w=2
 
 There is also a life with qmail-ldap homepage at:
 http://www.lifewithqmail.org/ldap
