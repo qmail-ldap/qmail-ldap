@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2005/04/01 14:10:30 $ ($Revision: 1.214 $)
+RELEASE: $Date: 2005/09/30 09:09:33 $ ($Revision: 1.215 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,11 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Just use malloc() instead of the code in alloc.c that code could be exploited
+ on 64-Bit systems with a lot of RAM and no limits.
+
+NEWS for 20040401a stuff:
 
  Enable logging in qmail-verify. It is not perfect but far better than
  before.
