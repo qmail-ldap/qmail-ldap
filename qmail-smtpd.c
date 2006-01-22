@@ -819,6 +819,8 @@ void smtp_ehlo(char *arg)
 void smtp_rset(char *arg)
 {
   seenmail = 0;
+  if (relayclient != NULL && relayok == NULL)
+	  env_unset("RELAYCLIENT");
   relayclient = relayok; /* restore original relayclient setting */
   out("250 flushed\r\n");
   logline(4,"remote rset");
@@ -851,8 +853,10 @@ void smtp_mail(char *arg)
   }
 
   /* check if we are authenticated, if yes enable relaying */
-  if (flagauthok && relayclient == 0)
+  if (flagauthok && relayclient == 0) {
     relayclient = "";
+    if (!env_put("RELAYCLIENT=")) die_nomem();
+  }
 
   /* smtp size check */
   if (databytes && !sizelimit(arg))
@@ -934,6 +938,7 @@ void smtp_mail(char *arg)
   if (!relayclient) {
     if (rmfcheck()) {
       relayclient = "";
+      if (!env_put("RELAYCLIENT=")) die_nomem();
       logline(4,"relaying allowed via relaymailfrom");
     }
   }
