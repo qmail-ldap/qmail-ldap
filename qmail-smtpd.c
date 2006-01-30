@@ -733,16 +733,16 @@ int goodmailaddr(void)
       if (addr.s[ext] == *auto_break)
 	extcnt++;
     for (;;) {
-      if (addr.s[ext] != *auto_break)
-	continue;
-      if (!stralloc_copyb(&gmaddr, addr.s, ext + 1))
-	die_nomem();
-      if (!stralloc_cats(&gmaddr, LDAP_CATCH_ALL))
-	die_nomem();
-      if (!stralloc_catb(&gmaddr, addr.s + at, addr.len - at - 1))
-	die_nomem();
-      if (constmap(&mapgma, gmaddr.s, gmaddr.len))
-	return 1;
+      if (addr.s[ext] == *auto_break) {
+	if (!stralloc_copyb(&gmaddr, addr.s, ext + 1))
+	  die_nomem();
+	if (!stralloc_cats(&gmaddr, LDAP_CATCH_ALL))
+	  die_nomem();
+	if (!stralloc_catb(&gmaddr, addr.s + at, addr.len - at - 1))
+	  die_nomem();
+	if (constmap(&mapgma, gmaddr.s, gmaddr.len))
+	  return 1;
+      }
       if (ext == 0)
 	break;
       ext--;
