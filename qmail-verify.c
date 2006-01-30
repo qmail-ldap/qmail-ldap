@@ -126,15 +126,15 @@ temp_nfs(void)
 	return -1;
 }
 
-int
-temp_cdb(void)
+void
+die_cdb(void)
 {
 	if (substdio_puts(subfdout,
 	    "ZTrouble reading users/cdb in qmail-verify.") == -1)
 		die_write();
 	if (substdio_putflush(subfdout, "", 1) == -1)
 		die_write();
-	return -1;
+	_exit(111);
 }
 
 int lookup(stralloc *);
@@ -358,7 +358,7 @@ lookup_cdb(const char *mail)
 	fd = open_read("users/cdb");
 	if (fd == -1)
 		if (errno != error_noent)
-			return temp_cdb();
+			die_cdb();
 
 	if (fd != -1) {
 		uint32 dlen;
@@ -367,13 +367,13 @@ lookup_cdb(const char *mail)
 		cdb_init(&cdb, fd);
 		r = cdb_seek(&cdb, "", 0, &dlen);
 		if (r != 1)
-			return temp_cdb();
+			die_cdb();
 
 		if (!stralloc_ready(&wildchars, (unsigned int) dlen))
 			die_nomem();
 		wildchars.len = dlen;
 		if (cdb_bread(&cdb, wildchars.s, wildchars.len) == -1)
-			return temp_cdb();
+			die_cdb();
 
 		i = lower.len;
 		flagwild = 0;
@@ -384,7 +384,7 @@ lookup_cdb(const char *mail)
 			    wildchars.len, lower.s[i - 1]) < wildchars.len) {
 				r = cdb_seek(&cdb,lower.s,i,&dlen);
 				if (r == -1)
-					return temp_cdb();
+					die_cdb();
 				if (r == 1) {
 					/* OK */
 					if (substdio_putflush(subfdout, "K",
