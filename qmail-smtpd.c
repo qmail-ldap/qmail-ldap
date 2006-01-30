@@ -892,7 +892,7 @@ void smtp_mail(char *arg)
     return;
   }
 
-  logline2(3,"mail from: ",addr.s);
+  logline2(4,"mail from: ",addr.s);
 
   if (needauth && !flagauthok) {
     out("530 authentication needed\r\n");
@@ -1080,7 +1080,7 @@ void smtp_mail(char *arg)
   if (!stralloc_copys(&mailfrom,addr.s)) die_nomem();
   if (!stralloc_0(&mailfrom)) die_nomem();
   rcptcount = 0;
-  if (loglevel == 2)
+  if (loglevel < 4)
     logline2(2,"mail from: ",mailfrom.s);
   out("250 ok\r\n");
 }
@@ -1117,7 +1117,7 @@ void smtp_rcpt(char *arg)
   /* do we block this recipient */
   if (rcptdenied()) {
     err_badrcptto();
-    logline2(3,"'rcpt to' denied via badrcptto: ",arg);
+    logline2(3,"'rcpt to' denied via badrcptto: ",addr.s);
     if (errdisconnect) err_quit();
     return;
   }
@@ -1130,7 +1130,7 @@ void smtp_rcpt(char *arg)
   } else {
     if (!addrallowed()) { 
       err_nogateway();
-      logline2(3,"no mail relay for 'rcpt to': ",arg);
+      logline2(3,"no mail relay for 'rcpt to': ",addr.s);
       if (errdisconnect) err_quit();
       return; 
     }
@@ -1182,7 +1182,7 @@ void smtp_rcpt(char *arg)
     }
   }
 
-  if (loglevel == 2)
+  if (loglevel < 4)
     logline2(2,"rcpt to: ",addr.s);
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
