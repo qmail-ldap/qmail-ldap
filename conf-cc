@@ -1,4 +1,3 @@
-cc -O2 -DFD_SETSIZE=2048 -g -Wall -Wimplicit -Wunused -Wcomment -Wchar-subscripts -Wshadow -Wwrite-strings -funsigned-char -Wcast-align -Wpointer-arith -Wsign-compare
-cc -O2 -DFD_SETSIZE=2048
+cc -O2
 
 This will be used to compile .c files.
