@@ -6,6 +6,7 @@
 #include "subfd.h"
 #include "alloc.h"
 #include "auto_qmail.h"
+#include "auto_break.h"
 #include "control.h"
 #include "received.h"
 #include "constmap.h"
@@ -28,6 +29,7 @@
 #include "commands.h"
 #include "dns.h"
 #include "smtpcall.h"
+#include "qmail-ldap.h"
 #include "limit.h"
 #ifdef SMTPEXECCHECK
 #include "execcheck.h"
@@ -162,7 +164,7 @@ void straynewline(void) { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r
 void oversizedline(void) { out("500 Text line too long."); logline(1,"Oversized line in data part, closing connection"); flush(); _exit(1); }
 void err_qqt(void) { out("451 qqt failure (#4.3.0)\r\n"); }
 void err_dns(void) { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
-void err_ldapsoft(void) { out("451 temporary ldap lookup failure, try again later\r\n"); logline(1,"temporary ldap lookup failure"); }
+void err_soft(char *s) { out("451 "); out(s); out("\r\n"); logline2(1,"temporary verify error: ", s); }
 void err_bmf(void) { out("553 sorry, your mail was administratively denied. (#5.7.1)\r\n"); }
 void err_bmfunknown(void) { out("553 sorry, your mail from a host ["); out(remoteip); out("] without valid reverse DNS was administratively denied (#5.7.1)\r\n"); }
 void err_maxrcpt(void) { out("553 sorry, too many recipients (#5.7.1)\r\n"); }
@@ -707,16 +709,57 @@ int rcptdenied(void)
   return 0;
 }
 
+stralloc gmaddr;
+
 int goodmailaddr(void)
 {
-  unsigned int j;
+  unsigned int at;
+#ifdef DASH_EXT
+  unsigned int ext;
+  int extcnt;
+#endif
 
   if (!gmaok) return 0;
   if (constmap(&mapgma, addr.s, addr.len - 1)) return 1;
-  j = byte_rchr(addr.s,addr.len,'@');
-  if (j < addr.len)
-    if (constmap(&mapgma, addr.s + j, addr.len - j - 1))
+  at = byte_rchr(addr.s,addr.len,'@');
+  if (at < addr.len) {
+    if (constmap(&mapgma, addr.s + at, addr.len - at - 1))
       return 1;
+    printf("lookup: %s till %c [%u]\n", addr.s, *(addr.s + at), at);
+    if (constmap(&mapgma, addr.s, at + 1))
+      return 1;
+#ifdef DASH_EXT
+    /* foo-catchall@domain.org */
+    for (ext = 0, extcnt = 1; ext < at && extcnt <= DASH_EXT_LEVELS; ext++)
+      if (addr.s[ext] == *auto_break)
+	extcnt++;
+    for (; ; --ext) {
+      if (addr.s[ext] != *auto_break)
+	continue;
+      if (!stralloc_copyb(&gmaddr, addr.s, ext + 1))
+	die_nomem();
+      if (!stralloc_cats(&gmaddr, LDAP_CATCH_ALL))
+	die_nomem();
+      if (!stralloc_catb(&gmaddr, addr.s + at, addr.len - at - 1))
+	die_nomem();
+      gmaddr.s[gmaddr.len] = 0;
+      logline2(1, "goodmailaddr: lookup ", gmaddr.s);
+      if (constmap(&mapgma, gmaddr.s, gmaddr.len))
+	return 1;
+      if (ext == 0)
+	break;
+    }
+#endif
+    /* catchall@domain.org */
+    if (!stralloc_copys(&gmaddr, LDAP_CATCH_ALL))
+      die_nomem();
+    if (!stralloc_catb(&gmaddr, addr.s + at, addr.len - at - 1))
+      die_nomem();
+    gmaddr.s[gmaddr.len] = 0;
+    logline2(1, "goodmailaddr: lookup ", gmaddr.s);
+    if (constmap(&mapgma, gmaddr.s, gmaddr.len))
+      return 1;
+  }
   return 0;
 }
 
@@ -760,8 +803,18 @@ int ldaplookup(char *address, char **s)
 	return 0;
       }
     }
-    /* FALLTHROUGH */
+    break;
   case 'Z':
+    /* soft error */
+    if (!stralloc_copys(&verifyresponse, "")) die_nomem();
+    while (call_getc(&ccverify, &ch) == 1) {
+      if (!stralloc_append(&verifyresponse, &ch)) die_nomem();
+      if (ch == 0) {
+	*s = verifyresponse.s;
+	return -1;
+      }
+    }
+    break;
   default:
     break;
   }
@@ -1004,7 +1057,7 @@ void smtp_mail(char *arg)
           default: /* other error, treat as soft 4xx */
             if (ldapsoftok)
               break;
-            err_ldapsoft();
+            err_soft(s);
             if (errdisconnect) err_quit();
             return;
         }
@@ -1136,7 +1189,7 @@ void smtp_rcpt(char *arg)
             if (ldapsoftok)
               break;
 	    logline(3,"recipient verify soft error");
-            err_ldapsoft();
+            err_soft(s);
             if (errdisconnect) err_quit();
             return;
         }

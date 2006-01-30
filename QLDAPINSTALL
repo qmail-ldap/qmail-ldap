@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2005/09/30 09:04:50 $)
+RELEASE: current ($Date: 2006/01/30 14:53:05 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -28,7 +28,9 @@ IMPORTANT NEWS:
  - From release 20030901 on we broke certain backwards compatibility with
    release 20030801 and prior releases for clarity and cleanup reasons!!
 
- - New qmailGroup attribute "bounceadmin", see QLDAPGROUP for more info
+ - tuned qmail-verify and ~control/goodmailaddr, now RCPTCHECK can be endabled
+   in almost all situations. See the goodmailaddr and RCPTCHECK entries in this
+   document for more info.
 
  - and as always a lot of smaller patches see QLDAPNEWS
 
@@ -521,13 +523,18 @@ OR
 ~control/goodmailaddr
 
  This file contains local recipient addresses that are always accepted in
- conjunction with sender or recipient verify checks.
+ conjunction with sender or recipient verify checks. Address can be specified
+ in multiple forms. user@domain.org, @domain.org, user@ and versions in the
+ form foo-catchall@domain.org including catchall@domain.org (which is the same
+ as @domain.org).
  Default: none
- Example: user@domain or @domain
+ Example: foo-bar@domain.org, @otherdomain.org, postmaster@, abuse@,
+          list-sub-catchall@list.domain.org
  Note: This is useful for things like <postmaster@domain.com> and other
        addresses you always want to accept, even if they are not in the
        ldap directory or when a lookup temporarly fails. See RCPTCHECK
-       and SENDERCHECK.
+       and SENDERCHECK. Accounts mapped via the alias user (~alias/.qmail-*)
+       can be added here so that RCPTCHECK can be endabled by default.
 
 ~control/badrcptto
 
@@ -828,6 +835,8 @@ RCPTCHECK
 
  Check if the recipient (envelope "rcpt to:") of a message really exists. If not
  give a 550 reject right now instead of bouncing later in qmail-lspawn.
+ If localdelivery is set users will additionaly be verified against ~/users/cdb
+ and the local /etc/passwd database.
  Default: off
  Affects: qmail-smtpd
  Example: "" (any value will do)
@@ -875,6 +884,8 @@ SENDERCHECK
 
  Check if the sender (envelope "mail from:") of a message really exists (in the
  ldap directory). If not give a 550 reject right now.
+ If localdelivery is set users will additionaly be verified against ~/users/cdb
+ and the local /etc/passwd database.
  Default: off
  Affects: qmail-smtpd
  Example: "" or "LOOSE" or "STRICT"

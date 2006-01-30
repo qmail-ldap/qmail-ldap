@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2006/01/22 15:40:34 $ ($Revision: 1.216 $)
+RELEASE: $Date: 2006/01/30 14:53:06 $ ($Revision: 1.217 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,21 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
 
 NEWS for current stuff:
 
+ ~control/goodmailaddr allows more ways to check if a address is allowed:
+   foobar@qmail-ldap.org        full match, user & domain
+   @qmail-ldap.org              match domain only (all users are allowed)
+   abuse@                       allow specific user for all domains
+   foo-catchall@qmail-ldap.org  allow addresses like foo-bar@qmail-ldap.org
+                                or foo-bar-baz@qmail-ldap.org
+				will only work if compiled with DASH_EXT
+   catchall@qmail-ldap.org      same as @qmail-ldap.org
+
+ Enhance qmail-verify to check against ~users/cdb and /etc/passwd if local-
+ delivery is enabled (like qmail-lspawn does). This makes RCPTCHECK usefull
+ in mixed user environments.
+
+ Minor enhancements in qmail-verify error handling.
+ 
  Set RELAYCLIENT everytime we allow relaying because of some reason (SMTP AUTH
  or relaymailfrom). Requested by many so that qmail-scanner can make additional
  decisions based on RELAYCLIENT.
