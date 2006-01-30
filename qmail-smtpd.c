@@ -725,7 +725,6 @@ int goodmailaddr(void)
   if (at < addr.len) {
     if (constmap(&mapgma, addr.s + at, addr.len - at - 1))
       return 1;
-    printf("lookup: %s till %c [%u]\n", addr.s, *(addr.s + at), at);
     if (constmap(&mapgma, addr.s, at + 1))
       return 1;
 #ifdef DASH_EXT
@@ -733,7 +732,7 @@ int goodmailaddr(void)
     for (ext = 0, extcnt = 1; ext < at && extcnt <= DASH_EXT_LEVELS; ext++)
       if (addr.s[ext] == *auto_break)
 	extcnt++;
-    for (; ; --ext) {
+    for (;;) {
       if (addr.s[ext] != *auto_break)
 	continue;
       if (!stralloc_copyb(&gmaddr, addr.s, ext + 1))
@@ -742,12 +741,11 @@ int goodmailaddr(void)
 	die_nomem();
       if (!stralloc_catb(&gmaddr, addr.s + at, addr.len - at - 1))
 	die_nomem();
-      gmaddr.s[gmaddr.len] = 0;
-      logline2(1, "goodmailaddr: lookup ", gmaddr.s);
       if (constmap(&mapgma, gmaddr.s, gmaddr.len))
 	return 1;
       if (ext == 0)
 	break;
+      ext--;
     }
 #endif
     /* catchall@domain.org */
@@ -755,8 +753,6 @@ int goodmailaddr(void)
       die_nomem();
     if (!stralloc_catb(&gmaddr, addr.s + at, addr.len - at - 1))
       die_nomem();
-    gmaddr.s[gmaddr.len] = 0;
-    logline2(1, "goodmailaddr: lookup ", gmaddr.s);
     if (constmap(&mapgma, gmaddr.s, gmaddr.len))
       return 1;
   }
