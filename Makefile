@@ -139,7 +139,7 @@ sig.h str.h stralloc.h substdio.h timeoutread.h auth_mod.h
 auth_mod.o: \
 compile auth_mod.c auth_mod.h checkpassword.h byte.h localdelivery.h \
 locallookup.h output.h qldap.h qldap-debug.h qldap-errno.h stralloc.h \
-read-ctrl.h dirmaker.h qldap-cluster.h select.h
+read-ctrl.h dirmaker.h qldap-cluster.h select.h alloc.h
 	./compile $(LDAPFLAGS) $(DEBUG) $(HDIRMAKE) $(MDIRMAKE) auth_mod.c
 
 auth_pop: \

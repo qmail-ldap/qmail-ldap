@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2006/01/30 15:54:17 $ ($Revision: 1.219 $)
+RELEASE: $Date: 2006/02/01 15:59:19 $ ($Revision: 1.220 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,11 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Rewritten forwarding code in auth_pop and auth_imap. The copyloop is now
+ using stdin and stdout for communicating with the client. This should fix
+ a problem with ssl encrypted sessions. Additionally write polling was
+ implemented. This should give better reaction on slow links.
 
  ~control/goodmailaddr allows more ways to check if a address is allowed:
    foobar@qmail-ldap.org        full match, user & domain
