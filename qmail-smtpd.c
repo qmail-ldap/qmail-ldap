@@ -703,9 +703,12 @@ int rcptdenied(void)
   if (!brtok) return 0;
   if (constmap(&mapbadrcptto, addr.s, addr.len - 1)) return 1;
   j = byte_rchr(addr.s,addr.len,'@');
-  if (j < addr.len)
+  if (j < addr.len) {
     if (constmap(&mapbadrcptto, addr.s + j, addr.len - j - 1))
       return 1;
+    if (constmap(&mapgma, addr.s, j + 1))
+      return 1;
+  }
   return 0;
 }
 
