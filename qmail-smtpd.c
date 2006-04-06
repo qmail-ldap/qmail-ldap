@@ -656,8 +656,10 @@ int bmfunknowncheck(void)
   if (case_diffs(remotehost,"unknown")) return 0;
   if (constmap(&mapbmfunknown,addr.s,addr.len - 1)) return 1;
   j = byte_rchr(addr.s,addr.len,'@');
-  if (j < addr.len)
-    if (constmap(&mapbmfunknown,addr.s + j,addr.len - j - 1)) return 1;
+  if (j < addr.len) {
+    if (constmap(&mapbmfunknown,addr.s + j, addr.len - j - 1)) return 1;
+    if (constmap(&mapbmfunknown,addr.s, j + 1)) return 1;
+  }
   return 0;
 }
 
