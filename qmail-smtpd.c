@@ -708,7 +708,7 @@ int rcptdenied(void)
   if (j < addr.len) {
     if (constmap(&mapbadrcptto, addr.s + j, addr.len - j - 1))
       return 1;
-    if (constmap(&mapgma, addr.s, j + 1))
+    if (constmap(&mapbadrcptto, addr.s, j + 1))
       return 1;
   }
   return 0;
