@@ -86,6 +86,7 @@ int main()
   int flagdos;
   int flagsenderok;
   int flagbother;
+  int flagnolocal = 0;
   unsigned long qp;
   const char *result;
   char *x;
@@ -114,6 +115,7 @@ int main()
   local = env_get("TCPLOCALHOST");
   if (!local) local = env_get("TCPLOCALIP");
   if (!local) local = "unknown";
+  if (env_get("NOLOCAL")) flagnolocal = 1;
  
   flagdos = 0;
   for (;;) {
@@ -216,7 +218,7 @@ int main()
         if (relayclient)
           str_copy(buf + len,relayclient);
         else
-          switch(rcpthosts(buf,len)) {
+          switch(rcpthosts(buf,len,flagnolocal)) {
             case -1: resources();
             case 0: failure.s[failure.len - 1] = 'D';
           }

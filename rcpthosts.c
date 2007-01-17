@@ -20,7 +20,8 @@ static struct cdb cdbmrh;
 static stralloc locals = {0};
 static struct constmap maplocals;
 
-int rcpthosts_init(void)
+int
+rcpthosts_init(void)
 {
 	fdlo = open_read("control/locals.cdb");
 	if (fdlo == -1) {
@@ -56,7 +57,8 @@ int rcpthosts_init(void)
 
 static stralloc host = {0};
 
-int localhosts(char *buf, unsigned int len)
+int
+localhosts(char *buf, unsigned int len)
 {
 	unsigned int j;
 	uint32 dlen;
@@ -79,7 +81,8 @@ int localhosts(char *buf, unsigned int len)
 	return 0;
 }
 
-int rcpthosts(char *buf, unsigned int len)
+int
+rcpthosts(char *buf, unsigned int len, int nolocal)
 {
 	unsigned int j;
 	int r;
@@ -98,13 +101,17 @@ int rcpthosts(char *buf, unsigned int len)
 	buf = host.s;
 	case_lowerb(buf,len);
 
-	/* first locals */
-	/* if local.cdb available use this as source */
-	if (fdlo != -1) {
-		r = cdb_seek(&cdblo, buf, len, &dlen);
-		if (r) return r;
-	} else   
-		if (constmap(&maplocals,buf,len)) return 1;
+	/* first locals if enabled */
+	if (!nolocal) {
+		/* if local.cdb available use this as source */
+		if (fdlo != -1) {
+			r = cdb_seek(&cdblo, buf, len, &dlen);
+			if (r)
+				return r;
+		} else   
+			if (constmap(&maplocals,buf,len))
+				return 1;
+	}
 
 	/* then rcpthosts */
 	for (j = 0;j < len;++j)

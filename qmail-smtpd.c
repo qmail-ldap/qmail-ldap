@@ -291,6 +291,8 @@ int flagauth = 0;
 int needauth = 0;
 int needssl = 0;
 int flagauthok = 0;
+int flagextauth = 0;
+int flagnolocal = 0;
 const char *authprepend;
 #ifdef TLS_SMTPD
 stralloc sslcert = {0};
@@ -402,7 +404,9 @@ void setup(void)
     if (!case_diffs("TLSREQUIRED", env_get("SMTPAUTH"))) needssl = 1;
   }
   if (env_get("AUTHREQUIRED")) needauth = 1;
+  if (env_get("AUTHORIZED")) flagextauth = 1;
   authprepend = env_get("AUTHPREPEND");
+  if (env_get("NOLOCAL")) flagnolocal = 1;
 
 #ifdef SMTPEXECCHECK
   execcheck_setup();
@@ -442,6 +446,7 @@ void setup(void)
 #ifdef TLS_SMTPD
   if (sslcert.s && *sslcert.s) logstring(3, "starttls ");
 #endif
+  if (flagnolocal) logstring(3, "nolocal ");
   if (relayclient) logstring(3,"relayclient ");
   if (sanitycheck) logstring(3,"sanitycheck ");
   if (returnmxcheck) logstring(3,"returnmxcheck ");
@@ -459,6 +464,12 @@ void setup(void)
   if (needssl) logstring(3, "-tls-required ");
   else logstring(3, " ");
   if (needauth) logstring(3, "authrequired ");
+  if (flagextauth) logstring(3, "authorized ");
+  if (authprepend) {
+    logstring(3, "authprepend: ");
+    logstring(3,authprepend);
+    logstring(3," ");
+  }
 #ifdef SMTPEXECCHECK
   if (execcheck_on()) logstring(3, "rejectexecutables ");
 #endif
@@ -684,7 +695,7 @@ int addrallowed(void)
 {
   int r;
 
-  r = rcpthosts(addr.s,addr.len - 1);
+  r = rcpthosts(addr.s,addr.len - 1, flagnolocal);
   if (r == -1) die_control();
   return r;
 }
@@ -899,7 +910,7 @@ void smtp_mail(char *arg)
 
   logline2(4,"mail from: ",addr.s);
 
-  if (needauth && !flagauthok) {
+  if (needauth && !(flagauthok || flagextauth)) {
     out("530 authentication needed\r\n");
     logline(3, "auth needed");
     if (errdisconnect) err_quit();
@@ -1535,7 +1546,7 @@ void smtp_auth(char *arg)
   const char *status;
 
   if (!flagauth) {
-    err_unimpl("AUTH without STARTTLS");
+    err_unimpl("AUTH");
     return;
   }
   if (flagauthok) {
