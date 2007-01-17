@@ -173,7 +173,7 @@ int main()
  unsigned int len;
  char ch;
 #ifdef BIGBROTHER
- unsigned int xlen, n;
+ unsigned int xlen, n, j;
  char *x;
  const char *b;
 #endif
@@ -295,12 +295,14 @@ int main()
    do
     {
      n = byte_chr(x,xlen,0);
-     if ((b = constmap(&mapbb, x, n))) {
-       if (*b) {
-         if (substdio_bput(&ssout,"T", 1) == -1) die_write();
-         if (substdio_bputs(&ssout,b) == -1) die_write();
-         if (substdio_bput(&ssout,"",1) == -1) die_write();
-       }
+     if (!(b = constmap(&mapbb, x, n))) {
+       if ((j = byte_rchr(x, n, '@')) < n)
+         b = constmap(&mapbb, x + j, n - j);
+     }  
+     if (b && *b) {
+       if (substdio_bput(&ssout,"T", 1) == -1) die_write();
+       if (substdio_bputs(&ssout,b) == -1) die_write();
+       if (substdio_bput(&ssout,"",1) == -1) die_write();
      }
      if (n++ >= xlen) break;
      x += n; xlen -= n;
