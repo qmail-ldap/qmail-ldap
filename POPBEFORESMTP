@@ -5,7 +5,7 @@ Andre Oppermann <opi@nrg4u.com>
 The POPBEFORESMTP tools are a part of the qmail-ldap patch.
 This patch for qmail comes with NO WARRANTY.
 
-RELEASE: current ($Date: 2004/04/16 13:24:16 $)
+RELEASE: current ($Date: 2007/01/17 13:08:19 $)
 
 POP-Before-SMTP:
 ======================
@@ -130,6 +130,7 @@ CONFIG FILES
  Example: HOST
           TCPREMOTEIP=FROMIP
           USER=TCPREMOTEINFO=[pbs]
+          AUTHORIZED=pbs
           
 
 ================================================================================

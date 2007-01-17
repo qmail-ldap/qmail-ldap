@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2006/01/30 14:53:05 $)
+RELEASE: current ($Date: 2007/01/17 13:08:19 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -597,11 +597,12 @@ OR
 
  This file is only used if BIGBROTHER was defined in the Makefile.
  For ISP that need to implement some surveillance method because of some
- beloved authoroties (like here in switzerland), you can enable a per
+ beloved authorities (like here in switzerland), you can enable a per
  address queue extra feature. To automatically forward all mail to and from
  badguy@badplace.ch to bigbrother@admin.ch you need to add followong line to
  ~control/bigbrother: badguy@badplace.ch:bigbrother@admin.ch.
  bigbrother@admin.ch can be a local, ldap or remote address.
+ To intercept all mails to and from a domain @badplace.ch can be used.
  Default: none (off)
  Example: badguy@badplace.ch:bigbrother@admin.ch
  Note: An extra recipient will be added in qmail-send. If the bigbrother
@@ -658,6 +659,17 @@ OR
 ================================================================================
 
 Environment variables setable via tcpserver, envdir or plain old env/sh:
+
+AUTHORIZED
+
+ If set tells qmail-smtpd that the user was authorized by a external helper,
+ most probably pbscheck. Useful together with AUTHREQUIRED.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: pbsadd will not automatically add AUTHORIZED so it needs to be added to
+       ~control/pbsenv. AUTHORIZED does not imply RELAYCLIENT both need to be
+       set to allow authorized users to send mails to everybody.
 
 AUTHPREPEND
 
@@ -791,6 +803,15 @@ NOCOMPRESS
  Disables the dynamoc data compression in qmail-qmqpd.
  Default: off
  Affects: qmail-qmqpd
+ Example: "" (any value will do)
+
+NOLOCAL
+
+ Disables the rcpthost lookup in ~control/locals or ~control/locals.cdb.
+ This restors old behaviour where qmail-smtpd only checks for rcpthosts
+ ignoring the locals file.
+ Default: off
+ Affects: qmail-smtpd / qmail-qmtpd
  Example: "" (any value will do)
 
 NOPBS

@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2006/02/01 15:59:19 $ ($Revision: 1.220 $)
+RELEASE: $Date: 2007/01/17 13:08:19 $ ($Revision: 1.221 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -16,6 +16,18 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
 NEWS for current stuff:
+
+ Implemented AUTHORIZED environment variable which is repsected by qmail-smtpd.
+ This is useful together with AUTHREQUIRED and external tools like pbscheck.
+
+ qmail-smtpd and qmail-qmtpd respect the NOLOCAL environment variable. If set
+ ~control/locals or ~control/locals.cdb is not considered to check if a
+ recipient is a local address or not. Only the rcpthosts files are searched.
+
+ It is now possible to use @domain-tld in ~control/bigbrother to capture all
+ mails to the specified domain.
+
+NEWS for 20060201 stuff:
 
  Rewritten forwarding code in auth_pop and auth_imap. The copyloop is now
  using stdin and stdout for communicating with the client. This should fix
