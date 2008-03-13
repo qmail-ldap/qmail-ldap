@@ -61,7 +61,7 @@ static int gettime(char *name, datetime_sec *mtime)
 	if (*s++ != '/')
 		return -1;
 	s += scan_ulong(s, &u);
-	if (*s == '.') {
+	if (u != 0 && *s == '.') {
 		*mtime = u;
 		return 0;
 	}
