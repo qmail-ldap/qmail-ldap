@@ -7,6 +7,7 @@
 #include "direntry.h"
 #include "datetime.h"
 #include "now.h"
+#include "scan.h"
 #include "str.h"
 #include "maildir.h"
 
@@ -50,6 +51,27 @@ stralloc *tmpname;
  closedir(dir);
 }
 
+static int gettime(char *name, datetime_sec *mtime)
+{
+	char *s;
+	unsigned long u;
+	struct stat st;
+
+	s = name + str_rchr(name, '/');
+	if (*s++ != '/')
+		return -1;
+	s += scan_ulong(s, &u);
+	if (*s == '.') {
+		*mtime = u;
+		return 0;
+	}
+
+	if (stat(name, &st) == -1)
+		return -1;
+	*mtime = st.st_mtime;
+	return (0);
+}
+
 static int append(pq,filenames,subdir,tnow)
 prioq *pq;
 stralloc *filenames;
@@ -60,7 +82,7 @@ datetime_sec tnow;
  direntry *d;
  struct prioq_elt pe;
  unsigned int pos;
- struct stat st;
+ datetime_sec mtime;
 
  dir = opendir(subdir);
  if (!dir)
@@ -74,10 +96,10 @@ datetime_sec tnow;
    if (!stralloc_cats(filenames,"/")) break;
    if (!stralloc_cats(filenames,d->d_name)) break;
    if (!stralloc_0(filenames)) break;
-   if (stat(filenames->s + pos,&st) == 0)
-     if (st.st_mtime < tnow) /* don't want to mix up the order */
+   if (gettime(filenames->s + pos,&mtime) == 0)
+     if (mtime < tnow) /* don't want to mix up the order */
       {
-       pe.dt = st.st_mtime;
+       pe.dt = mtime;
        pe.id = pos;
        if (!prioq_insert(pq,&pe)) break;
       }
