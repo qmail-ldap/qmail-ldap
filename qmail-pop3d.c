@@ -441,7 +441,7 @@ int main(int argc, char **argv)
   sig_alarmcatch(die);
   sig_pipeignore();
   
-  /* if MAILDIR is defined us this as Maildir and not the argument */
+  /* if MAILDIR is defined use this as Maildir and not the argument */
   if ( (env = env_get("MAILDIR") ) && *env ) argv[1] = env;
 
   if (!argv[1]) die_nomaildir();
