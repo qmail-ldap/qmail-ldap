@@ -1128,10 +1128,10 @@ compile maildirmake.c strerr.h exit.h
 maildirwatch: \
 load maildirwatch.o hfield.o headerbody.o maildir.o prioq.o now.o \
 getln.a env.a open.a strerr.a stralloc.a alloc.a substdio.a error.a \
-str.a
+str.a fs.a
 	./load maildirwatch hfield.o headerbody.o maildir.o \
 	prioq.o now.o getln.a env.a open.a strerr.a stralloc.a \
-	alloc.a substdio.a error.a str.a 
+	alloc.a substdio.a error.a str.a fs.a
 
 maildirwatch.0: \
 maildirwatch.1
