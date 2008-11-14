@@ -408,7 +408,7 @@ void pop3_top(char *arg)
   foo[fmt_uint(foo,m[i].size)] = 0;
   putstr(foo);
 
-  putstr(" octets \r\n");
+  putstr(" octets\r\n");
   flush();
 #else
   okay();
