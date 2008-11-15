@@ -42,6 +42,9 @@ struct credentials {
 	stralloc	home;
 	stralloc	maildir;
 	stralloc	forwarder;
+	unsigned long	size;
+	unsigned long	count;
+	unsigned long	max;
 };
 
 typedef int (*checkfunc)(stralloc *, stralloc *, struct credentials *, int);

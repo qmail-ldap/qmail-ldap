@@ -90,7 +90,6 @@ check_ldap(stralloc *login, stralloc *authdata,
 	qldap	*q;
 	char	*filter;
 	int	r, status, pwok, needforward;
-	unsigned long count, size, max;
 	const	char	*attrs[] = {
 				LDAP_UID, /* the first 10 attrs are default */
 				LDAP_QMAILUID,
@@ -164,36 +163,8 @@ check_ldap(stralloc *login, stralloc *authdata,
 		if (!stralloc_0(&c->home) ||
 		    !stralloc_0(&c->maildir))
 			return ERRNO;
-		size = count = max = 0;
-		r = qldap_get_quota(q, &size, &count, &max);
+		r = qldap_get_quota(q, &c->size, &c->count, &c->max);
 		if (r != OK) goto fail;
-		if (max != 0) {
-			num[fmt_ulong(num, max)] = 0;
-			if (!env_put2("DATASIZE", num))
-				auth_error(ERRNO);
-		}
-		if (size != 0 || count != 0) {
-			if (!stralloc_copys(&ld, "")) auth_error(ERRNO);
-			if (size != 0) {
-				if (!stralloc_catb(&ld, num,
-					    fmt_ulong(num, size)))
-					auth_error(ERRNO);
-				if (!stralloc_append(&ld, "S"))
-					auth_error(ERRNO);
-			}
-			if (count != 0) {
-				if (size != 0)
-					if (!stralloc_append(&ld, ","))
-						auth_error(ERRNO);
-				if (!stralloc_catb(&ld, num,
-					    fmt_ulong(num, count)))
-					auth_error(ERRNO);
-				if (!stralloc_append(&ld, "C"))
-					auth_error(ERRNO);
-			}
-			if (!stralloc_0(&ld)) auth_error(ERRNO);
-			if (!env_put2(ENV_QUOTA, ld.s )) auth_error(ERRNO);
-		}
 	}
 	
 	if (qldap_need_rebind() == 0) {
@@ -262,6 +233,8 @@ change_uid(unsigned int uid, unsigned int gid)
 void
 setup_env(char *user, struct credentials *c)
 {
+	static	stralloc ld = {0};
+
 	/* set up the environment for the execution of the subprogram */
 	if (!env_put2("USER", user))
 		auth_error(ERRNO);
@@ -281,6 +254,32 @@ setup_env(char *user, struct credentials *c)
 		if (!env_unset("MAILDIR"))
 			auth_error(ERRNO);
 	}
+	if (c->size != 0 || c->count != 0) {
+		if (!stralloc_copys(&ld, "")) auth_error(ERRNO);
+		if (c->size != 0) {
+			if (!stralloc_catb(&ld, num, fmt_ulong(num, c->size)))
+				auth_error(ERRNO);
+			if (!stralloc_append(&ld, "S"))
+				auth_error(ERRNO);
+		}
+		if (c->count != 0) {
+			if (c->size != 0)
+				if (!stralloc_append(&ld, ","))
+					auth_error(ERRNO);
+			if (!stralloc_catb(&ld, num, fmt_ulong(num, c->count)))
+				auth_error(ERRNO);
+			if (!stralloc_append(&ld, "C"))
+				auth_error(ERRNO);
+		}
+		if (!stralloc_0(&ld)) auth_error(ERRNO);
+		if (!env_put2(ENV_QUOTA, ld.s )) auth_error(ERRNO);
+	}
+	if (c->max != 0) {
+		num[fmt_ulong(num, c->max)] = 0;
+		if (!env_put2("DATASIZE", num))
+			auth_error(ERRNO);
+	}
+
 	logit(32, "environment successfully set: "
 	    "USER %s, HOME %s, MAILDIR %s\n",
 	    user, c->home.s != 0 && c->home.len > 0?
@@ -288,4 +287,3 @@ setup_env(char *user, struct credentials *c)
 	    c->maildir.s != 0 && c->maildir.len > 0?
 	    c->maildir.s:"unset, using aliasempty"); 
 }
-
