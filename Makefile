@@ -90,8 +90,8 @@ SHELL=/bin/sh
 
 default: it ldap
 
-ldap: qmail-quotawarn qmail-reply auth_pop auth_imap auth_smtp digest \
-qmail-ldaplookup pbsadd pbscheck pbsdbd qmail-todo qmail-forward \
+ldap: qmail-quotawarn qmail-reply auth_pop auth_imap auth_dovecot auth_smtp \
+digest qmail-ldaplookup pbsadd pbscheck pbsdbd qmail-todo qmail-forward \
 qmail-secretary qmail-group qmail-verify condwrite qmail-cdb \
 qmail-imapd.run qmail-pbsdbd.run qmail-pop3d.run qmail-qmqpd.run \
 qmail-smtpd.run qmail.run qmail-imapd-ssl.run qmail-pop3d-ssl.run \
@@ -113,6 +113,29 @@ alloc_re.o: \
 compile alloc_re.c alloc.h byte.h
 	./compile alloc_re.c
 
+auth_dovecot: \
+load auth_dovecot.o auth_mod.o checkpassword.o passwd.o digest_md4.o \
+digest_md5.o digest_rmd160.o digest_sha1.o base64.o read-ctrl.o getopt.a \
+control.o dirmaker.o mailmaker.o qldap.a localdelivery.o locallookup.o \
+pbsexec.o constmap.o getln.a strerr.a substdio.a stralloc.a env.a wait.a \
+dns.o ip.o ipalloc.o ipme.o alloc.a str.a case.a fs.a error.a timeoutconn.o \
+timeoutread.o ndelay.a open.a prot.o auto_uids.o auto_qmail.o \
+dns.lib socket.lib
+	./load auth_dovecot auth_mod.o checkpassword.o passwd.o digest_md4.o \
+	digest_md5.o digest_rmd160.o digest_sha1.o base64.o read-ctrl.o \
+	getopt.a control.o qldap.a dirmaker.o mailmaker.o localdelivery.o \
+	locallookup.o pbsexec.o constmap.o getln.a strerr.a substdio.a \
+	stralloc.a env.a wait.a dns.o ip.o ipalloc.o ipme.o alloc.a str.a \
+	case.a fs.a error.a timeoutconn.o timeoutread.o ndelay.a open.a \
+	prot.o auto_uids.o auto_qmail.o $(LDAPLIBS) $(SHADOWLIBS) \
+	`cat dns.lib` `cat socket.lib`
+
+auth_dovecot.o: \
+compile auth_dovecot.c byte.h env.h error.h exit.h fmt.h ip.h pbsexec.h \
+qldap-debug.h qldap-errno.h qmail-ldap.h readwrite.h sgetopt.h str.h \
+stralloc.h substdio.h timeoutread.h checkpassword.h auth_mod.h
+	./compile $(LDAPFLAGS) $(DEBUG) auth_dovecot.c
+
 auth_imap: \
 load auth_imap.o auth_mod.o checkpassword.o passwd.o digest_md4.o \
 digest_md5.o digest_rmd160.o digest_sha1.o base64.o read-ctrl.o getopt.a \
@@ -133,7 +156,7 @@ dns.lib socket.lib
 auth_imap.o: \
 compile auth_imap.c alloc.h byte.h env.h error.h exit.h fmt.h pbsexec.h \
 qldap-debug.h qldap-errno.h qmail-ldap.h readwrite.h scan.h sgetopt.h \
-sig.h str.h stralloc.h substdio.h timeoutread.h auth_mod.h
+sig.h str.h stralloc.h substdio.h timeoutread.h checkpassword.h auth_mod.h
 	./compile $(LDAPFLAGS) $(DEBUG) auth_imap.c
 
 auth_mod.o: \
@@ -162,7 +185,7 @@ dns.lib socket.lib
 auth_pop.o: \
 compile auth_pop.c byte.h env.h error.h exit.h pbsexec.h qldap-debug.h \
 qldap-errno.h qmail-ldap.h readwrite.h sgetopt.h str.h stralloc.h substdio.h \
-timeoutread.h auth_mod.h
+timeoutread.h checkpassword.h auth_mod.h
 	./compile $(LDAPFLAGS) $(DEBUG) auth_pop.c
 
 auth_smtp: \

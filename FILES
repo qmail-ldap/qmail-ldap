@@ -435,6 +435,7 @@ QLDAPNEWS
 QLDAPPICTURE
 QLDAPTODO
 TLS.readme
+auth_dovecot.c
 auth_imap.c
 auth_mod.c
 auth_mod.h

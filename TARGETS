@@ -381,12 +381,14 @@ forgeries.0
 man
 setup
 check
-auth_imap
 Makefile.cdb-p
+auth_imap
 auth_imap.o
 auth_mod.o
 auth_pop
 auth_pop.o
+auth_dovecot
+auth_dovecot.o
 auth_smtp
 auth_smtp.o
 auto_userl.c
