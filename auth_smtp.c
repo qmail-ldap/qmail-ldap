@@ -209,5 +209,3 @@ main(int argc, char **argv)
 	auth_error(PANIC);
 	return 1; /* should never get here */
 }
-
-
