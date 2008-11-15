@@ -124,6 +124,7 @@ main(int argc, char **argv)
 		byte_zero(authdatastr.s, authdatastr.len);
 		change_uid(c.uid, c.gid);
 		setup_env(loginstr.s, &c);
+		auth_setup(&c);
 		chdir_or_make(c.home.s, c.maildir.s);
 		auth_success(loginstr.s);
 	case FORWARD:
@@ -340,20 +341,32 @@ copyloop(int infdr, int infdw, int outfd, int timeout)
 void
 forward(char *name, char *passwd, struct credentials *c)
 {
-	struct	ip_address outip;
-	ipalloc	ip = {0};
 	int	ffd;
 	int	timeout = 31*60; /* ~30 min timeout RFC1730 */
-	int	ctimeout = 30;
 	
 	/* pop befor smtp */
 	pbsexec();
+
+	/* We have a connection, first send user and pass */
+	ffd = auth_forward(&c->forwarder, name, passwd);
+	copyloop(0, 1, ffd, timeout);
+
+	_exit(0); /* all went ok, exit normaly */
+}
+
+int
+forward_establish(stralloc *host, unsigned int port)
+{
+	struct	ip_address outip;
+	ipalloc	ip = {0};
+	int	ffd;
+	int	ctimeout = 30;
 
 	if (!ip_scan("0.0.0.0", &outip))
 		auth_error(ERRNO);
 
 	dns_init(0);
-	switch (dns_ip(&ip,&c->forwarder)) {
+	switch (dns_ip(&ip, host)) {
 		case DNS_MEM:
 			auth_error(ERRNO);
 		case DNS_SOFT:
@@ -378,15 +391,10 @@ forward(char *name, char *passwd, struct credentials *c)
 	if (ffd == -1)
 		auth_error(ERRNO);
 	
-	if (timeoutconn(ffd, &ip.ix[0].ip, &outip, auth_port, ctimeout) != 0)
+	if (timeoutconn(ffd, &ip.ix[0].ip, &outip, port, ctimeout) != 0)
 		auth_error(ERRNO);
-	
-	/* We have a connection, first send user and pass */
-	auth_forward(ffd, name, passwd);
-	copyloop(0, 1, ffd, timeout);
 
-	_exit(0); /* all went ok, exit normaly */
+	return ffd;
 }
 
 #endif /* QLDAP_CLUSTER */
-

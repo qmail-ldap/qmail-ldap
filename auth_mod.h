@@ -36,8 +36,6 @@
 
 #include "stralloc.h"
 
-extern const unsigned int auth_port;
-
 /* 
  * auth_init must return the 0-terminated strings login and authdata.
  * possible arguments should be parsed and the argument for auth_success
@@ -65,12 +63,22 @@ void auth_error(int);
  * for connection forwarding, makes the login part and returns after 
  * sending the latest command immidiatly
  */
-void auth_forward(int fd, char *login, char *passwd);
+int auth_forward(stralloc *host, char *login, char *passwd);
+
+/*
+ * establish a forwarding socket to the specified host:port
+ */
+int forward_establish(stralloc *host, unsigned int port);
 
 /*
  * returns the default maildir if it is not defined, this is normally
  * the last argument of the execution chain.
  */
 char *auth_aliasempty(void);
+
+/*
+ * setup function called before auth_success
+ */
+void auth_setup(struct credentials *c);
 
 #endif

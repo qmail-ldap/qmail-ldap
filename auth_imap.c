@@ -56,13 +56,12 @@
 #include "substdio.h"
 #include "timeoutread.h"
 
+#include "checkpassword.h"
 #include "auth_mod.h"
 
 #ifndef PORT_IMAP /* this is for testing purposes */
 #define PORT_IMAP	143
 #endif
-
-const unsigned int auth_port = PORT_IMAP;
 
 #define UP_LEN 1024
 static char auth_up[UP_LEN];
@@ -223,6 +222,11 @@ auth_fail(const char *login, int reason)
 }
 
 void
+auth_setup(struct credentials *c)
+{
+}
+
+void
 auth_success(const char *login)
 {
 	byte_zero(auth_up, sizeof(auth_up));
@@ -327,12 +331,16 @@ get_ok(int fd, const char *tag)
 	auth_error(BADCLUSTER);
 }
 
-void
-auth_forward(int fd, char *login, char *passwd)
+int
+auth_forward(stralloc *host, char *login, char *passwd)
 {
 	char *tag;
 	substdio ss;
 	char buf[512];
+	int fd;
+
+	/* does not return on failure */
+	forward_establish(host, PORT_IMAP);
 	
 	tag = env_get("IMAPLOGINTAG");
 	if (!(tag && *tag))
@@ -348,6 +356,8 @@ auth_forward(int fd, char *login, char *passwd)
 	substdio_puts(&ss, passwd); 
 	substdio_puts(&ss, "\r\n");
 	substdio_flush(&ss);
+
+	return fd;
 }
 
 #endif /* QLDAP_CLUSTER */

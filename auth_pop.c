@@ -48,13 +48,12 @@
 #include "substdio.h"
 #include "timeoutread.h"
 
+#include "checkpassword.h"
 #include "auth_mod.h"
 
 #ifndef PORT_POP3 /* this is for testing purposes */
 #define PORT_POP3	110
 #endif
-
-const unsigned int auth_port = PORT_POP3;
 
 #define UP_LEN 513
 static char auth_up[UP_LEN];
@@ -132,6 +131,11 @@ auth_fail(const char *login, int reason)
 	/* In this case we can use auth_error() */
 	logit(2, "warning: auth_fail: user %s failed\n", login);
 	auth_error(reason);
+}
+
+void
+auth_setup(struct credentials *c)
+{
 }
 
 void
@@ -217,10 +221,15 @@ static void get_ok(int fd)
 	auth_error(BADCLUSTER);
 }
 
-void auth_forward(int fd, char *login, char *passwd)
+int
+auth_forward(stralloc *host, char *login, char *passwd)
 {
 	char buf[512];
 	substdio ss;
+	int fd;
+
+	/* does not return on failure */
+	fd = forward_establish(host, PORT_POP3);
 
 	substdio_fdbuf(&ss,subwrite,fd,buf,sizeof(buf));
 	get_ok(fd);
@@ -234,6 +243,7 @@ void auth_forward(int fd, char *login, char *passwd)
 	substdio_puts(&ss, "\r\n");
 	substdio_flush(&ss);
 
+	return fd;
 }
 
 #endif /* QLDAP_CLUSTER */
