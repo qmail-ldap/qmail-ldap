@@ -33,7 +33,6 @@
  */
 #include <sys/types.h>
 #include <unistd.h>
-#include "auth_mod.h"
 #include "auto_uids.h"
 #include "byte.h"
 #include "check.h"
@@ -55,6 +54,7 @@
 #endif
 
 #include "checkpassword.h"
+#include "auth_mod.h"
 
 int
 check(checkfunc *f, stralloc *login, stralloc *authdata,
@@ -247,7 +247,7 @@ setup_env(char *user, struct credentials *c)
 		if (!env_put2("HOME", c->home.s))
 			auth_error(ERRNO);
 	
-	if (c->maildir.s != 0 && c->maildir.len > 0) {
+	if (c->maildir.s != 0 && c->maildir.s[0] && c->maildir.len > 0) {
 		if (!env_put2("MAILDIR", c->maildir.s))
 			auth_error(ERRNO);
 	} else {
@@ -282,8 +282,8 @@ setup_env(char *user, struct credentials *c)
 
 	logit(32, "environment successfully set: "
 	    "USER %s, HOME %s, MAILDIR %s\n",
-	    user, c->home.s != 0 && c->home.len > 0?
-	    c->home.s:"unset, forwarding",
-	    c->maildir.s != 0 && c->maildir.len > 0?
-	    c->maildir.s:"unset, using aliasempty"); 
+	    user, c->home.s != 0 && c->home.len > 0 ?
+	    c->home.s : "unset, forwarding",
+	    c->maildir.s != 0 && c->maildir.s[0] && c->maildir.len > 0 ?
+	    c->maildir.s : "unset, using aliasempty"); 
 }
