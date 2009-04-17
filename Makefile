@@ -133,7 +133,7 @@ dns.lib socket.lib
 auth_dovecot.o: \
 compile auth_dovecot.c byte.h env.h error.h exit.h fmt.h ip.h pbsexec.h \
 qldap-debug.h qldap-errno.h qmail-ldap.h readwrite.h sgetopt.h str.h \
-stralloc.h substdio.h timeoutread.h checkpassword.h auth_mod.h
+scan.h stralloc.h substdio.h timeoutread.h checkpassword.h auth_mod.h
 	./compile $(LDAPFLAGS) $(DEBUG) auth_dovecot.c
 
 auth_imap: \

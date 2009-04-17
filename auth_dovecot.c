@@ -44,6 +44,7 @@
 #include "qldap-errno.h"
 #include "qmail-ldap.h"
 #include "readwrite.h"
+#include "scan.h"
 #include "sgetopt.h"
 #include "str.h"
 #include "stralloc.h"
@@ -57,11 +58,13 @@
 static char auth_up[UP_LEN];
 static int auth_argc;
 static char **auth_argv;
+static char *aliasempty;
 
 void
 auth_setup(struct credentials *c)
 {
 	static stralloc qenv = {0};
+	static stralloc ext = {0};
 	char num[FMT_ULONG];
 	unsigned long size;
 
@@ -90,22 +93,33 @@ auth_setup(struct credentials *c)
 			auth_error(ERRNO);
 		if (!env_put2("userdb_quota_rule", qenv.s))
 			auth_error(ERRNO);
-		if (!env_put2("EXTRA", "userdb_quota_rule userdb_mail"))
+		if (!stralloc_copys(&ext,"userdb_quota_rule"))
 			auth_error(ERRNO);
 		logit(32, "dovecot environment set: userdb_quota_rule %s\n",
 		    qenv.s);
-	} else {
-		if (!env_put2("EXTRA", "userdb_mail"))
+	}
+
+	if (c->maildir.s != 0 && c->maildir.s[0] && c->maildir.len > 0) {
+		if (ext.s != 0 && ext.len > 0) {
+			if (!stralloc_cats(&ext," userdb_mail"))
+				auth_error(ERRNO);
+		} else {
+			if (!stralloc_copys(&ext,"userdb_mail"))
+				auth_error(ERRNO);
+		}
+		if (!stralloc_copys(&qenv,"maildir:"))
+			auth_error(ERRNO);
+		if (!stralloc_cats(&qenv, c->maildir.s))
+			auth_error(ERRNO);
+		if (!stralloc_0(&qenv))
+			auth_error(ERRNO);
+		if (!env_put2("userdb_mail", qenv.s))
 			auth_error(ERRNO);
 	}
 
-	if (!stralloc_copys(&qenv,"maildir:"))
+	if (!stralloc_0(&ext))
 		auth_error(ERRNO);
-	if (!stralloc_cats(&qenv, c->maildir.s))
-		auth_error(ERRNO);
-	if (!stralloc_0(&qenv))
-		auth_error(ERRNO);
-	if (!env_put2("userdb_mail", qenv.s))
+	if (!env_put2("EXTRA", ext.s))
 		auth_error(ERRNO);
 	logit(32, "dovecot environment set: userdb_mail %s\n", qenv.s);
 }
@@ -113,14 +127,22 @@ auth_setup(struct credentials *c)
 void
 auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 {
+	extern unsigned long loglevel;
 	char		*l, *p;
 	unsigned int	uplen, u;
 	int		n, opt;
 
-	while ((opt = getopt(argc, argv, "d:")) != opteof) {
+	while ((opt = getopt(argc, argv, "a:d:D:")) != opteof) {
 		switch (opt) {
+		case 'a':
+			aliasempty = optarg;
+			break;
 		case 'd':
 			pbstool = optarg;
+			break;
+		case 'D':
+			scan_ulong(optarg, &loglevel);
+			loglevel &= ~256;	/* see auth_mod.c */
 			break;
 		default:
 			auth_error(AUTH_CONF);
@@ -221,9 +243,7 @@ void auth_error(int errnum)
 char *
 auth_aliasempty(void)
 {
-	if (auth_argc > 0)
-		return auth_argv[auth_argc-1];
-	return (char *)0;
+	return aliasempty;
 }
 
 #ifdef QLDAP_CLUSTER
