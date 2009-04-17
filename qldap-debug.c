@@ -62,7 +62,7 @@
 
 #define LOGLEN 256
 static int addLOG;
-static unsigned long loglevel;
+unsigned long loglevel;
 substdio sslog;
 char logbuffer[LOGLEN];
 
