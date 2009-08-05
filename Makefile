@@ -24,13 +24,13 @@
 # Perhaps you have different ldap libraries, change them here
 LDAPLIBS=-L/usr/local/lib -lldap -llber
 # and change the location of the include files here
-LDAPINCLUDES=-I/usr/local/include
+LDAPINCLUDES=-DLDAP_DEPRECATED=1 -I/usr/local/include
 # on Slowaris you need -lresolv and probably a LD_RUN_PATH added like this:
 #LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber -lresolv -R/opt/OpenLDAP/lib
 # for example on my Linux box I use:
 #LDAPLIBS=-L/opt/OpenLDAP/lib -lldap -llber
 # if you need a special include-directory for ldap headers enable this
-#LDAPINCLUDES=-I/opt/OpenLDAP/include
+#LDAPINCLUDES=-DLDAP_DEPRECATED=1 -I/opt/OpenLDAP/include
 
 # ZLIB needed for -DDATA_COMPRESS and -DQMQP_COMPRESS
 #ZLIB=-lz
