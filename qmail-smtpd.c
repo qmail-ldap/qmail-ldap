@@ -194,11 +194,13 @@ stralloc me = {0};
 stralloc greeting = {0};
 stralloc cookie = {0};
 
+void stutter(const char *);
+
 void smtp_greet(const char *code)
 {
-  substdio_puts(&ssout,code);
-  substdio_puts(&ssout,me.s);
-  substdio_puts(&ssout," ESMTP ");
+  stutter(code);
+  stutter(me.s);
+  stutter(" ESMTP ");
   substdio_put(&ssout,greeting.s,greeting.len);
   if (cookie.len > 0) {
     substdio_puts(&ssout," ");
@@ -299,6 +301,8 @@ const char *authprepend;
 stralloc sslcert = {0};
 #endif
 char smtpsize[FMT_ULONG];
+unsigned int stutterdelay = 0;
+int droprushgreet = 0;
 
 void setup(void)
 {
@@ -353,6 +357,11 @@ void setup(void)
 
   x = env_get("BADRCPTDELAY");
   if (x) { scan_ulong(x,&u); badrcptdelay = u > INT_MAX ? INT_MAX : u; }
+
+  x = env_get("GREETDELAY");
+  if (x) { scan_ulong(x,&u); stutterdelay = u > INT_MAX ? INT_MAX : u; }
+
+  if (env_get("DROPRUSHGREET")) droprushgreet = 1;
 
   if (rcpthosts_init() == -1) die_control();
 
@@ -449,6 +458,13 @@ void setup(void)
   }
   if (greeting550) logstring(3,"greeting550 ");
   if (greeting421) logstring(3,"greeting421 ");
+  if (stutterdelay != 0) {
+    ulbuf[fmt_ulong(ulbuf, stutterdelay)] = 0;
+    logstring(3, "GREETDELAY ");
+    logstring(3,ulbuf);
+    logstring(3," ");
+  }
+  if (droprushgreet) logstring(3,"droprushgreet ");
 #ifdef TLS_SMTPD
   if (sslcert.s && *sslcert.s) logstring(3, "starttls ");
 #endif
@@ -1345,6 +1361,31 @@ void put(const char *ch)
   ++bytesreceived;
 }
 
+void stutter(const char *str)
+{
+	int x;
+
+	if (stutterdelay) {
+		for (; *str && stutterdelay > 0; stutterdelay--) {
+			substdio_bput(&ssout, str++, 1);
+			flush();
+			if (droprushgreet) {
+				x = timeoutread(1,0,ssinbuf,sizeof ssinbuf);
+				if (x > 0) {
+					err_554msg("SMTP protocol violation");
+					flush();
+					cleanup();
+					_exit(1);
+				} else if (x == 0 || (x == -1 &&
+				    errno != error_timeout))
+					die_read();
+			} else
+				sleep(1);
+		}
+	}
+	substdio_puts(&ssout,str);
+}
+
 void blast(unsigned int *hops)
 {
   char ch;
@@ -1790,4 +1831,3 @@ int main(int argc, char **argv)
   /* NOTREACHED */
   return 1;
 }
-
