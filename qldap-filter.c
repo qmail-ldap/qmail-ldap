@@ -179,7 +179,7 @@ filter_mail(char *mail, int *done)
 				return 0;
 		if (!stralloc_cats(&filter, LDAP_CATCH_ALL)) return 0;
 	}
-	/* @damin.com */
+	/* @domain.com */
 	if (!stralloc_catb(&filter, escaped+at, len-at)) return 0;
 
 	/* mailalternate address */
