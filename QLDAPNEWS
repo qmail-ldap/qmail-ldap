@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2009/11/09 22:27:09 $ ($Revision: 1.222 $)
+RELEASE: $Date: 2009/11/09 23:38:28 $ ($Revision: 1.223 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -35,6 +35,11 @@ NEWS for current stuff:
 
  BADRCPTDELAY support added. Diff originally from
  http://kristof.bajnok.hu/qmail/qldap-badrcptdelay.patch
+
+ Add GREETDELAY and DROPRUSHGREET to annoy spammers. This delays the
+ the initial greeting by stuttering with 1 char per second and if
+ DROPRUSHGREET is set all clients rushing for the ehlo will be disconnected
+ because of a protocol violation. Idea somewhat stolen by OpenBSD's spamd.
 
 NEWS for 20060201 stuff:
 

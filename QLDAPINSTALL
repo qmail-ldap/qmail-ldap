@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2009/11/09 22:27:09 $)
+RELEASE: current ($Date: 2009/11/09 23:38:28 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -715,6 +715,27 @@ BLOCKRELAYPROBE
        hack and double-"@" a sendwhale bug.
        Beware if you actually use the qmail percent-hack! Then this can't
        be used obviously!
+
+DROPRUSHGREET
+
+ Close the connection with a 5xx fatal error when a client is sending
+ commands before the initial greeting message is sent. Only works if
+ GREETDELAY is set to a value bigger then 1.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "" (any value will do)
+ Note: This is quite useful to stop spammers since their always in a rush.
+
+GREETDELAY
+
+ In the initial greeting message stutter for the specified time with one
+ character per second. This simulates OpenBSD's spamd and many spammers
+ disconnect if the banner is sent that way.
+ Default: off
+ Affects: qmail-smtpd
+ Example: "10"
+ Note: Only the 220 <me> EHLO parts are stuttered so using to large values
+       will not work.
 
 LDAPSOFTOK
 
