@@ -284,6 +284,7 @@ int blockrelayprobe = 0;
 unsigned int tarpitcount = 0;
 unsigned int tarpitdelay = 5;
 unsigned int maxrcptcount = 0;
+unsigned int badrcptdelay = 0;
 int sendercheck = 0;
 int rcptcheck = 0;
 int ldapsoftok = 0;
@@ -305,6 +306,7 @@ void setup(void)
   char *sslpath;
 #endif
   char *x, *l;
+  char ulbuf[FMT_ULONG];
   unsigned long u;
 
   l = env_get("LOGLEVEL");
@@ -348,6 +350,9 @@ void setup(void)
 
   x = env_get("MAXRCPTCOUNT");
   if (x) { scan_ulong(x,&u); maxrcptcount = u >= UINT_MAX ? UINT_MAX - 1 : u; };
+
+  x = env_get("BADRCPTDELAY");
+  if (x) { scan_ulong(x,&u); badrcptdelay = u > INT_MAX ? INT_MAX : u; }
 
   if (rcpthosts_init() == -1) die_control();
 
@@ -443,6 +448,7 @@ void setup(void)
     logstring(3," ");
   }
   if (greeting550) logstring(3,"greeting550 ");
+  if (greeting421) logstring(3,"greeting421 ");
 #ifdef TLS_SMTPD
   if (sslcert.s && *sslcert.s) logstring(3, "starttls ");
 #endif
@@ -459,6 +465,12 @@ void setup(void)
   if (sendercheck == 2) logstring(3,"-loose ");
   if (sendercheck == 3) logstring(3,"-strict ");
   if (rcptcheck) logstring(3,"rcptcheck ");
+  if (badrcptdelay) {
+    ulbuf[fmt_ulong(ulbuf, badrcptdelay)] = 0;
+    logstring(3, "badrcptdelay ");
+    logstring(3,ulbuf);
+    logstring(3," ");
+  }
   if (ldapsoftok) logstring(3,"ldapsoftok ");
   if (flagauth) logstring(3, "smtp-auth");
   if (needssl) logstring(3, "-tls-required ");
@@ -1183,6 +1195,7 @@ void smtp_rcpt(char *arg)
             break;
           case 0: /* invalid */
 	    logline2(2, "bad recipient: ", addr.s);
+	    if (badrcptdelay) sleep(badrcptdelay);
             err_554msg(s);
             if (errdisconnect) err_quit();
             return;
@@ -1205,7 +1218,7 @@ void smtp_rcpt(char *arg)
   if (!stralloc_0(&rcptto)) die_nomem();
   if (tarpitcount && tarpitdelay && rcptcount >= tarpitcount) {
     logline(3,"tarpitting");
-    while (sleep(tarpitdelay));
+    sleep(tarpitdelay);
   }
   out("250 ok\r\n");
 }
