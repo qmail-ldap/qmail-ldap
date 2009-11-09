@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2009/11/09 23:38:28 $ ($Revision: 1.223 $)
+RELEASE: $Date: 2009/11/09 23:58:02 $ ($Revision: 1.224 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -27,6 +27,12 @@ NEWS for current stuff:
 
  It is now possible to use @domain-tld in ~control/bigbrother to capture all
  mails to the specified domain.
+
+ Support user@ syntax in badrcptto and badmailfromunknown.
+
+ Try to minimize stat()'s by parsing the filename. If that fails a stat is
+ still done. This can reduce the amount of time spent on quota recalculation
+ and opening maildirs in qmail-pop3d massivly.
 
  Implement a dovecot auth module installed as auth_dovecot.
 
