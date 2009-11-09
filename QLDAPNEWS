@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2007/01/17 13:08:19 $ ($Revision: 1.221 $)
+RELEASE: $Date: 2009/11/09 22:27:09 $ ($Revision: 1.222 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -15,6 +15,7 @@ TODO:
 WARNING: If you are upgrading from 20030801a or earlier make sure that
          you have read the news section for 20030901.
 
+
 NEWS for current stuff:
 
  Implemented AUTHORIZED environment variable which is repsected by qmail-smtpd.
@@ -26,6 +27,14 @@ NEWS for current stuff:
 
  It is now possible to use @domain-tld in ~control/bigbrother to capture all
  mails to the specified domain.
+
+ Implement a dovecot auth module installed as auth_dovecot.
+
+ Add the custome error message qmail-queue patch which is useful for e.g.
+ simscan.
+
+ BADRCPTDELAY support added. Diff originally from
+ http://kristof.bajnok.hu/qmail/qldap-badrcptdelay.patch
 
 NEWS for 20060201 stuff:
 

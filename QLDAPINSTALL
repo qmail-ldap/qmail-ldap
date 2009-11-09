@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2007/01/17 13:08:19 $)
+RELEASE: current ($Date: 2009/11/09 22:27:09 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -691,6 +691,15 @@ AUTHREQUIRED
        remote mail servers sending messages for local users. This is only useful
        if you want to restrict certain IP ranges (for example you dial-up or
        other customers) to be able to send only as existing and valid users.
+
+BADRCPTDELAY
+
+ Add a delay when peer issues an RCPT TO command on a non-existing local
+ address to prevent Directory Harvest Attacks. Only works when RCPTCHECK
+ is set as well.
+ Default: off (0)
+ Affects: qmail-smtpd
+ Example: "5"
 
 BLOCKRELAYPROBE
 
