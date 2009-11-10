@@ -257,7 +257,7 @@ int main(int argc, char **argv)
 			break;
 		default:
 			output(subfdout, "Found %i entries:\n", r);
-			if (mode == uid || mode == uid) {
+			if (mode == mail || mode == uid) {
 				output(subfdout,
 				    "Uh-oh: multiple entries found but "
 				    "should be unique!\n");
