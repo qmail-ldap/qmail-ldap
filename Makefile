@@ -1445,7 +1445,8 @@ compile qldap-errno.c qldap-errno.h error.h
 	./compile $(LDAPFLAGS) qldap-errno.c
 
 qldap-filter.o: \
-compile qldap-filter.c auto_break.h qldap.h qmail-ldap.h str.h stralloc.h
+compile qldap-filter.c auto_break.h constmap.h qldap.h qmail-ldap.h str.h \
+stralloc.h
 	./compile $(LDAPFLAGS) qldap-filter.c
 
 profile: qldap-profile.o
@@ -1537,12 +1538,12 @@ qlx.h
 
 qmail-group: \
 load qmail-group.o qmail.o now.o control.o case.a getln.a sig.a open.a \
-seek.a fd.a wait.a env.a qldap.a read-ctrl.o stralloc.a alloc.a strerr.a \
-substdio.a error.a fs.a str.a coe.o auto_qmail.o
+seek.a fd.a wait.a env.a qldap.a constmap.o read-ctrl.o stralloc.a alloc.a \
+strerr.a substdio.a error.a fs.a case.a str.a coe.o auto_qmail.o
 	./load qmail-group qmail.o now.o control.o case.a getln.a sig.a \
-	open.a seek.a fd.a wait.a env.a qldap.a read-ctrl.o stralloc.a \
-	alloc.a fs.a strerr.a substdio.a error.a str.a coe.o auto_qmail.o \
-	$(LDAPLIBS) 
+	open.a seek.a fd.a wait.a env.a qldap.a constmap.o read-ctrl.o \
+	stralloc.a alloc.a fs.a strerr.a substdio.a error.a case.a str.a \
+	coe.o auto_qmail.o $(LDAPLIBS) 
 
 qmail-group.o: \
 compile qmail-group.c alloc.h auto_break.h byte.h case.h coe.h control.h \
@@ -2201,12 +2202,12 @@ qmail-users.9 conf-break conf-spawn
 	> qmail-users.5
 
 qmail-verify: \
-load qmail-verify.o qldap.a read-ctrl.o control.o getln.a substdio.a \
-stralloc.a env.a alloc.a error.a open.a fs.a case.a cdb.a str.a timeoutread.o \
-localdelivery.o auto_qmail.o
-	./load qmail-verify qldap.a read-ctrl.o control.o getln.a \
-	substdio.a stralloc.a env.a alloc.a error.a open.a fs.a case.a \
-	cdb.a str.a seek.a timeoutread.o localdelivery.o auto_qmail.o \
+load qmail-verify.o qldap.a constmap.o read-ctrl.o control.o getln.a \
+substdio.a stralloc.a env.a alloc.a error.a open.a fs.a case.a cdb.a \
+str.a timeoutread.o localdelivery.o auto_qmail.o
+	./load qmail-verify qldap.a constmap.o read-ctrl.o control.o \
+	getln.a substdio.a stralloc.a env.a alloc.a error.a open.a fs.a \
+	case.a cdb.a str.a seek.a timeoutread.o localdelivery.o auto_qmail.o \
 	$(LDAPLIBS)
 
 qmail-verify.o: \

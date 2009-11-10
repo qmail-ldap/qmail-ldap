@@ -106,8 +106,6 @@ int qldap_get_bool(qldap *, const char *, int *);
 int qldap_get_attr(qldap *, const char *, stralloc *, int);
 
 /* qldap-filter.c */
-char *filter_escape(char *);
-char *filter_objectclass(char *);
 char *filter_uid(char *);
 char *filter_mail(char *, int *);
 int filter_mail_ext(void);

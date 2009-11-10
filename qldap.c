@@ -41,6 +41,7 @@
 #include "case.h"
 #include "check.h"
 #include "control.h"
+#include "constmap.h"
 #include "error.h"
 #include "fmt.h"
 #include "qldap-debug.h"
@@ -75,6 +76,9 @@ stralloc	ldap_login = {0};
 stralloc	ldap_password = {0};
 stralloc	default_messagestore = {0};
 stralloc	dotmode = {0};
+stralloc	adm = {0};
+struct constmap	ad_map;
+int		adok = 0;
 unsigned int	ldap_timeout = QLDAP_TIMEOUT;	/* default timeout is 30 secs */
 int		rebind = 0;			/* default off */
 unsigned int	default_uid = 0;
@@ -210,6 +214,14 @@ qldap_ctrl_generic(void)
 		return -1;
 	logit(64, "init_ldap: control/defaultquotasize: %u\n", quotasize);
 	logit(64, "init_ldap: control/defaultquotacount: %u\n", quotacount);
+
+	if ((adok = control_readfile(&adm, "control/aliasdomains", 0)) == -1)
+		return -1;
+	if (adok) {
+		logit(64, "init_ldap: control/aliasdomains mapped\n");
+		if (!constmap_init(&ad_map, adm.s, adm.len, 1))
+			return -1;
+	}
 
 	return 0;
 }
