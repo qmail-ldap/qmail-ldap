@@ -350,6 +350,7 @@ int main()
   do_int("ldapcluster","0","Clustering is "," (1 = on, 0 = off)");
   do_lst("ldapclusterhosts","Messages for me are not redirected.",
 	 "Messages for "," are not redirected.");
+  do_lst("aliasdomains","No LDAP alias domains.","LDAP alias domain: ","");
 
   substdio_puts(subfdout,"\n");
   
@@ -357,6 +358,7 @@ int main()
   while ((d = readdir(dir))) {
     if (str_equal(d->d_name,".")) continue;
     if (str_equal(d->d_name,"..")) continue;
+    if (str_equal(d->d_name,"aliasdomains")) continue;
     if (str_equal(d->d_name,"badmailfrom")) continue;
     if (str_equal(d->d_name,"badmailfrom-unknown")) continue;
     if (str_equal(d->d_name,"badrcptto")) continue;
