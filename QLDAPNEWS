@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2009/11/09 23:58:02 $ ($Revision: 1.224 $)
+RELEASE: $Date: 2009/11/10 22:59:14 $ ($Revision: 1.225 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -46,6 +46,11 @@ NEWS for current stuff:
  the initial greeting by stuttering with 1 char per second and if
  DROPRUSHGREET is set all clients rushing for the ehlo will be disconnected
  because of a protocol violation. Idea somewhat stolen by OpenBSD's spamd.
+
+ Implemented the aliasdomain map to remap domains in the LDAP queries.
+ This allows to transparently alias domains in such a way that RCPTCHECK
+ works as well.
+ Idea from http://kristof.bajnok.hu/qmail/qldap-domainalias.patch
 
 NEWS for 20060201 stuff:
 

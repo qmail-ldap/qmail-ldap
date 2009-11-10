@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2009/11/09 23:38:28 $)
+RELEASE: current ($Date: 2009/11/10 22:59:14 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -248,6 +248,16 @@ INSTALL:
 ================================================================================
 
 CONFIG FILES:
+
+~control/aliasdomains
+
+ Alias listed domains to an other domain in LDAP queries. All LDAP queries
+ on mail address are modified so that the alias domain is replaced by the
+ real domain. This options allows to map two domains in such a way that
+ RCPTCHECK still works.
+ Default: NULL
+ Example: mail.qmail-ldap.org:qmail-ldap.org
+ Note: The aliased domain must be listed at least in ~control/locals.
 
 ~control/aliasempty
 OR
