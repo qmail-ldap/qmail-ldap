@@ -923,7 +923,7 @@ struct qmail qqt;
 
 void smtp_mail(char *arg)
 {
-  unsigned int i,j;
+  unsigned int i;
   char *rblname;
   int bounceflag = 0;
 
@@ -1005,25 +1005,12 @@ void smtp_mail(char *arg)
       return;
     }
     /* No '.' in domain.TLD */
-    if ((j = byte_rchr(addr.s+i, addr.len-i, '.')) >= addr.len-i) {
+    if (byte_rchr(addr.s+i, addr.len-i, '.') >= addr.len-i) {
       err_554msg("mailfrom without . in domain part is "
         "administratively denied");
       if (errdisconnect) err_quit();
       return;
     }
-    /* check tld length */
-    j = addr.len-(i+1+j+1);
-    if (j < 2 || j > 6)
-    {
-      /* XXX: This needs adjustment when new TLD's are constituded.
-       * OK, now after the candidates are nominated we know new TLD's
-       * may contain up to six characters.
-       */
-      err_554msg("mailfrom without country or top level domain is "
-        "administratively denied");
-      if (errdisconnect) err_quit();
-      return;
-     }
   }
 
   /* relay mail from check (allow relaying based on evelope sender address) */
