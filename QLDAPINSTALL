@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2009/11/10 22:59:14 $)
+RELEASE: current ($Date: 2010/02/11 14:39:12 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -934,7 +934,7 @@ RETURNMXCHECK
 
 SANITYCHECK
 
- Rejects senders without an @, no . in domain part or too long/short TLD
+ Rejects senders without an @ or no '.' in domain part
  Default: off
  Affects: qmail-smtpd
  Example: "" (any value will do)

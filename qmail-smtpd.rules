@@ -17,7 +17,7 @@
 #  RCPTCHECK: Check if the recipient of a message really exists.
 #  REJECTEXEC: Reject DOS/Windows executables in mail attachements.
 #  RETURNMXCHECK: Rejects senders if they don't have a valid return MX.
-#  SANITYCHECK: Rejects senders without an @, no . or too long/short TLD
+#  SANITYCHECK: Rejects senders without an @ or no '.'
 #  SENDERCHECK: Check if the sender of a message really exists.
 #  SMTPAUTH: Enables SMTP-AUTH for remote clients.
 #  550GREETING: Rejects a connection right away with an 550 error
