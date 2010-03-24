@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2010/02/11 14:39:12 $ ($Revision: 1.226 $)
+RELEASE: $Date: 2010/03/24 15:46:02 $ ($Revision: 1.227 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -38,7 +38,7 @@ NEWS for current stuff:
 
  Implement a dovecot auth module installed as auth_dovecot.
 
- Add the custome error message qmail-queue patch which is useful for e.g.
+ Add the custom error message qmail-queue patch which is useful for e.g.
  simscan.
 
  BADRCPTDELAY support added. Diff originally from
