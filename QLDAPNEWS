@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2010/03/24 15:46:02 $ ($Revision: 1.227 $)
+RELEASE: $Date: 2010/08/23 20:01:47 $ ($Revision: 1.228 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -53,6 +53,9 @@ NEWS for current stuff:
  This allows to transparently alias domains in such a way that RCPTCHECK
  works as well.
  Idea from http://kristof.bajnok.hu/qmail/qldap-domainalias.patch
+
+ The username of authenticated smtp users is now exported in the SMTPAUTHUSER
+ environment variable. Idea by Nicolas de Bari Embriz Garcia Rojas.
 
 NEWS for 20060201 stuff:
 

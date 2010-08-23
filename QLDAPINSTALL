@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2010/02/11 14:39:12 $)
+RELEASE: current ($Date: 2010/08/23 20:01:47 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -981,6 +981,12 @@ SMTPAUTH
        base64 encoding. With TLSREQUIRED enabled SMTP-AUTH is only accepted
        when the SMTP session is TLS encrypted to prevent password sniffing.
        TLSREQUIRED requires TLS option to be compiled into qmail-ldap.
+
+SMTPAUTHUSER
+
+ Set by qmail-smptd when a user sucessfully authenticates.
+ Example: "johndoe"
+ Note: This variable is only useable in alternate queue runners.
 
 SMTP550DISCONNECT
 

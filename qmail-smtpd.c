@@ -1653,6 +1653,7 @@ fail:
     remoteinfo = line.s;
     out(status);
     logline2(2,"authentication success, user ", remoteinfo);
+    if (!env_put2("SMTPAUTHUSER", remoteinfo)) die_nomem();
     break;
   case '4':
   case '5':
