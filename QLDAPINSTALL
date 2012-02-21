@@ -6,7 +6,7 @@ The qmail-ldap patch for qmail comes with NO WARRANTY.
 
 This patch is under the BSD license. See LICENSE.
 
-RELEASE: current ($Date: 2010/08/23 20:01:47 $)
+RELEASE: current ($Date: 2012/02/21 20:08:45 $)
 
 TOC:
  INSTALL                        how to install the patch
@@ -545,6 +545,15 @@ OR
        ldap directory or when a lookup temporarly fails. See RCPTCHECK
        and SENDERCHECK. Accounts mapped via the alias user (~alias/.qmail-*)
        can be added here so that RCPTCHECK can be endabled by default.
+
+~control/goodmailfrom
+
+ This file contains accepted MAIL FROM addresses which will always bypass
+ any other checks done. For example the RBL checks or the matching against
+ badmailfrom.
+ Default: none
+ Example: user@domain or @domain or user@
+ Note: This can be useful if to accept important mails from RBL listed hosts.
 
 ~control/badrcptto
 

@@ -261,6 +261,9 @@ void dohelo(const char *arg)
 
 int liphostok = 0;
 stralloc liphost = {0};
+int gmfok = 0;
+stralloc gmf = {0};
+struct constmap mapgmf;
 int bmfok = 0;
 stralloc bmf = {0};
 struct constmap mapbmf;
@@ -364,6 +367,11 @@ void setup(void)
   if (env_get("DROPRUSHGREET")) droprushgreet = 1;
 
   if (rcpthosts_init() == -1) die_control();
+
+  gmfok = control_readfile(&gmf,"control/goodmailfrom",0);
+  if (gmfok == -1) die_control();
+  if (gmfok)
+    if (!constmap_init(&mapgmf,gmf.s,gmf.len,0)) die_nomem();
 
   bmfok = control_readfile(&bmf,"control/badmailfrom",0);
   if (bmfok == -1) die_control();
@@ -672,6 +680,21 @@ int sizelimit(char *arg)
 }
 
 
+int gmfcheck(void)
+{
+  unsigned int j;
+
+  if (!gmfok) return 0;
+  if (constmap(&mapgmf,addr.s,addr.len - 1)) return 1;
+  j = byte_rchr(addr.s,addr.len,'@');
+  if (j < addr.len)
+  {
+    if (constmap(&mapgmf,addr.s + j,addr.len - j - 1)) return 1;
+    if (constmap(&mapgmf,addr.s, j + 1)) return 1;
+  }
+  return 0;
+}
+
 int bmfcheck(void)
 {
   unsigned int j;
@@ -926,6 +949,7 @@ void smtp_mail(char *arg)
   unsigned int i;
   char *rblname;
   int bounceflag = 0;
+  int isgmf = 0;
 
   /* address syntax check */
   if (!addrparse(arg))
@@ -959,8 +983,12 @@ void smtp_mail(char *arg)
     return;
   }
 
+  /* good mailfrom check */
+  if (gmfcheck())
+    isgmf = 1;
+
   /* bad mailfrom check */
-  if (bmfcheck())
+  if (!isgmf && bmfcheck())
   {
     err_bmf();
     logline2(3,"bad mailfrom: ",addr.s);
@@ -968,7 +996,7 @@ void smtp_mail(char *arg)
     return;
   }
   /* bad mailfrom unknown check */
-  if (bmfunknowncheck())
+  if (!isgmf && bmfunknowncheck())
   {
     err_bmfunknown();
     logline2(3,"bad mailfrom unknown: ",addr.s);
@@ -989,7 +1017,7 @@ void smtp_mail(char *arg)
   }
 
   /* Sanity checks */
-  if (sanitycheck && !bounceflag)
+  if (!isgmf && sanitycheck && !bounceflag)
   {
     /* Invalid Mailfrom */
     if ((i=byte_rchr(addr.s,addr.len,'@')) >= addr.len)
@@ -1023,7 +1051,7 @@ void smtp_mail(char *arg)
   }
 
   /* Check RBL only if relayclient is not set */
-  if (rblok && !relayclient)
+  if (!isgmf && rblok && !relayclient)
   {
     switch(rblcheck(remoteip, &rblname, rbloh))
     {
@@ -1046,7 +1074,7 @@ void smtp_mail(char *arg)
   }
 
   /* return MX check */
-  if (returnmxcheck && !bounceflag)
+  if (!isgmf && returnmxcheck && !bounceflag)
   {
     if ((i=byte_rchr(addr.s,addr.len,'@')) < addr.len)
       switch (badmxcheck(&addr.s[i+1]))
@@ -1068,7 +1096,7 @@ void smtp_mail(char *arg)
   }
 
   /* check if sender exists in ldap */
-  if (sendercheck && !bounceflag) {
+  if (!isgmf && sendercheck && !bounceflag) {
     if (!goodmailaddr()) { /* good mail addrs go through anyway */
       logline(4,"sender verify, sender not in goodmailaddr");
       if (addrlocals()) {

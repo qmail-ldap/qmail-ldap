@@ -262,6 +262,7 @@ int main()
   substdio_puts(subfdout,"\n\n");
 
 
+  do_lst("goodmailfrom","No MAIL FROM will bypass additional checks.",""," bypasses additional checks in MAIL FROM.");
   do_lst("badmailfrom","Any MAIL FROM is allowed.",""," not accepted in MAIL FROM.");
   do_lst("badmailfrom-unknown","Any MAIL FROM from hosts without PTR is allowed.","",
 	 " not accepted in MAIL FROM from host without PTR.");
@@ -380,6 +381,7 @@ int main()
     if (str_equal(d->d_name,"envnoathost")) continue;
     if (str_equal(d->d_name,"helohost")) continue;
     if (str_equal(d->d_name,"goodmailaddr")) continue;
+    if (str_equal(d->d_name,"goodmailfrom")) continue;
     if (str_equal(d->d_name,"idhost")) continue;
     if (str_equal(d->d_name,"ldapbasedn")) continue;
     if (str_equal(d->d_name,"ldapcluster")) continue;
