@@ -127,7 +127,9 @@ auth_setup(struct credentials *c)
 void
 auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 {
+#ifdef DEBUG
 	extern unsigned long loglevel;
+#endif
 	char		*l, *p;
 	unsigned int	uplen, u;
 	int		n, opt;
@@ -140,10 +142,12 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 		case 'd':
 			pbstool = optarg;
 			break;
+#ifdef DEBUG
 		case 'D':
 			scan_ulong(optarg, &loglevel);
 			loglevel &= ~256;	/* see auth_mod.c */
 			break;
+#endif
 		default:
 			auth_error(AUTH_CONF);
 		}
