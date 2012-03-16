@@ -223,12 +223,12 @@ int main(int argc, char **argv)
 		switch (mode) {
 		case mail:
 			f = filter_mail(value, &done);
-			if (value == 0)
+			if (f == 0)
 				strerr_die2sys(1, FATAL, "building filter: ");
 			break;
 		case uid:
 			f = filter_uid(value);
-			if (value == 0)
+			if (f == 0)
 				strerr_die2sys(1, FATAL, "building filter: ");
 			done = 1;
 			break;
