@@ -107,7 +107,7 @@ filter_uid(char *uid)
 		return 0;
 
 	if (!filter_start(&filter)  ||
-	    !stralloc_copys(&filter,"(") ||
+	    !stralloc_cats(&filter,"(") ||
 	    !stralloc_cats(&filter, LDAP_UID) ||
 	    !stralloc_cats(&filter, "=") ||
 	    !filter_escape(&filter, uid, str_len(uid)) ||
@@ -179,7 +179,6 @@ filter_mail(char *mail, int *done)
 		}
 		extcnt--;
 #else
-#error XXX XXX 
 		/* basic qmail-ldap behavior test for username@domain.com and
 		   catchall@domain.com */
 		ext = 0;
@@ -193,7 +192,7 @@ filter_mail(char *mail, int *done)
 			/* build the search string for the email address */
 			/* mail address */
 			if (!filter_start(&filter) ||
-			    !stralloc_copys(&filter, "(|(") ||
+			    !stralloc_cats(&filter, "(|(") ||
 			    !stralloc_cats(&filter, LDAP_MAIL) ||
 			    !stralloc_cats(&filter, "="))
 				return 0;
