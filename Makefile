@@ -2316,9 +2316,9 @@ scan_8long.o: \
 compile scan_8long.c scan.h uint64.h
 	./compile scan_8long.c
 
-scan_int64.o: \
-compile scan_int64.c scan.h uint64.h
-	./compile scan_int64.c
+scan_uint64.o: \
+compile scan_uint64.c scan.h uint64.h
+	./compile scan_uint64.c
 
 scan_ulong.o: \
 compile scan_ulong.c scan.h uint64.h
