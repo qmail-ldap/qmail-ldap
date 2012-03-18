@@ -1,8 +1,8 @@
 QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
-(c) 1999-2004 Internet Business Solutions AG
+(c) 1999-2012 Internet Business Solutions AG
 
-RELEASE: $Date: 2012/03/18 14:39:38 $ ($Revision: 1.231 $)
+RELEASE: $Date: 2012/03/18 15:46:18 $ ($Revision: 1.232 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
