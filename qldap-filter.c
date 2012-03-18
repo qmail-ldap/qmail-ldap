@@ -42,7 +42,7 @@ extern stralloc	objectclass;
 extern struct constmap ad_map;
 extern int adok;
 
-int filter_escape(stralloc *, char *, unsigned int);
+int filter_escape(stralloc *, const char *, unsigned int);
 int filter_start(stralloc *);
 int filter_end(stralloc *);
 
@@ -51,7 +51,7 @@ int filter_end(stralloc *);
  * We ignore the '\0' case because it is not possible to have a '\0' in s.
  */
 int
-filter_escape(stralloc *filter, char *s, unsigned int len)
+filter_escape(stralloc *filter, const char *s, unsigned int len)
 {
 	char	x;
 
@@ -124,7 +124,7 @@ static unsigned int ext = 0;
 char *
 filter_mail(char *mail, int *done)
 {
-	char			*domain, *alias;
+	const char		*domain, *alias;
 	unsigned int		at;
 	int			round;
 #ifdef DASH_EXT
