@@ -133,7 +133,8 @@ dns.lib socket.lib
 auth_dovecot.o: \
 compile auth_dovecot.c byte.h env.h error.h exit.h fmt.h ip.h pbsexec.h \
 qldap-debug.h qldap-errno.h qmail-ldap.h readwrite.h sgetopt.h str.h \
-scan.h stralloc.h substdio.h timeoutread.h checkpassword.h auth_mod.h
+scan.h stralloc.h substdio.h timeoutread.h checkpassword.h auth_mod.h \
+uint64.h
 	./compile $(LDAPFLAGS) $(DEBUG) auth_dovecot.c
 
 auth_imap: \
@@ -156,7 +157,8 @@ dns.lib socket.lib
 auth_imap.o: \
 compile auth_imap.c alloc.h byte.h env.h error.h exit.h fmt.h pbsexec.h \
 qldap-debug.h qldap-errno.h qmail-ldap.h readwrite.h scan.h sgetopt.h \
-sig.h str.h stralloc.h substdio.h timeoutread.h checkpassword.h auth_mod.h
+sig.h str.h stralloc.h substdio.h timeoutread.h checkpassword.h auth_mod.h \
+uint64.h
 	./compile $(LDAPFLAGS) $(DEBUG) auth_imap.c
 
 auth_mod.o: \
@@ -218,7 +220,7 @@ load auto-gid.o substdio.a error.a str.a fs.a
 
 auto-gid.o: \
 compile auto-gid.c subfd.h substdio.h substdio.h readwrite.h exit.h \
-scan.h fmt.h
+scan.h fmt.h uint64.h
 	./compile auto-gid.c
 
 auto-int: \
@@ -226,7 +228,7 @@ load auto-int.o substdio.a error.a str.a fs.a
 	./load auto-int substdio.a error.a str.a fs.a 
 
 auto-int.o: \
-compile auto-int.c substdio.h readwrite.h exit.h scan.h fmt.h
+compile auto-int.c substdio.h readwrite.h exit.h scan.h fmt.h uint64.h
 	./compile auto-int.c
 
 auto-int8: \
@@ -234,7 +236,7 @@ load auto-int8.o substdio.a error.a str.a fs.a
 	./load auto-int8 substdio.a error.a str.a fs.a 
 
 auto-int8.o: \
-compile auto-int8.c substdio.h readwrite.h exit.h scan.h fmt.h
+compile auto-int8.c substdio.h readwrite.h exit.h scan.h fmt.h uint64.h
 	./compile auto-int8.c
 
 auto-str: \
@@ -251,7 +253,7 @@ load auto-uid.o substdio.a error.a str.a fs.a
 
 auto-uid.o: \
 compile auto-uid.c subfd.h substdio.h substdio.h readwrite.h exit.h \
-scan.h fmt.h
+scan.h fmt.h uint64.h
 	./compile auto-uid.c
 
 auto_break.c: \
@@ -479,7 +481,7 @@ compile checkpassword.c auth_mod.h auto_uids.h byte.h check.h env.h \
 error.h fmt.h localdelivery.h passwd.h pbsexec.h prot.h \
 qldap.h qldap-debug.h qldap-errno.h qmail-ldap.h scan.h str.h stralloc.h \
 dns.h ipalloc.h ipme.h ndelay.h qldap-cluster.h readwrite.h select.h \
-timeoutconn.h dirmaker.h mailmaker.h
+timeoutconn.h dirmaker.h mailmaker.h uint64.h
 	./compile $(LDAPFLAGS) $(LDAPINCLUDES) $(DEBUG) checkpassword.c
 
 chkshsgr: \
@@ -496,7 +498,7 @@ load chkspawn.o substdio.a error.a str.a fs.a auto_spawn.o
 
 chkspawn.o: \
 compile chkspawn.c substdio.h subfd.h substdio.h fmt.h select.h \
-exit.h auto_spawn.h
+exit.h auto_spawn.h uint64.h
 	./compile chkspawn.c
 
 clean: \
@@ -530,7 +532,7 @@ condredirect.1
 
 condredirect.o: \
 compile condredirect.c sig.h readwrite.h exit.h env.h error.h fork.h \
-wait.h seek.h qmail.h substdio.h strerr.h substdio.h fmt.h
+wait.h seek.h qmail.h substdio.h strerr.h substdio.h fmt.h uint64.h
 	./compile condredirect.c
 
 condwrite: \
@@ -544,7 +546,7 @@ open.a sig.a lock.a auto_qmail.o
 condwrite.o: \
 compile condwrite.c auto_qmail.h byte.h env.h error.h fmt.h getln.h gfrom.h \
 lock.h maildir++.h now.h open.h qmail-ldap.h seek.h sig.h str.h stralloc.h \
-strerr.h subfd.h substdio.h wait.h mailmaker.h qldap-errno.h
+strerr.h subfd.h substdio.h wait.h mailmaker.h qldap-errno.h uint64.h
 	./compile $(MDIRMAKE) condwrite.c
 
 config: \
@@ -571,11 +573,11 @@ compile constmap.c constmap.h alloc.h case.h
 
 control.o: \
 compile control.c readwrite.h open.h getln.h stralloc.h gen_alloc.h \
-substdio.h error.h control.h alloc.h scan.h
+substdio.h error.h control.h alloc.h scan.h uint64.h
 	./compile control.c
 
 date822fmt.o: \
-compile date822fmt.c datetime.h fmt.h date822fmt.h
+compile date822fmt.c datetime.h fmt.h date822fmt.h uint64.h
 	./compile date822fmt.c
 
 datemail: \
@@ -651,7 +653,7 @@ alloc.a error.a fs.a str.a
 
 dns.o: \
 compile dns.c ip.h ipalloc.h ip.h gen_alloc.h fmt.h alloc.h str.h \
-stralloc.h gen_alloc.h dns.h case.h
+stralloc.h gen_alloc.h dns.h case.h uint64.h
 	./compile $(LDAPFLAGS) dns.c
 
 dnscname: \
@@ -704,7 +706,7 @@ substdio.a error.a str.a fs.a dns.lib socket.lib
 dnsmxip.o: \
 compile dnsmxip.c substdio.h subfd.h substdio.h stralloc.h \
 gen_alloc.h fmt.h dns.h dnsdoe.h ip.h ipalloc.h ip.h gen_alloc.h \
-now.h datetime.h exit.h
+now.h datetime.h exit.h uint64.h
 	./compile dnsmxip.c
 
 dnsptr: \
@@ -716,7 +718,7 @@ substdio.a error.a str.a fs.a dns.lib socket.lib
 
 dnsptr.o: \
 compile dnsptr.c substdio.h subfd.h substdio.h stralloc.h gen_alloc.h \
-str.h scan.h dns.h dnsdoe.h ip.h exit.h
+str.h scan.h dns.h dnsdoe.h ip.h exit.h uint64.h
 	./compile dnsptr.c
 
 dot-qmail.0: \
@@ -818,27 +820,31 @@ find-systype.sh auto-ccld.sh
 	chmod 755 find-systype
 
 fmt_str.o: \
-compile fmt_str.c fmt.h
+compile fmt_str.c fmt.h uint64.h
 	./compile fmt_str.c
 
 fmt_strn.o: \
-compile fmt_strn.c fmt.h
+compile fmt_strn.c fmt.h uint64.h
 	./compile fmt_strn.c
 
 fmt_uint.o: \
-compile fmt_uint.c fmt.h
+compile fmt_uint.c fmt.h uint64.h
 	./compile fmt_uint.c
 
 fmt_uint0.o: \
-compile fmt_uint0.c fmt.h
+compile fmt_uint0.c fmt.h uint64.h
 	./compile fmt_uint0.c
 
+fmt_uint64.o: \
+compile fmt_uint64.c fmt.h uint64.h
+	./compile fmt_uint64.c
+
 fmt_ulong.o: \
-compile fmt_ulong.c fmt.h
+compile fmt_ulong.c fmt.h uint64.h
 	./compile fmt_ulong.c
 
 fmtqfn.o: \
-compile fmtqfn.c fmtqfn.h fmt.h auto_split.h
+compile fmtqfn.c fmtqfn.h fmt.h auto_split.h uint64.h
 	./compile fmtqfn.c
 
 forgeries.0: \
@@ -864,14 +870,14 @@ forward.1
 
 forward.o: \
 compile forward.c sig.h readwrite.h exit.h env.h qmail.h substdio.h \
-strerr.h substdio.h fmt.h
+strerr.h substdio.h fmt.h uint64.h
 	./compile forward.c
 
 fs.a: \
-makelib fmt_str.o fmt_strn.o fmt_uint.o fmt_uint0.o fmt_ulong.o \
-scan_ulong.o scan_8long.o
+makelib fmt_str.o fmt_strn.o fmt_uint.o fmt_uint0.o fmt_uint64.o fmt_ulong.o \
+scan_ulong.o scan_8long.o scan_uint64.o
 	./makelib fs.a fmt_str.o fmt_strn.o fmt_uint.o fmt_uint0.o \
-	fmt_ulong.o scan_ulong.o scan_8long.o
+	fmt_uint64.o fmt_ulong.o scan_ulong.o scan_8long.o scan_uint64.o
 
 getln.a: \
 makelib getln.o getln2.o
@@ -962,7 +968,7 @@ compile hfield.c hfield.h
 	./compile hfield.c
 
 hier.o: \
-compile hier.c auto_qmail.h auto_split.h auto_uids.h fmt.h fifo.h
+compile hier.c auto_qmail.h auto_split.h auto_uids.h fmt.h fifo.h uint64.h
 	./compile $(LDAPFLAGS) $(DEBUG) hier.c
 
 home: \
@@ -996,7 +1002,7 @@ seek.a
 
 idedit.o: \
 compile idedit.c readwrite.h exit.h scan.h fmt.h strerr.h open.h \
-seek.h fork.h
+seek.h fork.h uint64.h
 	./compile idedit.c
 
 install: \
@@ -1015,7 +1021,7 @@ auto_uids.o auto_userl.o strerr.a substdio.a open.a error.a str.a fs.a
 
 install-big.o: \
 compile install-big.c auto_qmail.h auto_split.h auto_uids.h fmt.h \
-fifo.h
+fifo.h uint64.h
 	./compile $(LDAPFLAGS) $(DEBUG) install-big.c
 
 install.o: \
@@ -1034,7 +1040,7 @@ compile instcheck.c strerr.h error.h readwrite.h exit.h
 	./compile instcheck.c
 
 ip.o: \
-compile ip.c fmt.h scan.h ip.h
+compile ip.c fmt.h scan.h ip.h uint64.h
 	./compile ip.c
 
 ipalloc.o: \
@@ -1114,7 +1120,7 @@ strerr.h
 maildir++.o: \
 compile maildir++.c maildir++.h readwrite.h stralloc.h error.h str.h \
 open.h substdio.h getln.h error.h strerr.h fmt.h scan.h now.h seek.h \
-sig.h direntry.h
+sig.h direntry.h uint64.h
 	./compile $(LDAPFLAGS) maildir++.c
 
 maildir2mbox: \
@@ -1234,7 +1240,7 @@ mbox.5
 	nroff -man mbox.5 > mbox.0
 
 myctime.o: \
-compile myctime.c datetime.h fmt.h myctime.h
+compile myctime.c datetime.h fmt.h myctime.h uint64.h
 	./compile myctime.c
 
 ndelay.a: \
@@ -1251,7 +1257,7 @@ compile ndelay_off.c ndelay.h
 
 newfield.o: \
 compile newfield.c fmt.h datetime.h stralloc.h gen_alloc.h \
-date822fmt.h newfield.h stralloc.h
+date822fmt.h newfield.h stralloc.h uint64.h
 	./compile newfield.c
 
 now.o: \
@@ -1286,7 +1292,7 @@ compile open_write.c open.h
 
 output.o: \
 compile output.c output.h stralloc.h substdio.h fmt.h str.h scan.h \
-readwrite.h
+readwrite.h uint64.h
 	./compile output.c
 
 passwd.o: \
@@ -1304,7 +1310,7 @@ alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o socket.lib
 
 pbsadd.o: \
 compile pbsadd.c alloc.h auto_qmail.h byte.h control.h env.h error.h \
-exit.h fmt.h ip.h now.h readwrite.h stralloc.h substdio.h
+exit.h fmt.h ip.h now.h readwrite.h stralloc.h substdio.h uint64.h
 	./compile pbsadd.c
 
 pbscheck: \
@@ -1318,7 +1324,7 @@ error.a str.a fs.a auto_qmail.o socket.lib
 pbscheck.o: \
 compile pbscheck.c alloc.h auto_qmail.h byte.h control.h env.h error.h \
 exit.h fmt.h ip.h now.h readwrite.h str.h stralloc.h substdio.h timeoutread.h \
-timeoutwrite.h
+timeoutwrite.h uint64.h
 	./compile pbscheck.c
 
 pbsdbd: \
@@ -1354,7 +1360,7 @@ error.a str.a fs.a
 
 predate.o: \
 compile predate.c datetime.h fork.h wait.h fd.h fmt.h strerr.h \
-substdio.h subfd.h substdio.h readwrite.h exit.h
+substdio.h subfd.h substdio.h readwrite.h exit.h uint64.h
 	./compile predate.c
 
 preline: \
@@ -1427,7 +1433,7 @@ qldap-debug.o qldap-errno.o auto_break.o
 
 qldap.o: \
 compile qldap.c qldap.h alloc.h byte.h case.h check.h control.h error.h \
-fmt.h qldap-debug.h qldap-errno.h qmail-ldap.h scan.h str.h stralloc.h
+fmt.h qldap-debug.h qldap-errno.h qmail-ldap.h scan.h str.h stralloc.h uint64.h
 	./compile $(LDAPFLAGS) $(LDAPINCLUDES) $(DEBUG) qldap.c
 
 qldap-cluster.o: \
@@ -1437,7 +1443,7 @@ stralloc.h
 
 qldap-debug.o: \
 compile qldap-debug.c output.h stralloc.h substdio.h fmt.h str.h readwrite.h \
-error.h qldap-errno.h env.h scan.h qldap-debug.h
+error.h qldap-errno.h env.h scan.h qldap-debug.h uint64.h
 	./compile $(LDAPFLAGS) $(DEBUG) qldap-debug.c
 
 qldap-errno.o: \
@@ -1481,7 +1487,7 @@ qmail-clean.8
 qmail-clean.o: \
 compile qmail-clean.c readwrite.h sig.h now.h datetime.h str.h \
 direntry.h getln.h stralloc.h gen_alloc.h substdio.h subfd.h \
-substdio.h byte.h scan.h fmt.h error.h exit.h fmtqfn.h auto_qmail.h
+substdio.h byte.h scan.h fmt.h error.h exit.h fmtqfn.h auto_qmail.h uint64.h
 	./compile $(LDAPFLAGS) qmail-clean.c
 
 qmail-command.0: \
@@ -1627,7 +1633,7 @@ open.h wait.h lock.h seek.h substdio.h getln.h strerr.h subfd.h \
 sgetopt.h subgetopt.h alloc.h error.h stralloc.h gen_alloc.h fmt.h \
 str.h now.h case.h quote.h qmail.h slurpclose.h myctime.h gfrom.h \
 auto_patrn.h qmail-ldap.h qldap-errno.h auto_qmail.h scan.h maildir++.h \
-mailmaker.h
+mailmaker.h uint64.h
 	./compile $(LDAPFLAGS) $(MDIRMAKE) qmail-local.c
 
 qmail-log.0: \
@@ -1650,7 +1656,7 @@ qmail-ldaplookup.o: \
 compile qmail-ldaplookup.c alloc.h auto_usera.h byte.h case.h env.h error.h \
 localdelivery.h output.h passwd.h qldap.h qldap-cluster.h qldap-debug.h \
 qldap-errno.h qmail-ldap.h read-ctrl.h scan.h sgetopt.h str.h stralloc.h \
-strerr.h subfd.h substdio.h dirmaker.h
+strerr.h subfd.h substdio.h dirmaker.h uint64.h
 	./compile $(LDAPFLAGS) $(SHADOWOPTS) $(HDIRMAKE) $(DEBUG) \
 	qmail-ldaplookup.c
 
@@ -1673,7 +1679,7 @@ qmail-lspawn.8
 qmail-lspawn.o: \
 compile qmail-lspawn.c fd.h wait.h prot.h substdio.h stralloc.h \
 gen_alloc.h scan.h exit.h fork.h error.h cdb.h uint32.h case.h \
-slurpclose.h auto_qmail.h auto_uids.h qlx.h \
+slurpclose.h auto_qmail.h auto_uids.h qlx.h uint64.h \
 auto_break.h auto_usera.h byte.h check.h env.h fmt.h localdelivery.h \
 open.h qldap.h qldap-debug.h qldap-errno.h qmail-ldap.h read-ctrl.h \
 sig.h str.h qldap-cluster.h getln.h seek.h dirmaker.h
@@ -1754,7 +1760,7 @@ qmail-pop3d.8
 qmail-pop3d.o: \
 compile qmail-pop3d.c commands.h sig.h getln.h stralloc.h gen_alloc.h \
 substdio.h alloc.h open.h prioq.h datetime.h gen_alloc.h scan.h fmt.h \
-str.h exit.h maildir.h strerr.h readwrite.h timeoutread.h \
+str.h exit.h maildir.h strerr.h readwrite.h timeoutread.h uint64.h \
 timeoutwrite.h maildir++.h
 	./compile $(LDAPFLAGS) $(MNW) qmail-pop3d.c
 
@@ -1814,7 +1820,7 @@ qmail-pw2u.o: \
 compile qmail-pw2u.c substdio.h readwrite.h subfd.h substdio.h \
 sgetopt.h subgetopt.h control.h constmap.h stralloc.h gen_alloc.h \
 fmt.h str.h scan.h open.h error.h getln.h auto_break.h auto_qmail.h \
-auto_usera.h
+auto_usera.h uint64.h
 	./compile qmail-pw2u.c
 
 qmail-qmqpc: \
@@ -1972,7 +1978,7 @@ compile qmail-remote.c sig.h stralloc.h gen_alloc.h substdio.h \
 subfd.h substdio.h scan.h case.h error.h auto_qmail.h control.h dns.h \
 alloc.h quote.h ip.h ipalloc.h ip.h gen_alloc.h ipme.h ip.h ipalloc.h \
 gen_alloc.h gen_allocdefs.h str.h now.h datetime.h exit.h constmap.h \
-tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
+tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h uint64.h
 	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) $(ZINCLUDES) \
 	qmail-remote.c
 
@@ -2057,7 +2063,7 @@ open.h seek.h exit.h lock.h ndelay.h now.h datetime.h getln.h \
 substdio.h alloc.h error.h stralloc.h gen_alloc.h str.h byte.h fmt.h \
 scan.h case.h auto_qmail.h trigger.h newfield.h stralloc.h quote.h \
 qmail.h substdio.h qsutil.h prioq.h datetime.h gen_alloc.h constmap.h \
-fmtqfn.h readsubdir.h direntry.h cdb.h uint32.h
+fmtqfn.h readsubdir.h direntry.h cdb.h uint32.h uint64.h
 	./compile $(LDAPFLAGS) qmail-send.c
 
 qmail-showctl: \
@@ -2105,7 +2111,7 @@ substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
 exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h rbl.h \
-qmail-ldap.h auto_break.h
+qmail-ldap.h auto_break.h uint64.h
 	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) $(ZINCLUDES) \
 	qmail-smtpd.c
 
@@ -2177,7 +2183,8 @@ alloc.a substdio.a error.a str.a seek.a fs.a auto_qmail.o auto_split.o
 qmail-todo.o: \
 compile qmail-todo.c alloc.h auto_qmail.h byte.h cdb.h constmap.h control.h \
 direntry.h error.h exit.h fmt.h fmtqfn.h getln.h open.h ndelay.h now.h \
-readsubdir.h scan.h select.h sig.h str.h stralloc.h substdio.h trigger.h
+readsubdir.h scan.h select.h sig.h str.h stralloc.h substdio.h trigger.h \
+uint64.h
 	./compile $(LDAPFLAGS) qmail-todo.c
 
 qmail-upq: \
@@ -2284,7 +2291,7 @@ constmap.h stralloc.h gen_alloc.h rcpthosts.h
 
 readsubdir.o: \
 compile readsubdir.c readsubdir.h direntry.h fmt.h scan.h str.h \
-auto_split.h
+auto_split.h uint64.h
 	./compile readsubdir.c
 
 readwrite.o: \
@@ -2306,11 +2313,15 @@ timeoutread.h timeoutwrite.h remoteinfo.h
 	./compile remoteinfo.c
 
 scan_8long.o: \
-compile scan_8long.c scan.h
+compile scan_8long.c scan.h uint64.h
 	./compile scan_8long.c
 
+scan_int64.o: \
+compile scan_int64.c scan.h uint64.h
+	./compile scan_int64.c
+
 scan_ulong.o: \
-compile scan_ulong.c scan.h
+compile scan_ulong.c scan.h uint64.h
 	./compile scan_ulong.c
 
 seek.a: \
@@ -2417,18 +2428,18 @@ substdio.h substdio.c substdi.c substdo.c substdio_copy.c subfd.h \
 subfderr.c subfdouts.c subfdout.c subfdins.c subfdin.c readwrite.h \
 exit.h timeoutconn.h timeoutconn.c timeoutread.h timeoutread.c \
 timeoutwrite.h timeoutwrite.c remoteinfo.h remoteinfo.c uint32.h1 \
-uint32.h2 tryulong32.c wait.3 wait.h wait_pid.c wait_nohang.c \
-trywaitp.c sig.h sig_alarm.c sig_block.c sig_catch.c sig_pause.c \
-sig_pipe.c sig_child.c sig_term.c sig_hup.c sig_misc.c sig_bug.c \
-trysgact.c trysgprm.c env.3 env.h env.c envread.c byte.h byte_chr.c \
-byte_copy.c byte_cr.c byte_diff.c byte_rchr.c byte_zero.c str.h \
-str_chr.c str_cpy.c str_diff.c str_diffn.c str_len.c str_rchr.c \
+uint32.h2 tryulong32.c uint64.h1 uint64.h2 tryulong64.c wait.3 wait.h \
+wait_pid.c wait_nohang.c trywaitp.c sig.h sig_alarm.c sig_block.c \
+sig_catch.c sig_pause.c sig_pipe.c sig_child.c sig_term.c sig_hup.c \
+sig_misc.c sig_bug.c trysgact.c trysgprm.c env.3 env.h env.c envread.c \
+byte.h byte_chr.c byte_copy.c byte_cr.c byte_diff.c byte_rchr.c byte_zero.c \
+str.h str_chr.c str_cpy.c str_diff.c str_diffn.c str_len.c str_rchr.c \
 str_start.c lock.h lock_ex.c lock_exnb.c lock_un.c tryflock.c getln.3 \
 getln.h getln.c getln2.3 getln2.c sgetopt.3 sgetopt.h sgetopt.c \
 subgetopt.3 subgetopt.h subgetopt.c error.3 error_str.3 error_temp.3 \
 error.h error.c error_str.c error_temp.c fmt.h fmt_str.c fmt_strn.c \
 fmt_uint.c fmt_uint0.c fmt_ulong.c scan.h scan_ulong.c scan_8long.c \
-slurpclose.h slurpclose.c quote.h quote.c hfield.h hfield.c \
+scan_uint64.c slurpclose.h slurpclose.c quote.h quote.c hfield.h hfield.c \
 headerbody.h headerbody.c token822.h token822.c control.h control.c \
 datetime.3 datetime.h datetime.c datetime_un.c prioq.h prioq.c \
 date822fmt.h date822fmt.c dns.h dns.c trylsock.c tryrsolv.c ip.h ip.c \
@@ -2521,7 +2532,7 @@ splogger.8
 
 splogger.o: \
 compile splogger.c error.h substdio.h subfd.h substdio.h exit.h str.h \
-scan.h fmt.h
+scan.h fmt.h uint64.h
 	./compile splogger.c
 
 str.a: \
@@ -2692,7 +2703,7 @@ tcp-env.1
 
 tcp-env.o: \
 compile tcp-env.c sig.h stralloc.h gen_alloc.h str.h env.h fmt.h \
-scan.h subgetopt.h ip.h dns.h byte.h remoteinfo.h exit.h case.h
+scan.h subgetopt.h ip.h dns.h byte.h remoteinfo.h exit.h case.h uint64.h
 	./compile tcp-env.c
 
 tcp-environ.0: \
@@ -2740,6 +2751,13 @@ tryulong32.c compile load uint32.h1 uint32.h2
 	./tryulong32 ) >/dev/null 2>&1 \
 	&& cat uint32.h2 || cat uint32.h1 ) > uint32.h
 	rm -f tryulong32.o tryulong32
+
+uint64.h: \
+tryulong64.c compile load uint64.h1 uint64.h2
+	( ( ./compile tryulong64.c && ./load tryulong64 && \
+	./tryulong64 ) >/dev/null 2>&1 \
+	&& cat uint64.h2 || cat uint64.h1 ) > uint64.h
+	rm -f tryulong64.o tryulong64
 
 wait.a: \
 makelib wait_pid.o wait_nohang.o

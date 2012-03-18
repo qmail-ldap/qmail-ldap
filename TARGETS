@@ -114,7 +114,9 @@ fmt_str.o
 fmt_strn.o
 fmt_uint.o
 fmt_uint0.o
+fmt_uint64.o
 fmt_ulong.o
+scan_uint64.o
 scan_ulong.o
 scan_8long.o
 fs.a
@@ -132,6 +134,7 @@ auto_patrn.o
 socket.lib
 qmail-local
 uint32.h
+uint64.h
 qmail-lspawn.o
 select.h
 chkspawn.o

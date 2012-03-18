@@ -80,7 +80,7 @@ sigalrm()
 }
 
 void
-quota_add(int fd, unsigned long size, unsigned long count)
+quota_add(int fd, uint64 size, uint64 count)
 /* add size and count to the quota (maildirsize) */
 {
 	char num[FMT_ULONG];
@@ -95,11 +95,11 @@ quota_add(int fd, unsigned long size, unsigned long count)
 	substdio_fdbuf(&ss,subwrite,fd,writebuf,sizeof(writebuf));
 
 	/* create string of the form '1234 12\n' and add it to the quota */
-	if (substdio_bput(&ss, num, fmt_ulong(num, size) ) == -1)
+	if (substdio_bput(&ss, num, fmt_uint64(num, size) ) == -1)
 		goto addfail;
 	if (substdio_bput(&ss, " ", 1) == -1)
 		goto addfail;
-	if (substdio_bput(&ss, num, fmt_ulong(num, count) ) == -1)
+	if (substdio_bput(&ss, num, fmt_uint64(num, count) ) == -1)
 		goto addfail;
 	if (substdio_bput(&ss, "\n", 1) == -1)
 		goto addfail;
@@ -118,7 +118,7 @@ addfail:
 }
 
 void
-quota_rm(int fd, unsigned long size, unsigned long count)
+quota_rm(int fd, uint64 size, uint64 count)
 /* remove size and count from the quota (maildirsize) *
  * both size and count are POSITVE integers           */
 {
@@ -136,11 +136,11 @@ quota_rm(int fd, unsigned long size, unsigned long count)
 	/* create string of the form '-1232 -12\n' and add it to the quota */
 	if (substdio_bput(&ss, "-", 1) == -1)
 		goto rmfail;
-	if (substdio_bput(&ss, num, fmt_ulong(num, size)) == -1)
+	if (substdio_bput(&ss, num, fmt_uint64(num, size)) == -1)
 		goto rmfail;
 	if (substdio_bput(&ss, " -", 2) == -1)
 		goto rmfail;
-	if (substdio_bput(&ss, num, fmt_ulong(num, count)) == -1)
+	if (substdio_bput(&ss, num, fmt_uint64(num, count)) == -1)
 		goto rmfail;
 	if (substdio_bput(&ss, "\n", 1) == -1)
 		goto rmfail;
@@ -245,7 +245,7 @@ quota_recalc(const char *dir, int *fd, quota_t *q)
 }
 
 int
-quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc)
+quota_check(quota_t *q, uint64 size, uint64 count, int *perc)
 {
 	int sp , cp;
 	
@@ -257,10 +257,10 @@ quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc)
 		
 	if (perc != (int *)0) {
 		sp = q->quota_size != 0 ?
-			(int)((q->size + size)*100.0/q->quota_size) :
+			(int)((q->size + size)*100/q->quota_size) :
 			0;
 		cp = q->quota_count != 0 ?
-			(int)((q->count + count)*100.0/q->quota_count) :
+			(int)((q->count + count)*100/q->quota_count) :
 			0;
 		if (sp > cp)
 			*perc = sp;
@@ -282,7 +282,7 @@ quota_check(quota_t *q, unsigned long size, unsigned long count, int *perc)
 void
 quota_get(quota_t *q, const char *quota)
 {
-	unsigned long i;
+	uint64 i;
 
 	q->quota_size = 0;
 	q->quota_count = 0;
@@ -298,7 +298,7 @@ quota_get(quota_t *q, const char *quota)
 		}
 
 		/* parse found number */
-		quota += scan_ulong(quota, &i);
+		quota += scan_uint64(quota, &i);
 
 		switch (*quota) {
 			case 'S':
@@ -345,7 +345,8 @@ quota_parsesize(quota_t *q, int *fd, char *buf, int len)
 {
 	char *s;
 	quota_t dummy;
-	long fig, pn;
+	uint64 fig;
+	int pn;
 	int i;
 	char c;
 	
@@ -384,9 +385,14 @@ quota_parsesize(quota_t *q, int *fd, char *buf, int len)
 		if (c == '\0') continue;
 		
 		/* first comes the size ... */
-		if ((i = scan_ulong(s, &fig)) == 0) continue;
+		if ((i = scan_uint64(s, &fig)) == 0) continue;
 		s += i;
-		q->size += (fig * pn);
+		if (pn > 0)
+			q->size += fig;
+		else if (q->size > fig)
+			q->size -= fig;
+		else
+			q->size = 0;
 
 		pn = 1;
 		while ((c = *s) < '0' || c > '9') {
@@ -395,9 +401,14 @@ quota_parsesize(quota_t *q, int *fd, char *buf, int len)
 		}
 
 		/* ... then the file count */
-		if ((i = scan_ulong(s, &fig)) == 0) continue;
+		if ((i = scan_uint64(s, &fig)) == 0) continue;
 		s += i;
-		q->count += (fig * pn);
+		if (pn > 0)
+			q->count += fig;
+		else if (q->count > fig)
+			q->count -= fig;
+		else
+			q->size = 0;
 	}
 
 	return 0;
@@ -444,7 +455,8 @@ quota_calcsize(quota_t *q, int *fd, char *buf, int len)
 			path.len = plen;
 		}
 	}
-	if (dirp) closedir(dirp);
+	if (dirp)
+		closedir(dirp);
 	
 	path.len = plen;
 	calc_curnew(q, &maxtime);
@@ -514,11 +526,11 @@ quota_writesize(quota_t *q, int *fd, time_t maxtime)
 	}
 	if (substdio_bput(&ss,"\n", 1) == -1)
 		goto fail;
-	if (substdio_bput(&ss, num, fmt_ulong(num, q->size)) == -1)
+	if (substdio_bput(&ss, num, fmt_uint64(num, q->size)) == -1)
 		goto fail;
 	if (substdio_bput(&ss, " ", 1) == -1)
 		goto fail;
-	if (substdio_bput(&ss, num, fmt_ulong(num, q->count)) == -1)
+	if (substdio_bput(&ss, num, fmt_uint64(num, q->count)) == -1)
 		goto fail;
 	if (substdio_bput(&ss, "\n", 1) == -1)
 		goto fail;
@@ -697,7 +709,7 @@ calc_curnew(quota_t *q, time_t *maxtime)
 			/* get the file size */
 			if(get_file_size(dp->d_name, &filest) == 0) {
 				q->count++;
-				q->size += (long)filest.st_size;
+				q->size += (uint64)filest.st_size;
 			} 
 		}
 		if (dirp) closedir(dirp);
@@ -733,4 +745,3 @@ read5120(const char *fn, char* buf, int *len)
 		buf += r;
 	}
 }
-

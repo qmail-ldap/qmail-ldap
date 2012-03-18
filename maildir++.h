@@ -33,19 +33,20 @@
  */
 #ifndef __MAILDIRPP_H__
 #define __MAILDIRPP_H__
+#include "uint64.h"
 
 typedef struct {
-	unsigned long quota_size;
-	unsigned long quota_count;
-	long size;
-	long count;
+	uint64 quota_size;
+	uint64 quota_count;
+	uint64 size;
+	uint64 count;
 } quota_t;
 
-void quota_add(int , unsigned long , unsigned long);
-void quota_rm(int , unsigned long , unsigned long);
+void quota_add(int , uint64, uint64);
+void quota_rm(int , uint64, uint64);
 int quota_calc(const char *, int *fd, quota_t *);
 int quota_recalc(const char *, int *fd, quota_t *);
-int quota_check(quota_t *, unsigned long , unsigned long , int *);
+int quota_check(quota_t *, uint64 , uint64, int *);
 void quota_get(quota_t *, const char *);
 
 #endif

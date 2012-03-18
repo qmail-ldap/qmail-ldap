@@ -147,14 +147,14 @@ char *dir;
  if (close(fd) == -1) goto fail; /* NFS dorks */
 
  s = fnnewtph;
- while( *s ) s++;
+ while(*s) s++;
  s += fmt_str(s,",S=");
- s += fmt_ulong(s,(unsigned long) st.st_size);
+ s += fmt_uint64(s,(uint64)st.st_size);
  *s++ = 0;
 
  if( quotastring && *quotastring ) {
    /* finally update the quota file "maildirsize" */
-   quota_add(msfd, (unsigned long) st.st_size, 1);
+   quota_add(msfd, (uint64)st.st_size, 1);
    close(msfd);
  }
   
@@ -223,7 +223,7 @@ char *fn;
  struct stat mailst;
  int perc;
  quota_t q;
- unsigned long mailsize;
+ uint64 mailsize;
 
 #ifdef AUTOMAILDIRMAKE
  switch (maildir_make(fn)) {
@@ -314,7 +314,7 @@ char *fn;
 
  /* quota handling mbox */
  struct stat filest, mailst;
- unsigned long totalsize;
+ uint64 totalsize;
  quota_t q;
 
  if( quotastring && *quotastring ) {
@@ -328,7 +328,7 @@ char *fn;
    if (fstat(0, &mailst) != 0)
      strerr_die3x(111,"Unable to quota mail: ",error_str(errno), ". (#4.3.0)");
    
-   totalsize = (unsigned long) filest.st_size + (unsigned long) mailst.st_size;
+   totalsize = (uint64)filest.st_size + (uint64)mailst.st_size;
    if (totalsize * 100 / q.quota_size >= QUOTA_WARNING_LEVEL)
      /* drop a warning when mailbox is around 80% full */
      quota_warning(fn);

@@ -1,5 +1,6 @@
 #ifndef SCAN_H
 #define SCAN_H
+#include "uint64.h"
 
 /* XXX not available in qmail-1.03
 extern unsigned int scan_uint();
@@ -10,6 +11,7 @@ extern unsigned int scan_xshort();
 extern unsigned int scan_nbbshort();
 */
 extern unsigned int scan_ulong(const char *, unsigned long *);
+extern unsigned int scan_uint64(const char *, uint64 *);
 /* XXX not available in qmail-1.03
 extern unsigned int scan_xlong();
 extern unsigned int scan_nbblong();

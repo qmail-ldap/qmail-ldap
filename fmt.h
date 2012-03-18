@@ -1,5 +1,6 @@
 #ifndef FMT_H
 #define FMT_H
+#include "uint64.h"
 
 #define FMT_ULONG 40 /* enough space to hold 2^128 - 1 in decimal, plus \0 */
 #define FMT_LEN ((char *) 0) /* convenient abbreviation */
@@ -14,6 +15,7 @@ extern unsigned int fmt_xshort();
 extern unsigned int fmt_nbbshort();
 */
 extern unsigned int fmt_ulong(char *, unsigned long);
+extern unsigned int fmt_uint64(char *, uint64);
 /* XXX not available in qmail-1.03
 extern unsigned int fmt_xlong();
 extern unsigned int fmt_nbblong();
