@@ -98,7 +98,14 @@ int safewrite(int fd, void *buf, int len)
 char ssoutbuf[512];
 substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 
+int saferead(int, void *, int);
+char ssinbuf[1024];
+substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
+
 void flush(void) { substdio_flush(&ssout); }
+#ifdef TLS_SMTPD
+void flush_tls(void) { ssin.p = 0; flush(); }
+#endif
 void out(const char *s) { substdio_puts(&ssout,s); }
 
 /* level 0 = no logging
@@ -1358,9 +1365,6 @@ int saferead(int fd,void *buf,int len)
   return r;
 }
 
-char ssinbuf[1024];
-substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
-
 unsigned long bytestooverflow = 0;
 unsigned long bytesreceived = 0;
 
@@ -1798,7 +1802,7 @@ struct commands smtpcommands[] = {
 , { "rset", smtp_rset, 0 }
 , { "help", smtp_help, flush }
 #ifdef TLS_SMTPD
-, { "starttls", smtp_tls, flush }
+, { "starttls", smtp_tls, flush_tls }
 #endif
 #ifdef DATA_COMPRESS
 , { "dataz", smtp_dataz, flush }

@@ -2,7 +2,7 @@ QMAIL_LDAP by Andre Oppermann <opi@nrg4u.com>,
 Claudio Jeker <jeker@n-r-g.com> and Boris Lutz <lutz@n-r-g.com>
 (c) 1999-2004 Internet Business Solutions AG
 
-RELEASE: $Date: 2012/02/21 20:24:32 $ ($Revision: 1.230 $)
+RELEASE: $Date: 2012/03/18 14:39:38 $ ($Revision: 1.231 $)
 
 
 This is the NEWS FILE, so the QLDAPINSTALL file gets a bit cleaner.
@@ -17,6 +17,10 @@ WARNING: If you are upgrading from 20030801a or earlier make sure that
 
 
 NEWS for current stuff:
+
+ Fix the STARTTLS vulnerability found by Wietse Venema in qmail-tls.
+
+NEWS for 20120221 stuff:
 
  Add ~control/goodmailfrom, a list of addresses which will bypass any
  checks that would happen on the sender address. This also includes the
