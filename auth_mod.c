@@ -94,6 +94,8 @@ void chdir_or_make(char *, char *);
 void forward(char *, char *, struct credentials *);
 #endif
 
+int do_not_drop_privs;
+
 int
 main(int argc, char **argv)
 {
@@ -122,10 +124,12 @@ main(int argc, char **argv)
 	case OK:
 		/* authdata no longer needed */
 		byte_zero(authdatastr.s, authdatastr.len);
-		change_uid(c.uid, c.gid);
+		if (!do_not_drop_privs)
+			change_uid(c.uid, c.gid);
 		setup_env(loginstr.s, &c);
 		auth_setup(&c);
-		chdir_or_make(c.home.s, c.maildir.s);
+		if (!do_not_drop_privs)
+			chdir_or_make(c.home.s, c.maildir.s);
 		auth_success(loginstr.s);
 	case FORWARD:
 #ifdef QLDAP_CLUSTER

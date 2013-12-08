@@ -60,6 +60,8 @@ static int auth_argc;
 static char **auth_argv;
 static char *aliasempty;
 
+extern int do_not_drop_privs;
+
 void
 auth_setup(struct credentials *c)
 {
@@ -67,6 +69,27 @@ auth_setup(struct credentials *c)
 	static stralloc ext = {0};
 	char num[FMT_ULONG];
 	unsigned long size;
+
+	if (!stralloc_copyb(&qenv, num, fmt_ulong(num, c->uid)))
+		auth_error(ERRNO);
+	if (!stralloc_0(&qenv))
+		auth_error(ERRNO);
+	if (!env_put2("userdb_uid", qenv.s))
+		auth_error(ERRNO);
+	logit(32, "dovecot environment set: userdb_uid %s\n",
+	    qenv.s);
+
+	if (!stralloc_copyb(&qenv, num, fmt_ulong(num, c->gid)))
+		auth_error(ERRNO);
+	if (!stralloc_0(&qenv))
+		auth_error(ERRNO);
+	if (!env_put2("userdb_gid", qenv.s))
+		auth_error(ERRNO);
+	logit(32, "dovecot environment set: userdb_gid %s\n",
+	    qenv.s);
+	if (!stralloc_copys(&ext,"userdb_uid userdb_gid"))
+		auth_error(ERRNO);
+
 
 	if (c->size != 0 || c->count != 0) {
 		/*
@@ -93,20 +116,15 @@ auth_setup(struct credentials *c)
 			auth_error(ERRNO);
 		if (!env_put2("userdb_quota_rule", qenv.s))
 			auth_error(ERRNO);
-		if (!stralloc_copys(&ext,"userdb_quota_rule"))
+		if (!stralloc_cats(&ext," userdb_quota_rule"))
 			auth_error(ERRNO);
 		logit(32, "dovecot environment set: userdb_quota_rule %s\n",
 		    qenv.s);
 	}
 
 	if (c->maildir.s != 0 && c->maildir.s[0] && c->maildir.len > 0) {
-		if (ext.s != 0 && ext.len > 0) {
-			if (!stralloc_cats(&ext," userdb_mail"))
-				auth_error(ERRNO);
-		} else {
-			if (!stralloc_copys(&ext,"userdb_mail"))
-				auth_error(ERRNO);
-		}
+		if (!stralloc_cats(&ext," userdb_mail"))
+			auth_error(ERRNO);
 		if (!stralloc_copys(&qenv,"maildir:"))
 			auth_error(ERRNO);
 		if (!stralloc_cats(&qenv, c->maildir.s))
@@ -115,13 +133,14 @@ auth_setup(struct credentials *c)
 			auth_error(ERRNO);
 		if (!env_put2("userdb_mail", qenv.s))
 			auth_error(ERRNO);
+		logit(32, "dovecot environment set: userdb_mail %s\n", qenv.s);
 	}
 
 	if (!stralloc_0(&ext))
 		auth_error(ERRNO);
 	if (!env_put2("EXTRA", ext.s))
 		auth_error(ERRNO);
-	logit(32, "dovecot environment set: userdb_mail %s\n", qenv.s);
+	logit(32, "dovecot environment set: EXTRA %s\n", ext.s);
 }
 
 void
@@ -133,6 +152,8 @@ auth_init(int argc, char **argv, stralloc *login, stralloc *authdata)
 	char		*l, *p;
 	unsigned int	uplen, u;
 	int		n, opt;
+
+	do_not_drop_privs = 1;
 
 	while ((opt = getopt(argc, argv, "a:d:D:")) != opteof) {
 		switch (opt) {
@@ -216,6 +237,7 @@ auth_success(const char *login)
 	pbsexec();
 	
 	/* start qmail-pop3d */
+	logit(4, "auth_success: calling %s\n", *auth_argv);
 	execvp(*auth_argv,auth_argv);
 
 	auth_error(AUTH_EXEC);
