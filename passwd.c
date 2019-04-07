@@ -84,6 +84,7 @@ int
 cmp_passwd(char *clear, char *encrypted)
 {
 	int	i, r;
+	char	*c;
 
 	for (i = 0; algo[i].scheme != 0; i++) {
 		if (case_diffb(encrypted, algo[i].slen, algo[i].scheme) == 0) {
@@ -102,7 +103,9 @@ cmp_passwd(char *clear, char *encrypted)
 	}
 	logit(256, "cpm_passwd: comparing crypt(3) passwd (%s == %s)\n", 
 	    crypt(clear,encrypted), encrypted);
-	if (str_diff(encrypted, crypt(clear,encrypted)) == 0)
+	if ((c = crypt(clear,encrypted)) == NULL)
+		return BADPASS;
+	if (str_diff(encrypted, c) == 0)
 		return OK;
 #ifdef CLEARTEXTPASSWD
 #warning ___CLEARTEXT_PASSWORD_SUPPORT_IS_ON___
