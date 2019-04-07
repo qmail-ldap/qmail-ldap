@@ -46,7 +46,7 @@
 #endif
 
 #ifdef TLS_REMOTE
-SSL *ssl = 0;
+SSL *ssl = NULL;
 #endif
 
 #define HUGESMTPTEXT 5000
@@ -437,6 +437,7 @@ stralloc cookie = {0};
 stralloc recip = {0};
 #ifdef TLS_REMOTE
 stralloc sslcert = {0};
+stralloc sslciphers = {0};
 #endif
 stralloc xtext = {0};
 
@@ -512,14 +513,14 @@ void smtp(void)
   }
 
 #ifdef TLS_REMOTE
-  if (flagtls) {
+  if (flagtls && sslcert.s && *sslcert.s) {
     substdio_puts(&smtpto,"STARTTLS\r\n");
     substdio_flush(&smtpto);
     if (smtpcode() == 220) {
 #ifdef TLSDEBUG
       SSL_load_error_strings();
 #endif
-      SSLeay_add_ssl_algorithms();
+      SSL_library_init();
       if (!(ctx=SSL_CTX_new(SSLv23_client_method()))) {
 #ifdef TLSDEBUG
         out("ZTLS not available: error initializing ctx");
@@ -532,12 +533,22 @@ void smtp(void)
         out("\n");
         zerodie();
       }
+      SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
 
-      if (sslcert.s && *sslcert.s) {
-        SSL_CTX_use_RSAPrivateKey_file(ctx, sslcert.s, SSL_FILETYPE_PEM);
-        SSL_CTX_use_certificate_file(ctx, sslcert.s, SSL_FILETYPE_PEM);
+      SSL_CTX_use_certificate_file(ctx, sslcert.s, SSL_FILETYPE_PEM);
+      SSL_CTX_use_RSAPrivateKey_file(ctx, sslcert.s, SSL_FILETYPE_PEM);
+
+      if (!SSL_CTX_set_cipher_list(ctx, sslciphers.s)) {
+#ifdef TLSDEBUG
+        out("ZTLS not available: error setting cipher list");
+        out(": ");
+        out(ERR_error_string(ERR_get_error(), buf));
+#else
+        out("ZTLS not available: error setting cipher list");
+#endif
+        out("\n");
+        zerodie();
       }
-      /*SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1);*/
 
       if (!(ssl=SSL_new(ctx))) {
 #ifdef TLSDEBUG
@@ -870,6 +881,9 @@ void getcontrols(void)
   if (control_readline(&sslcert, "control/remotecert") == -1)
     temp_control();
   if (!stralloc_0(&sslcert)) temp_nomem();
+  if (control_rldef(&sslciphers, "control/tlsremoteciphers", 0, "DEFAULT") == -1)
+    temp_control();
+  if (!stralloc_0(&sslciphers)) temp_nomem();
 #endif
 
 }
