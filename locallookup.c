@@ -81,7 +81,11 @@ check_passwd(stralloc *login, stralloc *authdata,
 
 	if (localdelivery() == 0) return NOSUCH;
 
+#ifdef __OpenBSD__
+	pw = getpwnam_shadow(login->s);
+#else
 	pw = getpwnam(login->s);
+#endif
 	if (!pw) {
 		/* XXX: unfortunately getpwnam() hides temporary errors */
 		logit(32, "check_passwd: user %s not found in passwd db\n",
@@ -129,6 +133,7 @@ check_passwd(stralloc *login, stralloc *authdata,
 #endif /* END PW_SHADOW */
 	logit(32, "check_pw: password compare was %s\n", 
 	    ret==OK?"successful":"not successful");
+	endpwent();
 	return ret;
 }
 
