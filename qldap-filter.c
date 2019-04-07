@@ -178,6 +178,9 @@ filter_mail(char *mail, int *done)
 			if (mail[ext] == *auto_break) break;
 		}
 		extcnt--;
+		/* in the -a@foobar.com case just check catchall@foobar.com */
+		if (ext == 0)
+			extcnt = 0;
 #else
 		/* basic qmail-ldap behavior test for username@domain.com and
 		   catchall@domain.com */
