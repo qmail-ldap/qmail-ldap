@@ -98,16 +98,13 @@ die_nomem(void)
 static void
 init(void)
 {
-	unsigned int l;
-
 	if (chdir(auto_qmail) == -1) die_control();
 
 	if (control_rldef(&addr,"control/pbsip",0, "0.0.0.0") == -1)
 		die_control();
 	if (!stralloc_0(&addr)) die_nomem();
 
-	l = ip_scan(addr.s, &ip);
-	if (l == 0 && l > 15) die_control();
+	if (!ip_scan(addr.s, &ip)) die_control();
 
 	if (control_rldef(&secret,"control/pbssecret",0,"") != 1)
 		die_control();

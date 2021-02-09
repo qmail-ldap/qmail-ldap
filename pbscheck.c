@@ -94,7 +94,7 @@ void
 setup(void)
 {
 	char* s;
-	unsigned int i, len;
+	unsigned int i;
 	int fdsourcedir;
 
 	fdsourcedir = open_read(".");
@@ -131,8 +131,7 @@ setup(void)
 
 	s = addresses.s;
 	for (i = 0; i < numservers; i++) {
-		len = ip_scan(s, &servers[i]);
-		if (len == 0 || len > 15) die_control();
+		if (!ip_scan(s, &servers[i])) die_control();
 		while (*s++);
 	}
 }
@@ -273,8 +272,7 @@ int main (int argc, char** argv)
 
 	ipstr = env_get("TCPREMOTEIP");
 	if (!ipstr) die_badenv();
-	len = ip_scan(ipstr, &ip);
-	if (len == 0 || len > 15) die_badenv();
+	if (!ip_scan(ipstr, &ip)) die_badenv();
 
 	sfd = socket(AF_INET,SOCK_DGRAM,0);
 	if (sfd == -1) goto start_daemon;
