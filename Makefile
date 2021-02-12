@@ -39,15 +39,14 @@ LDAPINCLUDES=-DLDAP_DEPRECATED=1 -I/usr/local/include
 #ZINCLUDES=-I/opt/zlib/include
 
 # TLS (SMTP encryption) in qmail-smtpd and qmail-remote, see TLS.readme
-# You need OpenSSL for this
-# use -DTLS_REMOTE to enable tls support in qmail-remote
-# use -DTLS_SMTPD to enable tls support in qmail-smtpd
+# You need LibreSSL libtls for this
+# use -DTLS to enable tls support in qmail-remote and qmail-smtpd
 # use -DTLSDEBUG to enable additional tls debug information in qmail-remote
-#TLS=-DTLS_REMOTE -DTLS_SMTPD
-# Path to OpenSSL includes
+TLS=-DTLS_REMOTE -DTLS
+# Path to TLS includes
 #TLSINCLUDES=-I/usr/local/include
-# Path to OpenSSL libraries
-#TLSLIBS=-L/usr/local/lib -lssl -lcrypto
+# Path to TLS libraries
+TLSLIBS=-L/usr/local/lib -ltls -lssl -lcrypto
 # Path to OpenSSL binary
 #OPENSSLBIN=/usr/local/bin/openssl
 #OPENSSLBIN=openssl
@@ -1957,14 +1956,14 @@ wait.h lock.h
 	./compile qmail-quotawarn.c
 
 qmail-remote: \
-load qmail-remote.o control.o constmap.o timeoutread.o timeoutwrite.o \
-timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o ipme.o quote.o xtext.o \
-base64.o ndelay.a case.a sig.a open.a lock.a seek.a getln.a stralloc.a \
-alloc.a strerr.a substdio.a error.a str.a fs.a auto_qmail.o \
-dns.lib socket.lib
-	./load qmail-remote control.o constmap.o timeoutread.o \
-	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
-	ipalloc.o ipme.o quote.o xtext.o base64.o ndelay.a case.a \
+load qmail-remote.o control.o constmap.o tlsreadwrite.o timeoutread.o \
+timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o ipme.o \
+quote.o xtext.o base64.o ndelay.a case.a sig.a open.a lock.a seek.a \
+getln.a stralloc.a alloc.a strerr.a substdio.a error.a str.a fs.a \
+auto_qmail.o dns.lib socket.lib
+	./load qmail-remote control.o constmap.o tlsreadwrite.o \
+	timeoutread.o timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o \
+	ip.o ipalloc.o ipme.o quote.o xtext.o base64.o ndelay.a case.a \
 	sig.a open.a lock.a seek.a getln.a stralloc.a alloc.a \
 	strerr.a substdio.a error.a str.a fs.a auto_qmail.o \
 	`cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
@@ -2087,19 +2086,19 @@ auto_split.h
 	./compile qmail-showctl.c
 
 qmail-smtpd: \
-load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o rbl.o \
-timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
+load qmail-smtpd.o rcpthosts.o commands.o tlsreadwrite.o timeoutread.o \
+timeoutwrite.o rbl.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
 date822fmt.o now.o qmail.o execcheck.o cdb.a smtpcall.o coe.o fd.a \
 seek.a wait.a datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
 alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_break.o \
 dns.lib socket.lib
-	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o rbl.o \
-	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
-	received.o date822fmt.o now.o qmail.o execcheck.o cdb.a \
-	smtpcall.o coe.o fd.a seek.a wait.a datetime.a getln.a \
-	open.a sig.a case.a env.a stralloc.a alloc.a substdio.a \
-	error.a fs.a auto_qmail.o dns.o str.a auto_break.o \
-	`cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
+	./load qmail-smtpd rcpthosts.o commands.o tlsreadwrite.o \
+	timeoutread.o timeoutwrite.o rbl.o ip.o ipme.o ipalloc.o \
+	control.o constmap.o received.o date822fmt.o now.o qmail.o \
+	execcheck.o cdb.a smtpcall.o coe.o fd.a seek.a wait.a \
+	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
+	alloc.a substdio.a error.a fs.a auto_qmail.o dns.o str.a \
+	auto_break.o `cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
 
 qmail-smtpd.0: \
 qmail-smtpd.8
@@ -2731,6 +2730,10 @@ compile timeoutread.c timeoutread.h select.h error.h readwrite.h
 timeoutwrite.o: \
 compile timeoutwrite.c timeoutwrite.h select.h error.h readwrite.h
 	./compile timeoutwrite.c
+
+tlsreadwrite.o: \
+compile tlsreadwrite.c tlsreadwrite.h
+	./compile $(TLS) $(TLSINCLUDES) tlsreadwrite.c
 
 token822.o: \
 compile token822.c stralloc.h gen_alloc.h alloc.h str.h token822.h \

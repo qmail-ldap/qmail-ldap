@@ -34,19 +34,16 @@
 #include "timeoutwrite.h"
 #include "base64.h"
 #include "xtext.h"
-#ifdef TLS_REMOTE /* openssl/ssh.h needs to be included befor zlib.h else ... */
-#include <sys/stat.h>
-#include <openssl/ssl.h>
-#ifdef TLSDEBUG
-#include <openssl/err.h>
-#endif
+#ifdef TLS
+#include <tls.h>
+#include "tlsreadwrite.h"
 #endif
 #ifdef DATA_COMPRESS
 #include <zlib.h>
 #endif
 
-#ifdef TLS_REMOTE
-SSL *ssl = NULL;
+#ifdef TLS
+struct tls *tls = NULL;
 #endif
 
 #define HUGESMTPTEXT 5000
@@ -143,38 +140,6 @@ int timeoutconnect = 60;
 int smtpfd;
 int timeout = 1200;
 
-#ifdef TLS_REMOTE
-int flagtimedout = 0;
-void sigalrm(int sig)
-{
- flagtimedout = 1;
-}
-int ssl_timeoutread(int tout, int fd, void *buf, int n)
-{
- int r; int saveerrno;
- if (flagtimedout) { errno = error_timeout; return -1; }
- alarm(tout);
- r = SSL_read(ssl,buf,n);
- saveerrno = errno;
- alarm(0);
- if (flagtimedout) { errno = error_timeout; return -1; }
- errno = saveerrno;
- return r;
-}
-int ssl_timeoutwrite(int tout, int fd, void *buf, int n)
-{
- int r; int saveerrno;
- if (flagtimedout) { errno = error_timeout; return -1; }
- alarm(tout);
- r = SSL_write(ssl,buf,n);
- saveerrno = errno;
- alarm(0);
- if (flagtimedout) { errno = error_timeout; return -1; }
- errno = saveerrno;
- return r;
-}
-#endif 
-
 #ifdef DATA_COMPRESS
 z_stream stream;
 char zbuf[4096];
@@ -205,9 +170,9 @@ void compression_done(void)
     switch (r) {
     case Z_OK:
       if (stream.avail_out == 0) {
-#ifdef TLS_REMOTE
-	if (ssl)
-	  r = ssl_timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf));
+#ifdef TLS
+	if (tls)
+	  r = tlstimeoutwrite(timeout,smtpfd,tls,zbuf,sizeof(zbuf));
 	else
 #endif
 	r = timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf));
@@ -228,9 +193,10 @@ void compression_done(void)
   } while (r!=Z_STREAM_END);
   if (stream.avail_out != sizeof(zbuf)) {
     /* write left data */
-#ifdef TLS_REMOTE
-    if (ssl)
-      r = ssl_timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf)-stream.avail_out);
+#ifdef TLS
+    if (tls)
+      r = tlstimeoutwrite(timeout,smtpfd,tls,zbuf,
+	  sizeof(zbuf)-stream.avail_out);
     else
 #endif
     r = timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf)-stream.avail_out);
@@ -249,9 +215,9 @@ void compression_done(void)
 int saferead(int fd, void *buf, int len)
 {
   int r;
-#ifdef TLS_REMOTE
-  if (ssl)
-    r = ssl_timeoutread(timeout,smtpfd,buf,len);
+#ifdef TLS
+  if (tls)
+    r = tlstimeoutread(timeout,smtpfd,tls,buf,len);
   else
 #endif
   r = timeoutread(timeout,smtpfd,buf,len);
@@ -270,9 +236,9 @@ int safewrite(int fd, void *buf, int len)
       switch (r) {
       case Z_OK:
 	if (stream.avail_out == 0) {
-#ifdef TLS_REMOTE
-	  if (ssl)
-	    r = ssl_timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf));
+#ifdef TLS
+	  if (tls)
+	    r = tlstimeoutwrite(timeout,smtpfd,tls,zbuf,sizeof(zbuf));
 	  else
 #endif
 	  r = timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf));
@@ -291,9 +257,9 @@ int safewrite(int fd, void *buf, int len)
     return len;
   }
 #endif
-#ifdef TLS_REMOTE
-  if (ssl)
-    r = ssl_timeoutwrite(timeout,smtpfd,buf,len);
+#ifdef TLS
+  if (tls)
+    r = tlstimeoutwrite(timeout,smtpfd,tls,buf,len);
   else
 #endif
   r = timeoutwrite(timeout,smtpfd,buf,len);
@@ -377,30 +343,26 @@ void quit(const char *prepend, const char *append)
 	  out(num); out(" percent.\n");
   }
 #endif
-/* TAG */
-#if defined(TLS_REMOTE) && defined(TLSDEBUG)
-#define ONELINE_NAME(X) X509_NAME_oneline(X,NULL,0)
 
- if (ssl) {
-  X509 *peer;
+#ifdef TLS
+ if (tls) {
+  int ret;
 
-  out("STARTTLS proto="); out(SSL_get_version(ssl));
-  out("; cipher="); out(SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)));
+  out("STARTTLS proto=");
+  out(tls_conn_version(tls));
+  out("; cipher=");
+  out(tls_conn_cipher(tls));
 
   /* we want certificate details */
-  peer=SSL_get_peer_certificate(ssl);
-  if (peer != NULL) {
-   char *str;
-
-   str=ONELINE_NAME(X509_get_subject_name(peer));
-   out("; subject="); out(str);
-   OPENSSL_free(str);
-   str=ONELINE_NAME(X509_get_issuer_name(peer));
-   out("; issuer="); out(str);
-   OPENSSL_free(str);
-   X509_free(peer);
+  if (tls_peer_cert_provided(tls)) {
+    out("; fingerprint=");
+    out(tls_peer_cert_hash(tls));
   }
   out(";\n");
+
+  do {
+    ret = tls_close(tls);
+  } while (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT);
  }
 #endif
 
@@ -435,9 +397,11 @@ void blast(void)
 
 stralloc cookie = {0};
 stralloc recip = {0};
-#ifdef TLS_REMOTE
-stralloc sslcert = {0};
-stralloc sslciphers = {0};
+#ifdef TLS
+stralloc tlscert = {0};
+stralloc tlsciphers = {0};
+stralloc tlsdheparams = {0};
+stralloc tlshost = {0};
 #endif
 stralloc xtext = {0};
 
@@ -451,15 +415,9 @@ void smtp(void)
   int flagauth;
   unsigned int i, j;
   char num[FMT_ULONG];
-#ifdef TLS_REMOTE
-  int flagtls;
-  SSL_CTX *ctx;
-  int saveerrno, r;
-#ifdef TLSDEBUG
-  char buf[1024];
-#endif
-
-  flagtls = 0;
+#ifdef TLS
+  int flagtls = 0;
+  struct tls_config *tls_config;
 #endif
 
   code = smtpcode();
@@ -500,7 +458,7 @@ void smtp(void)
     else if (i+9 < smtptext.len && !case_diffb("DATAZ", 5, smtptext.s+i+4))
             wantcomp = 1;
 #endif
-#ifdef TLS_REMOTE
+#ifdef TLS
     else if (i+12 < smtptext.len && !case_diffb("STARTTLS", 8, smtptext.s+i+4))
       flagtls = 1;
 #endif
@@ -512,74 +470,55 @@ void smtp(void)
     }
   }
 
-#ifdef TLS_REMOTE
-  if (flagtls && sslcert.s && *sslcert.s) {
+#ifdef TLS
+  if (flagtls) {
     substdio_puts(&smtpto,"STARTTLS\r\n");
     substdio_flush(&smtpto);
     if (smtpcode() == 220) {
-#ifdef TLSDEBUG
-      SSL_load_error_strings();
-#endif
-      SSL_library_init();
-      if (!(ctx=SSL_CTX_new(SSLv23_client_method()))) {
-#ifdef TLSDEBUG
-        out("ZTLS not available: error initializing ctx");
-        out(": ");
-        out(ERR_error_string(ERR_get_error(), buf));
-        out("\n");
-#else
-        out("ZTLS not available: error initializing ctx\n");
-#endif
-        out("\n");
-        zerodie();
-      }
-      SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
+      tls_config = tls_config_new();
+      if (tls_config == NULL)
+        temp_nomem();
 
-      SSL_CTX_use_certificate_file(ctx, sslcert.s, SSL_FILETYPE_PEM);
-      SSL_CTX_use_RSAPrivateKey_file(ctx, sslcert.s, SSL_FILETYPE_PEM);
-
-      if (!SSL_CTX_set_cipher_list(ctx, sslciphers.s)) {
-#ifdef TLSDEBUG
-        out("ZTLS not available: error setting cipher list");
-        out(": ");
-        out(ERR_error_string(ERR_get_error(), buf));
-#else
-        out("ZTLS not available: error setting cipher list");
-#endif
+      if (tls_config_set_protocols(tls_config, TLS_PROTOCOLS_ALL) != 0 ||
+          tls_config_set_ciphers(tls_config, tlsciphers.s) != 0 ||
+          tls_config_set_dheparams(tls_config, tlsdheparams.s) != 0) {
+fail:
+        out("ZTLS not available: error initializing ssl: ");
+        out(tls_config_error(tls_config));
         out("\n");
         zerodie();
       }
 
-      if (!(ssl=SSL_new(ctx))) {
-#ifdef TLSDEBUG
-        out("ZTLS not available: error initializing ssl");
-        out(": ");
-        out(ERR_error_string(ERR_get_error(), buf));
-#else
-        out("ZTLS not available: error initializing ssl");
-#endif
-        out("\n");
-        zerodie();
-      }
-      SSL_set_fd(ssl,smtpfd);
+      if (tls_config_set_ca_file(tls_config, tls_default_ca_cert_file()) != 0)
+        goto fail;
 
-      alarm(timeout);
-      r = SSL_connect(ssl); saveerrno = errno;
-      alarm(0); 
-      if (flagtimedout) {
-        out("ZTLS not available: connect timed out\n");
+      if (tlscert.s && *tlscert.s) {
+	if (tls_config_set_cert_file(tls_config, tlscert.s) != 0)
+	  goto fail;
+	if (tls_config_set_key_file(tls_config, tlscert.s) != 0)
+	  goto fail;
+      }
+
+      tls_config_insecure_noverifycert(tls_config);
+      tls_config_insecure_noverifyname(tls_config);
+      tls_config_insecure_noverifytime(tls_config);
+
+      if (!(tls = tls_client()))
+	temp_nomem();
+      if (tls_configure(tls, tls_config) == -1) {
+        out("ZTLS not available: error initializing ssl: ");
+        out(tls_error(tls));
+        out("\n");
         zerodie();
       }
-      errno = saveerrno;
-      if (r<=0) {
-#ifdef TLSDEBUG
-        out("ZTLS not available: connect failed");
-        out(": ");
-        out(ERR_error_string(ERR_get_error(), buf));
+
+      if (!stralloc_copy(&tlshost,&host)) temp_nomem();
+      if (!stralloc_0(&tlshost)) temp_nomem();
+
+      if (tls_connect_socket(tls, smtpfd, tlshost.s) == -1) {
+        out("ZTLS not available: connect failed: ");
+        out(tls_error(tls));
         out("\n");
-#else
-        out("ZTLS not available: connect failed\n");
-#endif
         zerodie();
       }
 
@@ -877,13 +816,16 @@ void getcontrols(void)
   if (!stralloc_0(&outgoingip)) temp_nomem();
   if (!ip_scan(outgoingip.s, &outip)) temp_noip();
 
-#ifdef TLS_REMOTE
-  if (control_readline(&sslcert, "control/remotecert") == -1)
+#ifdef TLS
+  if (control_readline(&tlscert, "control/remotecert") == -1)
     temp_control();
-  if (!stralloc_0(&sslcert)) temp_nomem();
-  if (control_rldef(&sslciphers, "control/tlsremoteciphers", 0, "DEFAULT") == -1)
+  if (!stralloc_0(&tlscert)) temp_nomem();
+  if (control_rldef(&tlsciphers, "control/tlsremoteciphers", 0, "default") == -1)
     temp_control();
-  if (!stralloc_0(&sslciphers)) temp_nomem();
+  if (!stralloc_0(&tlsciphers)) temp_nomem();
+  if (control_rldef(&tlsdheparams, "control/tlsdheparams", 0, "none") == -1)
+    temp_control();
+  if (!stralloc_0(&tlsdheparams)) temp_nomem();
 #endif
 
 }
@@ -899,9 +841,6 @@ int main(int argc, char **argv)
   int flagalias;
   const char *relayhost;
 
-#ifdef TLS_REMOTE
-  sig_alarmcatch(sigalrm);
-#endif
   sig_pipeignore();
   if (argc < 4) perm_usage();
   if (chdir(auto_qmail) == -1) temp_chdir();

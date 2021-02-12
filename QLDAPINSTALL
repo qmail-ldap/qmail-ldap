@@ -594,12 +594,6 @@ OR
        abort the delivery attempt, bounce the message and report a smtp
        loop error.
 
-~control/cert.pem
-
- Certificate for qmail-smtp tls option. This file can be generated via "make
- cert" or "make cert-req". The file needs to be readable for qmail-smtpd -- in
- other words it needs to be readable for user qmaild.
-
 ~control/outgoingip
 
  This file contains the IP qmail-remote should bind to.
@@ -649,22 +643,46 @@ OR
 
 ~control/smtpcert
 
- This file contains the location of the SSL certificate used for smtps STARTTLS
+ This file contains the location of the TLS certificate used for smtps STARTTLS
  feature. The path may be relative to /var/qmail or whatever was specified in
- conf-qmail.
+ conf-qmail. Can also be set via env variable SSLCERT.
+ The certificate should be only readable by qmail-smtpd (default user qmaild).
  Default: none
  Example: control/cert.pem
 
 ~control/remotecert
 
- This file contains the location of the OPTIONAL SSL certificate used for
+ This file contains the location of the OPTIONAL TLS certificate used for
  outgoing SMTP sessions. The path may be relative to /var/qmail or whatever
  was specified in conf-qmail.
+ The certificate should be only readable by qmail-remote (default user qmailr).
  Default: none
  Example: control/cert.pem
- Note: Unlike ~control/smtpcert this file is completle optional for encrypion.
-       qmail-remote will use STARTTLS and SSL encryption even without a cert
+ Note: Unlike ~control/smtpcert this file is optional for encrypion.
+       qmail-remote will use STARTTLS and TLS encryption even without a cert
        file, as it is not neccessary for the client.
+
+~control/tlsciphers
+~control/tlsremoteciphers
+
+ Set the list of ciphers that may be used. Lists of ciphers are specified
+ by name, and the permitted names are:
+   secure (or alias default)
+   compat
+   legacy
+   insecure (or alias all)
+ Alternatively, libssl cipher strings can be specified.
+ Default: default
+
+~control/tlsdheparams
+
+ This file specifies the parameters that will be used during Diffie-Hellman
+ Ephemeral (DHE) key exchange. It can be set to 'auto', 'legacy', or 'none'.
+ In auto mode, the key size for the ephemeral key is automatically
+ selected based on the size of the private key being used for signing.  In
+ legacy mode, 1024 bit ephemeral keys are used.  The default value is
+ none, which disables DHE key exchange.
+ Default: none
 
 ~control/tarpitcount
 ~control/tarpitdelay

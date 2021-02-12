@@ -34,9 +34,9 @@
 #ifdef SMTPEXECCHECK
 #include "execcheck.h"
 #endif
-#ifdef TLS_SMTPD
-#include <openssl/ssl.h>
-SSL *ssl = NULL;
+#ifdef TLS
+#include <tls.h>
+#include "tlsreadwrite.h"
 #endif
 #ifdef DATA_COMPRESS
 /* zlib needs to be after openssl includes or build will fail */
@@ -48,53 +48,9 @@ SSL *ssl = NULL;
 unsigned long databytes = 0;
 int timeout = 1200;
 
-#ifdef TLS_SMTPD
-int flagtimedout = 0;
-void sigalrm()
-{
- flagtimedout = 1;
-}
-int ssl_timeoutread(int tout, int fd, void *buf, int n)
-{
- int r; int saveerrno;
- if (flagtimedout) { errno = error_timeout; return -1; }
- alarm(tout);
- r = SSL_read(ssl,buf,n);
- saveerrno = errno;
- alarm(0);
- if (flagtimedout) { errno = error_timeout; return -1; }
- errno = saveerrno;
- return r;
-}
-int ssl_timeoutwrite(int tout, int fd, const void *buf, int n)
-{
- int r; int saveerrno;
- if (flagtimedout) { errno = error_timeout; return -1; }
- alarm(tout);
- r = SSL_write(ssl,buf,n);
- saveerrno = errno;
- alarm(0);
- if (flagtimedout) { errno = error_timeout; return -1; }
- errno = saveerrno;
- return r;
-}
-#endif
-
 void die_write(void);
 
-int safewrite(int fd, void *buf, int len)
-{
-  int r;
-#ifdef TLS_SMTPD
-  if (ssl)
-    r = ssl_timeoutwrite(timeout,fd,buf,len);
-  else
-#endif
-  r = timeoutwrite(timeout,fd,buf,len);
-  if (r <= 0) die_write();
-  return r;
-}
-
+int safewrite(int, void *, int);
 char ssoutbuf[512];
 substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 
@@ -103,7 +59,7 @@ char ssinbuf[1024];
 substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
 void flush(void) { substdio_flush(&ssout); }
-#ifdef TLS_SMTPD
+#ifdef TLS
 void flush_tls(void) { ssin.p = 0; flush(); }
 #endif
 void out(const char *s) { substdio_puts(&ssout,s); }
@@ -307,8 +263,11 @@ int flagauthok = 0;
 int flagextauth = 0;
 int flagnolocal = 0;
 const char *authprepend;
-#ifdef TLS_SMTPD
-stralloc sslcert = {0};
+#ifdef TLS
+struct tls *tls = NULL;
+stralloc tlscert = {0};
+stralloc tlsciphers = {0};
+stralloc tlsdheparams = {0};
 #endif
 char smtpsize[FMT_ULONG];
 unsigned int stutterdelay = 0;
@@ -316,7 +275,7 @@ int droprushgreet = 0;
 
 void setup(void)
 {
-#ifdef TLS_SMTPD
+#ifdef TLS
   char *sslpath;
 #endif
   char *x, *l;
@@ -345,15 +304,21 @@ void setup(void)
   if (control_readint(&timeout,"control/timeoutsmtpd") == -1) die_control();
   if (timeout <= 0) timeout = 1;
 
-#ifdef TLS_SMTPD
+#ifdef TLS
   sslpath = env_get("SSLCERT");
   if (!sslpath) {
     sslpath = (char *)"control/smtpcert";
-    if (control_readline(&sslcert, sslpath) == -1)
+    if (control_readline(&tlscert, sslpath) == -1)
       die_control();
   } else
-    if (!stralloc_copys(&sslcert, sslpath)) die_nomem();
-  if (!stralloc_0(&sslcert)) die_nomem();
+    if (!stralloc_copys(&tlscert, sslpath)) die_nomem();
+  if (!stralloc_0(&tlscert)) die_nomem();
+  if (control_rldef(&tlsciphers, "control/tlsciphers", 0, "default") == -1)
+      die_nomem();
+  if (!stralloc_0(&tlsciphers)) die_nomem();
+  if (control_rldef(&tlsdheparams, "control/tlsdheparams", 0, "none") == -1)
+      die_nomem();
+  if (!stralloc_0(&tlsdheparams)) die_nomem();
 #endif
 
   x = env_get("TARPITCOUNT");
@@ -480,8 +445,8 @@ void setup(void)
     logstring(3," ");
   }
   if (droprushgreet) logstring(3,"droprushgreet ");
-#ifdef TLS_SMTPD
-  if (sslcert.s && *sslcert.s) logstring(3, "starttls ");
+#ifdef TLS
+  if (tlscert.s && *tlscert.s) logstring(3, "starttls ");
 #endif
   if (flagnolocal) logstring(3, "nolocal ");
   if (relayclient) logstring(3,"relayclient ");
@@ -924,12 +889,10 @@ void smtp_ehlo(char *arg)
 #ifdef DATA_COMPRESS
   out("250-DATAZ\r\n");
 #endif
-#ifdef TLS_SMTPD
-  if (!ssl && sslcert.s && *sslcert.s)
+#ifdef TLS
+  if (!tls && tlscert.s && *tlscert.s)
     out("250-STARTTLS\r\n");
-#endif
-#ifdef TLS_SMTPD
-  if (!needssl || ssl)
+  if (!needssl || tls)
 #endif
   if (flagauth)
     out("250-AUTH LOGIN PLAIN\r\n");
@@ -1312,6 +1275,19 @@ int compression_done(void)
 }
 #endif
 
+int safewrite(int fd, void *buf, int len)
+{
+  int r;
+#ifdef TLS
+  if (tls)
+    r = tlstimeoutwrite(timeout,fd,tls,buf,len);
+  else
+#endif
+  r = timeoutwrite(timeout,fd,buf,len);
+  if (r <= 0) die_write();
+  return r;
+}
+
 int saferead(int fd,void *buf,int len)
 {
   int r;
@@ -1322,9 +1298,9 @@ int saferead(int fd,void *buf,int len)
     stream.next_out = buf;
     do {
       if (stream.avail_in == 0) {
-#ifdef TLS_SMTPD
-	if (ssl)
-	  r = ssl_timeoutread(timeout,fd,zbuf,sizeof(zbuf));
+#ifdef TLS
+	if (tls)
+	  r = tlstimeoutread(timeout,fd,tls,zbuf,sizeof(zbuf));
 	else
 #endif
 	r = timeoutread(timeout,fd,zbuf,sizeof(zbuf));
@@ -1354,9 +1330,9 @@ int saferead(int fd,void *buf,int len)
     } while (1);
   }
 #endif
-#ifdef TLS_SMTPD
-  if (ssl)
-    r = ssl_timeoutread(timeout,fd,buf,len);
+#ifdef TLS
+  if (tls)
+    r = tlstimeoutread(timeout,fd,tls,buf,len);
   else
 #endif
   r = timeoutread(timeout,fd,buf,len);
@@ -1490,7 +1466,7 @@ void acceptmessage(unsigned long qp)
   logflush(2);
 }
 
-#ifdef TLS_SMTPD
+#ifdef TLS
 stralloc protocolinfo = {0};
 #endif
 
@@ -1524,10 +1500,19 @@ void smtp_data(char *arg) {
   out("354 go ahead punk, make my day\r\n"); logline(4,"go ahead");
   rblheader(&qqt);
 
-#ifdef TLS_SMTPD
-  if(ssl){
-    if (!stralloc_copys(&protocolinfo,
-       SSL_CIPHER_get_name(SSL_get_current_cipher(ssl)))) die_nomem();
+#ifdef TLS
+  if(tls){
+    if (!stralloc_copys(&protocolinfo, tls_conn_version(tls))) die_nomem();
+    if (!stralloc_cats(&protocolinfo, " ")) die_nomem();
+    if (!stralloc_cats(&protocolinfo, tls_conn_cipher(tls))) die_nomem();
+    if (tls_peer_cert_provided(tls)) {
+      if (!stralloc_cats(&protocolinfo, " fingerprint=")) die_nomem();
+      if (!stralloc_cats(&protocolinfo, tls_peer_cert_hash(tls))) die_nomem();
+    } else {
+      if (!stralloc_cats(&protocolinfo,
+          " fingerprint=no certificate presented"))
+        die_nomem();
+    }
 #ifdef DATA_COMPRESS
     if (wantcomp) {
       if (!stralloc_cats(&protocolinfo, " encrypted compressed SMTP"))
@@ -1628,8 +1613,8 @@ void smtp_auth(char *arg)
     if (errdisconnect) err_quit();
     return;
   }
-#ifdef TLS_SMTPD
-  if (needssl && !ssl) {
+#ifdef TLS
+  if (needssl && !tls) {
     out("538 Encryption required for requested authentication mechanism");
     logline(3,"TLS encryption required for authentication");
     if (errdisconnect) err_quit();
@@ -1698,75 +1683,71 @@ fail:
   }
 }
 
-#ifdef TLS_SMTPD
-RSA *tmp_rsa_cb(SSL *s,int export,int keylength) 
-{
-  RSA* rsa;
-  BIO* in;
-
-  if (!export || keylength == 512)
-   if ((in=BIO_new(BIO_s_file_internal())))
-    if (BIO_read_filename(in,"control/rsa512.pem") > 0)
-     if ((rsa=PEM_read_bio_RSAPrivateKey(in,NULL,NULL,NULL)))
-      return rsa;
-  return (RSA_generate_key(export?keylength:512,RSA_F4,NULL,NULL));
-}
-
+#ifdef TLS
 void smtp_tls(char *arg) 
 {
-  SSL_CTX *ctx;
+  struct tls_config *tls_config;
+  struct tls *tlsserv;
 
-  if (sslcert.s == 0 || *sslcert.s == '\0') {
+  if (tlscert.s == 0 || *tlscert.s == '\0') {
     err_unimpl("STARTTLS");
     return;
   }
 
-  if (*arg)
-  {
+  if (*arg) {
     out("501 Syntax error (no parameters allowed) (#5.5.4)\r\n");
     logline(3,"aborting TLS negotiations, no parameters to starttls allowed");
     return;
   }
 
-  SSLeay_add_ssl_algorithms();
-  if(!(ctx=SSL_CTX_new(SSLv23_server_method())))
-  {
+  tls_config = tls_config_new();
+  if (tls_config == NULL) {
+    if (1)
+      logline(3,"aborting TLS negotiations, "
+        "unable to initialize local SSL context");
+    else
+fail:
+      logline2(3,"aborting TLS negotiations: ", tls_config_error(tls_config));
     out("454 TLS not available: unable to initialize ctx (#4.3.0)\r\n"); 
-    logline(3,"aborting TLS negotiations, "
-      "unable to initialize local SSL context");
+    tls_config_free(tls_config);
     return;
   }
-  if(!SSL_CTX_use_RSAPrivateKey_file(ctx, sslcert.s, SSL_FILETYPE_PEM))
-  {
-    out("454 TLS not available: missing RSA private key (#4.3.0)\r\n");
-    logline2(3,"aborting TLS negotiations, "
-      "RSA private key invalid or unable to read ", sslcert.s);
-    return;
+
+  if (tls_config_set_protocols(tls_config, TLS_PROTOCOLS_ALL) != 0 ||
+      tls_config_set_ciphers(tls_config, tlsciphers.s) != 0 ||
+      tls_config_set_dheparams(tls_config, tlsdheparams.s) != 0)
+    goto fail;
+
+
+  if (tls_config_set_ca_file(tls_config, tls_default_ca_cert_file()) != 0)
+    goto fail;
+  if (tls_config_set_cert_file(tls_config, tlscert.s) != 0)
+    goto fail;
+  if (tls_config_set_key_file(tls_config, tlscert.s) != 0)
+    goto fail;
+
+  tls_config_verify_client_optional(tls_config);
+
+  if (!(tlsserv = tls_server()))
+    die_nomem();
+
+  if(tls_configure(tlsserv, tls_config) == -1) {
+    logline2(3,"aborting TLS connection, unable to set up TLS session: ",
+	tls_error(tlsserv));
+    die_read();
   }
-  if(!SSL_CTX_use_certificate_chain_file(ctx, sslcert.s))
-  {
-    out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
-    logline2(3,"aborting TLS negotiations, "
-      "local cert invalid or unable to read ", sslcert.s);
-    return;
-  }
-  SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_cb);
- 
+
   out("220 ready for tls\r\n"); flush();
 
-  if(!(ssl=SSL_new(ctx))) 
-  {
-    logline(3,"aborting TLS connection, unable to set up SSL session");
+  if(tls_accept_fds(tlsserv, &tls, substdio_fileno(&ssin),
+     substdio_fileno(&ssout)) == -1) {
+    logline2(3,"aborting TLS connection, unable to finish tls accept: ",
+	tls_error(tlsserv));
     die_read();
   }
-  SSL_set_rfd(ssl,substdio_fileno(&ssin));
-  SSL_set_wfd(ssl,substdio_fileno(&ssout));
-  if(SSL_accept(ssl)<=0)
-  {
-    logline(3,"aborting TLS connection, unable to finish SSL accept");
-    die_read();
-  }
-  //substdio_fdbuf(&ssout,SSL_write,ssl,ssoutbuf,sizeof(ssoutbuf));
+
+  tls_free(tlsserv);
+  tls_config_free(tls_config);
 
   remotehost = env_get("TCPREMOTEHOST");
   if (!remotehost) remotehost = "unknown";
@@ -1777,6 +1758,16 @@ void smtp_tls(char *arg)
 void cleanup(void)
 {
 	ldaplookupdone();
+
+#ifdef TLS
+	if (tls) {
+		int ret;
+
+		do {
+			ret = tls_close(tls);
+		} while (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT);
+	}
+#endif
 }
 
 void err_503or421(char *arg)
@@ -1801,7 +1792,7 @@ struct commands smtpcommands[] = {
 , { "ehlo", smtp_ehlo, flush }
 , { "rset", smtp_rset, 0 }
 , { "help", smtp_help, flush }
-#ifdef TLS_SMTPD
+#ifdef TLS
 , { "starttls", smtp_tls, flush_tls }
 #endif
 #ifdef DATA_COMPRESS
@@ -1822,9 +1813,6 @@ struct commands smtprestricted[] = {
 
 int main(int argc, char **argv)
 {
-#ifdef TLS_SMTPD
-  sig_alarmcatch(sigalrm);
-#endif
   sig_pipeignore();
   if (chdir(auto_qmail) == -1) die_control();
   setup();
