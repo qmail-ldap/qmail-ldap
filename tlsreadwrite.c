@@ -45,21 +45,21 @@ tlstimeoutread(int tout, int fd, struct tls *ctx, void *buf, int size)
 	struct timeval tv;
 	ssize_t ret;
 
-	tv.tv_sec = tout;
-	tv.tv_usec = 0;
-
-	FD_ZERO(&rfds);
-	FD_SET(fd,&rfds);
-
-	if (select(fd + 1,&rfds,(fd_set *) 0,(fd_set *) 0,&tv) == -1)
-		return -1;
-	if (FD_ISSET(fd,&rfds))
-		do {
-			ret = tls_read(ctx, buf, size);
-			if (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT)
-				continue;
+	do {
+		ret = tls_read(ctx, buf, size);
+		if (ret != TLS_WANT_POLLIN && ret != TLS_WANT_POLLOUT)
 			return ret;
-		} while (1);
+
+		tv.tv_sec = tout;
+		tv.tv_usec = 0;
+
+		FD_ZERO(&rfds);
+		FD_SET(fd,&rfds);
+		if (select(fd + 1,&rfds,(fd_set *) 0,(fd_set *) 0,&tv) == -1)
+			return -1;
+		if (!FD_ISSET(fd,&rfds))
+			break;
+	} while (1);
 
 	errno = error_timeout;
 	return -1;
@@ -72,21 +72,21 @@ tlstimeoutwrite(int tout, int fd, struct tls *ctx, void *buf, int size)
 	struct timeval tv;
 	ssize_t ret;
 
-	tv.tv_sec = tout;
-	tv.tv_usec = 0;
-
-	FD_ZERO(&wfds);
-	FD_SET(fd,&wfds);
-
-	if (select(fd + 1,(fd_set *) 0,&wfds,(fd_set *) 0,&tv) == -1)
-		return -1;
-	if (FD_ISSET(fd,&wfds))
-		do {
-			ret = tls_write(ctx, buf, size);
-			if (ret == TLS_WANT_POLLIN || ret == TLS_WANT_POLLOUT)
-				continue;
+	do {
+		ret = tls_write(ctx, buf, size);
+		if (ret != TLS_WANT_POLLIN && ret != TLS_WANT_POLLOUT)
 			return ret;
-		} while (1);
+
+		tv.tv_sec = tout;
+		tv.tv_usec = 0;
+
+		FD_ZERO(&wfds);
+		FD_SET(fd,&wfds);
+		if (select(fd + 1,(fd_set *) 0,&wfds,(fd_set *) 0,&tv) == -1)
+			return -1;
+		if (!FD_ISSET(fd,&wfds))
+			break;
+	} while (1);
 
 	errno = error_timeout;
 	return -1;
