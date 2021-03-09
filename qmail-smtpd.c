@@ -1726,8 +1726,6 @@ fail:
   if (tls_config_set_key_file(tls_config, tlscert.s) != 0)
     goto fail;
 
-  tls_config_verify_client_optional(tls_config);
-
   if (!(tlsserv = tls_server()))
     die_nomem();
 
