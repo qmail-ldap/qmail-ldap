@@ -60,7 +60,7 @@ substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
 void flush(void) { substdio_flush(&ssout); }
 #ifdef TLS
-void flush_tls(void) { ssin.p = 0; flush(); }
+void flush_tls(void) { substdio_seek(&ssin, ssin.p); flush(); }
 #endif
 void out(const char *s) { substdio_puts(&ssout,s); }
 
