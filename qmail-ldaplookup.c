@@ -216,7 +216,7 @@ int main(int argc, char **argv)
 	if (r != OK) fail(q, "qldap_bind", r);
 
 	if (passwd == 0 || mode != uid || qldap_need_rebind() != 0)
-		attrs[sizeof(attrs)/4 - 2] = 0; /* password */
+		attrs[sizeof(attrs)/sizeof(attrs[0]) - 2] = 0; /* password */
 	done = 0;
 	f = 0;
 	do {
