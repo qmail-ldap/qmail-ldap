@@ -553,7 +553,7 @@ fail:
       do {
 	r = tls_handshake(tls);
 	if (r == -1) {
-          out("ZTLS not available: handshake failed: ");
+          out("ZTLS not available: ");
           out(tls_error(tls));
           out("\n");
           zerodie();
