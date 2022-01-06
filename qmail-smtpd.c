@@ -95,7 +95,8 @@ void logline2(int level, const char *s1, const char *s2)
   if (level > loglevel) return;
   logpid(level);
   substdio_puts(subfderr,s1);
-  substdio_puts(subfderr,s2);
+  if (s2)
+	  substdio_puts(subfderr,s2);
   substdio_puts(subfderr,"\n");
   substdio_flush(subfderr);
 }
@@ -117,6 +118,26 @@ void cleanup(void);
 
 const char *remoteip;
 
+#ifdef TLS
+void die_tlsread(struct tls *tls)
+{
+	if (errno == error_timeout)
+		logline(1,"TLS read error: timeout");
+	else
+		logline2(1,"TLS read error:", tls_error(tls));
+	cleanup();
+	_exit(1);
+}
+void die_tlswrite(struct tls *tls)
+{
+	if (errno == error_timeout)
+		logline(1,"TLS read error: timeout");
+	else
+		logline2(1,"TLS write error:", tls_error(tls));
+	cleanup();
+	_exit(1);
+}
+#endif
 void die_read(void) { logline(1,"read error or connection closed"); cleanup(); _exit(1); }
 void die_write(void) { logline(1,"write error, connection closed"); cleanup(); _exit(1); }
 void die_alarm(void) { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); cleanup(); _exit(1); }
@@ -313,7 +334,7 @@ void setup(void)
   } else
     if (!stralloc_copys(&tlscert, sslpath)) die_nomem();
   if (!stralloc_0(&tlscert)) die_nomem();
-  if (control_rldef(&tlsciphers, "control/tlsciphers", 0, "default") == -1)
+  if (control_rldef(&tlsciphers, "control/tlsciphers", 0, "compat") == -1)
       die_nomem();
   if (!stralloc_0(&tlsciphers)) die_nomem();
   if (control_rldef(&tlsdheparams, "control/tlsdheparams", 0, "none") == -1)
@@ -1279,9 +1300,10 @@ int safewrite(int fd, void *buf, int len)
 {
   int r;
 #ifdef TLS
-  if (tls)
+  if (tls) {
     r = tlstimeoutwrite(timeout,fd,tls,buf,len);
-  else
+    if (r == -1) die_tlswrite(tls);
+  } else
 #endif
   r = timeoutwrite(timeout,fd,buf,len);
   if (r <= 0) die_write();
@@ -1299,9 +1321,10 @@ int saferead(int fd,void *buf,int len)
     do {
       if (stream.avail_in == 0) {
 #ifdef TLS
-	if (tls)
+	if (tls) {
 	  r = tlstimeoutread(timeout,fd,tls,zbuf,sizeof(zbuf));
-	else
+          if (r == -1) die_tlsread(tls);
+	} else
 #endif
 	r = timeoutread(timeout,fd,zbuf,sizeof(zbuf));
 	if (r == -1) if (errno == error_timeout) die_alarm();
@@ -1331,9 +1354,10 @@ int saferead(int fd,void *buf,int len)
   }
 #endif
 #ifdef TLS
-  if (tls)
+  if (tls) {
     r = tlstimeoutread(timeout,fd,tls,buf,len);
-  else
+    if (r == -1) die_tlsread(tls);
+  } else
 #endif
   r = timeoutread(timeout,fd,buf,len);
   if (r == -1) if (errno == error_timeout) die_alarm();
@@ -1688,6 +1712,7 @@ void smtp_tls(char *arg)
 {
   struct tls_config *tls_config;
   struct tls *tlsserv;
+  int r;
 
   if (tlscert.s == 0 || *tlscert.s == '\0') {
     err_unimpl("STARTTLS");
@@ -1739,10 +1764,19 @@ fail:
 
   if(tls_accept_fds(tlsserv, &tls, substdio_fileno(&ssin),
      substdio_fileno(&ssout)) == -1) {
-    logline2(3,"aborting TLS connection, unable to finish tls accept: ",
+    logline2(3,"aborting TLS connection, unable to finish TLS accept: ",
 	tls_error(tlsserv));
     die_read();
   }
+
+  do {
+	r = tls_handshake(tls);
+	if (r == -1) {
+	   logline2(3,"aborting TLS connection, handshake failed: ",
+	     tls_error(tls));
+           die_read();
+	}
+  } while (r != 0);
 
   tls_free(tlsserv);
   tls_config_free(tls_config);

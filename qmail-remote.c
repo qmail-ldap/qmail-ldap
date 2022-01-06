@@ -127,6 +127,23 @@ void outhost(void)
 
 int flagcritical = 0;
 
+#ifdef TLS
+void dropped_tls(struct tls *tls) {
+  out("ZConnected to ");
+  outhost();
+  out(" but TLS connection died: ");
+  if (errno == error_timeout)
+    out("timeout ");
+  else {
+    out(tls_error(tls));
+    out(" ");
+  }
+  if (flagcritical) out("Possible duplicate! ");
+  out("(#4.4.2)\n");
+  zerodie();
+}
+#endif
+
 void dropped(void) {
   out("ZConnected to ");
   outhost();
@@ -171,9 +188,11 @@ void compression_done(void)
     case Z_OK:
       if (stream.avail_out == 0) {
 #ifdef TLS
-	if (tls)
+	if (tls) {
 	  r = tlstimeoutwrite(timeout,smtpfd,tls,zbuf,sizeof(zbuf));
-	else
+	  if (r == -1)
+	    dropped_tls(tls);
+	} else
 #endif
 	r = timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf));
 	if (r <= 0) dropped();
@@ -194,10 +213,12 @@ void compression_done(void)
   if (stream.avail_out != sizeof(zbuf)) {
     /* write left data */
 #ifdef TLS
-    if (tls)
+    if (tls) {
       r = tlstimeoutwrite(timeout,smtpfd,tls,zbuf,
 	  sizeof(zbuf)-stream.avail_out);
-    else
+      if (r == -1)
+        dropped_tls(tls);
+    } else
 #endif
     r = timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf)-stream.avail_out);
     if (r <= 0) dropped();
@@ -216,9 +237,11 @@ int saferead(int fd, void *buf, int len)
 {
   int r;
 #ifdef TLS
-  if (tls)
+  if (tls) {
     r = tlstimeoutread(timeout,smtpfd,tls,buf,len);
-  else
+    if (r == -1)
+      dropped_tls(tls);
+  } else
 #endif
   r = timeoutread(timeout,smtpfd,buf,len);
   if (r <= 0) dropped();
@@ -237,9 +260,11 @@ int safewrite(int fd, void *buf, int len)
       case Z_OK:
 	if (stream.avail_out == 0) {
 #ifdef TLS
-	  if (tls)
+	  if (tls) {
 	    r = tlstimeoutwrite(timeout,smtpfd,tls,zbuf,sizeof(zbuf));
-	  else
+	    if (r == -1)
+	      dropped_tls(tls);
+	  } else
 #endif
 	  r = timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf));
 	  if (r <= 0) dropped();
@@ -258,9 +283,11 @@ int safewrite(int fd, void *buf, int len)
   }
 #endif
 #ifdef TLS
-  if (tls)
+  if (tls) {
     r = tlstimeoutwrite(timeout,smtpfd,tls,buf,len);
-  else
+    if (r == -1)
+      dropped_tls(tls);
+  } else
 #endif
   r = timeoutwrite(timeout,smtpfd,buf,len);
   if (r <= 0) dropped();
@@ -417,6 +444,7 @@ void smtp(void)
   char num[FMT_ULONG];
 #ifdef TLS
   int flagtls = 0;
+  int r;
   struct tls_config *tls_config;
 #endif
 
@@ -521,6 +549,16 @@ fail:
         out("\n");
         zerodie();
       }
+
+      do {
+	r = tls_handshake(tls);
+	if (r == -1) {
+          out("ZTLS not available: handshake failed: ");
+          out(tls_error(tls));
+          out("\n");
+          zerodie();
+	}
+      } while (r != 0);
 
       /* re-EHLO as per RFC */
       substdio_puts(&smtpto,"EHLO ");
@@ -820,7 +858,7 @@ void getcontrols(void)
   if (control_readline(&tlscert, "control/remotecert") == -1)
     temp_control();
   if (!stralloc_0(&tlscert)) temp_nomem();
-  if (control_rldef(&tlsciphers, "control/tlsremoteciphers", 0, "default") == -1)
+  if (control_rldef(&tlsciphers, "control/tlsremoteciphers", 0, "compat") == -1)
     temp_control();
   if (!stralloc_0(&tlsciphers)) temp_nomem();
   if (control_rldef(&tlsdheparams, "control/tlsdheparams", 0, "none") == -1)
