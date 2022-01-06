@@ -80,8 +80,6 @@ check(checkfunc *f, stralloc *login, stralloc *authdata,
 	return NOSUCH;
 }
 
-char num[FMT_ULONG];
-
 int
 check_ldap(stralloc *login, stralloc *authdata,
     struct credentials *c, int fast)
@@ -234,6 +232,7 @@ void
 setup_env(char *user, struct credentials *c)
 {
 	static	stralloc ld = {0};
+	char num[FMT_ULONG];
 
 	/* set up the environment for the execution of the subprogram */
 	if (!env_put2("USER", user))
