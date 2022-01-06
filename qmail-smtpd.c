@@ -142,10 +142,10 @@ void die_read(void) { logline(1,"read error or connection closed"); cleanup(); _
 void die_write(void) { logline(1,"write error, connection closed"); cleanup(); _exit(1); }
 void die_alarm(void) { out("451 timeout (#4.4.2)\r\n"); logline(1,"connection timed out, closing connection"); flush(); cleanup(); _exit(1); }
 void die_nomem(void) { out("421 out of memory (#4.3.0)\r\n"); logline(1,"out of memory, closing connection"); flush(); cleanup(); _exit(1); }
-void die_control(void) { out("421 unable to read controls (#4.3.0)\r\n"); logline(1,"unable to read controls, closing connection"); flush(); _exit(1); }
-void die_ipme(void) { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); logline(1,"unable to figure out my IP address, closing connection"); flush(); _exit(1); }
-void straynewline(void) { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); _exit(1); }
-void oversizedline(void) { out("500 Text line too long."); logline(1,"Oversized line in data part, closing connection"); flush(); _exit(1); }
+void die_control(void) { out("421 unable to read controls (#4.3.0)\r\n"); logline(1,"unable to read controls, closing connection"); flush(); cleanup(); _exit(1); }
+void die_ipme(void) { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); logline(1,"unable to figure out my IP address, closing connection"); flush(); cleanup(); _exit(1); }
+void straynewline(void) { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); logline(1,"stray new line detected, closing connection"); flush(); cleanup(); _exit(1); }
+void oversizedline(void) { out("500 Text line too long."); logline(1,"Oversized line in data part, closing connection"); flush(); cleanup(); _exit(1); }
 void err_qqt(void) { out("451 qqt failure (#4.3.0)\r\n"); }
 void err_dns(void) { out("421 DNS temporary failure at return MX check, try again later (#4.3.0)\r\n"); }
 void err_soft(char *s) { out("451 "); out(s); out("\r\n"); logline2(1,"temporary verify error: ", s); }
@@ -1772,7 +1772,7 @@ fail:
   do {
 	r = tls_handshake(tls);
 	if (r == -1) {
-	   logline2(3,"aborting TLS connection, handshake failed: ",
+	   logline2(3,"aborting TLS connection: ",
 	     tls_error(tls));
            die_read();
 	}
@@ -1780,6 +1780,19 @@ fail:
 
   tls_free(tlsserv);
   tls_config_free(tls_config);
+
+  logpid(3);
+  logstring(3, "STARTTLS proto=");
+  logstring(3, tls_conn_version(tls));
+  logstring(3, "; cipher=");
+  logstring(3, tls_conn_cipher(tls));
+
+  /* we want certificate details */
+  if (tls_peer_cert_provided(tls)) {
+    logstring(3, "; fingerprint=");
+    logstring(3, tls_peer_cert_hash(tls));
+  }
+  logflush(3);
 
   remotehost = env_get("TCPREMOTEHOST");
   if (!remotehost) remotehost = "unknown";
