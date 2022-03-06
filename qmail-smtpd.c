@@ -47,7 +47,7 @@
 #define MAXHOPS 100
 #define MAXLINELEN 10000
 unsigned long databytes = 0;
-int timeout = 1200;
+int timeout = 120;
 
 void die_write(void);
 
