@@ -36,6 +36,7 @@
 #endif
 #ifdef TLS
 #include <tls.h>
+#include "ndelay.h"
 #include "tlsreadwrite.h"
 #endif
 #ifdef DATA_COMPRESS
@@ -1762,6 +1763,11 @@ fail:
 
   out("220 ready for tls\r\n"); flush();
 
+  if (ndelay_on(substdio_fileno(&ssin)) == -1 ||
+      ndelay_on(substdio_fileno(&ssout)) == -1) {
+    logline(3,"aborting TLS connection, unable to set no delay");
+    die_read();
+  }
   if(tls_accept_fds(tlsserv, &tls, substdio_fileno(&ssin),
      substdio_fileno(&ssout)) == -1) {
     logline2(3,"aborting TLS connection, unable to finish TLS accept: ",

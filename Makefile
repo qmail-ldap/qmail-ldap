@@ -1976,7 +1976,7 @@ qmail-remote.o: \
 compile qmail-remote.c sig.h stralloc.h gen_alloc.h substdio.h \
 subfd.h substdio.h scan.h case.h error.h auto_qmail.h control.h dns.h \
 alloc.h quote.h ip.h ipalloc.h ip.h gen_alloc.h ipme.h ip.h ipalloc.h \
-gen_alloc.h gen_allocdefs.h str.h now.h datetime.h exit.h constmap.h \
+gen_alloc.h gen_allocdefs.h str.h now.h ndelay.h datetime.h exit.h constmap.h \
 tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h uint64.h
 	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) $(ZINCLUDES) \
 	qmail-remote.c
@@ -2090,14 +2090,14 @@ load qmail-smtpd.o rcpthosts.o commands.o tlsreadwrite.o timeoutread.o \
 timeoutwrite.o rbl.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
 date822fmt.o now.o qmail.o execcheck.o cdb.a smtpcall.o coe.o fd.a \
 seek.a wait.a datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
-alloc.a substdio.a error.a str.a fs.a auto_qmail.o auto_break.o \
+alloc.a substdio.a error.a str.a ndelay.a fs.a auto_qmail.o auto_break.o \
 dns.lib socket.lib
 	./load qmail-smtpd rcpthosts.o commands.o tlsreadwrite.o \
 	timeoutread.o timeoutwrite.o rbl.o ip.o ipme.o ipalloc.o \
 	control.o constmap.o received.o date822fmt.o now.o qmail.o \
 	execcheck.o cdb.a smtpcall.o coe.o fd.a seek.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
-	alloc.a substdio.a error.a fs.a auto_qmail.o dns.o str.a \
+	alloc.a substdio.a error.a fs.a ndelay.a auto_qmail.o dns.o str.a \
 	auto_break.o `cat dns.lib` `cat socket.lib` $(TLSLIBS) $(ZLIB)
 
 qmail-smtpd.0: \
@@ -2110,7 +2110,7 @@ substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
 exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h rbl.h \
-qmail-ldap.h auto_break.h uint64.h
+qmail-ldap.h auto_break.h uint64.h ndelay.h
 	./compile $(LDAPFLAGS) $(TLS) $(TLSINCLUDES) $(ZINCLUDES) \
 	qmail-smtpd.c
 

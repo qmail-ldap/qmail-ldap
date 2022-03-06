@@ -36,6 +36,7 @@
 #include "xtext.h"
 #ifdef TLS
 #include <tls.h>
+#include "ndelay.h"
 #include "tlsreadwrite.h"
 #endif
 #ifdef DATA_COMPRESS
@@ -128,7 +129,8 @@ void outhost(void)
 int flagcritical = 0;
 
 #ifdef TLS
-void dropped_tls(struct tls *tls) {
+void dropped_tls(void)
+{
   out("ZConnected to ");
   outhost();
   out(" but TLS connection died: ");
@@ -191,7 +193,7 @@ void compression_done(void)
 	if (tls) {
 	  r = tlstimeoutwrite(timeout,smtpfd,tls,zbuf,sizeof(zbuf));
 	  if (r == -1)
-	    dropped_tls(tls);
+	    dropped_tls();
 	} else
 #endif
 	r = timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf));
@@ -217,7 +219,7 @@ void compression_done(void)
       r = tlstimeoutwrite(timeout,smtpfd,tls,zbuf,
 	  sizeof(zbuf)-stream.avail_out);
       if (r == -1)
-        dropped_tls(tls);
+        dropped_tls();
     } else
 #endif
     r = timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf)-stream.avail_out);
@@ -240,7 +242,7 @@ int saferead(int fd, void *buf, int len)
   if (tls) {
     r = tlstimeoutread(timeout,smtpfd,tls,buf,len);
     if (r == -1)
-      dropped_tls(tls);
+      dropped_tls();
   } else
 #endif
   r = timeoutread(timeout,smtpfd,buf,len);
@@ -263,7 +265,7 @@ int safewrite(int fd, void *buf, int len)
 	  if (tls) {
 	    r = tlstimeoutwrite(timeout,smtpfd,tls,zbuf,sizeof(zbuf));
 	    if (r == -1)
-	      dropped_tls(tls);
+	      dropped_tls();
 	  } else
 #endif
 	  r = timeoutwrite(timeout,smtpfd,zbuf,sizeof(zbuf));
@@ -286,7 +288,7 @@ int safewrite(int fd, void *buf, int len)
   if (tls) {
     r = tlstimeoutwrite(timeout,smtpfd,tls,buf,len);
     if (r == -1)
-      dropped_tls(tls);
+      dropped_tls();
   } else
 #endif
   r = timeoutwrite(timeout,smtpfd,buf,len);
@@ -543,6 +545,10 @@ fail:
       if (!stralloc_copy(&tlshost,&host)) temp_nomem();
       if (!stralloc_0(&tlshost)) temp_nomem();
 
+      if (ndelay_on(smtpfd) == -1) {
+        out("ZTLS not available: failed to set no delay\n");
+        zerodie();
+      }
       if (tls_connect_socket(tls, smtpfd, tlshost.s) == -1) {
         out("ZTLS not available: connect failed: ");
         out(tls_error(tls));
