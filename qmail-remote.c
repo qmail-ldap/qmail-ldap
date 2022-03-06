@@ -157,7 +157,7 @@ void dropped(void) {
 
 int timeoutconnect = 60;
 int smtpfd;
-int timeout = 1200;
+int timeout = 120;
 
 #ifdef DATA_COMPRESS
 z_stream stream;
