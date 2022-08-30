@@ -100,4 +100,35 @@ tlstimeoutwrite(int tout, int fd, struct tls *ctx, void *buf, int size)
 	return -1;
 }
 
+int
+tlstimeouthandshake(int tout, int fd, struct tls *ctx)
+{
+	fd_set rfds, wfds;
+	struct timeval tv;
+	ssize_t ret;
+
+	do {
+		ret = tls_handshake(ctx);
+		if (ret != TLS_WANT_POLLIN && ret != TLS_WANT_POLLOUT)
+			return ret;
+
+		tv.tv_sec = tout;
+		tv.tv_usec = 0;
+
+		FD_ZERO(&rfds);
+		FD_ZERO(&wfds);
+		if (ret == TLS_WANT_POLLIN)
+		  FD_SET(fd,&rfds);
+		else
+		  FD_SET(fd,&wfds);
+		if (select(fd + 1,&rfds,&wfds,(fd_set *) 0,&tv) == -1)
+			return -1;
+		if (!FD_ISSET(fd,&rfds) && !FD_ISSET(fd,&wfds))
+			break;
+	} while (1);
+
+	errno = error_timeout;
+	return -1;
+}
+
 #endif

@@ -3,5 +3,6 @@
 
 int	tlstimeoutread(int, int, struct tls *, void *, int);
 int	tlstimeoutwrite(int, int, struct tls *, void *, int);
+int	tlstimeouthandshake(int, int, struct tls *);
 
 #endif

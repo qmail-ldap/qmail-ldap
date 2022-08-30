@@ -1775,14 +1775,13 @@ fail:
     die_read();
   }
 
-  do {
-	r = tls_handshake(tls);
-	if (r == -1) {
-	   logline2(3,"aborting TLS connection: ",
-	     tls_error(tls));
-           die_read();
-	}
-  } while (r != 0);
+  if (tlstimeouthandshake(timeout,substdio_fileno(&ssin),tls) == -1) {
+    if (errno == error_timeout)
+      logline(1,"aborting TLS connection: timeout");
+    else
+      logline2(3,"aborting TLS connection: ", tls_error(tls));
+    die_read();
+  }
 
   tls_free(tlsserv);
   tls_config_free(tls_config);

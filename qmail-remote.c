@@ -556,16 +556,6 @@ fail:
         zerodie();
       }
 
-      do {
-	r = tls_handshake(tls);
-	if (r == -1) {
-          out("ZTLS not available: ");
-          out(tls_error(tls));
-          out("\n");
-          zerodie();
-	}
-      } while (r != 0);
-
       /* re-EHLO as per RFC */
       substdio_puts(&smtpto,"EHLO ");
       substdio_put(&smtpto,helohost.s,helohost.len);
